@@ -1,4 +1,5 @@
 import { useRef, useState, type DragEvent } from 'react'
+import { getDropIndex, getDropTargetId, reorderByDrop, reorderById } from '../utils/Reorder'
 
 type Turn = {
     id: number
@@ -28,17 +29,7 @@ export function TurnsTracker() {
     }
 
     function reorderTurn(sourceId: number, targetId: number) {
-        setTurns((currentTurns) => {
-            const sourceIndex = currentTurns.findIndex((turn) => turn.id === sourceId)
-            const targetIndex = currentTurns.findIndex((turn) => turn.id === targetId)
-            if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return currentTurns
-
-            const reorderedTurns = [...currentTurns]
-            const [sourceTurn] = reorderedTurns.splice(sourceIndex, 1)
-            const insertionIndex = reorderedTurns.findIndex((turn) => turn.id === targetId)
-            reorderedTurns.splice(insertionIndex, 0, sourceTurn)
-            return reorderedTurns
-        })
+        setTurns((currentTurns) => reorderById(currentTurns, sourceId, targetId))
     }
 
     function handleDragStart(event: DragEvent<HTMLButtonElement>, id: number) {
@@ -46,10 +37,15 @@ export function TurnsTracker() {
         event.dataTransfer.effectAllowed = 'move'
     }
 
-    function handleDrop(event: DragEvent<HTMLDivElement>, targetId: number) {
+    function handleListDrop(event: DragEvent<HTMLDivElement>) {
         event.preventDefault()
         const draggedId = event.dataTransfer.getData('text/plain')
-        if (draggedId) reorderTurn(Number(draggedId), targetId)
+        if (!draggedId) return
+
+        const sourceId = Number(draggedId)
+        const targetId = getDropTargetId(event.target)
+        const insertionIndex = getDropIndex(event.currentTarget, event.clientY, targetId)
+        setTurns((currentTurns) => reorderByDrop(currentTurns, sourceId, targetId, insertionIndex))
     }
 
     function sortTurns() {
@@ -73,13 +69,13 @@ export function TurnsTracker() {
     return (
         <section className="turns-tracker" aria-labelledby="turns-heading">
             <h2 id="turns-heading">Turni</h2>
-            <div className="turns-list">
+            <div className="turns-list" onDragOver={(event) => event.preventDefault()} onDrop={handleListDrop}>
                 {turns.map((turn, index) => (
                     <div
                         className="turn-row"
+                        data-reorder-item
+                        data-reorder-id={turn.id}
                         key={turn.id}
-                        onDragOver={(event) => event.preventDefault()}
-                        onDrop={(event) => handleDrop(event, turn.id)}
                     >
                         <button
                             aria-label={`Trascina per riordinare il turno ${index + 1}`}

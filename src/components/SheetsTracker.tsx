@@ -1,4 +1,5 @@
 import { useRef, useState, type DragEvent } from 'react'
+import { getDropIndex, getDropTargetId, reorderByDrop, reorderById } from '../utils/Reorder'
 
 type Sheet = {
     id: number
@@ -30,17 +31,7 @@ export function SheetsTracker() {
     }
 
     function reorderSheet(sourceId: number, targetId: number) {
-        setSheets((currentSheets) => {
-            const sourceIndex = currentSheets.findIndex((sheet) => sheet.id === sourceId)
-            const targetIndex = currentSheets.findIndex((sheet) => sheet.id === targetId)
-            if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return currentSheets
-
-            const reorderedSheets = [...currentSheets]
-            const [sourceSheet] = reorderedSheets.splice(sourceIndex, 1)
-            const insertionIndex = reorderedSheets.findIndex((sheet) => sheet.id === targetId)
-            reorderedSheets.splice(insertionIndex, 0, sourceSheet)
-            return reorderedSheets
-        })
+        setSheets((currentSheets) => reorderById(currentSheets, sourceId, targetId))
     }
 
     function handleDragStart(event: DragEvent<HTMLButtonElement>, id: number) {
@@ -48,10 +39,15 @@ export function SheetsTracker() {
         event.dataTransfer.effectAllowed = 'move'
     }
 
-    function handleDrop(event: DragEvent<HTMLDivElement>, targetId: number) {
+    function handleListDrop(event: DragEvent<HTMLDivElement>) {
         event.preventDefault()
         const draggedId = event.dataTransfer.getData('text/plain')
-        if (draggedId) reorderSheet(Number(draggedId), targetId)
+        if (!draggedId) return
+
+        const sourceId = Number(draggedId)
+        const targetId = getDropTargetId(event.target)
+        const insertionIndex = getDropIndex(event.currentTarget, event.clientY, targetId)
+        setSheets((currentSheets) => reorderByDrop(currentSheets, sourceId, targetId, insertionIndex))
     }
 
     function removeSheet(id: number) {
@@ -61,13 +57,13 @@ export function SheetsTracker() {
     return (
         <section className="sheets-tracker" aria-labelledby="sheets-heading">
             <h2 id="sheets-heading">Schede</h2>
-            <div className="sheets-list">
+            <div className="sheets-list" onDragOver={(event) => event.preventDefault()} onDrop={handleListDrop}>
                 {sheets.map((sheet, index) => (
                     <div
                         className="sheet-row"
+                        data-reorder-item
+                        data-reorder-id={sheet.id}
                         key={sheet.id}
-                        onDragOver={(event) => event.preventDefault()}
-                        onDrop={(event) => handleDrop(event, sheet.id)}
                     >
                         <button
                             aria-label={`Trascina per riordinare la creatura ${index + 1}`}

@@ -1,4 +1,5 @@
 import { useRef, useState, type DragEvent } from 'react'
+import { getDropIndex, getDropTargetId, reorderByDrop, reorderById } from '../utils/Reorder'
 
 const durations = ['1 minuto', '10 minuti', '1 ora', '8 ore', '24 ore'] as const
 
@@ -38,17 +39,7 @@ export function AbilitiesTracker() {
     }
 
     function reorderAbility(sourceId: number, targetId: number) {
-        setAbilities((currentAbilities) => {
-            const sourceIndex = currentAbilities.findIndex((ability) => ability.id === sourceId)
-            const targetIndex = currentAbilities.findIndex((ability) => ability.id === targetId)
-            if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return currentAbilities
-
-            const reorderedAbilities = [...currentAbilities]
-            const [sourceAbility] = reorderedAbilities.splice(sourceIndex, 1)
-            const insertionIndex = reorderedAbilities.findIndex((ability) => ability.id === targetId)
-            reorderedAbilities.splice(insertionIndex, 0, sourceAbility)
-            return reorderedAbilities
-        })
+        setAbilities((currentAbilities) => reorderById(currentAbilities, sourceId, targetId))
     }
 
     function handleDragStart(event: DragEvent<HTMLButtonElement>, id: number) {
@@ -56,10 +47,15 @@ export function AbilitiesTracker() {
         event.dataTransfer.effectAllowed = 'move'
     }
 
-    function handleDrop(event: DragEvent<HTMLDivElement>, targetId: number) {
+    function handleListDrop(event: DragEvent<HTMLDivElement>) {
         event.preventDefault()
         const draggedId = event.dataTransfer.getData('text/plain')
-        if (draggedId) reorderAbility(Number(draggedId), targetId)
+        if (!draggedId) return
+
+        const sourceId = Number(draggedId)
+        const targetId = getDropTargetId(event.target)
+        const insertionIndex = getDropIndex(event.currentTarget, event.clientY, targetId)
+        setAbilities((currentAbilities) => reorderByDrop(currentAbilities, sourceId, targetId, insertionIndex))
     }
 
     function removeAbility(id: number) {
@@ -75,13 +71,13 @@ export function AbilitiesTracker() {
     return (
         <section className="abilities-tracker" aria-labelledby="abilities-heading">
             <h2 id="abilities-heading">Abilità</h2>
-            <div className="abilities-list">
+            <div className="abilities-list" onDragOver={(event) => event.preventDefault()} onDrop={handleListDrop}>
                 {abilities.map((ability, index) => (
                     <div
                         className="ability-row"
+                        data-reorder-item
+                        data-reorder-id={ability.id}
                         key={ability.id}
-                        onDragOver={(event) => event.preventDefault()}
-                        onDrop={(event) => handleDrop(event, ability.id)}
                     >
                         <button
                             aria-label={`Trascina per riordinare l'abilità ${index + 1}`}
