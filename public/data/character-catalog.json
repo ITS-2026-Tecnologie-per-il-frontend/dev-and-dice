@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "ruleset": "dnd5e-2014",
+  "srdVersion": "5.1",
+  "retrievedAt": "2026-10-06T15:34:59.651573+00:00",
+  "source": "https://github.com/5e-bits/5e-database",
+  "licenseIds": [
+    "OGL-1.0a",
+    "MIT-5e-database"
+  ],
+  "files": {
+    "character-options.json": {
+      "bytes": 3012689,
+      "sha256": "f90b223dba51b0cb5ed4e922f5cc95fd28df4c752dbc59325de84d670a0738a6"
+    },
+    "character-equipment.json": {
+      "bytes": 1222359,
+      "sha256": "58414b08d8e1ade24cc63cef8a385269c97783b9188d41a1a099488ef9b23f4c"
+    },
+    "character-rules.json": {
+      "bytes": 889435,
+      "sha256": "eeafa3eb97edd6a4ad7e4e82eaee305ad5a483d1c30e3c99eb3208e520f95435"
+    },
+    "wiki-character-index.json": {
+      "bytes": 99319,
+      "sha256": "20fd89f8b5c4e7f3150cfb744aac17af6d78e3ee569d8a7b6270a424e1e31c92"
+    }
+  },
+  "coverage": {
+    "abilityScores": 6,
+    "alignments": 9,
+    "backgrounds": 1,
+    "classes": 12,
+    "conditions": 15,
+    "damageTypes": 13,
+    "equipmentCategories": 39,
+    "equipment": 237,
+    "feats": 1,
+    "features": 407,
+    "languages": 16,
+    "levels": 290,
+    "magicItems": 362,
+    "magicSchools": 8,
+    "proficiencies": 117,
+    "races": 9,
+    "ruleSections": 33,
+    "rules": 6,
+    "skills": 18,
+    "spells": 319,
+    "subclasses": 12,
+    "subraces": 4,
+    "traits": 38,
+    "weaponProperties": 11
+  },
+  "sources": [
+    {
+      "url": "https://github.com/5e-bits/5e-database/tree/main/src/2014/en",
+      "content": "Complete downloaded 2014 SRD collections, English text and structured mechanics"
+    },
+    {
+      "url": "https://dungeonedraghi.it/compendio/classi/",
+      "content": "Italian SRD class pages"
+    },
+    {
+      "url": "https://dungeonedraghi.it/compendio/razze/",
+      "content": "Italian SRD race pages"
+    },
+    {
+      "url": "https://dungeonedraghi.it/regole/",
+      "content": "Italian rule articles discovered recursively from the rules index"
+    },
+    {
+      "url": "https://www.dndbeyond.com/sources/dnd/basic-rules-2014/step-by-step-characters",
+      "content": "Verified mechanical facts for ability generation, XP and hit point calculations; no copied narrative text"
+    },
+    {
+      "url": "https://dnd5e.wikidot.com/",
+      "content": "Additional player-option index names/URLs; no non-SRD full descriptions"
+    }
+  ],
+  "licenses": [
+    {
+      "id": "OGL-1.0a",
+      "textFile": "ogl-1.0a.txt",
+      "sourceUrl": "https://dungeonedraghi.it/licenza-ogl/",
+      "appliesTo": "SRD 5.1 mechanics and descriptions, including cited Italian translations; images and Product Identity excluded"
+    },
+    {
+      "id": "MIT-5e-database",
+      "textFile": "srd-database-license.txt",
+      "sourceUrl": "https://github.com/5e-bits/5e-database/blob/main/LICENSE.md",
+      "appliesTo": "Database structure and source repository software"
+    }
+  ],
+  "limitations": [
+    "SRD coverage only: one background, one feat and one subclass per class; commercial expansions are not included.",
+    "Wikidot extra options are metadata only, not mechanically validated.",
+    "Automated calculations are described in data; the current player-sheet UI does not yet apply these catalogs.",
+    "2014 rules; no inferred 2024 bonuses.",
+    "Fields requiring choices or conditional context must never be silently autofilled."
+  ],
+  "downloadErrors": [
+    {
+      "url": "https://dungeonedraghi.it/regole/caratteristiche/",
+      "error": "The read operation timed out"
+    },
+    {
+      "url": "https://dungeonedraghi.it/regole/combattimento/",
+      "error": "The read operation timed out"
+    },
+    {
+      "url": "https://dungeonedraghi.it/regole/personaggio/background/",
+      "error": "The read operation timed out"
+    },
+    {
+      "url": "https://dungeonedraghi.it/regole/avventura/tempo/",
+      "error": "The read operation timed out"
+    },
+    {
+      "url": "https://dungeonedraghi.it/regole/avventura/ambiente/",
+      "error": "The read operation timed out"
+    },
+    {
+      "url": "https://dungeonedraghi.it/regole/avventura/riposo/",
+      "error": "The read operation timed out"
+    },
+    {
+      "url": "https://dungeonedraghi.it/regole/avventura/piani-di-esistenza/",
+      "error": "The read operation timed out"
+    },
+    {
+      "url": "https://dungeonedraghi.it/regole/avventura/malattie/",
+      "error": "The read operation timed out"
+    },
+    {
+      "url": "https://dungeonedraghi.it/regole/avventura/pazzia/",
+      "error": "The read operation timed out"
+    },
+    {
+      "url": "https://dungeonedraghi.it/regole/avventura/oggetti/",
+      "error": "The read operation timed out"
+    }
+  ],
+  "italianCoverage": {
+    "options": 21,
+    "rulePages": 39
+  },
+  "wikiIndexCounts": {
+    "class": 26,
+    "race": 55,
+    "background": 102,
+    "feat": 199
+  },
+  "expressionFormat": "See character-rules.json; safe JSON operation tree, not executable strings",
+  "integration": {
+    "existingCatalog": "database.json stays separate; current monster and combat data are unchanged",
+    "playerSheet": "Base field mapping uses strength/dexterity/constitution/intelligence/wisdom/charisma; see skill.playerDetailsKeys for saved skill fields"
+  }
+}

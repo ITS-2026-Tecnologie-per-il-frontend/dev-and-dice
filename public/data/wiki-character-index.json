@@ -1,0 +1,3457 @@
+{
+  "schemaVersion": 1,
+  "retrievedAt": "2026-10-06T15:23:31.000544+00:00",
+  "sources": [
+    {
+      "url": "https://dungeonedraghi.it",
+      "status": "downloaded",
+      "scope": "index-links-and-names-only"
+    },
+    {
+      "url": "https://dnd5e.wikidot.com",
+      "status": "downloaded",
+      "scope": "index-links-and-names-only"
+    }
+  ],
+  "entries": [
+    {
+      "name": "Barbaro",
+      "kind": "class",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/classi/barbaro/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Bardo",
+      "kind": "class",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/classi/bardo/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Chierico",
+      "kind": "class",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/classi/chierico/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Druido",
+      "kind": "class",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/classi/druido-2/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Guerriero",
+      "kind": "class",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/classi/guerriero/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Ladro",
+      "kind": "class",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/classi/ladro/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Mago",
+      "kind": "class",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/classi/mago-2/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Monaco",
+      "kind": "class",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/classi/monaco/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Paladino",
+      "kind": "class",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/classi/paladino/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Ranger",
+      "kind": "class",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/classi/ranger/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Stregone",
+      "kind": "class",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/classi/stregone/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Warlock",
+      "kind": "class",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/classi/warlock/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Dragonide",
+      "kind": "race",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/razze/dragonide/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Elfo",
+      "kind": "race",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/razze/elfo/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Gnomo",
+      "kind": "race",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/razze/gnomo/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Halfling",
+      "kind": "race",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/razze/halfling/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Mezzelfo",
+      "kind": "race",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/razze/mezzelfo/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Mezzorco",
+      "kind": "race",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/razze/mezzorco/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Nano",
+      "kind": "race",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/razze/nano/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Tiefling",
+      "kind": "race",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/razze/tiefling/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Umano",
+      "kind": "race",
+      "sourceUrl": "https://dungeonedraghi.it/compendio/razze/umano/",
+      "language": "it",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Dragonborn",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:dragonborn",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Dwarf",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:dwarf",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Elf",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:elf",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Gnome",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:gnome",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Half-Elf",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:half-elf",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Half-Orc",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:half-orc",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Halfling",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:halfling",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Human",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:human",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Tiefling",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:tiefling",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Aarakocra",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:aarakocra",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Aasimar",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:aasimar",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Changeling",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:changeling",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Deep Gnome",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:deep-gnome",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Duergar",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:duergar",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Eladrin",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:eladrin",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Fairy",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:fairy",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Firbolg",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:firbolg",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Genasi (Air)",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:genasi-air",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Genasi (Earth)",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:genasi-earth",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Genasi (Fire)",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:genasi-fire",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Genasi (Water)",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:genasi-water",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Githyanki",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:githyanki",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Githzerai",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:githzerai",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Goliath",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:goliath",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Harengon",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:harengon",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Kenku",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:kenku",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Locathah",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:locathah",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Owlin",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:owlin",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Satyr",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:satyr",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Sea Elf",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:sea-elf",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Shadar-Kai",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:shadar-kai",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Tabaxi",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:tabaxi",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Tortle",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:tortle",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Triton",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:triton",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Verdan",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:verdan",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Bugbear",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:bugbear",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Centaur",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:centaur",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Goblin",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:goblin",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Grung",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:grung",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Hobgoblin",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:hobgoblin",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Kobold",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:kobold",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Lizardfolk",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:lizardfolk",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Minotaur",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:minotaur",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Orc",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:orc",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Shifter",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:shifter",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Yuan-Ti",
+      "kind": "race",
+      "sourceUrl": "https://dnd5e.wikidot.com/lineage:yuan-ti",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Acolyte",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:acolyte",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Anthropologist",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:anthropologist",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Archaeologist",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:archaeologist",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Athlete",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:athlete",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Charlatan",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:charlatan",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Investigator (SCAG)",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:city-watch",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Clan Crafter",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:clan-crafter",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Cloistered Scholar",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:cloistered-scholar",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Courtier",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:courtier",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Spy",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:criminal",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Gladiator",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:entertainer",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Faceless",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:faceless",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Faction Agent",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:faction-agent",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Far Traveler",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:far-traveler",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Feylost",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:feylost",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Fisher",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:fisher",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Folk Hero",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:folk-hero",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Giant Foundling",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:giant-foundling",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Guild Merchant",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:guild-artisan",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Haunted One",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:haunted-one",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Hermit",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:hermit",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "House Agent",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:house-agent",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Inheritor",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:inheritor",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Investigator (VRGR)",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:investigator",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Noble",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:noble",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Knight of the Order",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:knight-of-the-order",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Marine",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:marine",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Mercenary Veteran",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:mercenary-veteran",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Outlander",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:outlander",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Sailor",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:sailor",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Rewarded",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:rewarded",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Ruined",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:ruined",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Rune Carver",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:rune-carver",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Sage",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:sage",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Shipwright",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:shipwright",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Smuggler",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:smuggler",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Soldier",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:soldier",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Urban Bounty Hunter",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:urban-bounty-hunter",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Urchin",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:urchin",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Uthgardt Tribe Member",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:uthgardt-tribe-member",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Waterdhavian Noble",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:waterdhavian-noble",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Witchlight Hand",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:witchlight-hand",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Black Fist Double Agent",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:black-fist-double-agent",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Dragon Casualty",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:dragon-casualty",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Iron Route Bandit",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:iron-route-bandit",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Phlan Insurgent",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:phlan-insurgent",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Stojanow Prisoner",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:stojanow-prisoner",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Ticklebelly Nomad",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:ticklebelly-nomad",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Caravan Specialist",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:caravan-specialist",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Earthspur Miner",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:earthspur-miner",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Harborfolk",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:harborfolk",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Mulmaster Aristocrat",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:mulmaster-aristocrat",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Phlan Refugee",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:phlan-refugee",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Cormanthor Refugee",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:cormanthor-refugee",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Gate Urchin",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:gate-urchin",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Hillsfar Merchant",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:hillsfar-merchant",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Hillsfar Smuggler",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:hillsfar-smuggler",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Secret Identity",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:secret-identity",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Shade Fanatic",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:shade-fanatic",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Trade Sheriff",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:trade-sheriff",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Ashari",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:ashari",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Celebrity Adventurer's Scion",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:celebrity-adventurers-scion",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Failed Merchant",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:failed-merchant",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Gambler",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:gambler",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Plaintiff",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:plaintiff",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Rival Intern",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:rival-intern",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Dissenter",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:dissenter",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Initiate",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:initiate",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Vizier",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:vizier",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Knight of Solamnia",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:knight-of-solamnia",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Mage of High Sorcery",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:mage-of-high-sorcery",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Inquisitor",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:inquisitor",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Gate Warden",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:gate-warden",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Planar Philosopher",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:planar-philosopher",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Azorius Functionary",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:azorius-functionary",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Boros Legionnaire",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:boros-legionnaire",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Dimir Operative",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:dimir-operative",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Golgari Agent",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:golgari-agent",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Gruul Anarch",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:gruul-anarch",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Izzet Engineer",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:izzet-engineer",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Orzhov Representative",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:orzhov-representative",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Rakdos Cultist",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:rakdos-cultist",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Selesnya Initiate",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:selesnya-initiate",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Simic Scientist",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:simic-scientist",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Lorehold Student",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:lorehold-student",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Prismari Student",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:prismari-student",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Quandrix Student",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:quandrix-student",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Silverquill Student",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:silverquill-student",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Witherbloom Student",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:witherbloom-student",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Grinner",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:grinner",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Volstrucker Agent",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:volstrucker-agent",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Astral Drifter",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:astral-drifter",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Wildspacer",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:wildspacer",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Optional Features",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:optional-features",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Wildemount",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:wildemount-heroic-chronicle",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Sword Coast (D&D Beyond)",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:sword-coast-heroic-chronicle",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Artificer",
+      "kind": "class",
+      "sourceUrl": "https://dnd5e.wikidot.com/artificer",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Barbarian",
+      "kind": "class",
+      "sourceUrl": "https://dnd5e.wikidot.com/barbarian",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Bard",
+      "kind": "class",
+      "sourceUrl": "https://dnd5e.wikidot.com/bard",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Blood Hunter (Homebrew)",
+      "kind": "class",
+      "sourceUrl": "https://dnd5e.wikidot.com/blood-hunter",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Cleric",
+      "kind": "class",
+      "sourceUrl": "https://dnd5e.wikidot.com/cleric",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Druid",
+      "kind": "class",
+      "sourceUrl": "https://dnd5e.wikidot.com/druid",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Fighter",
+      "kind": "class",
+      "sourceUrl": "https://dnd5e.wikidot.com/fighter",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Monk",
+      "kind": "class",
+      "sourceUrl": "https://dnd5e.wikidot.com/monk",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Paladin",
+      "kind": "class",
+      "sourceUrl": "https://dnd5e.wikidot.com/paladin",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Ranger",
+      "kind": "class",
+      "sourceUrl": "https://dnd5e.wikidot.com/ranger",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Rogue",
+      "kind": "class",
+      "sourceUrl": "https://dnd5e.wikidot.com/rogue",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Sorcerer",
+      "kind": "class",
+      "sourceUrl": "https://dnd5e.wikidot.com/sorcerer",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Warlock",
+      "kind": "class",
+      "sourceUrl": "https://dnd5e.wikidot.com/warlock",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Wizard",
+      "kind": "class",
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Aberrant Dragonmark",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:aberrant-dragonmark",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Actor",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:actor",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Alert",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:alert",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Artificer Initiate",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:artificer-initiate",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Athlete",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:athlete",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Cartomancer",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:cartomancer",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Charger",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:charger",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Chef",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:chef",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Crossbow Expert",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:crossbow-expert",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Crusher",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:crusher",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Defensive Duelist",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:defensive-duelist",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Dual Wielder",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:dual-wielder",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Dungeon Delver",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:dungeon-delver",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Durable",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:durable",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Eldritch Adept",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:eldritch-adept",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Elemental Adept",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:elemental-adept",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Ember of the Fire Giant",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:ember-of-the-fire-giant",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Fey Touched",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:fey-touched",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Fighting Initiate",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:fighting-initiate",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Fury of the Frost Giant",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:fury-of-the-frost-giant",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Gift of the Chromatic Dragon",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:gift-of-the-chromatic-dragon",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Gift of the Gem Dragon",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:gift-of-the-gem-dragon",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Gift of the Metallic Dragon",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:gift-of-the-metallic-dragon",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Grappler",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:grappler",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Great Weapon Master",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:great-weapon-master",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Guile of the Cloud Giant",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:guile-of-the-cloud-giant",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Gunner",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:gunner",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Healer",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:healer",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Heavily Armored",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:heavily-armored",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Heavy Armor Master",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:heavy-armor-master",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Inspiring Leader",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:inspiring-leader",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Keen Mind",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:keen-mind",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Keenness of the Stone Giant",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:keenness-of-the-stone-giant",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Lightly Armored",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:lightly-armored",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Linguist",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:linguist",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Lucky",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:lucky",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Mage Slayer",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:mage-slayer",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Magic Initiate",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:magic-initiate",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Martial Adept",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:martial-adept",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Medium Armor Master",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:medium-armor-master",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Metamagic Adept",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:metamagic-adept",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Mobile",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:mobile",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Moderately Armored",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:moderately-armored",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Mounted Combatant",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:mounted-combatant",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Observant",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:observant",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Piercer",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:piercer",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Poisoner",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:poisoner",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Polearm Master",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:polearm-master",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Resilient",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:resilient",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Ritual Caster",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:ritual-caster",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Rune Shaper",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:rune-shaper",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Savage Attacker",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:savage-attacker",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Sentinel",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:sentinel",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Shadow Touched",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:shadow-touched",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Sharpshooter",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:sharpshooter",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Shield Master",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:shield-master",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Skill Expert",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:skill-expert",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Skilled",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:skilled",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Skulker",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:skulker",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Slasher",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:slasher",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Soul of the Storm Giant",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:soul-of-the-storm-giant",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Spell Sniper",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:spell-sniper",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Strike of the Giants",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:strike-of-the-giants",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Tavern Brawler",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:tavern-brawler",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Telekinetic",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:telekinetic",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Telepathic",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:telepathic",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Tough",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:tough",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Vigor of the Hill Giant",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:vigor-of-the-hill-giant",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "War Caster",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:war-caster",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Weapon Master",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:weapon-master",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Agent of Order",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:agent-of-order",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Baleful Scion",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:baleful-scion",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Cohort of Chaos",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:cohort-of-chaos",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Outlands Envoy",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:outlands-envoy",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Planar Wanderer",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:planar-wanderer",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Righteous Heritor",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:righteous-heritor",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Scion of the Outer Planes",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:scion-of-the-outer-planes",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Strixhaven Initiate",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:strixhaven-initiate",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Strixhaven Mascot",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:strixhaven-mascot",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Adept of the Black Robes",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:adept-of-the-black-robes",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Adept of the Red Robes",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:adept-of-the-red-robes",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Adept of the White Robes",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:adept-of-the-white-robes",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Divinely Favored",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:divinely-favored",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Initiate of High Sorcery",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:initiate-of-high-sorcery",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Knight of the Crown",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:knight-of-the-crown",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Knight of the Rose",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:knight-of-the-rose",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Knight of the Sword",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:knight-of-the-sword",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Squire of Solamnia",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:squire-of-solamnia",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Servo Crafting",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:servo-crafting",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Quicksmithing",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:quicksmithing",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Cruel",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:cruel",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Flash Recall",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:flash-recall",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Mystic Conflux",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:mystic-conflux",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Remarkable Recovery",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:remarkable-recovery",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Spelldriver",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:spelldriver",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Thrown Arms Master",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:thrown-arms-master",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Vital Sacrifice",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:vital-sacrifice",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Bountiful Luck",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:bountiful-luck",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Dragon Fear",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:dragon-fear",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Dragon Hide",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:dragon-hide",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Dwarven Fortitude",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:dwarven-resilience",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Drow High Magic",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:drow-high-magic",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Elven Accuracy",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:elven-accuracy",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Fade Away",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:fade-away",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Fey Teleportation",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:fey-teleportation",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Flames of Phlegethos",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:flames-of-phlegethos",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Infernal Constitution",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:infernal-constitution",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Orcish Fury",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:orcish-fury",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Prodigy",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:prodigy",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Revenant Blade",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:revenant-blade",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Second Chance",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:second-chance",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Squat Nimbleness",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:squat-nimbleness",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Svirfneblin Magic",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:svirfneblin-magic",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Wood Elf Magic",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:wood-elf-magic",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Barbed Hide",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:barbed-hide",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Critter Friend",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:critter-friend",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Dragon Wings",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:dragon-wings",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Everybody's Friend",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:everybodys-friend",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Grudge Bearer",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:grudge-bearer",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Human Determination",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:human-determination",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Orcish Aggression",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:orcish-aggression",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Wonder Maker",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:wonder-maker",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Vampiric Exultation",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:vampiric-exultation",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Acrobat",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:acrobat",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Adept of the Black Robes",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:adept-of-the-black-robes-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Adept of the Red Robes",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:adept-of-the-red-robes-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Adept of the White Robes",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:adept-of-the-white-robes-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Agent of Order",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:agent-of-order-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Alchemist",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:alchemist",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Animal Handler",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:animal-handler",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Arcanist",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:arcanist",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Baleful Scion",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:baleful-scion-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Blade Mastery",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:blade-mastery",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Brawny",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:brawny",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Burglar",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:burglar",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Cartomancer",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:cartomancer-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Cohort of Chaos",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:cohort-of-chaos-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Diplomat",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:diplomat",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Divine Communications",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:divine-communications-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Divinely Favored",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:divinely-favored-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Dragonmark",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:dragonmark-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Elemental Touched",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:elemental-touched-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Ember of the Fire Giant",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:ember-of-the-fire-giant-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Ember of the Fire Giant (Revised)",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:ember-of-the-fire-giant-revised-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Empathic",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:empathic",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Fell Handed",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:fell-handed",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Flail Mastery",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:flail-mastery",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Fury of the Frost Giant",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:fury-of-the-frost-giant-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Fury of the Frost Giant (Revised)",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:fury-of-the-frost-giant-revised-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Guile of the Cloud Giant",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:guile-of-the-cloud-giant-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Guile of the Cloud Giant (Revised)",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:guile-of-the-cloud-giant-revised-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Gourmand",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:gourmand",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Greater Dragonmark",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:greater-dragonmark",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Historian",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:historian",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Initiate of High Sorcery",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:initiate-of-high-sorcery-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Investigator",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:investigator",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Keenness of the Stone Giant",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:keenness-of-the-stone-giant-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Keenness of the Stone Giant (Revised)",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:keenness-of-the-stone-giant-revised-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Knight of the Crown",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:knight-of-the-crown-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Knight of the Sword",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:knight-of-the-sword-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Knight of the Rose",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:knight-of-the-rose-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Master of Disguise",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:master-of-disguise",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Medic",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:medic",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Menacing",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:menacing",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Metabolic Control",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:metabolic-control",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Naturalist",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:naturalist",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Outlands Envoy",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:outlands-envoy-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Outsized Might",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:outsized-might-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Perceptive",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:perceptive",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Performer",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:performer",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Planar Wanderer",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:planar-wanderer-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Practiced Expert",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:practiced-expert",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Quick-Fingered",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:quick-fingered",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Righteous Heritor",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:righteous-heritor-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Rune Carver Adept",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:rune-carver-adept-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Rune Carver Adept (Revised)",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:rune-carver-adept-revised-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Rune Carver Apprentice",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:rune-carver-apprentice-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Rune Carver Apprentice (Revised)",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:rune-carver-apprentice-revised-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Scion of the Outer Planes",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:scion-of-the-outer-planes-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Scion of Elemental Air",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:scion-of-elemental-air-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Scion of Elemental Earth",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:scion-of-elemental-earth-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Scion of Elemental Fire",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:scion-of-elemental-fire-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Scion of Elemental Water",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:scion-of-elemental-water-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Shield Training",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:shield-training",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Silver-Tongued",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:silver-tongued",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Spear Mastery",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:spear-mastery",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Soul of the Storm Giant",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:soul-of-the-storm-giant-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Soul of the Storm Giant (Revised)",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:soul-of-the-storm-giant-revised-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Squire of Solamnia",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:squire-of-solamnia-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Stealthy",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:stealthy",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Strike of the Giants",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:strike-of-the-giants-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Survivalist",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:survivalist",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Tandem Tactician",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:tandem-tactician",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Theologian",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:theologian",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Tower of Iron Will",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:tower-of-iron-will",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Tracker",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:tracker",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Vigor of the Hill Giant",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:vigor-of-the-hill-giant-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Vigor of the Hill Giant (Revised)",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:vigor-of-the-hill-giant-revised-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Wild Talent",
+      "kind": "feat",
+      "sourceUrl": "https://dnd5e.wikidot.com/feat:wild-talent",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Gate Warden",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:gate-warden-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Giant Foundling",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:giant-foundling-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Knight of Solamnia",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:knight-of-solamnia-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Mage of High Sorcery",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:mage-of-high-sorcery-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Planar Philosopher",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:planar-philosopher-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    },
+    {
+      "name": "Rune Carver",
+      "kind": "background",
+      "sourceUrl": "https://dnd5e.wikidot.com/background:rune-carver-ua",
+      "language": "en",
+      "ruleset": "unverified-variant",
+      "scope": "index-metadata",
+      "autoApply": false
+    }
+  ],
+  "scope": "Index names and URLs only. Editions, settings, UA/homebrew and mechanical compatibility are not verified; never auto-apply."
+}

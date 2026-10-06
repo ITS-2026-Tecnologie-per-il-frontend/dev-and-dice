@@ -4,12 +4,17 @@ import { characterFields, numericCharacterFields, newCharacterSheet, parseCharac
 import { sheetFromCatalog, templateFromCatalog, type Catalog } from '../utils/Catalog'
 import { CatalogSearch } from './CatalogSearch'
 import { InfoButton } from './InfoButton'
+import { useDialogDismiss } from '../utils/Dialog'
+import { PlayerSheet } from './PlayerSheet'
 
 const storageKey = 'dev-and-dice.character-sheets.v1'
 
 type Props = { onAdd: (sheet: CharacterSheet) => void; combatStarted: boolean; presentSheetIds: string[]; catalog: Catalog }
 
 export function CharacterSheets({ onAdd, combatStarted, presentSheetIds, catalog }: Props) {
+    const dismissDialog = useDialogDismiss()
+    const dismissDeleteDialog = useDialogDismiss()
+    const deleteDialog = useRef<HTMLDialogElement>(null)
     const [saved, setSaved] = useState(() => {
         try {
             return { sheets: parseCharacterSheets(localStorage.getItem(storageKey)), error: '', blocked: false }
@@ -87,14 +92,14 @@ export function CharacterSheets({ onAdd, combatStarted, presentSheetIds, catalog
                 ))}
             </div>
             {combatStarted && <p className="library-help">Termina il combattimento per aggiungere partecipanti.</p>}
-            <dialog ref={dialog} className="character-dialog" aria-labelledby="character-dialog-heading" onClose={() => { setDraft(null); setError('') }}>
+            <dialog ref={dialog} className={`character-dialog${draft?.kind === 'PG' ? ' player-sheet-dialog' : ''}`} aria-labelledby="character-dialog-heading" {...dismissDialog} onClose={() => { deleteDialog.current?.close(); setDraft(null); setError('') }}>
                 {draft && (
                     <form onSubmit={(event) => { event.preventDefault(); saveSheet() }}>
                         <div className="dialog-header">
                             <h2 id="character-dialog-heading">{draft.name || 'Nuova scheda'}</h2>
                             <button className="delete-turn" type="button" aria-label="Chiudi scheda" onClick={closeDialog}>×</button>
                         </div>
-                        <div className="character-fields">
+                        {draft.kind === 'PG' ? <PlayerSheet sheet={draft} onChange={setDraft} /> : <div className="character-fields">
                             {(Object.entries(characterFields) as [keyof typeof characterFields, string][]).map(([field, label]) => (
                                 <label key={field} className={field === 'notes' ? 'character-notes' : undefined}>
                                     <span>{field === 'initiative' && draft.kind !== 'PG' ? 'Iniziativa inserita' : label}</span>
@@ -119,7 +124,7 @@ export function CharacterSheets({ onAdd, combatStarted, presentSheetIds, catalog
                                     )}
                                 </label>
                             ))}
-                        </div>
+                        </div>}
                         <section className="sheet-abilities" aria-labelledby="sheet-abilities-heading">
                             <h3 id="sheet-abilities-heading">Abilità del personaggio</h3>
                             <p className="library-help">Vengono aggiunte al combattimento come inattive, già collegate al personaggio.</p>
@@ -162,16 +167,25 @@ export function CharacterSheets({ onAdd, combatStarted, presentSheetIds, catalog
                             <button className="sort-turns" type="submit">Salva scheda</button>
                             <button className="end-combat" type="button" onClick={closeDialog}>Annulla</button>
                             {saved.sheets.some((sheet) => sheet.id === draft.id) && (
-                                <button className="clear-turns" type="button" onClick={() => {
-                                    if (!window.confirm(`Eliminare la scheda di ${draft.name}?`)) return
-                                    void persist(saved.sheets.filter((sheet) => sheet.id !== draft.id)).then((success) => {
-                                        if (success) closeDialog()
-                                    })
-                                }}>Elimina scheda</button>
+                                <button className="clear-turns" type="button" onClick={() => deleteDialog.current?.showModal()}>Elimina scheda</button>
                             )}
                         </div>
                     </form>
                 )}
+            </dialog>
+            <dialog ref={deleteDialog} className="character-dialog" aria-labelledby="delete-sheet-heading" {...dismissDeleteDialog}>
+                <h2 id="delete-sheet-heading">Elimina scheda</h2>
+                <p>Eliminare la scheda di {draft?.name}?</p>
+                <div className="turn-actions">
+                    <button autoFocus className="end-combat" type="button" onClick={() => deleteDialog.current?.close()}>Annulla</button>
+                    <button className="clear-turns" type="button" onClick={() => {
+                        if (!draft) return
+                        void persist(saved.sheets.filter((sheet) => sheet.id !== draft.id)).then((success) => {
+                            deleteDialog.current?.close()
+                            if (success) closeDialog()
+                        })
+                    }}>Elimina scheda</button>
+                </div>
             </dialog>
         </aside>
     )

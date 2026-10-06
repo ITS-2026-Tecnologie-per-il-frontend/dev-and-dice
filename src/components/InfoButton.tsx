@@ -1,4 +1,5 @@
 import { useId, useRef } from 'react'
+import { useDialogDismiss } from '../utils/Dialog.ts'
 import type { CatalogEntry } from '../utils/Catalog'
 
 const labels: Record<string, string> = {
@@ -79,6 +80,7 @@ function InfoFields({ values, scores = false }: { values: Record<string, unknown
 
 type Props = { entry?: CatalogEntry; name: string; description?: string; fields?: Record<string, unknown> }
 export function InfoButton({ entry, name, description, fields = {} }: Props) {
+    const dismissDialog = useDialogDismiss()
     const dialog = useRef<HTMLDialogElement>(null)
     const heading = useId()
     const details = { ...entry?.data, ...fields }
@@ -90,11 +92,7 @@ export function InfoButton({ entry, name, description, fields = {} }: Props) {
     return (
         <>
             <button type="button" className="more-info" aria-label={`Altro su ${name || 'questa card'}`} onClick={() => dialog.current?.showModal()}>Altro</button>
-            <dialog ref={dialog} className="character-dialog info-dialog" aria-labelledby={heading} onClick={(event) => {
-                if (event.target !== event.currentTarget) return
-                const bounds = event.currentTarget.getBoundingClientRect()
-                if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) event.currentTarget.close()
-            }}>
+            <dialog ref={dialog} className="character-dialog info-dialog" aria-labelledby={heading} {...dismissDialog}>
                 <div className="dialog-header"><h2 id={heading}>{name || 'Dettagli'}</h2><button autoFocus type="button" className="delete-turn" aria-label="Chiudi dettagli" onClick={() => dialog.current?.close()}>×</button></div>
                 {entry && <p className="library-help">{entry.label}</p>}
                 <section className="info-section" aria-label="Dati principali"><InfoFields values={summary} /></section>

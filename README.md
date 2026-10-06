@@ -200,3 +200,85 @@ Controlli della ricerca, compilazione e compatibilità delle schede salvate:
 node --experimental-strip-types tests/catalog.mjs
 node --experimental-strip-types tests/combat.mjs
 ```
+
+## Cataloghi per la creazione dei personaggi
+
+I cataloghi in `public/data` descrivono D&D 5e **2014 / SRD 5.1**. Non vengono
+mescolati con bonus di specie e background dell'edizione 2024.
+
+- `character-options.json`: 12 classi, 12 sottoclassi SRD, 290 righe di progressione
+  di classe/sottoclasse, 407 privilegi, 9 razze, 4 sottorazze, 38 tratti,
+  competenze, linguaggi, allineamenti, il background e il talento SRD, 319
+  incantesimi con riferimenti alle classi. Le 12 classi e 9 razze includono
+  anche i testi italiani scaricati da Dungeon e Draghi, suddivisi in sezioni
+  e tabelle in `localizations.it`.
+- `character-equipment.json`: 237 oggetti di equipaggiamento, armi e armature,
+  362 oggetti magici, proprietà delle armi, categorie e tipi di danno. Le
+  statistiche mantengono le unità originali, piedi e libbre.
+- `character-rules.json`: caratteristiche, 18 abilità, condizioni, regole SRD
+  in inglese e articoli italiani; 18 formule e 26 interpretazioni strutturate
+  di effetti di razza/classe, bonus di competenza per livello, tabella dei
+  modificatori, generazione delle caratteristiche, point buy e soglie PE.
+- `wiki-character-index.json`: 382 riferimenti alle opzioni del giocatore
+  estratti dagli indici di Wikidot e Dungeon e Draghi. Sono **nomi e URL**:
+  non contengono i testi integrali delle opzioni non SRD, né bonus validati
+  da applicare automaticamente. Varianti, setting, UA e homebrew restano da
+  verificare prima di usarli.
+- `character-catalog.json`: conteggi, fonti, licenze, checksum dei file,
+  copertura italiana e richieste fallite. Le pagine italiane in timeout sono
+  segnalate; i relativi argomenti restano disponibili nel catalogo inglese.
+
+La struttura inglese deriva dai file pubblici di `5e-bits/5e-database`:
+<https://github.com/5e-bits/5e-database/tree/main/src/2014/en>.
+I testi italiani provengono da <https://dungeonedraghi.it/compendio/classi/>,
+<https://dungeonedraghi.it/compendio/razze/> e <https://dungeonedraghi.it/regole/>.
+Gli indici aggiuntivi provengono da <https://dnd5e.wikidot.com/>. Le regole di
+generazione, PE e variazioni dei PF sono state verificate sulle Basic Rules 2014
+ufficiali: <https://www.dndbeyond.com/sources/dnd/basic-rules-2014/step-by-step-characters>.
+Le attribuzioni OGL sono in `ogl-1.0a.txt`; la licenza della struttura del
+database sorgente è in `srd-database-license.txt`. Non vengono copiate immagini.
+
+Per scaricare ed esportare, con Python 3 e senza dipendenze aggiuntive:
+
+```sh
+python3 scripts/scrape_character_data.py
+python3 scripts/scrape_character_data.py --refresh
+```
+
+Lo scraper controlla `robots.txt` per le wiki, limita il crawling alla sezione
+delle regole, attende fra le richieste e mantiene una cache in
+`character-source.local`, esclusa dal versionamento. Le API italiane possono
+andare in timeout: classi, razze e regole vengono quindi lette dalle pagine HTML.
+I JSON strutturati SRD vengono scaricati in blocco, senza migliaia di richieste
+alle singole voci dell'API. `--download-only` salva soltanto lo snapshot;
+`--refresh` aggiorna le risposte memorizzate. Per ricostruire senza rete:
+
+```sh
+python3 scripts/scrape_character_data.py --input character-source.local/srd-snapshot.json
+python3 tests/character_catalog.py
+```
+
+I riferimenti tra i nuovi cataloghi usano identificativi `srd2014:...`; i campi
+originali della fonte vengono conservati. `fixedAbilityBonuses` separa i bonus
+razziali fissi da `abilityBonusChoices`. Le sottorazze ereditano la razza base.
+`levelIds` collega la classe alla sua progressione 1–20 e `hitPoints` riporta
+dado vita, valore iniziale e valore fisso dei livelli successivi. I riferimenti
+in `proficiency_choices`, equipaggiamento iniziale e multiclassamento conservano
+le alternative, senza scegliere al posto del giocatore.
+
+Le formule sono alberi JSON di operazioni aritmetiche, **non codice da eseguire**.
+Vantaggio e svantaggio restano stati del tiro; la maestria sostituisce il
+moltiplicatore della competenza. Le formule della CA sono alternative e non
+vanno sommate. La competenza dipende dal livello totale, mentre privilegi e
+slot dipendono dal livello nella classe. Gli effetti condizionali o con scelte
+vanno applicati solo quando il contesto è noto. I privilegi non coperti da una
+regola strutturata conservano la descrizione e richiedono valutazione manuale.
+
+Questa raccolta prepara i dati per l'autocompilazione: la finestra della scheda
+non applica ancora automaticamente i nuovi cataloghi. `database.json`, il
+combattimento e le schede salvate mantengono il formato esistente.
+
+I controlli offline verificano checksum, collegamenti, progressioni per livello,
+scelte razziali, casi limite delle formule e conservazione dei file precedenti
+in caso di esportazione non valida. Tutti i documenti vengono validati prima
+della sostituzione; il manifest viene scritto per ultimo.

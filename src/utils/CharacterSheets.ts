@@ -12,7 +12,7 @@ export const numericCharacterFields = ['hitPoints', 'armorClass', 'initiative', 
 
 export type SheetAbility = { name: string; duration: keyof typeof durationTurns; catalogId?: string; remainingTurns?: number }
 
-export type CharacterSheet = { id: string; abilities: SheetAbility[]; catalogId?: string } & Record<keyof typeof characterFields, string>
+export type CharacterSheet = { id: string; abilities: SheetAbility[]; catalogId?: string; playerDetails?: Record<string, string> } & Record<keyof typeof characterFields, string>
 
 export function newCharacterSheet(): CharacterSheet {
     return { id: crypto.randomUUID(), abilities: [], ...(Object.fromEntries(Object.keys(characterFields).map((key) => [key, key === 'kind' ? 'PG' : ''])) as Record<keyof typeof characterFields, string>) }
@@ -26,6 +26,7 @@ export function parseCharacterSheets(raw: string | null): CharacterSheet[] {
         && sheet.id.length > 0 && Object.keys(characterFields).every((key) => typeof sheet[key] === 'string')
         && ['PG', 'Mostro', 'PNG'].includes(sheet.kind) && sheet.name.trim().length > 0
         && (sheet.catalogId === undefined || typeof sheet.catalogId === 'string')
+        && (sheet.playerDetails === undefined || (sheet.playerDetails !== null && typeof sheet.playerDetails === 'object' && !Array.isArray(sheet.playerDetails) && Object.values(sheet.playerDetails).every((value) => typeof value === 'string')))
         && (sheet.abilities === undefined || (Array.isArray(sheet.abilities) && sheet.abilities.every((ability: unknown) =>
             ability !== null && typeof ability === 'object' && 'name' in ability && typeof ability.name === 'string'
             && ability.name.trim().length > 0 && 'duration' in ability && typeof ability.duration === 'string'

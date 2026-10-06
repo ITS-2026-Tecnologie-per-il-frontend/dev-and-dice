@@ -279,19 +279,49 @@ html { scroll-behavior: smooth; }
 
 .tracker-layout {
     display: grid;
-    grid-template-columns: 220px minmax(0, 1fr);
-    gap: 24px;
+    grid-template-columns: minmax(160px, var(--library-width, 220px)) 16px minmax(0, 1fr);
+    gap: 0;
     padding: 24px;
     text-align: left;
 }
 
 .tracker-main {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+    grid-template-columns: minmax(0, 1fr) 16px minmax(280px, var(--abilities-width, 380px));
     align-items: start;
-    gap: 24px;
+    gap: 0;
     min-width: 0;
 }
+
+.column-separator {
+    position: relative;
+    align-self: stretch;
+    min-height: 80px;
+    cursor: col-resize;
+    touch-action: none;
+    user-select: none;
+    border-radius: 4px;
+}
+
+.column-separator::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 7px;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--border);
+}
+
+.column-separator:hover,
+.column-separator:focus-visible,
+.column-separator.is-dragging { background: rgba(20, 125, 114, 0.1); }
+.column-separator:focus-visible { outline: 2px solid #147d72; outline-offset: -2px; }
+.column-separator:hover::before,
+.column-separator:focus-visible::before,
+.column-separator.is-dragging::before { background: #147d72; }
+.tracker-layout:has(.is-dragging) { user-select: none; cursor: col-resize; }
 
 .tracker-main .abilities-tracker {
     padding: 16px;
@@ -424,12 +454,13 @@ html { scroll-behavior: smooth; }
 }
 
 @media (max-width: 1100px) {
-    .tracker-layout { grid-template-columns: 180px minmax(0, 1fr); gap: 16px; padding: 16px; }
-    .tracker-main { grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; }
+    .tracker-layout { padding: 16px; }
 }
 
 @media (max-width: 1000px) {
-    .tracker-main { grid-template-columns: minmax(0, 1fr); }
+    .tracker-layout { grid-template-columns: 180px minmax(0, 1fr); gap: 16px; }
+    .tracker-main { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+    .column-separator { display: none; }
 }
 
 @media (max-width: 700px) {

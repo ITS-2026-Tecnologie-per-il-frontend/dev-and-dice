@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState, type DragEvent } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type DragEvent } from 'react'
+import { ColumnSeparator } from './ColumnSeparator'
+import { useDialogDismiss } from '../utils/Dialog'
 import { CharacterSheets } from './CharacterSheets'
 import { characterFields, turnFromSheet, abilitiesFromSheet, initiativeBonus, type CharacterSheet } from '../utils/CharacterSheets'
 import { AbilitiesTracker } from './AbilitiesTracker'
@@ -18,6 +20,9 @@ type Turn = {
 }
 
 export function TurnsTracker() {
+    const dismissRemovalDialog = useDialogDismiss()
+    const [libraryWidth, setLibraryWidth] = useState('220px')
+    const [abilitiesWidth, setAbilitiesWidth] = useState('380px')
     const [catalog, setCatalog] = useState<Catalog>({ creatures: [], abilities: [] })
     const [catalogStatus, setCatalogStatus] = useState('Caricamento del catalogo…')
     const [turns, setTurns] = useState<Turn[]>([])
@@ -157,9 +162,10 @@ export function TurnsTracker() {
     }
 
     return (
-        <div className="tracker-layout">
+        <div className="tracker-layout" style={{ '--library-width': libraryWidth } as CSSProperties}>
             <CharacterSheets onAdd={addCharacter} combatStarted={combat !== null} presentSheetIds={presentSheetIds} catalog={catalog} />
-            <main className="tracker-main">
+            <ColumnSeparator label="Ridimensiona schede e combattimento" side="left" minimum={160} otherMinimum={600} onResize={setLibraryWidth} />
+            <main className="tracker-main" style={{ '--abilities-width': abilitiesWidth } as CSSProperties}>
                 <section className="combat-tracker" aria-labelledby="turns-heading">
                     <h2 id="turns-heading">Combattimento · Turni e schede</h2>
                     {catalogStatus && <p className="library-help" role="status">{catalogStatus}</p>}
@@ -312,8 +318,9 @@ export function TurnsTracker() {
                         </div>
                     </form>
                 </section>
+                <ColumnSeparator label="Ridimensiona combattimento e abilità" side="right" minimum={280} otherMinimum={280} onResize={setAbilitiesWidth} />
                 <AbilitiesTracker onAdd={addAbility} abilities={abilities} setAbilities={setAbilities} participants={turns} catalog={catalog} />
-                <dialog ref={removalDialog} className="character-dialog" aria-labelledby="removal-heading" onClose={() => setPendingRemoval(null)}>
+                <dialog ref={removalDialog} className="character-dialog" aria-labelledby="removal-heading" {...dismissRemovalDialog} onClose={() => setPendingRemoval(null)}>
                     {pendingRemoval && (
                         <>
                             <h2 id="removal-heading">Rimuovi dal combattimento</h2>
