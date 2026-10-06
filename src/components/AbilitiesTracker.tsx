@@ -1,19 +1,23 @@
 import { type Dispatch, type SetStateAction, type DragEvent } from 'react'
 import { durationTurns, activateAbility, type Ability } from '../utils/Combat'
 import { getDropIndex, getDropTargetId, reorderByDrop, reorderById } from '../utils/Reorder'
+import { templateFromCatalog, type Catalog } from '../utils/Catalog'
+import { CatalogSearch } from './CatalogSearch'
+import { InfoButton } from './InfoButton'
 
 type Props = {
     onAdd: () => void
     abilities: Ability[]
     setAbilities: Dispatch<SetStateAction<Ability[]>>
     participants: { id: number; description: string }[]
+    catalog: Catalog
 }
 
-export function AbilitiesTracker({ abilities, setAbilities, participants, onAdd }: Props) {
+export function AbilitiesTracker({ abilities, setAbilities, participants, onAdd, catalog }: Props) {
     function updateAbilityName(id: number, name: string) {
         setAbilities((currentAbilities) =>
             currentAbilities.map((ability) =>
-                ability.id === id ? { ...ability, name } : ability,
+                ability.id === id ? { ...ability, name, catalogId: undefined } : ability,
             ),
         )
     }
@@ -87,14 +91,22 @@ export function AbilitiesTracker({ abilities, setAbilities, participants, onAdd 
                         >
                             <span aria-hidden="true">↕</span>
                         </button>
-                        <input
+                        <CatalogSearch
                             aria-label={`Nome abilità ${index + 1}`}
                             className="ability-name"
                             type="text"
                             placeholder="Nome abilità"
                             value={ability.name}
-                            onChange={(event) => updateAbilityName(ability.id, event.target.value)}
+                            disabled={ability.active}
+                            entries={catalog.abilities}
+                            onChange={(value) => updateAbilityName(ability.id, value)}
+                            onSelect={(entry) => setAbilities((current) => current.map((item) => item.id === ability.id && !item.active ? { ...item, ...templateFromCatalog(entry), remainingTurns: entry.rounds ?? 0 } : item))}
                         />
+                        <div className="card-info"><InfoButton name={ability.name}
+                            entry={catalog.abilities.find((entry) => entry.id === ability.catalogId)}
+                            fields={{ duration: ability.duration, remainingTurns: ability.remainingTurns, active: ability.active, owner: participants.find((participant) => participant.id === ability.ownerId)?.description ?? 'Nessuno' }} />
+                            {ability.duration === 'Personalizzata' && <span className="library-help">{ability.remainingTurns === 0 ? 'Durata istantanea o non definita: imposta i turni per avviare il conteggio.' : 'Durata personalizzata in turni.'}</span>}
+                        </div>
                         <label className="ability-duration">
                             <span>Durata</span>
                             <select

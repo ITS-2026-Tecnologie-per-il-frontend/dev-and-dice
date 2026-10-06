@@ -1,12 +1,15 @@
 import { durationTurns } from '../utils/Combat'
 import { useEffect, useRef, useState } from 'react'
-import { characterFields, numericCharacterFields, newCharacterSheet, parseCharacterSheets, type CharacterSheet } from '../utils/CharacterSheets'
+import { characterFields, numericCharacterFields, newCharacterSheet, parseCharacterSheets, initiativeBonus, type CharacterSheet } from '../utils/CharacterSheets'
+import { sheetFromCatalog, templateFromCatalog, type Catalog } from '../utils/Catalog'
+import { CatalogSearch } from './CatalogSearch'
+import { InfoButton } from './InfoButton'
 
 const storageKey = 'dev-and-dice.character-sheets.v1'
 
-type Props = { onAdd: (sheet: CharacterSheet) => void; combatStarted: boolean }
+type Props = { onAdd: (sheet: CharacterSheet) => void; combatStarted: boolean; presentSheetIds: string[]; catalog: Catalog }
 
-export function CharacterSheets({ onAdd, combatStarted }: Props) {
+export function CharacterSheets({ onAdd, combatStarted, presentSheetIds, catalog }: Props) {
     const [saved, setSaved] = useState(() => {
         try {
             return { sheets: parseCharacterSheets(localStorage.getItem(storageKey)), error: '', blocked: false }
@@ -22,7 +25,6 @@ export function CharacterSheets({ onAdd, combatStarted }: Props) {
         if (draft && !dialog.current?.open) dialog.current?.showModal()
     }, [draft])
 
-    // esempio didattico; localStorage resta sincrono, async restituisce una Promise.
     async function persist(sheets: CharacterSheet[]): Promise<boolean> {
         if (saved.blocked) return false
         try {
@@ -49,7 +51,7 @@ export function CharacterSheets({ onAdd, combatStarted }: Props) {
             setError('Inserisci numeri interi validi nelle statistiche.')
             return
         }
-        if (!sheet.name || sheet.abilities.some((ability) => !ability.name || !Object.hasOwn(durationTurns, ability.duration))) {
+        if (!sheet.name || sheet.abilities.some((ability) => !ability.name || !Object.hasOwn(durationTurns, ability.duration) || (ability.remainingTurns !== undefined && (!Number.isSafeInteger(ability.remainingTurns) || ability.remainingTurns < 0)))) {
             setError('Inserisci il nome del personaggio e di ogni abilità, con una durata valida.')
             return
         }
@@ -76,8 +78,10 @@ export function CharacterSheets({ onAdd, combatStarted }: Props) {
                             <span>{sheet.kind}{sheet.characterClass ? ` · ${sheet.characterClass}` : ''}</span>
                             <span>PF {sheet.hitPoints || '—'} · CA {sheet.armorClass || '—'}</span>
                         </button>
-                        <button className="character-add" type="button" disabled={combatStarted} onClick={() => onAdd(sheet)}>
-                            + In combattimento
+                        <InfoButton name={sheet.name} entry={catalog.creatures.find((entry) => entry.id === sheet.catalogId)} description={sheet.notes}
+                            fields={{ ...Object.fromEntries(Object.entries(characterFields).filter(([key]) => key !== 'initiative').map(([key, label]) => [label, sheet[key as keyof typeof characterFields]])), initiativeModifier: initiativeBonus(sheet) || 'Non disponibile', initiative: sheet.initiative || 'Da inserire' }} />
+                        <button className="character-add" type="button" disabled={combatStarted || presentSheetIds.includes(sheet.id)} onClick={() => onAdd(sheet)}>
+                            {presentSheetIds.includes(sheet.id) ? 'Già in combattimento' : '+ In combattimento'}
                         </button>
                     </article>
                 ))}
@@ -93,21 +97,23 @@ export function CharacterSheets({ onAdd, combatStarted }: Props) {
                         <div className="character-fields">
                             {(Object.entries(characterFields) as [keyof typeof characterFields, string][]).map(([field, label]) => (
                                 <label key={field} className={field === 'notes' ? 'character-notes' : undefined}>
-                                    <span>{label}</span>
+                                    <span>{field === 'initiative' && draft.kind !== 'PG' ? 'Iniziativa inserita' : label}</span>
                                     {field === 'kind' ? (
                                         <select value={draft[field]} onChange={(event) => setDraft({ ...draft, [field]: event.target.value })}>
-                                            <option>PG</option><option>Mostro</option>
+                                            <option>PG</option><option>Mostro</option><option>PNG</option>
                                         </select>
                                     ) : field === 'notes' ? (
                                         <textarea rows={5} value={draft[field]} onChange={(event) => setDraft({ ...draft, [field]: event.target.value })} />
+                                    ) : field === 'name' ? (
+                                        <CatalogSearch autoFocus required pattern={'.*\\S.*'} aria-label="Nome della scheda" value={draft.name}
+                                            entries={catalog.creatures} onChange={(name) => setDraft({ ...draft, name, catalogId: undefined })}
+                                            onSelect={(entry) => setDraft(sheetFromCatalog(entry, catalog, draft))} />
                                     ) : (
                                         <input
-                                            autoFocus={field === 'name'}
-                                            required={field === 'name'}
-                                            pattern={field === 'name' ? '.*\\S.*' : undefined}
                                             type={(numericCharacterFields as readonly string[]).includes(field) ? 'number' : 'text'}
                                             step={(numericCharacterFields as readonly string[]).includes(field) ? '1' : undefined}
                                             value={draft[field]}
+                                            placeholder={field === 'initiative' ? initiativeBonus(draft) : undefined}
                                             onChange={(event) => setDraft({ ...draft, [field]: event.target.value })}
                                         />
                                     )}
@@ -121,28 +127,36 @@ export function CharacterSheets({ onAdd, combatStarted }: Props) {
                                 <div className="sheet-ability-row" key={index}>
                                     <label>
                                         <span>Nome abilità</span>
-                                        <input
+                                        <CatalogSearch
                                             required
                                             pattern={'.*\\S.*'}
                                             value={ability.name}
-                                            onChange={(event) => setDraft({ ...draft, abilities: draft.abilities.map((item, i) => i === index ? { ...item, name: event.target.value } : item) })}
+                                            aria-label={`Nome abilità ${index + 1} della scheda`}
+                                            entries={catalog.abilities}
+                                            onChange={(name) => setDraft({ ...draft, abilities: draft.abilities.map((item, i) => i === index ? { ...item, name, catalogId: undefined } : item) })}
+                                            onSelect={(entry) => setDraft({ ...draft, abilities: draft.abilities.map((item, i) => i === index ? templateFromCatalog(entry) : item) })}
                                         />
                                     </label>
                                     <label>
                                         <span>Durata</span>
                                         <select
                                             value={ability.duration}
-                                            onChange={(event) => setDraft({ ...draft, abilities: draft.abilities.map((item, i) => i === index ? { ...item, duration: event.target.value as keyof typeof durationTurns } : item) })}
+                                            onChange={(event) => setDraft({ ...draft, abilities: draft.abilities.map((item, i) => i === index ? { ...item, duration: event.target.value as keyof typeof durationTurns, remainingTurns: undefined } : item) })}
                                         >
                                             {Object.keys(durationTurns).map((duration) => <option key={duration}>{duration}</option>)}
                                         </select>
                                     </label>
+                                    {ability.duration === 'Personalizzata' && <label className="sheet-ability-turns"><span>Turni (0: senza conteggio)</span><input type="number" min="0" step="1" value={ability.remainingTurns ?? 0} onChange={(event) => {
+                                        const remainingTurns = event.target.valueAsNumber
+                                        if (Number.isSafeInteger(remainingTurns) && remainingTurns >= 0) setDraft({ ...draft, abilities: draft.abilities.map((item, i) => i === index ? { ...item, remainingTurns } : item) })
+                                    }} /></label>}
+                                    <InfoButton name={ability.name} entry={catalog.abilities.find((entry) => entry.id === ability.catalogId)} fields={{ duration: ability.duration, remainingTurns: ability.remainingTurns ?? durationTurns[ability.duration] }} />
                                     <button className="delete-turn" type="button" aria-label={`Elimina ${ability.name || `abilità ${index + 1}`} dalla scheda`} onClick={() => setDraft({ ...draft, abilities: draft.abilities.filter((_, i) => i !== index) })}>×</button>
                                 </div>
                             ))}
                             <button className="end-combat" type="button" onClick={() => setDraft({ ...draft, abilities: [...draft.abilities, { name: '', duration: '1 minuto' }] })}>+ Aggiungi abilità</button>
                         </section>
-                        <p className="library-help">L’iniziativa predefinita viene copiata nel combattimento: puoi modificarla dopo il tiro.</p>
+                        <p className="library-help">Per mostri e PNG l’iniziativa nel combattimento resta vuota: il modificatore è un suggerimento, inserisci tu il risultato del tiro. Per i PG viene copiata l’iniziativa predefinita.</p>
                         {error && <p role="alert">{error}</p>}
                         <div className="turn-actions">
                             <button className="sort-turns" type="submit">Salva scheda</button>

@@ -19,6 +19,7 @@ export const durationTurns = {
     '1 ora': 600,
     '8 ore': 4800,
     '24 ore': 14400,
+    'Personalizzata': 0,
 } as const
 
 export type Ability = {
@@ -28,6 +29,7 @@ export type Ability = {
     remainingTurns: number
     ownerId: number | null
     active: boolean
+    catalogId?: string
 }
 
 export function advanceAbilityDurations(abilities: Ability[]): Ability[] {
@@ -38,4 +40,11 @@ export function advanceAbilityDurations(abilities: Ability[]): Ability[] {
 export function activateAbility(ability: Ability): Ability {
     if (ability.active || ability.remainingTurns === 0 || !ability.name.trim() || ability.ownerId === null) return ability
     return { ...ability, active: true }
+}
+
+export function removeParticipantAbilities(abilities: Ability[], participantIds: number[], remove: boolean): Ability[] {
+    return abilities.flatMap((ability) => {
+        if (ability.ownerId === null || !participantIds.includes(ability.ownerId)) return [ability]
+        return remove ? [] : [{ ...ability, ownerId: null }]
+    })
 }
