@@ -1,27 +1,15 @@
-import { useRef, useState, type DragEvent } from 'react'
+import { type Dispatch, type SetStateAction, type DragEvent } from 'react'
+import { durationTurns, activateAbility, type Ability } from '../utils/Combat'
 import { getDropIndex, getDropTargetId, reorderByDrop, reorderById } from '../utils/Reorder'
 
-const durations = ['1 minuto', '10 minuti', '1 ora', '8 ore', '24 ore'] as const
-
-type Ability = {
-    id: number
-    name: string
-    duration: (typeof durations)[number]
+type Props = {
+    onAdd: () => void
+    abilities: Ability[]
+    setAbilities: Dispatch<SetStateAction<Ability[]>>
+    participants: { id: number; description: string }[]
 }
 
-export function AbilitiesTracker() {
-    const [abilities, setAbilities] = useState<Ability[]>([])
-    const nextId = useRef(0)
-
-    function createAbility(): Ability {
-        return { id: nextId.current++, name: '', duration: durations[0] }
-    }
-
-    function addAbility() {
-        const newAbility = createAbility()
-        setAbilities((currentAbilities) => [...currentAbilities, newAbility])
-    }
-
+export function AbilitiesTracker({ abilities, setAbilities, participants, onAdd }: Props) {
     function updateAbilityName(id: number, name: string) {
         setAbilities((currentAbilities) =>
             currentAbilities.map((ability) =>
@@ -33,7 +21,7 @@ export function AbilitiesTracker() {
     function updateAbilityDuration(id: number, duration: Ability['duration']) {
         setAbilities((currentAbilities) =>
             currentAbilities.map((ability) =>
-                ability.id === id ? { ...ability, duration } : ability,
+                ability.id === id ? { ...ability, duration, remainingTurns: durationTurns[duration] } : ability,
             ),
         )
     }
@@ -43,13 +31,13 @@ export function AbilitiesTracker() {
     }
 
     function handleDragStart(event: DragEvent<HTMLButtonElement>, id: number) {
-        event.dataTransfer.setData('text/plain', String(id))
+        event.dataTransfer.setData('application/x-dnd-ability', String(id))
         event.dataTransfer.effectAllowed = 'move'
     }
 
     function handleListDrop(event: DragEvent<HTMLDivElement>) {
         event.preventDefault()
-        const draggedId = event.dataTransfer.getData('text/plain')
+        const draggedId = event.dataTransfer.getData('application/x-dnd-ability')
         if (!draggedId) return
 
         const sourceId = Number(draggedId)
@@ -71,10 +59,13 @@ export function AbilitiesTracker() {
     return (
         <section className="abilities-tracker" aria-labelledby="abilities-heading">
             <h2 id="abilities-heading">Abilità</h2>
+            <p className="ability-help">1 turno = 1 round di 6 secondi. Solo le abilità attivate diminuiscono a fine round. L’attivazione è definitiva.</p>
             <div className="abilities-list" onDragOver={(event) => event.preventDefault()} onDrop={handleListDrop}>
                 {abilities.map((ability, index) => (
                     <div
                         className="ability-row"
+                        id={`ability-${ability.id}`}
+                        tabIndex={-1}
                         data-reorder-item
                         data-reorder-id={ability.id}
                         key={ability.id}
@@ -107,17 +98,61 @@ export function AbilitiesTracker() {
                         <label className="ability-duration">
                             <span>Durata</span>
                             <select
+                                disabled={ability.active}
                                 aria-label={`Durata abilità ${index + 1}`}
                                 value={ability.duration}
                                 onChange={(event) =>
                                     updateAbilityDuration(ability.id, event.target.value as Ability['duration'])
                                 }
                             >
-                                {durations.map((duration) => (
+                                {(Object.keys(durationTurns) as Ability['duration'][]).map((duration) => (
                                     <option key={duration} value={duration}>{duration}</option>
                                 ))}
                             </select>
                         </label>
+                        <label className="ability-remaining">
+                            <span>Turni rimanenti{ability.active && ability.remainingTurns === 0 ? ' · Scaduta' : ''}</span>
+                            <input
+                                aria-label={`Turni rimanenti di ${ability.name || `abilità ${index + 1}`}`}
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={ability.remainingTurns}
+                                onChange={(event) => {
+                                    const remainingTurns = event.target.valueAsNumber
+                                    if (!Number.isSafeInteger(remainingTurns) || remainingTurns < 0) return
+                                    setAbilities((current) => current.map((item) => item.id === ability.id ? { ...item, remainingTurns } : item))
+                                }}
+                            />
+                        </label>
+                        <label className="ability-owner">
+                            <span>PG / mostro</span>
+                            <select
+                                disabled={ability.active}
+                                aria-label={`Proprietario di ${ability.name || `abilità ${index + 1}`}`}
+                                value={ability.ownerId ?? ''}
+                                onChange={(event) => {
+                                    const ownerId = event.target.value === '' ? null : Number(event.target.value)
+                                    if (ownerId !== null && !participants.some((participant) => participant.id === ownerId)) return
+                                    setAbilities((current) => current.map((item) => item.id === ability.id ? { ...item, ownerId } : item))
+                                }}
+                            >
+                                <option value="">Seleziona PG / mostro</option>
+                                {participants.map((participant) => (
+                                    <option key={participant.id} value={participant.id}>
+                                        {participant.description || `Creatura ${participant.id + 1}`}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        <button
+                            className="activate-ability"
+                            type="button"
+                            disabled={ability.active || ability.remainingTurns === 0 || !ability.name.trim() || ability.ownerId === null}
+                            onClick={() => setAbilities((current) => current.map((item) => item.id === ability.id ? activateAbility(item) : item))}
+                        >
+                            {ability.active ? (ability.remainingTurns === 0 ? 'Scaduta' : 'Attivata') : 'Attiva'}
+                        </button>
                         <button
                             aria-label={`Elimina ${ability.name || `abilità ${index + 1}`}`}
                             className="delete-ability"
@@ -132,7 +167,7 @@ export function AbilitiesTracker() {
                 <button
                     className="add-ability"
                     type="button"
-                    onClick={addAbility}
+                    onClick={onAdd}
                     aria-label="Aggiungi abilità"
                 >
                     <span aria-hidden="true">+</span>

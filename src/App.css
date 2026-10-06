@@ -1,403 +1,452 @@
-.turns-tracker {
-	width: min(100% - 32px, 720px);
-	margin: 24px auto;
-	text-align: left;
-}
-
+.combat-tracker,
 .abilities-tracker {
-	width: min(100% - 32px, 720px);
-	margin: 24px auto;
-	text-align: left;
+    width: min(100% - 32px, 1050px);
+    margin: 24px auto;
+    text-align: left;
 }
 
-.sheets-tracker {
-	width: min(100% - 32px, 720px);
-	margin: 24px auto;
-	text-align: left;
-}
-
-.turns-tracker h2 {
-	margin-bottom: 12px;
-}
-
+.combat-tracker h2,
 .abilities-tracker h2 {
-	margin-bottom: 12px;
+    margin-bottom: 12px;
 }
 
-.sheets-tracker h2 {
-	margin-bottom: 12px;
+.combat-status {
+    margin: 12px 0 20px;
+    color: var(--text-h);
 }
 
-.turns-list {
-	display: grid;
-	gap: 8px;
-}
-
+.turns-list,
 .abilities-list {
-	display: grid;
-	gap: 8px;
+    display: grid;
+    gap: 8px;
 }
 
-.sheets-list {
-	display: grid;
-	gap: 8px;
+.turn-row,
+.ability-row {
+    display: grid;
+    align-items: center;
+    gap: 12px;
+    min-height: 64px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
 }
 
 .turn-row {
-	display: grid;
-	grid-template-columns: 36px minmax(0, 1fr) minmax(120px, 180px) 36px;
-	align-items: center;
-	gap: 12px;
-	min-height: 64px;
-	padding: 10px 14px;
-	border: 1px solid var(--border);
-	border-radius: 6px;
-	background: var(--bg);
+    grid-template-columns: 36px minmax(0, 1fr) minmax(85px, 110px) repeat(2, minmax(70px, 100px)) 36px;
+    grid-template-areas:
+        "drag name initiative pf ca delete"
+        ". details details details details ."
+        ". abilities abilities abilities abilities ."
+        ". active active active active .";
 }
 
 .ability-row {
-	display: grid;
-	grid-template-columns: 36px minmax(0, 1fr) minmax(150px, 220px) 36px;
-	grid-template-areas: "drag name duration delete";
-	align-items: center;
-	gap: 12px;
-	min-height: 64px;
-	padding: 10px 14px;
-	border: 1px solid var(--border);
-	border-radius: 6px;
-	background: var(--bg);
+    grid-template-columns: 36px minmax(0, 1fr) minmax(120px, 170px) minmax(130px, 170px) 36px;
+    grid-template-areas:
+        "drag name duration remaining delete"
+        ". owner owner owner ."
+        ". activation activation activation .";
 }
 
-.sheet-row {
-	display: grid;
-	grid-template-columns: 36px minmax(150px, 1fr) minmax(76px, 104px) minmax(76px, 104px) 36px;
-	grid-template-areas: "drag creature pf ca delete";
-	align-items: center;
-	gap: 12px;
-	min-height: 64px;
-	padding: 10px 14px;
-	border: 1px solid var(--border);
-	border-radius: 6px;
-	background: var(--bg);
+.turn-row.active-turn {
+    border: 2px solid #147d72;
+    background: rgba(20, 125, 114, 0.12);
 }
 
-.turn-row input {
-	box-sizing: border-box;
-	width: 100%;
-	min-width: 0;
-	padding: 8px 10px;
-	border: 1px solid var(--border);
-	border-radius: 4px;
-	color: var(--text-h);
-	background: var(--bg);
-	font: inherit;
+.active-turn-label {
+    grid-area: active;
+    color: var(--text-h);
+    font-size: 14px;
 }
 
+.turn-description,
+.ability-name { grid-area: name; }
+.initiative-field { grid-area: initiative; }
+.turn-pf { grid-area: pf; }
+.turn-ca { grid-area: ca; }
+.ability-duration { grid-area: duration; }
+.ability-remaining { grid-area: remaining; }
+.ability-owner { grid-area: owner; }
+
+.turn-row input,
 .ability-row input,
 .ability-row select {
-	box-sizing: border-box;
-	width: 100%;
-	min-width: 0;
-	padding: 8px 10px;
-	border: 1px solid var(--border);
-	border-radius: 4px;
-	color: var(--text-h);
-	background: var(--bg);
-	font: inherit;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-h);
+    background: var(--bg);
+    font: inherit;
 }
 
-.sheet-row input {
-	box-sizing: border-box;
-	width: 100%;
-	min-width: 0;
-	padding: 8px 10px;
-	border: 1px solid var(--border);
-	border-radius: 4px;
-	color: var(--text-h);
-	background: var(--bg);
-	font: inherit;
+.initiative-field,
+.turn-stat,
+.ability-duration,
+.ability-remaining,
+.ability-owner {
+    display: grid;
+    gap: 2px;
+    color: var(--text);
+    font-size: 12px;
+    line-height: 1.2;
 }
 
-.ability-name {
-	grid-area: name;
+.turn-row input[type='number'] {
+    -moz-appearance: textfield;
 }
 
-.sheet-creature {
-	grid-area: creature;
-}
-
-.sheet-drag-handle {
-	grid-area: drag;
-	display: grid;
-	width: 36px;
-	height: 36px;
-	place-items: center;
-	border: 1px solid var(--border);
-	border-radius: 4px;
-	color: var(--text);
-	background: var(--bg);
-	font: inherit;
-	cursor: grab;
-}
-
-.sheet-drag-handle:active {
-	cursor: grabbing;
-}
-
-.sheet-stat {
-	display: grid;
-	gap: 2px;
-	color: var(--text);
-	font-size: 12px;
-	line-height: 1.2;
-}
-
-.sheet-pf {
-	grid-area: pf;
-}
-
-.sheet-ca {
-	grid-area: ca;
-}
-
-.delete-sheet {
-	grid-area: delete;
-	display: grid;
-	width: 36px;
-	height: 36px;
-	place-items: center;
-	border: 1px solid var(--border);
-	border-radius: 4px;
-	color: #a33b3b;
-	background: var(--bg);
-	font: 22px var(--sans);
-	cursor: pointer;
-}
-
-.ability-drag-handle {
-	grid-area: drag;
-	display: grid;
-	width: 36px;
-	height: 36px;
-	place-items: center;
-	border: 1px solid var(--border);
-	border-radius: 4px;
-	color: var(--text);
-	background: var(--bg);
-	font: inherit;
-	cursor: grab;
-}
-
-.ability-drag-handle:active {
-	cursor: grabbing;
-}
-
-.ability-duration {
-	display: grid;
-	grid-area: duration;
-	gap: 2px;
-	color: var(--text);
-	font-size: 12px;
-	line-height: 1.2;
-}
-
-.delete-ability {
-	grid-area: delete;
-	display: grid;
-	width: 36px;
-	height: 36px;
-	place-items: center;
-	border: 1px solid var(--border);
-	border-radius: 4px;
-	color: #a33b3b;
-	background: var(--bg);
-	font: 22px var(--sans);
-	cursor: pointer;
-}
-
-.initiative-field input[type='number'],
-.sheet-stat input[type='number'] {
-	-moz-appearance: textfield;
-}
-
-.initiative-field input[type='number']::-webkit-inner-spin-button,
-.initiative-field input[type='number']::-webkit-outer-spin-button,
-.sheet-stat input[type='number']::-webkit-inner-spin-button,
-.sheet-stat input[type='number']::-webkit-outer-spin-button {
-	margin: 0;
-	-webkit-appearance: none;
-}
-
-.turn-row input:focus-visible,
-.turn-row button:focus-visible,
-.ability-row button:focus-visible,
-.ability-row input:focus-visible,
-.ability-row select:focus-visible,
-.sheet-row button:focus-visible,
-.sheet-row input:focus-visible,
-.add-turn:focus-visible,
-.add-ability:focus-visible,
-.add-sheet:focus-visible,
-.sort-turns:focus-visible,
-.clear-turns:focus-visible,
-.clear-abilities:focus-visible,
-.clear-sheets:focus-visible {
-	outline: 2px solid #147d72;
-	outline-offset: 2px;
+.turn-row input[type='number']::-webkit-inner-spin-button,
+.turn-row input[type='number']::-webkit-outer-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
 }
 
 .turn-drag-handle,
-.delete-turn {
-	display: grid;
-	width: 36px;
-	height: 36px;
-	place-items: center;
-	border: 1px solid var(--border);
-	border-radius: 4px;
-	color: var(--text);
-	background: var(--bg);
-	font: inherit;
-	cursor: pointer;
+.ability-drag-handle,
+.delete-turn,
+.delete-ability {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    background: var(--bg);
+    font: inherit;
+    cursor: pointer;
 }
 
-.turn-drag-handle {
-	cursor: grab;
+.turn-drag-handle,
+.ability-drag-handle {
+    grid-area: drag;
+    cursor: grab;
 }
 
-.turn-drag-handle:active {
-	cursor: grabbing;
+.turn-drag-handle:active,
+.ability-drag-handle:active { cursor: grabbing; }
+
+.delete-turn,
+.delete-ability {
+    grid-area: delete;
+    color: #a33b3b;
+    font-size: 22px;
 }
 
-.delete-turn {
-	color: #a33b3b;
-	font-size: 22px;
-}
-
-.turn-row button:hover {
-	background: var(--accent-bg);
-}
-
-.ability-row button:hover {
-	background: var(--accent-bg);
-}
-
-.sheet-row button:hover {
-	background: var(--accent-bg);
-}
-
-.initiative-field {
-	display: grid;
-	gap: 2px;
-	color: var(--text);
-	font-size: 12px;
-	line-height: 1.2;
-}
+.turn-row button:hover,
+.ability-row button:hover { background: var(--accent-bg); }
 
 .add-turn,
-.add-ability,
-.add-sheet {
-	display: grid;
-	width: 100%;
-	min-height: 58px;
-	place-items: center;
-	border: 1px dashed #147d72;
-	border-radius: 6px;
-	color: #147d72;
-	background: transparent;
-	cursor: pointer;
+.add-ability {
+    display: grid;
+    width: 100%;
+    min-height: 58px;
+    place-items: center;
+    border: 1px dashed #147d72;
+    border-radius: 6px;
+    color: #147d72;
+    background: transparent;
+    cursor: pointer;
 }
 
 .add-turn span,
-.add-ability span,
-.add-sheet span {
-	font-size: 32px;
-	line-height: 1;
+.add-ability span {
+    font-size: 32px;
+    line-height: 1;
 }
 
 .add-turn:hover,
-.add-ability:hover,
-.add-sheet:hover {
-	background: rgba(20, 125, 114, 0.08);
-}
+.add-ability:hover { background: rgba(20, 125, 114, 0.08); }
 
 .turn-actions,
-.ability-actions,
-.sheet-actions {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 8px;
-	margin-top: 8px;
+.ability-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
 }
 
 .sort-turns,
+.end-combat,
 .clear-turns,
-.clear-abilities,
-.clear-sheets {
-	margin-top: 8px;
-	padding: 9px 14px;
-	border: 1px solid;
-	border-radius: 4px;
-	font: inherit;
-	cursor: pointer;
+.clear-abilities {
+    margin-top: 8px;
+    padding: 9px 14px;
+    border: 1px solid;
+    border-radius: 4px;
+    font: inherit;
+    cursor: pointer;
 }
 
 .sort-turns {
-	border-color: #147d72;
-	color: #fff;
-	background: #147d72;
+    border-color: #147d72;
+    color: #fff;
+    background: #147d72;
 }
 
-.sort-turns:hover {
-	background: #10675f;
+.sort-turns:hover { background: #10675f; }
+
+.end-combat {
+    border-color: var(--border);
+    color: var(--text-h);
+    background: var(--bg);
 }
 
 .clear-turns,
-.clear-abilities,
-.clear-sheets {
-	border-color: #a33b3b;
-	color: #a33b3b;
-	background: transparent;
+.clear-abilities {
+    border-color: #a33b3b;
+    color: #a33b3b;
+    background: transparent;
 }
 
 .clear-turns:hover:not(:disabled),
-.clear-abilities:hover:not(:disabled),
-.clear-sheets:hover:not(:disabled) {
-	color: #fff;
-	background: #a33b3b;
+.clear-abilities:hover:not(:disabled) {
+    color: #fff;
+    background: #a33b3b;
 }
 
-.clear-turns:disabled,
-.clear-abilities:disabled,
-.clear-sheets:disabled {
-	opacity: 0.5;
-	cursor: not-allowed;
+.combat-tracker button:disabled,
+.clear-abilities:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.combat-tracker :focus-visible,
+.abilities-tracker :focus-visible {
+    outline: 2px solid #147d72;
+    outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+    .turn-row {
+        grid-template-columns: 36px repeat(3, minmax(0, 1fr)) 36px;
+        grid-template-areas:
+            "drag name name name delete"
+            ". initiative pf ca ."
+            ". details details details ."
+            ". abilities abilities abilities ."
+            ". active active active .";
+        gap: 8px;
+    }
 }
 
 @media (max-width: 520px) {
-	.turn-row {
-		grid-template-columns: 36px minmax(0, 1fr) 36px;
-		gap: 8px;
-	}
+    .ability-row {
+        grid-template-columns: 36px minmax(0, 1fr) 36px;
+        grid-template-areas:
+            "drag name delete"
+            ". duration ."
+            ". remaining ."
+            ". owner ."
+            ". activation .";
+        gap: 8px;
+    }
+}
 
-	.ability-row {
-		grid-template-columns: 36px minmax(0, 1fr) 36px;
-		grid-template-areas:
-			"drag name delete"
-			". duration delete";
-		gap: 8px;
-	}
+.ability-help {
+    margin-bottom: 16px;
+    font-size: 14px;
+}
 
-	.sheet-row {
-		grid-template-columns: 36px minmax(0, 1fr) minmax(70px, 90px) 36px;
-		grid-template-areas:
-			"drag creature creature delete"
-			". pf ca .";
-		gap: 8px;
-	}
+.participant-abilities {
+    grid-area: abilities;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    font-size: 14px;
+}
 
-	.initiative-field {
-		grid-column: 2;
-		grid-template-columns: auto minmax(80px, 120px);
-		align-items: center;
-	}
+.participant-abilities a {
+    color: var(--text-h);
+    text-underline-offset: 3px;
+}
+
+.ability-row {
+    scroll-margin-block: 24px;
+}
+
+.ability-row:target {
+    border: 2px solid #b77908;
+    background: rgba(183, 121, 8, 0.14);
+}
+
+html { scroll-behavior: smooth; }
+
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+}
+
+.tracker-layout {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: 24px;
+    padding: 24px;
+    text-align: left;
+}
+
+.tracker-main { min-width: 0; }
+
+.tracker-main .combat-tracker,
+.tracker-main .abilities-tracker {
+    width: 100%;
+    margin: 0 0 28px;
+}
+
+.character-library {
+    position: sticky;
+    top: 24px;
+    align-self: start;
+    max-height: calc(100dvh - 48px);
+    overflow-y: auto;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    box-sizing: border-box;
+}
+
+.library-help,
+.library-empty {
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 12px 0;
+}
+
+.character-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.character-card {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.character-open,
+.character-add {
+    width: 100%;
+    padding: 10px;
+    border: 0;
+    color: var(--text-h);
+    background: var(--bg);
+    font: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+
+.character-open { display: grid; gap: 4px; overflow-wrap: anywhere; }
+.character-open span { font-size: 12px; color: var(--text); }
+.character-open:hover { background: var(--accent-bg); }
+.character-add { font-size: 13px; border-top: 1px solid var(--border); }
+.character-add:disabled,
+.character-library button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.character-dialog {
+    width: min(720px, calc(100% - 48px));
+    max-height: calc(100dvh - 48px);
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-sizing: border-box;
+    color: var(--text-h);
+    background: var(--bg);
+    text-align: left;
+}
+
+.character-dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+.dialog-header { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+.character-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 20px 0; }
+.character-fields label { display: grid; gap: 4px; font-size: 13px; }
+.character-notes { grid-column: 1 / -1; }
+.character-fields input,
+.character-fields select,
+.character-fields textarea {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--text-h);
+    font: inherit;
+}
+.character-fields textarea { resize: vertical; }
+.character-library :focus-visible { outline: 2px solid #147d72; outline-offset: 2px; }
+.combat-sheet-details { grid-area: details; font-size: 14px; }
+.combat-sheet-details summary { cursor: pointer; text-decoration: underline; }
+.combat-sheet-details dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.combat-sheet-details dt { color: var(--text); font-size: 12px; }
+.combat-sheet-details dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+@media (max-width: 1050px) {
+    .tracker-layout { grid-template-columns: 200px minmax(0, 1fr); gap: 16px; padding: 16px; }
+    .tracker-main .turn-row {
+        grid-template-columns: 36px repeat(3, minmax(0, 1fr)) 36px;
+        grid-template-areas:
+            "drag name name name delete"
+            ". initiative pf ca ."
+            ". details details details ."
+            ". abilities abilities abilities ."
+            ". active active active .";
+        gap: 8px;
+    }
+    .tracker-main .ability-row {
+        grid-template-columns: 36px minmax(0, 1fr) 36px;
+        grid-template-areas: "drag name delete" ". duration ." ". remaining ." ". owner ." ". activation .";
+    }
+}
+
+@media (max-width: 700px) {
+    .tracker-layout { grid-template-columns: minmax(0, 1fr); }
+    .character-library { position: static; max-height: 300px; }
+    .character-list { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .character-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .combat-sheet-details dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.activate-ability {
+    grid-area: activation;
+    justify-self: start;
+    padding: 8px 16px;
+    border: 1px solid #147d72;
+    border-radius: 4px;
+    color: #fff;
+    background: #147d72;
+    font: inherit;
+    cursor: pointer;
+}
+
+.abilities-tracker button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.sheet-abilities { margin: 24px 0; }
+.sheet-ability-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(120px, 160px) 36px; align-items: end; gap: 10px; margin-bottom: 12px; }
+.sheet-ability-row label { display: grid; gap: 4px; font-size: 13px; }
+.sheet-ability-row input,
+.sheet-ability-row select {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--text-h);
+    font: inherit;
+}
+
+@media (max-width: 520px) {
+    .sheet-ability-row { grid-template-columns: minmax(0, 1fr) 36px; }
+    .sheet-ability-row label:nth-child(2) { grid-column: 1; }
+    .sheet-ability-row button { grid-column: 2; grid-row: 1 / 3; }
 }
