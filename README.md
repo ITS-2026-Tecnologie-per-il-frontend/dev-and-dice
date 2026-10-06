@@ -274,9 +274,52 @@ slot dipendono dal livello nella classe. Gli effetti condizionali o con scelte
 vanno applicati solo quando il contesto è noto. I privilegi non coperti da una
 regola strutturata conservano la descrizione e richiedono valutazione manuale.
 
-Questa raccolta prepara i dati per l'autocompilazione: la finestra della scheda
-non applica ancora automaticamente i nuovi cataloghi. `database.json`, il
-combattimento e le schede salvate mantengono il formato esistente.
+La scheda PG usa questi cataloghi per la **creazione guidata**. Classe, razza,
+sottorazza, sottoclasse SRD, background e allineamento hanno menu a tendina;
+sono conservati anche valori personalizzati. Le schede precedenti rimangono
+manuali fino all'attivazione esplicita o alla scelta di un'opzione del catalogo.
+Alla prima attivazione controllare i punteggi base: i bonus razziali si aggiungono
+a questi valori, separati dai totali visualizzati nella scheda. Riattivare
+l'automazione conserva i bonus precedenti senza aggiungerli due volte.
+
+Si aggiornano caratteristiche, competenza, tiri salvezza, abilità, Percezione
+passiva, DV, PF massimi con valore fisso ai livelli successivi, velocità,
+linguaggi, competenze e descrizioni dei privilegi. I PF attuali già danneggiati
+rimangono invariati. Le scelte di competenze, linguaggi, bonus variabili e
+dotazioni iniziali si compilano nel pannello di creazione, comprese alternative
+annidate e quantità. Gli oggetti magici non sono concessi dalle categorie di
+equipaggiamento iniziale. Armatura e scudo vanno selezionati come indossati;
+aggiornano CA, requisiti e svantaggio in Furtività. Le armi iniziali generano
+attacchi con modificatore, competenza e danni ordinari (fino a sei righe).
+
+Gli incantesimi sono filtrati per classe e livello, con nomi italiani quando
+presenti nel catalogo esistente; slot, caratteristica magica, CD e bonus di
+attacco seguono la progressione. Sono mostrati i limiti di trucchetti,
+incantesimi conosciuti e preparati; nuove selezioni oltre il limite vengono
+disabilitate. Il Mago può avere copie aggiuntive nel libro. Magie razziali di
+Elfo alto e Tiefling sono separate dagli slot di classe. Cambiare classe o
+livello conserva le magie già scritte e segnala quelle da verificare: nessuna
+selezione viene cancellata senza intervento del giocatore. Le schede incompiute
+restano salvabili come bozze.
+
+Le modifiche ai campi generati diventano personalizzazioni persistenti;
+**Ripristina i campi generati** riattiva i calcoli per quei campi. Multiclasse,
+incrementi di caratteristica/talenti, magie di dominio/sottoclasse, stili di
+combattimento e privilegi condizionali richiedono compilazione manuale. Sono
+applicati i bonus di Robustezza draconica e la competenza nelle armature pesanti
+del Dominio della Vita; gli altri privilegi di sottoclasse conservano il testo.
+Il catalogo SRD comprende il solo background Accolito: gli altri si possono
+scrivere come personalizzati. `database.json`, il combattimento e le schede
+salvate mantengono il formato esistente; configurazione e scelte sono stringhe
+in `playerDetails`, compatibili con il salvataggio precedente.
+
+Verifica dell'autocompilazione con cataloghi reali:
+
+```sh
+node --experimental-strip-types tests/player-creation.mjs
+node --experimental-strip-types tests/player-creation-ui.mjs
+node --experimental-strip-types tests/player-sheet.mjs
+```
 
 I controlli offline verificano checksum, collegamenti, progressioni per livello,
 scelte razziali, casi limite delle formule e conservazione dei file precedenti

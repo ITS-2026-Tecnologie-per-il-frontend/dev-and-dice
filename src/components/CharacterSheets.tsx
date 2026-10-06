@@ -99,7 +99,7 @@ export function CharacterSheets({ onAdd, combatStarted, presentSheetIds, catalog
                             <h2 id="character-dialog-heading">{draft.name || 'Nuova scheda'}</h2>
                             <button className="delete-turn" type="button" aria-label="Chiudi scheda" onClick={closeDialog}>×</button>
                         </div>
-                        {draft.kind === 'PG' ? <PlayerSheet sheet={draft} onChange={setDraft} /> : <div className="character-fields">
+                        {draft.kind === 'PG' ? <PlayerSheet sheet={draft} catalog={catalog} onChange={setDraft} /> : <div className="character-fields">
                             {(Object.entries(characterFields) as [keyof typeof characterFields, string][]).map(([field, label]) => (
                                 <label key={field} className={field === 'notes' ? 'character-notes' : undefined}>
                                     <span>{field === 'initiative' && draft.kind !== 'PG' ? 'Iniziativa inserita' : label}</span>
