@@ -16,6 +16,19 @@ export function hitPointsAfterDamage(hitPoints: string, damage: string): string 
     return String(Math.max(0, current - amount))
 }
 
+export function hitPointsAfterDamageWithTemporary(hitPoints: string, temporaryHitPoints: string, damage: string): { hitPoints: string; temporaryHitPoints: string } | null {
+    const current = Number(hitPoints)
+    const temporary = temporaryHitPoints.trim() ? Number(temporaryHitPoints) : 0
+    const amount = Number(damage)
+    if (!hitPoints.trim() || !damage.trim() || !Number.isSafeInteger(current) || current < 0
+        || !Number.isSafeInteger(temporary) || temporary < 0 || !Number.isSafeInteger(amount) || amount <= 0) return null
+    const temporaryDamage = Math.min(temporary, amount)
+    return {
+        hitPoints: String(Math.max(0, current - (amount - temporaryDamage))),
+        temporaryHitPoints: temporaryHitPoints.trim() ? String(temporary - temporaryDamage) : '',
+    }
+}
+
 type Participant = { id: number; initiative: string }
 
 export function sortByInitiative<T extends Participant>(participants: T[]): T[] {

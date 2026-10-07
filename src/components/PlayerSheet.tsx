@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState, type ReactNode } from 'react'
-import { characterFields, clampCurrentHitPointsToMaximum, numericCharacterFields, type CharacterSheet } from '../utils/CharacterSheets'
+import { characterFields, clampCurrentHitPointsToMaximum, normalizeHitPoints, numericCharacterFields, type CharacterSheet } from '../utils/CharacterSheets'
 import { applyCreation, creationEnabled, enableCreation, labelOf, loadCreationData, resetCreationOverrides, selectedOrigins, spellRules, spellSelection, type CreationData, type Origin } from '../utils/PlayerCreation'
 import { CreationChoices, CreationStatus } from './PlayerCreation'
 import { type Catalog } from '../utils/Catalog'
@@ -36,8 +36,9 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
     const automatic = creationEnabled(sheet) && !!data
     const magic = data && automatic ? spellRules(sheet, data) : undefined
     const selectedMagic = data && automatic ? spellSelection(sheet, data) : undefined
-    function onChange(next: CharacterSheet) {
-        emitChange(data ? applyCreation(next, data) : next)
+    function onChange(next: CharacterSheet, clampHitPoints = false) {
+        const updated = data ? applyCreation(next, data) : next
+        emitChange(clampHitPoints ? clampCurrentHitPointsToMaximum(updated) : updated)
     }
     function clampHitPointsOnMaximumBlur() {
         emitChange(clampCurrentHitPointsToMaximum(sheet))
@@ -46,7 +47,7 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
         if (automatic && scores.includes(key as typeof scores[number])) {
             const bonus = Number(sheet[key as typeof scores[number]]) - Number(details[`creation.base.${key}`] || 0)
             onChange({ ...sheet, playerDetails: { ...details, [`creation.base.${key}`]: value === '' ? '' : String(Number(value) - bonus) } })
-        } else onChange({ ...sheet, [key]: value, playerDetails: { ...details, ...(automatic && ['armorClass', 'speed'].includes(key) ? { [`creation.override.base.${key}`]: 'true' } : {}) } })
+        } else onChange({ ...sheet, [key]: value, playerDetails: { ...details, ...(automatic && ['armorClass', 'speed'].includes(key) ? { [`creation.override.base.${key}`]: 'true' } : {}) } }, key === 'hitPoints')
     }
     function originSelect(kind: 'class' | 'race' | 'subrace' | 'subclass' | 'background', label: string, options: Origin[], base?: 'characterClass' | 'race') {
         const key = `creation.${kind}`
@@ -75,8 +76,10 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
     }
     function field(key: string, label: string, options: { base?: boolean; multiline?: boolean; numeric?: boolean; placeholder?: string; onBlur?: () => void } = {}) {
         const value = options.base ? sheet[key as keyof typeof characterFields] : details[key] ?? ''
-        const update = (value: string) => options.base
-            ? updateBase(key, value) : detail(key, value)
+        const update = (value: string) => {
+            const normalized = ['maxHitPoints', 'hitPoints', 'temporaryHitPoints'].includes(key) ? normalizeHitPoints(value) : value
+            return options.base ? updateBase(key, normalized) : detail(key, normalized)
+        }
         const numeric = options.numeric || (options.base && (numericCharacterFields as readonly string[]).includes(key))
         return <label className={`player-field${options.multiline ? ' player-field-prose' : ''}`} key={key}>
             <span>{label}</span>

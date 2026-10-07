@@ -2,9 +2,9 @@ import { useEffect, useRef, useState, type CSSProperties, type DragEvent } from 
 import { ColumnSeparator } from './ColumnSeparator'
 import { useDialogDismiss } from '../utils/Dialog'
 import { CharacterSheets, type CharacterSheetsHandle } from './CharacterSheets'
-import { characterFields, turnFromSheet, importSheetAbility, initiativeBonus, patchSheetStats, syncTurnStats, type CharacterSheet } from '../utils/CharacterSheets'
+import { characterFields, clampHitPointsToMaximum, normalizeHitPoints, turnFromSheet, importSheetAbility, initiativeBonus, patchSheetStats, syncTurnStats, type CharacterSheet } from '../utils/CharacterSheets'
 import { AbilitiesTracker } from './AbilitiesTracker'
-import { nextCombatTurn, sortByInitiative, advanceAbilityDurations, removeParticipantAbilities, hitPointsAfterDamage, hitPointsAfterHealing, type Ability, type Combat } from '../utils/Combat'
+import { nextCombatTurn, sortByInitiative, advanceAbilityDurations, removeParticipantAbilities, hitPointsAfterDamageWithTemporary, hitPointsAfterHealing, type Ability, type Combat } from '../utils/Combat'
 import { getDropIndex, getDropTargetId, reorderByDrop, reorderById } from '../utils/Reorder'
 import { parseCatalog, sheetFromCatalog, sheetWithCombatAbilities, type Catalog, type CatalogEntry } from '../utils/Catalog'
 import { CatalogSearch } from './CatalogSearch'
@@ -16,6 +16,7 @@ type Turn = {
     initiative: string
     hitPoints: string
     armorClass: string
+    temporaryHitPoints: string
     sheet?: CharacterSheet
     damage?: string
 }
@@ -53,7 +54,7 @@ export function TurnsTracker() {
     const nextAbilityId = useRef(0)
 
     function createTurn(): Turn {
-        return { id: nextId.current++, description: '', initiative: '', hitPoints: '', armorClass: '' }
+        return { id: nextId.current++, description: '', initiative: '', hitPoints: '', armorClass: '', temporaryHitPoints: '' }
     }
 
     function addTurn() {
@@ -94,16 +95,23 @@ export function TurnsTracker() {
         setAbilities((current) => importSheetAbility(current, sheet, turn.id, index, id))
     }
 
-    function updateTurn(id: number, field: 'description' | 'initiative' | 'hitPoints' | 'armorClass' | 'damage', value: string, clearAdjustment?: 'damage') {
+    function updateTurn(id: number, field: 'description' | 'initiative' | 'hitPoints' | 'armorClass' | 'temporaryHitPoints' | 'damage', value: string, clearAdjustment?: 'damage', temporaryHitPoints?: string) {
         const turn = turns.find((item) => item.id === id)
         if (!turn) return
-        const stats = field === 'initiative' || field === 'hitPoints' || field === 'armorClass' ? { [field]: value } : null
+        const normalizedValue = field === 'hitPoints' || field === 'temporaryHitPoints' ? normalizeHitPoints(value) : value
+        if (field === 'temporaryHitPoints' && normalizedValue !== '' && (!Number.isSafeInteger(Number(normalizedValue)) || Number(normalizedValue) < 0)) return
+        const updatedValue = field === 'hitPoints' ? clampHitPointsToMaximum(normalizedValue, maximumHitPoints(turn)) : normalizedValue
+        const nextTemporaryHitPoints = temporaryHitPoints ?? (field === 'temporaryHitPoints' ? normalizedValue : undefined)
+        const isSheetStat = field === 'initiative' || field === 'hitPoints' || field === 'armorClass'
+        const stats = isSheetStat || nextTemporaryHitPoints !== undefined
+            ? { ...(isSheetStat ? { [field]: updatedValue } : {}), ...(nextTemporaryHitPoints !== undefined ? { temporaryHitPoints: nextTemporaryHitPoints } : {}) }
+            : null
         if (stats && turn.sheet) {
             if (!patchSheetStats(turn.sheet, stats) || sheetEditor.current?.patchStats(turn.sheet.id, stats) === false) return
         }
         setTurns((currentTurns) =>
             currentTurns.map((turn) =>
-                turn.id === id ? { ...turn, [field]: value, ...(clearAdjustment ? { [clearAdjustment]: '' } : {}), sheet: turn.sheet
+                turn.id === id ? { ...turn, [field]: updatedValue, ...(nextTemporaryHitPoints !== undefined ? { temporaryHitPoints: nextTemporaryHitPoints } : {}), ...(clearAdjustment ? { [clearAdjustment]: '' } : {}), sheet: turn.sheet
                     ? stats ? patchSheetStats(turn.sheet, stats) ?? turn.sheet : field === 'description' ? { ...turn.sheet, name: value, catalogId: undefined } : turn.sheet
                     : undefined } : turn,
             ),
@@ -124,8 +132,9 @@ export function TurnsTracker() {
     function applyDamage(id: number) {
         const turn = turns.find((item) => item.id === id)
         if (!turn) return
-        const hitPoints = hitPointsAfterDamage(turn.hitPoints, turn.damage ?? '')
-        if (hitPoints !== null) updateTurn(id, 'hitPoints', hitPoints, 'damage')
+        const temporaryHitPoints = turn.temporaryHitPoints
+        const result = hitPointsAfterDamageWithTemporary(turn.hitPoints, temporaryHitPoints ?? '', turn.damage ?? '')
+        if (result !== null) updateTurn(id, 'hitPoints', result.hitPoints, 'damage', temporaryHitPoints === undefined ? undefined : result.temporaryHitPoints)
     }
 
     function selectCreature(id: number, entry: CatalogEntry) {
@@ -296,7 +305,6 @@ export function TurnsTracker() {
                                             disabled={combat !== null}
                                             type="number"
                                             value={turn.initiative}
-                                            placeholder={initiativeBonus(turn.sheet)}
                                             title={initiativeBonus(turn.sheet) ? `Modificatore iniziativa: ${initiativeBonus(turn.sheet)}. Inserisci il risultato del tiro.` : 'Inserisci il risultato del tiro di iniziativa.'}
                                             onChange={(event) => updateTurn(turn.id, 'initiative', event.target.value)}
                                         />
@@ -313,6 +321,17 @@ export function TurnsTracker() {
                                         />
                                         <span className="turn-max-hitpoints" aria-label="PF massimi">/{maximumHitPoints(turn) || '—'}</span>
                                         </span>
+                                    </label>
+                                    <label className="turn-stat turn-temporary-pf">
+                                        <span>PF temporanei</span>
+                                        <input
+                                            aria-label={`PF temporanei di ${turn.description || `creatura ${index + 1}`}`}
+                                            type="number"
+                                            min="0"
+                                            step="1"
+                                            value={turn.temporaryHitPoints}
+                                            onChange={(event) => updateTurn(turn.id, 'temporaryHitPoints', event.target.value)}
+                                        />
                                     </label>
                                     <label className="turn-stat turn-ca">
                                         <span>CA</span>
@@ -339,15 +358,15 @@ export function TurnsTracker() {
                                                 onKeyDown={(event) => { if (event.key === 'Enter') event.preventDefault() }} />
                                             <div className="hitpoint-buttons">
                                                 <button className="apply-damage" type="button" aria-label={`Applica danni a ${turn.description || `creatura ${index + 1}`}`}
-                                                    disabled={hitPointsAfterDamage(turn.hitPoints, turn.damage ?? '') === null} onClick={() => applyDamage(turn.id)}>−</button>
+                                                    disabled={hitPointsAfterDamageWithTemporary(turn.hitPoints, turn.temporaryHitPoints, turn.damage ?? '') === null} onClick={() => applyDamage(turn.id)}>−</button>
                                                 <button className="apply-damage apply-healing" type="button" aria-label={`Applica cura a ${turn.description || `creatura ${index + 1}`}`}
                                                     disabled={hitPointsAfterHealing(turn.hitPoints, turn.damage ?? '', maximumHitPoints(turn)) === null} onClick={() => applyHealing(turn.id)}>+</button>
                                             </div>
                                         </div>
                                     </div>
-                                    {((turn.sheet?.abilities.length ?? 0) > 0 || abilities.some((ability) => ability.ownerId === turn.id)) && (
+                                    {((turn.sheet?.abilities?.length ?? 0) > 0 || abilities.some((ability) => ability.ownerId === turn.id)) && (
                                         <div className="participant-abilities" aria-label={`Abilità di ${turn.description || 'creatura'}`}>
-                                            {turn.sheet?.abilities.map((template, index) => {
+                                            {turn.sheet?.abilities?.map((template, index) => {
                                                 const ability = abilities.find((item) => item.ownerId === turn.id && item.sheetAbilityIndex === index)
                                                 return <button className="participant-ability" data-ability-state={!ability ? 'available' : ability.active && (ability.remainingTurns > 0 || ability.timed === false) ? 'active' : 'inactive'} type="button" key={`sheet-${index}`} onClick={() => openSheetAbility(turn, index)}>
                                                     {ability?.name || template.name} · {!ability ? 'Aggiungi' : !ability.active ? 'Inattiva' : ability.timed === false ? 'Attiva · Senza conteggio' : ability.remainingTurns === 0 ? 'Scaduta' : `${ability.remainingTurns} turni`}

@@ -59,7 +59,7 @@ export function templateFromCatalog(entry: CatalogEntry): SheetAbility {
 
 export function sheetWithCombatSpells(sheet: CharacterSheet, catalog: Catalog): CharacterSheet {
     if (sheet.kind !== 'PG') return sheet
-    const abilities = [...sheet.abilities]
+    const abilities = [...(sheet.abilities ?? [])]
     for (const [key, value] of Object.entries(sheet.playerDetails ?? {})) {
         if (!/^spell\.\d+\.\d+\.name$/.test(key) || !value.trim()) continue
         const name = value.trim()
