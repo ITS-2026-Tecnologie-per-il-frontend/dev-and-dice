@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { newCharacterSheet, parseCharacterSheets, turnFromSheet, abilitiesFromSheet, importSheetAbility, initiativeBonus } from '../src/utils/CharacterSheets.ts'
-import { sortByInitiative, nextCombatTurn, durationTurns, advanceAbilityDurations, activateAbility, removeParticipantAbilities } from '../src/utils/Combat.ts'
+import { sortByInitiative, nextCombatTurn, durationTurns, advanceAbilityDurations, activateAbility, removeParticipantAbilities, hitPointsAfterDamage, hitPointsAfterHealing } from '../src/utils/Combat.ts'
 
 const participants = [
     { id: 0, initiative: '-2' },
@@ -9,6 +9,10 @@ const participants = [
     { id: 3, initiative: '9' },
 ]
 const ordered = sortByInitiative(participants)
+assert.equal(hitPointsAfterDamage('32', '7'), '25')
+assert.equal(hitPointsAfterDamage('5', '9'), '0', 'Damage must not make hit points negative')
+assert.equal(hitPointsAfterDamage('0', '2'), '0')
+for (const [hp, damage] of [['', '5'], ['10', ''], ['10', '-2'], ['10', '0'], ['10', '2.5'], ['-1', '1'], ['Infinity', '2'], ['10', '9007199254740992']]) assert.equal(hitPointsAfterDamage(hp, damage), null, 'Invalid values must leave hit points unchanged')
 assert.deepEqual(ordered.map(({ id }) => id), [2, 1, 3, 0])
 assert.equal(participants[0].id, 0, 'Sorting must not mutate the original list')
 assert.deepEqual(nextCombatTurn(ordered, { activeId: 2, round: 1 }), { activeId: 1, round: 1 })
@@ -120,3 +124,10 @@ assert.equal(importSheetAbility(removeParticipantAbilities(firstImport, [42], fa
 assert.equal(importSheetAbility([], lazySheet, 42, 0, 106)[0].remainingTurns, 10, 'Deleted abilities can be imported again from the template')
 assert.equal(lazySheet.abilities[0].name, 'Scudo', 'Importing must not change the saved template')
 console.log('Combat, ability and character sheet checks passed')
+
+assert.equal(hitPointsAfterHealing('25', '7', '40'), '32')
+assert.equal(hitPointsAfterHealing('38', '7', '40'), '40')
+assert.equal(hitPointsAfterHealing('0', '7', '40'), '7')
+assert.equal(hitPointsAfterHealing('45', '7', '40'), '45', 'Healing must never reduce existing HP')
+assert.equal(hitPointsAfterHealing('25', '7', ''), '32')
+for (const [hp, amount, max] of [['', '2', '40'], ['25', '', '40'], ['25', '-2', '40'], ['25', '0', '40'], ['25', '1.5', '40'], ['25', '2', 'oops'], ['9007199254740991', '1', '']]) assert.equal(hitPointsAfterHealing(hp, amount, max), null)

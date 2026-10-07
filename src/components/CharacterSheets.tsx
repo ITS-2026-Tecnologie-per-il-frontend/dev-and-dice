@@ -1,6 +1,6 @@
 import { durationTurns } from '../utils/Combat'
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react'
-import { characterFields, numericCharacterFields, newCharacterSheet, parseCharacterSheets, initiativeBonus, type CharacterSheet, type SheetAbility } from '../utils/CharacterSheets'
+import { characterFields, numericCharacterFields, newCharacterSheet, parseCharacterSheets, initiativeBonus, patchSheetStats, type SheetStats, type CharacterSheet, type SheetAbility } from '../utils/CharacterSheets'
 import { sheetFromCatalog, sheetWithCombatSpells, templateFromCatalog, type Catalog } from '../utils/Catalog'
 import { CatalogSearch } from './CatalogSearch'
 import { InfoButton } from './InfoButton'
@@ -10,9 +10,10 @@ import { pdfAbilities } from '../utils/PlayerAbilities'
 
 const storageKey = 'dev-and-dice.character-sheets.v1'
 
-type Props = { onAdd: (sheet: CharacterSheet) => void; combatStarted: boolean; presentSheetIds: string[]; catalog: Catalog; ref?: Ref<{ open: (sheet: CharacterSheet) => void }> }
+export type CharacterSheetsHandle = { open: (sheet: CharacterSheet) => void; patchStats: (id: string, stats: Partial<SheetStats>) => boolean }
+type Props = { onAdd: (sheet: CharacterSheet) => void; onSaved: (sheet: CharacterSheet) => void; combatStarted: boolean; presentSheetIds: string[]; catalog: Catalog; ref?: Ref<CharacterSheetsHandle> }
 
-export function CharacterSheets({ onAdd, combatStarted, presentSheetIds, catalog, ref }: Props) {
+export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds, catalog, ref }: Props) {
     const dismissDialog = useDialogDismiss()
     const dismissDeleteDialog = useDialogDismiss()
     const deleteDialog = useRef<HTMLDialogElement>(null)
@@ -29,13 +30,21 @@ export function CharacterSheets({ onAdd, combatStarted, presentSheetIds, catalog
 
     useImperativeHandle(ref, () => ({
         open: (sheet) => setDraft({ ...(saved.sheets.find((item) => item.id === sheet.id) ?? sheet) }),
-    }), [saved.sheets])
+        patchStats: (id, stats) => {
+            const sheet = saved.sheets.find((item) => item.id === id)
+            if (!sheet) return true
+            const updated = patchSheetStats(sheet, stats)
+            if (!updated || !writeSheets(saved.sheets.map((item) => item.id === id ? updated : item))) return false
+            setDraft((current) => current?.id === id ? patchSheetStats(current, stats) ?? current : current)
+            return true
+        },
+    }))
 
     useEffect(() => {
         if (draft && !dialog.current?.open) dialog.current?.showModal()
     }, [draft])
 
-    async function persist(sheets: CharacterSheet[]): Promise<boolean> {
+    function writeSheets(sheets: CharacterSheet[]): boolean {
         if (saved.blocked) return false
         try {
             localStorage.setItem(storageKey, JSON.stringify(sheets))
@@ -43,9 +52,15 @@ export function CharacterSheets({ onAdd, combatStarted, presentSheetIds, catalog
             setError('')
             return true
         } catch {
-            setError('Salvataggio non riuscito. Le modifiche sono ancora aperte: riprova senza chiudere la finestra.')
+            const message = 'Salvataggio non riuscito. Le modifiche sono ancora aperte: riprova senza chiudere la finestra.'
+            setError(message)
+            setSaved((current) => ({ ...current, error: message }))
             return false
         }
+    }
+
+    async function persist(sheets: CharacterSheet[]): Promise<boolean> {
+        return writeSheets(sheets)
     }
 
     function closeDialog() {
@@ -69,7 +84,7 @@ export function CharacterSheets({ onAdd, combatStarted, presentSheetIds, catalog
             ? saved.sheets.map((item) => item.id === sheet.id ? sheet : item)
             : [...saved.sheets, sheet]
         void persist(sheets).then((success) => {
-            if (success) closeDialog()
+            if (success) { onSaved(sheet); closeDialog() }
         })
     }
 

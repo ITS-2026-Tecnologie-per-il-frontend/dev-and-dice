@@ -44,8 +44,21 @@ export function parseCharacterSheets(raw: string | null): CharacterSheet[] {
 }
 
 export function turnFromSheet(sheet: CharacterSheet, id: number) {
-    // copia per combattimento; aggiornare la scheda base non modifica un incontro già preparato.
-    return { id, description: sheet.name, initiative: sheet.kind === 'PG' ? sheet.initiative : '', hitPoints: sheet.hitPoints, armorClass: sheet.armorClass, sheet: { ...sheet, abilities: sheet.abilities.map((ability) => ({ ...ability })) } }
+    const initiative = sheet.kind === 'PG' ? sheet.initiative : ''
+    return { id, description: sheet.name, initiative, hitPoints: sheet.hitPoints, armorClass: sheet.armorClass, sheet: { ...sheet, initiative, abilities: sheet.abilities.map((ability) => ({ ...ability })) } }
+}
+
+export type SheetStats = Pick<CharacterSheet, 'hitPoints' | 'armorClass' | 'initiative'>
+
+export function patchSheetStats(sheet: CharacterSheet, stats: Partial<SheetStats>): CharacterSheet | null {
+    if (Object.values(stats).some((value) => value !== '' && (!value.trim() || !Number.isSafeInteger(Number(value))))) return null
+    return { ...sheet, ...stats, ...(stats.armorClass !== undefined && stats.armorClass !== sheet.armorClass && sheet.playerDetails?.['creation.enabled'] === 'true'
+        ? { playerDetails: { ...sheet.playerDetails, 'creation.override.base.armorClass': 'true' } } : {}) }
+}
+
+export function syncTurnStats<T extends SheetStats & { description: string; sheet?: CharacterSheet }>(turn: T, sheet: CharacterSheet): T {
+    return { ...turn, description: sheet.name, hitPoints: sheet.hitPoints, armorClass: sheet.armorClass, initiative: sheet.initiative,
+        sheet: { ...sheet, abilities: turn.sheet?.abilities ?? sheet.abilities } }
 }
 
 export function initiativeBonus(sheet?: CharacterSheet): string {

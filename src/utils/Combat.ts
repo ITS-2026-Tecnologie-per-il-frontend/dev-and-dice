@@ -1,5 +1,21 @@
 export type Combat = { activeId: number; round: number }
 
+export function hitPointsAfterHealing(hitPoints: string, healing: string, maximum: string): string | null {
+    if (!hitPoints.trim() || !healing.trim()) return null
+    const hp = Number(hitPoints), amount = Number(healing), max = maximum.trim() ? Number(maximum) : null
+    if (!Number.isSafeInteger(hp) || hp < 0 || !Number.isSafeInteger(amount) || amount <= 0
+        || (max !== null && (!Number.isSafeInteger(max) || max < 0))) return null
+    const result = max === null ? hp + amount : Math.max(hp, hp + Math.min(amount, max - hp))
+    return Number.isSafeInteger(result) ? String(result) : null
+}
+
+export function hitPointsAfterDamage(hitPoints: string, damage: string): string | null {
+    const current = Number(hitPoints)
+    const amount = Number(damage)
+    if (!hitPoints.trim() || !damage.trim() || !Number.isSafeInteger(current) || current < 0 || !Number.isSafeInteger(amount) || amount <= 0) return null
+    return String(Math.max(0, current - amount))
+}
+
 type Participant = { id: number; initiative: string }
 
 export function sortByInitiative<T extends Participant>(participants: T[]): T[] {

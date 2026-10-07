@@ -377,3 +377,21 @@ successivi raggiungono la voce già importata e la evidenziano per due secondi.
 Scegliendo un'altra creatura sulla stessa card, le abilità precedentemente
 importate restano nel combattimento con il loro stato e conteggio, ma non sono
 più associate agli indici dei privilegi della nuova scheda.
+
+## Statistiche collegate tra card e scheda PDF
+
+PF attuali, CA e iniziativa delle card sono sincronizzati con la scheda salvata.
+Le modifiche dalla card, compreso Applica danni, vengono salvate anche nella
+scheda; Salva scheda aggiorna le card dello stesso personaggio. PF massimi e
+altri dati della scheda restano distinti dai PF attuali. Una CA inserita dalla
+card viene marcata come modifica manuale, così i calcoli della scheda PDF non
+la ripristinano. L'aggiunta iniziale di mostri e PNG mantiene l'iniziativa vuota.
+
+La sincronizzazione non riordina il combattimento e non resetta le abilità già
+importate o i loro conteggi. Se il salvataggio nel browser fallisce, la modifica
+dalla card non viene applicata e viene mostrato l'errore. Le modifiche nella
+finestra PDF si applicano alle card solo quando vengono salvate.
+
+```sh
+node --experimental-strip-types tests/stat-sync.mjs
+```

@@ -23,10 +23,14 @@ assert.ok(markup.indexOf('Dati principali') < markup.indexOf('info-ability-secti
 assert.ok(!markup.includes('<details') && !markup.includes('Scheda completa e abilità'), 'Creature sections must be visible without opening a dropdown')
 assert.ok(markup.includes('Nube di Muco'), 'The complete creature description must remain accessible')
 const panels = [...markup.matchAll(/<section class="info-section info-panel"[^>]*><h3>(.*?)<\/h3><p class="info-description">([\s\S]*?)<\/p><\/section>/g)]
-assert.deepEqual(panels.map((panel) => panel[1]), ['Abilità', 'Azioni', 'Azioni leggendarie'])
+assert.deepEqual(panels.map((panel) => panel[1]), ['Abilità', 'Azioni leggendarie', 'Azioni'])
+const columns = [...markup.matchAll(/<div class="info-ability-column">([\s\S]*?)<\/div>/g)]
+assert.equal(columns.length, 2)
+assert.ok(columns[0][1].includes('<h3>Abilità</h3>') && columns[0][1].includes('<h3>Azioni leggendarie</h3>') && !columns[0][1].includes('<h3>Azioni</h3>'), 'Legendary actions must follow abilities in an independent column')
+assert.ok(columns[1][1].includes('<h3>Azioni</h3>'))
 assert.ok(panels[0][2].includes('Nube di Muco') && !panels[0][2].includes('Multiattacco'))
-assert.ok(panels[1][2].includes('Multiattacco') && !panels[1][2].includes('Risucchio Psichico'))
-assert.ok(panels[2][2].includes('Risucchio Psichico') && panels[2][2].includes('può effettuare 3 azioni leggendarie'), 'Legendary instructions must stay with the legendary actions')
+assert.ok(panels[2][2].includes('Multiattacco') && !panels[2][2].includes('Risucchio Psichico'))
+assert.ok(panels[1][2].includes('Risucchio Psichico') && panels[1][2].includes('può effettuare 3 azioni leggendarie'), 'Legendary instructions must stay with the legendary actions')
 const descriptionMarkup = panels.map((panel) => panel[2]).join('\n')
 assert.ok(!descriptionMarkup.includes('Classe Armatura'))
 assert.ok(!descriptionMarkup.includes('135 (18d10 + 36)'))

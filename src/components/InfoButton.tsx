@@ -89,6 +89,9 @@ export function InfoButton({ entry, name, description, fields = {} }: Props) {
         'id', 'name', 'description', 'sourceUrl', 'slug', 'abilityIds', 'creatureId', 'catalogId', 'licenseId', ...grouped,
     ].includes(key)))
     const text = entry?.description || description
+    const sections = entry?.type === 'creature' ? creatureSections(entry) : []
+    const isLeftSection = (title: string) => title === 'Abilità' || title === 'Azioni leggendarie'
+    const columns = [sections.filter(([title]) => isLeftSection(title)), sections.filter(([title]) => !isLeftSection(title))].filter((column) => column.length)
     return (
         <>
             <button type="button" className="more-info" aria-label={`Altro su ${name || 'questa card'}`} onClick={() => dialog.current?.showModal()}>Altro</button>
@@ -104,10 +107,12 @@ export function InfoButton({ entry, name, description, fields = {} }: Props) {
                     </section>
                 })}
                 {text && !details.sections && (entry?.type === 'creature' ? (
-                    <div className="info-ability-sections">{creatureSections(entry).map(([title, blocks]) => (
+                    <div className="info-ability-sections">{columns.map((column, index) => (
+                        <div className="info-ability-column" key={index}>{column.map(([title, blocks]) => (
                         <section className="info-section info-panel" key={title} aria-label={title}>
                             <h3>{title}</h3><p className="info-description">{blocks.join('\n\n')}</p>
                         </section>
+                        ))}</div>
                     ))}</div>
                 ) : <section className="info-section"><h3>Descrizione</h3><p className="info-description">{text}</p></section>)}
                 {entry && !entry.description && <p>La descrizione completa non è disponibile per questa voce. Puoi consultare la fonte.</p>}

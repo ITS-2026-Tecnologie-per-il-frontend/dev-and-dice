@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type CSSProperties, type DragEvent } from 'react'
 import { ColumnSeparator } from './ColumnSeparator'
 import { useDialogDismiss } from '../utils/Dialog'
-import { CharacterSheets } from './CharacterSheets'
-import { characterFields, turnFromSheet, importSheetAbility, initiativeBonus, type CharacterSheet } from '../utils/CharacterSheets'
+import { CharacterSheets, type CharacterSheetsHandle } from './CharacterSheets'
+import { characterFields, turnFromSheet, importSheetAbility, initiativeBonus, patchSheetStats, syncTurnStats, type CharacterSheet } from '../utils/CharacterSheets'
 import { AbilitiesTracker } from './AbilitiesTracker'
-import { nextCombatTurn, sortByInitiative, advanceAbilityDurations, removeParticipantAbilities, type Ability, type Combat } from '../utils/Combat'
+import { nextCombatTurn, sortByInitiative, advanceAbilityDurations, removeParticipantAbilities, hitPointsAfterDamage, hitPointsAfterHealing, type Ability, type Combat } from '../utils/Combat'
 import { getDropIndex, getDropTargetId, reorderByDrop, reorderById } from '../utils/Reorder'
 import { parseCatalog, sheetFromCatalog, sheetWithCombatAbilities, type Catalog, type CatalogEntry } from '../utils/Catalog'
 import { CatalogSearch } from './CatalogSearch'
@@ -17,10 +17,11 @@ type Turn = {
     hitPoints: string
     armorClass: string
     sheet?: CharacterSheet
+    damage?: string
 }
 
 export function TurnsTracker() {
-    const sheetEditor = useRef<{ open: (sheet: CharacterSheet) => void }>(null)
+    const sheetEditor = useRef<CharacterSheetsHandle>(null)
     const dismissRemovalDialog = useDialogDismiss()
     const [libraryWidth, setLibraryWidth] = useState('220px')
     const [abilitiesWidth, setAbilitiesWidth] = useState('380px')
@@ -63,7 +64,12 @@ export function TurnsTracker() {
     function addCharacter(sheet: CharacterSheet) {
         if (combat || presentSheetIds.includes(sheet.id)) return
         const turn = turnFromSheet(sheetWithCombatAbilities(sheet, catalog), nextId.current++)
+        if (sheet.initiative !== turn.initiative && sheetEditor.current?.patchStats(sheet.id, { initiative: turn.initiative }) === false) return
         setTurns((current) => [...current, turn])
+    }
+
+    function syncSavedSheet(sheet: CharacterSheet) {
+        setTurns((current) => current.map((turn) => turn.sheet?.id === sheet.id ? syncTurnStats(turn, sheet) : turn))
     }
 
     function addAbility() {
@@ -88,12 +94,38 @@ export function TurnsTracker() {
         setAbilities((current) => importSheetAbility(current, sheet, turn.id, index, id))
     }
 
-    function updateTurn(id: number, field: 'description' | 'initiative' | 'hitPoints' | 'armorClass', value: string) {
+    function updateTurn(id: number, field: 'description' | 'initiative' | 'hitPoints' | 'armorClass' | 'damage', value: string, clearAdjustment?: 'damage') {
+        const turn = turns.find((item) => item.id === id)
+        if (!turn) return
+        const stats = field === 'initiative' || field === 'hitPoints' || field === 'armorClass' ? { [field]: value } : null
+        if (stats && turn.sheet) {
+            if (!patchSheetStats(turn.sheet, stats) || sheetEditor.current?.patchStats(turn.sheet.id, stats) === false) return
+        }
         setTurns((currentTurns) =>
             currentTurns.map((turn) =>
-                turn.id === id ? { ...turn, [field]: value, sheet: field === 'description' && turn.sheet ? { ...turn.sheet, name: value, catalogId: undefined } : turn.sheet } : turn,
+                turn.id === id ? { ...turn, [field]: value, ...(clearAdjustment ? { [clearAdjustment]: '' } : {}), sheet: turn.sheet
+                    ? stats ? patchSheetStats(turn.sheet, stats) ?? turn.sheet : field === 'description' ? { ...turn.sheet, name: value, catalogId: undefined } : turn.sheet
+                    : undefined } : turn,
             ),
         )
+    }
+
+    function maximumHitPoints(turn: Turn): string {
+        return turn.sheet?.playerDetails?.maxHitPoints?.trim() || String(catalog.creatures.find((entry) => entry.id === turn.sheet?.catalogId)?.data.hitPoints ?? '')
+    }
+
+    function applyHealing(id: number) {
+        const turn = turns.find((item) => item.id === id)
+        if (!turn) return
+        const hitPoints = hitPointsAfterHealing(turn.hitPoints, turn.damage ?? '', maximumHitPoints(turn))
+        if (hitPoints !== null) updateTurn(id, 'hitPoints', hitPoints, 'damage')
+    }
+
+    function applyDamage(id: number) {
+        const turn = turns.find((item) => item.id === id)
+        if (!turn) return
+        const hitPoints = hitPointsAfterDamage(turn.hitPoints, turn.damage ?? '')
+        if (hitPoints !== null) updateTurn(id, 'hitPoints', hitPoints, 'damage')
     }
 
     function selectCreature(id: number, entry: CatalogEntry) {
@@ -174,7 +206,7 @@ export function TurnsTracker() {
 
     return (
         <div className="tracker-layout" style={{ '--library-width': libraryWidth } as CSSProperties}>
-            <CharacterSheets ref={sheetEditor} onAdd={addCharacter} combatStarted={combat !== null} presentSheetIds={presentSheetIds} catalog={catalog} />
+            <CharacterSheets ref={sheetEditor} onAdd={addCharacter} onSaved={syncSavedSheet} combatStarted={combat !== null} presentSheetIds={presentSheetIds} catalog={catalog} />
             <ColumnSeparator label="Ridimensiona schede e combattimento" side="left" minimum={160} otherMinimum={600} onResize={setLibraryWidth} />
             <main className="tracker-main" style={{ '--abilities-width': abilitiesWidth } as CSSProperties}>
                 <section className="combat-tracker" aria-labelledby="turns-heading">
@@ -271,6 +303,7 @@ export function TurnsTracker() {
                                     </label>
                                     <label className="turn-stat turn-pf">
                                         <span>PF</span>
+                                        <span className="turn-hitpoints">
                                         <input
                                             aria-label={`PF di ${turn.description || `creatura ${index + 1}`}`}
                                             type="number"
@@ -278,6 +311,8 @@ export function TurnsTracker() {
                                             value={turn.hitPoints}
                                             onChange={(event) => updateTurn(turn.id, 'hitPoints', event.target.value)}
                                         />
+                                        <span className="turn-max-hitpoints" aria-label="PF massimi">/{maximumHitPoints(turn) || '—'}</span>
+                                        </span>
                                     </label>
                                     <label className="turn-stat turn-ca">
                                         <span>CA</span>
@@ -295,6 +330,21 @@ export function TurnsTracker() {
                                         entry={catalog.creatures.find((entry) => entry.id === turn.sheet?.catalogId)}
                                         description={turn.sheet?.notes}
                                         fields={{ ...(turn.sheet?.catalogId ? {} : Object.fromEntries(Object.entries(characterFields).filter(([key]) => !['name', 'notes', 'hitPoints', 'armorClass', 'initiative'].includes(key)).map(([key, label]) => [label, turn.sheet?.[key as keyof typeof characterFields] ?? '']))), hitPoints: turn.hitPoints, armorClass: turn.armorClass, initiativeModifier: initiativeBonus(turn.sheet) || 'Non disponibile', initiative: turn.initiative || 'Da inserire' }} />}</div>
+                                    <div className="damage-controls">
+                                        <span>Danni - / Cura +</span>
+                                        <div className="hitpoint-adjustment">
+                                            <input aria-label={`Danni o cura per ${turn.description || `creatura ${index + 1}`}`} type="number" min="1" step="1"
+                                                value={turn.damage ?? ''} placeholder="0"
+                                                onChange={(event) => updateTurn(turn.id, 'damage', event.target.value)}
+                                                onKeyDown={(event) => { if (event.key === 'Enter') event.preventDefault() }} />
+                                            <div className="hitpoint-buttons">
+                                                <button className="apply-damage" type="button" aria-label={`Applica danni a ${turn.description || `creatura ${index + 1}`}`}
+                                                    disabled={hitPointsAfterDamage(turn.hitPoints, turn.damage ?? '') === null} onClick={() => applyDamage(turn.id)}>−</button>
+                                                <button className="apply-damage apply-healing" type="button" aria-label={`Applica cura a ${turn.description || `creatura ${index + 1}`}`}
+                                                    disabled={hitPointsAfterHealing(turn.hitPoints, turn.damage ?? '', maximumHitPoints(turn)) === null} onClick={() => applyHealing(turn.id)}>+</button>
+                                            </div>
+                                        </div>
+                                    </div>
                                     {((turn.sheet?.abilities.length ?? 0) > 0 || abilities.some((ability) => ability.ownerId === turn.id)) && (
                                         <div className="participant-abilities" aria-label={`Abilità di ${turn.description || 'creatura'}`}>
                                             {turn.sheet?.abilities.map((template, index) => {
