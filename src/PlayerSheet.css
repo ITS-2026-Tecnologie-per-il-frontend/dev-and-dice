@@ -136,13 +136,163 @@
 .player-template-picker { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; }
 .player-template-picker select { padding: 8px; font: inherit; }
 .player-template-picker a { color: var(--text-h); font-size: 13px; }
-.player-paper-wizard .player-brand { font-size: 36px; letter-spacing: 2px; }
-.player-paper-wizard .player-box { border-radius: 12px 3px; border-color: #505050; }
-.player-paper-wizard .player-stat-page { grid-template-columns: 1fr 1fr 1fr; }
-.player-wizard-score { display: grid; grid-template-columns: 85px minmax(0, 1fr); align-items: center; gap: 12px; background: #e4e4e1; }
-.player-wizard-score .player-score { margin-bottom: 14px; }
-.player-wizard-favorite, .player-wizard-item { display: grid; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--paper-line); }
-.player-wizard-favorite:last-child, .player-wizard-item:last-child { border-bottom: 0; }
-.player-wizard-favorite textarea { min-height: 55px; }
-.player-wizard-slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.player-worn-equipment { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 16px 0; }
+/* La disposizione del Mago segue le quattro pagine del PDF; i campi usano i dati condivisi. */
+.player-paper-wizard { --paper-line: #555; background: #fff; }
+.player-paper-wizard .player-box { border: 2px solid var(--paper-line); border-radius: 12px 3px; padding: 10px; }
+.player-paper-wizard .player-box h3 { font-size: 10px; letter-spacing: .3px; }
+.player-paper-wizard .player-field > span { font-size: 9px; letter-spacing: .2px; }
+.player-paper-wizard input, .player-paper-wizard select { padding: 4px; font-size: 12px; background: #f5f5f380; }
+.player-paper-wizard textarea { font-size: 12px; background: transparent; }
+.player-wizard-identity { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; gap: 24px; margin-bottom: 20px; }
+.player-wizard-identity .player-name { padding: 14px 6px; border: 3px double var(--paper-line); border-radius: 3px 12px; }
+.player-wizard-identity .player-name input { font-size: 24px; }
+.player-wizard-bio { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 12px; border: 3px double var(--paper-line); }
+.player-wizard-class > strong { display: block; padding: 10px; border: 3px double var(--paper-line); text-align: center; font-size: 30px; letter-spacing: 2px; }
+.player-wizard-class-fields { display: grid; grid-template-columns: 65px minmax(0, 1fr); gap: 8px; margin-top: 8px; }
+.player-wizard-identity-1 { grid-template-columns: 1fr 2fr; }
+.player-wizard-appearance { border: 3px double var(--paper-line); padding: 12px; }
+.player-wizard-appearance .player-six-fields { margin-bottom: 14px; }
+.player-wizard-identity-2 { display: block; }
+.player-wizard-identity-2 .player-casting { grid-template-columns: 2fr 1fr 1fr 1fr; align-items: center; margin: 0; }
+.player-wizard-identity-2 .player-casting > .player-field { padding: 12px; border: 3px double var(--paper-line); text-align: center; }
+.player-paper-wizard .player-stat-page { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; align-items: stretch; }
+.player-wizard-statistics > .player-column { gap: 12px; }
+.player-wizard-competence { width: 75%; margin: 0 auto; padding: 8px 16px; border: 3px double var(--paper-line); border-radius: 24px 3px; }
+.player-wizard-competence .player-field { grid-template-columns: 1fr 45px; align-items: center; }
+.player-wizard-competence .player-field > span { font-size: 15px; }
+.player-wizard-competence input { text-align: center; font-size: 20px; }
+.player-wizard-perception { align-items: center; min-height: 55px; }
+.player-wizard-perception > .player-field { grid-template-columns: 44px 1fr; align-items: center; }
+.player-wizard-perception > .player-field input { grid-column: 1; grid-row: 1; text-align: center; }
+.player-wizard-perception > .player-field span { grid-column: 2; }
+.player-wizard-abilities { display: flex; flex-direction: column; gap: 14px; padding: 12px; background: #e2e2df; border-radius: 15px; flex: 1; }
+.player-wizard-score { display: grid; grid-template-columns: 80px minmax(0, 1fr); align-items: start; gap: 12px; min-height: 110px; }
+.player-wizard-score .player-score { border-radius: 8px 2px; padding: 8px 4px; margin-bottom: 12px; }
+.player-wizard-score .player-score input { font-size: 24px; }
+.player-paper-statistics .player-wizard-score .player-score output { margin-bottom: -20px; }
+.player-wizard-score .player-column { gap: 4px; padding-top: 8px; }
+.player-wizard-score .player-roll { gap: 4px; }
+.player-wizard-score .player-roll > span { font-size: 10px; }
+.player-wizard-score .player-roll small { display: none; }
+.player-wizard-score .player-roll > input { width: 25px; }
+.player-wizard-traits textarea { min-height: 65px; }
+.player-wizard-proficiencies { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
+.player-wizard-proficiencies .player-column { gap: 6px; }
+.player-wizard-proficiencies textarea { min-height: 160px; }
+.player-wizard-combat { display: grid; gap: 12px; padding: 10px; background: #e2e2df; border-radius: 15px; }
+.player-wizard-combat .player-combat-top > .player-field, .player-wizard-ac { padding: 6px 4px; border: 2px solid var(--paper-line); border-radius: 12px 3px; text-align: center; background: #fff; }
+.player-wizard-ac > .player-field { border: 0; padding: 0; border-radius: 0; }
+.player-wizard-combat .player-combat-top input { height: 36px; }
+.player-wizard-ac > .player-field + .player-field input { height: 22px; font-size: 12px; }
+.player-wizard-ac > .player-field:first-child input { font-size: 24px; }
+.player-wizard-ac > .player-field + .player-field { margin-top: 4px; }
+.player-wizard-hitpoints { display: grid; grid-template-columns: 60px 1fr 90px; gap: 5px; min-height: 88px; }
+.player-wizard-hitpoints > .player-field { padding: 8px 4px; border: 2px solid var(--paper-line); border-radius: 8px 2px; background: #fff; text-align: center; }
+.player-wizard-hitpoints input { height: 36px; text-align: center; font-size: 24px; }
+.player-wizard-vitality { display: grid; grid-template-columns: 1fr 1.2fr; gap: 8px; }
+.player-wizard-vitality > .player-column { gap: 6px; }
+.player-wizard-vitality .player-box { padding: 6px; }
+.player-wizard-vitality .player-field > output { min-height: 22px; padding: 0; }
+.player-wizard-vitality input { height: 25px; }
+.player-wizard-statistics .player-table input { height: 22px; padding: 2px; }
+.player-wizard-statistics .player-table td { padding: 2px; }
+.player-wizard-middle .player-table th:first-child { width: 44%; }
+.player-wizard-vitality .player-death { font-size: 9px; gap: 3px; }
+.player-wizard-hit-die { align-self: center; border: 2px solid var(--paper-line); padding: 3px 8px; border-radius: 50%; font-size: 18px; background: white; }
+.player-wizard-magic-combat { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: 8px; padding: 10px; background: #e2e2df; border-radius: 15px; }
+.player-wizard-magic-combat summary { font-size: 9px; cursor: pointer; }
+.player-wizard-magic-combat details[open] { grid-column: 1 / -1; }
+.player-wizard-favorites { flex: 1; }
+.player-wizard-favorite { display: grid; gap: 4px; padding-bottom: 6px; border-bottom: 1px solid var(--paper-line); flex: 1; }
+.player-wizard-favorite:last-child { border-bottom: 0; }
+.player-wizard-favorite-top { display: grid; grid-template-columns: 30px minmax(0, 1fr) 52px 65px; gap: 4px; }
+.player-wizard-favorite-top .player-field > span { font-size: 8px; }
+.player-wizard-favorite-extra { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; align-items: center; }
+.player-wizard-favorite textarea { min-height: 35px; height: 35px; }
+.player-wizard-favorite input { height: 22px; padding: 2px; font-size: 11px; line-height: 1.25; }
+.player-wizard-favorite .player-field { gap: 2px; }
+.player-wizard-favorite .player-field > span { font-size: 7px; line-height: 1.1; }
+.player-wizard-favorite > .player-field > span { position: absolute; clip-path: inset(50%); width: 1px; height: 1px; overflow: hidden; }
+.player-wizard-recovery { min-height: 95px; }
+.player-wizard-privilege { position: relative; flex: 1; min-height: 150px; }
+.player-wizard-privilege h3 { padding-right: 28px; }
+.player-wizard-level { position: absolute; top: -9px; right: -6px; display: grid; place-items: center; width: 32px; height: 32px; border: 3px double var(--paper-line); border-radius: 50%; background: #fff; font-size: 18px; }
+.player-wizard-privilege > .player-field { display: flex; flex-direction: column; flex: 1; }
+.player-wizard-privilege textarea { flex: 1; min-height: 100px; }
+.player-wizard-slot-box { margin-top: auto; }
+.player-wizard-slots { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 3px; }
+.player-wizard-slots .player-field > span { font-size: 7px; letter-spacing: 0; }
+.player-wizard-slots input { text-align: center; padding: 4px 0; }
+.player-paper-wizard .player-story-page { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; min-height: 1320px; }
+.player-wizard-story > .player-column:first-child > .player-box:first-child { min-height: 290px; }
+.player-wizard-story .player-portrait { min-height: 150px; }
+.player-wizard-story .player-portrait img { max-height: 180px; }
+.player-wizard-story .player-portrait + .player-field { font-size: 9px; }
+.player-wizard-story .player-column { gap: 12px; }
+.player-wizard-additional { min-height: 330px; }
+.player-wizard-background { min-height: 250px; }
+.player-wizard-background textarea { flex: 1; min-height: 215px; }
+.player-wizard-allies textarea { min-height: 100px; }
+.player-wizard-story .player-column:nth-child(2) > .player-box:not(.player-wizard-backpack) { min-height: 95px; }
+.player-wizard-story .player-column:nth-child(2) > .player-box:not(.player-wizard-backpack) textarea { min-height: 75px; height: 75px; }
+.player-wizard-backpack { flex: 1; }
+.player-wizard-inventory-row { display: grid; grid-template-columns: minmax(0, 1fr) 45px; gap: 8px; }
+.player-wizard-inventory-row + .player-wizard-inventory-row .player-field > span { position: absolute; clip-path: inset(50%); width: 1px; height: 1px; overflow: hidden; }
+.player-wizard-backpack .player-coins { margin-top: auto; }
+.player-wizard-magic-items { flex: 1; }
+.player-wizard-item { display: flex; flex-direction: column; gap: 4px; padding-bottom: 8px; border-bottom: 1px solid var(--paper-line); flex: 1; }
+.player-wizard-item:last-child { border-bottom: 0; }
+.player-wizard-item-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px; align-items: start; }
+.player-wizard-item-heading .player-checks { flex-direction: column; align-items: start; gap: 2px; }
+.player-wizard-item-heading .player-check { font-size: 8px; gap: 3px; }
+.player-wizard-item-heading input[type=checkbox] { width: 10px; height: 10px; }
+.player-wizard-item > .player-field > span { position: absolute; clip-path: inset(50%); width: 1px; height: 1px; overflow: hidden; }
+.player-wizard-item textarea { min-height: 36px; height: 36px; flex: 1; }
+.player-wizard-extra { margin-top: 20px; }
+.player-wizard-extra summary { cursor: pointer; font-weight: 650; }
+.player-spell-metadata-open { display: contents; }
+.player-spell-metadata-open > summary { display: none; }
+.player-paper-wizard .player-spell-entry { position: relative; gap: 0; margin-bottom: 8px; }
+.player-paper-wizard .player-spell-row { padding-right: 20px; }
+.player-paper-wizard .player-spell-metadata > summary { position: absolute; top: 0; right: 0; font-size: 0; cursor: pointer; }
+.player-paper-wizard .player-spell-metadata > summary::after { content: '⋯'; font-size: 18px; }
+.player-paper-wizard .player-spell-metadata[open] { margin-top: 8px; }
+.player-paper-wizard .player-spell-metadata[open] > summary::after { content: '−'; }
+.player-paper-wizard .player-spell-page { gap: 24px; }
+.player-paper-wizard .player-spell-level { flex: 1; }
+.player-wizard-worn-page { position: relative; width: 100%; aspect-ratio: 595.2 / 793.68; background-size: 100% 100%; background-repeat: no-repeat; }
+.player-wizard-worn-name { position: absolute; top: 6.9%; left: 34%; width: 35%; }
+.player-wizard-worn-name input { font-size: 20px; text-align: center; background: transparent; }
+.player-wizard-worn-name .player-field > span, .player-worn-slot .player-field > span { position: absolute; clip-path: inset(50%); width: 1px; height: 1px; overflow: hidden; }
+.player-wizard-attunements { position: absolute; top: 10.4%; left: 78%; font-size: 13px; background: white; padding: 2px 8px; }
+.player-worn-slot { position: absolute; width: 23.3%; height: 3.6%; }
+.player-worn-slot .player-field { height: 100%; }
+.player-paper .player-worn-slot textarea { resize: none; height: 100%; min-height: 0; padding: 2px; border: 0; border-radius: 0; background: #ffffffd9; }
+.player-worn-viso { left: 12.5%; top: 13.5%; }
+.player-worn-testa { left: 65.5%; top: 13.5%; }
+.player-worn-collo { left: 14.5%; top: 22.5%; }
+.player-worn-schiena { left: 62%; top: 27.5%; }
+.player-worn-corpo { left: 14.5%; top: 36.3%; }
+.player-worn-torso { left: 64.5%; top: 38.8%; }
+.player-worn-mani { left: 13.2%; top: 49.9%; }
+.player-worn-braccia { left: 62.3%; top: 52.7%; }
+.player-worn-vita { left: 12%; top: 62.4%; }
+.player-worn-piedi { left: 12.5%; top: 73.8%; }
+.player-worn-ring-0 { left: 46.3%; top: 66.1%; }
+.player-worn-ring-1 { left: 72%; top: 66.1%; }
+.player-worn-weapon-0 { left: 63.2%; top: 76.8%; }
+.player-worn-weapon-1 { left: 63.2%; top: 83%; }
+.player-worn-weapon-2 { left: 63.2%; top: 89.2%; }
+.player-worn-other-0 { left: 6%; top: 85%; }
+.player-worn-other-1 { left: 31.7%; top: 85%; }
+.player-worn-other-2 { left: 6%; top: 91.2%; }
+.player-worn-other-3 { left: 31.7%; top: 91.2%; }
+
+.player-paper-wizard .player-spell-row > .catalog-search, .player-paper-wizard .player-spell-row > select { flex: 1; }
+.player-paper-wizard .player-spell-row input, .player-paper-wizard .player-spell-row select { height: 24px; }
+.player-paper-wizard .player-spell-row input[type=checkbox] { height: 14px; }
+.player-paper-wizard .player-spell-entry { margin-bottom: 6px; }
+.player-portrait-controls > summary { cursor: pointer; font-size: 11px; }
+.player-portrait-controls[open] > .player-field { margin-top: 8px; }
+.player-paper:not(.player-paper-wizard) .player-portrait-controls { display: contents; }
+.player-paper:not(.player-paper-wizard) .player-portrait-controls > summary { display: none; }
