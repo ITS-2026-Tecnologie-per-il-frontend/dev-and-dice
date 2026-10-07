@@ -1,5 +1,6 @@
 import { durationTurns } from './Combat.ts'
 import { newCharacterSheet, type CharacterSheet, type SheetAbility } from './CharacterSheets.ts'
+import { pdfCombatAbilities } from './PlayerAbilities.ts'
 
 export type CatalogEntry = {
     id: string
@@ -52,8 +53,31 @@ export function parseCatalog(raw: unknown): Catalog {
 }
 
 export function templateFromCatalog(entry: CatalogEntry): SheetAbility {
-    const duration = (Object.keys(durationTurns) as SheetAbility['duration'][]).find((key) => durationTurns[key] === entry.rounds) ?? 'Personalizzata'
-    return { name: entry.name, catalogId: entry.id, duration, remainingTurns: entry.rounds ?? 0 }
+    const duration = entry.rounds === 0 ? 'Senza conteggio' : (Object.keys(durationTurns) as SheetAbility['duration'][]).find((key) => durationTurns[key] === entry.rounds) ?? 'Personalizzata'
+    return { name: entry.name, catalogId: entry.id, duration, remainingTurns: entry.rounds ?? 0, timed: duration !== 'Senza conteggio' }
+}
+
+export function sheetWithCombatSpells(sheet: CharacterSheet, catalog: Catalog): CharacterSheet {
+    if (sheet.kind !== 'PG') return sheet
+    const abilities = [...sheet.abilities]
+    for (const [key, value] of Object.entries(sheet.playerDetails ?? {})) {
+        if (!/^spell\.\d+\.\d+\.name$/.test(key) || !value.trim()) continue
+        const name = value.trim()
+        const spell = catalog.abilities.find((entry) => typeof entry.data.level === 'number' &&
+            (normalized(entry.name) === normalized(name) || (typeof entry.data.englishName === 'string' && normalized(entry.data.englishName) === normalized(name))))
+        if (abilities.some((ability) => normalized(ability.name) === normalized(name) || (spell && (ability.catalogId === spell.id || normalized(ability.name) === normalized(spell.name))))) continue
+        abilities.push(spell ? templateFromCatalog(spell) : { name, duration: 'Personalizzata', remainingTurns: 0 })
+    }
+    return { ...sheet, abilities }
+}
+
+export function sheetWithCombatAbilities(sheet: CharacterSheet, catalog: Catalog): CharacterSheet {
+    const result = sheetWithCombatSpells(sheet, catalog)
+    const abilities = [...result.abilities]
+    for (const ability of pdfCombatAbilities(sheet)) {
+        if (!abilities.some((item) => normalized(item.name) === normalized(ability.name))) abilities.push(ability)
+    }
+    return sheet.kind === 'PG' ? { ...result, abilities } : sheet
 }
 
 export function sheetFromCatalog(entry: CatalogEntry, catalog: Catalog, base: CharacterSheet = newCharacterSheet()): CharacterSheet {

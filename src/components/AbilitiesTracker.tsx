@@ -25,7 +25,7 @@ export function AbilitiesTracker({ abilities, setAbilities, participants, onAdd,
     function updateAbilityDuration(id: number, duration: Ability['duration']) {
         setAbilities((currentAbilities) =>
             currentAbilities.map((ability) =>
-                ability.id === id ? { ...ability, duration, remainingTurns: durationTurns[duration] } : ability,
+                ability.id === id ? { ...ability, duration, remainingTurns: durationTurns[duration], timed: duration !== 'Senza conteggio' } : ability,
             ),
         )
     }
@@ -100,13 +100,9 @@ export function AbilitiesTracker({ abilities, setAbilities, participants, onAdd,
                             disabled={ability.active}
                             entries={catalog.abilities}
                             onChange={(value) => updateAbilityName(ability.id, value)}
-                            onSelect={(entry) => setAbilities((current) => current.map((item) => item.id === ability.id && !item.active ? { ...item, ...templateFromCatalog(entry), remainingTurns: entry.rounds ?? 0 } : item))}
+                            onSelect={(entry) => setAbilities((current) => current.map((item) => item.id === ability.id && !item.active ? { ...item, ...templateFromCatalog(entry), remainingTurns: entry.rounds ?? 0, description: undefined } : item))}
                         />
-                        <div className="card-info"><InfoButton name={ability.name}
-                            entry={catalog.abilities.find((entry) => entry.id === ability.catalogId)}
-                            fields={{ duration: ability.duration, remainingTurns: ability.remainingTurns, active: ability.active, owner: participants.find((participant) => participant.id === ability.ownerId)?.description ?? 'Nessuno' }} />
-                            {ability.duration === 'Personalizzata' && <span className="library-help">{ability.remainingTurns === 0 ? 'Durata istantanea o non definita: imposta i turni per avviare il conteggio.' : 'Durata personalizzata in turni.'}</span>}
-                        </div>
+                        {ability.duration === 'Personalizzata' && <div className="card-info"><span className="library-help">{ability.remainingTurns === 0 ? 'Durata istantanea o non definita: imposta i turni per avviare il conteggio.' : 'Durata personalizzata in turni.'}</span></div>}
                         <label className="ability-duration">
                             <span>Durata</span>
                             <select
@@ -123,12 +119,13 @@ export function AbilitiesTracker({ abilities, setAbilities, participants, onAdd,
                             </select>
                         </label>
                         <label className="ability-remaining">
-                            <span>Turni rimanenti{ability.active && ability.remainingTurns === 0 ? ' · Scaduta' : ''}</span>
+                            <span>{ability.timed === false ? 'Senza conteggio' : `Turni rimanenti${ability.active && ability.remainingTurns === 0 ? ' · Scaduta' : ''}`}</span>
                             <input
                                 aria-label={`Turni rimanenti di ${ability.name || `abilità ${index + 1}`}`}
                                 type="number"
                                 min="0"
                                 step="1"
+                                disabled={ability.timed === false}
                                 value={ability.remainingTurns}
                                 onChange={(event) => {
                                     const remainingTurns = event.target.valueAsNumber
@@ -137,6 +134,7 @@ export function AbilitiesTracker({ abilities, setAbilities, participants, onAdd,
                                 }}
                             />
                         </label>
+                        <div className="ability-owner-controls">
                         <label className="ability-owner">
                             <span>PG / mostro</span>
                             <select
@@ -157,13 +155,18 @@ export function AbilitiesTracker({ abilities, setAbilities, participants, onAdd,
                                 ))}
                             </select>
                         </label>
+                        <InfoButton name={ability.name}
+                            description={ability.description}
+                            entry={catalog.abilities.find((entry) => entry.id === ability.catalogId)}
+                            fields={{ duration: ability.duration, remainingTurns: ability.remainingTurns, active: ability.active, owner: participants.find((participant) => participant.id === ability.ownerId)?.description ?? 'Nessuno' }} />
+                        </div>
                         <button
                             className="activate-ability"
                             type="button"
-                            disabled={ability.active || ability.remainingTurns === 0 || !ability.name.trim() || ability.ownerId === null}
+                            disabled={ability.active || (ability.remainingTurns === 0 && ability.timed !== false) || !ability.name.trim() || ability.ownerId === null}
                             onClick={() => setAbilities((current) => current.map((item) => item.id === ability.id ? activateAbility(item) : item))}
                         >
-                            {ability.active ? (ability.remainingTurns === 0 ? 'Scaduta' : 'Attivata') : 'Attiva'}
+                            {ability.active ? (ability.timed !== false && ability.remainingTurns === 0 ? 'Scaduta' : 'Attivata') : 'Attiva'}
                         </button>
                         <button
                             aria-label={`Elimina ${ability.name || `abilità ${index + 1}`}`}

@@ -2,11 +2,11 @@ import { useEffect, useRef, useState, type CSSProperties, type DragEvent } from 
 import { ColumnSeparator } from './ColumnSeparator'
 import { useDialogDismiss } from '../utils/Dialog'
 import { CharacterSheets } from './CharacterSheets'
-import { characterFields, turnFromSheet, abilitiesFromSheet, initiativeBonus, type CharacterSheet } from '../utils/CharacterSheets'
+import { characterFields, turnFromSheet, abilitiesFromSheet, importSheetAbility, initiativeBonus, type CharacterSheet } from '../utils/CharacterSheets'
 import { AbilitiesTracker } from './AbilitiesTracker'
 import { nextCombatTurn, sortByInitiative, advanceAbilityDurations, removeParticipantAbilities, type Ability, type Combat } from '../utils/Combat'
 import { getDropIndex, getDropTargetId, reorderByDrop, reorderById } from '../utils/Reorder'
-import { parseCatalog, sheetFromCatalog, type Catalog, type CatalogEntry } from '../utils/Catalog'
+import { parseCatalog, sheetFromCatalog, sheetWithCombatAbilities, type Catalog, type CatalogEntry } from '../utils/Catalog'
 import { CatalogSearch } from './CatalogSearch'
 import { InfoButton } from './InfoButton'
 
@@ -20,6 +20,7 @@ type Turn = {
 }
 
 export function TurnsTracker() {
+    const sheetEditor = useRef<{ open: (sheet: CharacterSheet) => void }>(null)
     const dismissRemovalDialog = useDialogDismiss()
     const [libraryWidth, setLibraryWidth] = useState('220px')
     const [abilitiesWidth, setAbilitiesWidth] = useState('380px')
@@ -32,7 +33,7 @@ export function TurnsTracker() {
     const removalDialog = useRef<HTMLDialogElement>(null)
     const presentSheetIds = turns.flatMap((turn) => turn.sheet ? [turn.sheet.id] : [])
     const removalAbilities = abilities.filter((ability) => ability.ownerId !== null && pendingRemoval?.includes(ability.ownerId))
-    const unexpiredAbilities = removalAbilities.filter((ability) => ability.active && ability.remainingTurns > 0)
+    const unexpiredAbilities = removalAbilities.filter((ability) => ability.active && (ability.remainingTurns > 0 || ability.timed === false))
 
     useEffect(() => {
         if (pendingRemoval && !removalDialog.current?.open) removalDialog.current?.showModal()
@@ -61,8 +62,9 @@ export function TurnsTracker() {
 
     function addCharacter(sheet: CharacterSheet) {
         if (combat || presentSheetIds.includes(sheet.id)) return
-        const turn = turnFromSheet(sheet, nextId.current++)
+        const turn = turnFromSheet(sheetWithCombatAbilities(sheet, catalog), nextId.current++)
         setTurns((current) => [...current, turn])
+        if (sheet.kind === 'PG') return
         const importedAbilities = abilitiesFromSheet(sheet, turn.id, nextAbilityId.current)
         nextAbilityId.current += importedAbilities.length
         setAbilities((current) => [...current, ...importedAbilities])
@@ -71,6 +73,23 @@ export function TurnsTracker() {
     function addAbility() {
         const ability: Ability = { id: nextAbilityId.current++, name: '', duration: '1 minuto', remainingTurns: 10, ownerId: null, active: false }
         setAbilities((current) => [...current, ability])
+    }
+
+    function highlightAbility(id: number) {
+        const element = document.getElementById(`ability-${id}`)
+        element?.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })
+        element?.focus({ preventScroll: true })
+        const highlight = { boxShadow: '0 0 0 2px #b77908', backgroundColor: 'rgba(183, 121, 8, 0.14)' }
+        element?.animate([highlight, highlight], 2000)
+    }
+
+    function openSheetAbility(turn: Turn, index: number) {
+        if (!turn.sheet) return
+        const existing = abilities.find((ability) => ability.ownerId === turn.id && ability.sheetAbilityIndex === index)
+        if (existing) { highlightAbility(existing.id); return }
+        const id = nextAbilityId.current++
+        const sheet = turn.sheet
+        setAbilities((current) => importSheetAbility(current, sheet, turn.id, index, id))
     }
 
     function updateTurn(id: number, field: 'description' | 'initiative' | 'hitPoints' | 'armorClass', value: string) {
@@ -163,7 +182,7 @@ export function TurnsTracker() {
 
     return (
         <div className="tracker-layout" style={{ '--library-width': libraryWidth } as CSSProperties}>
-            <CharacterSheets onAdd={addCharacter} combatStarted={combat !== null} presentSheetIds={presentSheetIds} catalog={catalog} />
+            <CharacterSheets ref={sheetEditor} onAdd={addCharacter} combatStarted={combat !== null} presentSheetIds={presentSheetIds} catalog={catalog} />
             <ColumnSeparator label="Ridimensiona schede e combattimento" side="left" minimum={160} otherMinimum={600} onResize={setLibraryWidth} />
             <main className="tracker-main" style={{ '--abilities-width': abilitiesWidth } as CSSProperties}>
                 <section className="combat-tracker" aria-labelledby="turns-heading">
@@ -185,6 +204,19 @@ export function TurnsTracker() {
                                     Inizia combattimento
                                 </button>
                             )}
+                        <div className="turn-actions turn-header-actions">
+                            <button className="sort-turns" type="button" onClick={sortTurns} disabled={combat !== null || turns.length === 0}>
+                                Ordina per iniziativa ↓
+                            </button>
+                            <button
+                                className="clear-turns"
+                                type="button"
+                                onClick={clearTurns}
+                                disabled={turns.length === 0}
+                            >
+                                Cancella tutti i partecipanti
+                            </button>
+                        </div>
                         </div>
                         <p className="combat-status" role="status">
                             {combat
@@ -265,18 +297,23 @@ export function TurnsTracker() {
                                             onChange={(event) => updateTurn(turn.id, 'armorClass', event.target.value)}
                                         />
                                     </label>
-                                    <div className="card-info"><InfoButton name={turn.description}
+                                    <div className="card-info">{turn.sheet?.kind === 'PG' ? (
+                                        <button className="more-info" type="button" aria-label={`Apri scheda di ${turn.description}`} onClick={() => { if (turn.sheet) sheetEditor.current?.open(turn.sheet) }}>Altro</button>
+                                    ) : <InfoButton name={turn.description}
                                         entry={catalog.creatures.find((entry) => entry.id === turn.sheet?.catalogId)}
                                         description={turn.sheet?.notes}
-                                        fields={{ ...(turn.sheet?.catalogId ? {} : Object.fromEntries(Object.entries(characterFields).filter(([key]) => !['name', 'notes', 'hitPoints', 'armorClass', 'initiative'].includes(key)).map(([key, label]) => [label, turn.sheet?.[key as keyof typeof characterFields] ?? '']))), hitPoints: turn.hitPoints, armorClass: turn.armorClass, initiativeModifier: initiativeBonus(turn.sheet) || 'Non disponibile', initiative: turn.initiative || 'Da inserire' }} /></div>
-                                    {abilities.some((ability) => ability.ownerId === turn.id) && (
+                                        fields={{ ...(turn.sheet?.catalogId ? {} : Object.fromEntries(Object.entries(characterFields).filter(([key]) => !['name', 'notes', 'hitPoints', 'armorClass', 'initiative'].includes(key)).map(([key, label]) => [label, turn.sheet?.[key as keyof typeof characterFields] ?? '']))), hitPoints: turn.hitPoints, armorClass: turn.armorClass, initiativeModifier: initiativeBonus(turn.sheet) || 'Non disponibile', initiative: turn.initiative || 'Da inserire' }} />}</div>
+                                    {(turn.sheet?.kind === 'PG' && turn.sheet.abilities.length > 0 || abilities.some((ability) => ability.ownerId === turn.id)) && (
                                         <div className="participant-abilities" aria-label={`Abilità di ${turn.description || 'creatura'}`}>
-                                            {abilities.filter((ability) => ability.ownerId === turn.id).map((ability) => (
-                                                <a key={ability.id} href={`#ability-${ability.id}`} onClick={() => {
-                                                    const highlight = { boxShadow: '0 0 0 2px #b77908', backgroundColor: 'rgba(183, 121, 8, 0.14)' }
-                                                    document.getElementById(`ability-${ability.id}`)?.animate([highlight, highlight], 2000)
-                                                }}>
-                                                    {ability.name || 'Abilità senza nome'} · {!ability.active ? 'Inattiva' : ability.remainingTurns === 0 ? 'Scaduta' : `${ability.remainingTurns} turni`}
+                                            {turn.sheet?.kind === 'PG' && turn.sheet.abilities.map((template, index) => {
+                                                const ability = abilities.find((item) => item.ownerId === turn.id && item.sheetAbilityIndex === index)
+                                                return <button className="participant-ability" data-ability-state={!ability ? 'available' : ability.active && (ability.remainingTurns > 0 || ability.timed === false) ? 'active' : 'inactive'} type="button" key={`sheet-${index}`} onClick={() => openSheetAbility(turn, index)}>
+                                                    {ability?.name || template.name} · {!ability ? 'Aggiungi' : !ability.active ? 'Inattiva' : ability.timed === false ? 'Attiva · Senza conteggio' : ability.remainingTurns === 0 ? 'Scaduta' : `${ability.remainingTurns} turni`}
+                                                </button>
+                                            })}
+                                            {abilities.filter((ability) => ability.ownerId === turn.id && (turn.sheet?.kind !== 'PG' || ability.sheetAbilityIndex === undefined)).map((ability) => (
+                                                <a key={ability.id} data-ability-state={ability.active && (ability.remainingTurns > 0 || ability.timed === false) ? 'active' : 'inactive'} href={`#ability-${ability.id}`} onClick={(event) => { event.preventDefault(); highlightAbility(ability.id) }}>
+                                                    {ability.name || 'Abilità senza nome'} · {!ability.active ? 'Inattiva' : ability.timed === false ? 'Attiva · Senza conteggio' : ability.remainingTurns === 0 ? 'Scaduta' : `${ability.remainingTurns} turni`}
                                                 </a>
                                             ))}
                                         </div>
@@ -301,19 +338,6 @@ export function TurnsTracker() {
                                 aria-label="Aggiungi PG o mostro"
                             >
                                 <span aria-hidden="true">+</span>
-                            </button>
-                        </div>
-                        <div className="turn-actions">
-                            <button className="sort-turns" type="button" onClick={sortTurns} disabled={combat !== null || turns.length === 0}>
-                                Ordina per iniziativa ↓
-                            </button>
-                            <button
-                                className="clear-turns"
-                                type="button"
-                                onClick={clearTurns}
-                                disabled={turns.length === 0}
-                            >
-                                Cancella tutti i partecipanti
                             </button>
                         </div>
                     </form>

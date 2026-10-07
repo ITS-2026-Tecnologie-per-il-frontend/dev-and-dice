@@ -10,7 +10,7 @@ export const characterFields = {
 
 export const numericCharacterFields = ['hitPoints', 'armorClass', 'initiative', 'strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const
 
-export type SheetAbility = { name: string; duration: keyof typeof durationTurns; catalogId?: string; remainingTurns?: number }
+export type SheetAbility = { name: string; duration: keyof typeof durationTurns; catalogId?: string; remainingTurns?: number; timed?: boolean; description?: string }
 
 export type CharacterSheet = { id: string; abilities: SheetAbility[]; catalogId?: string; playerDetails?: Record<string, string> } & Record<keyof typeof characterFields, string>
 
@@ -33,6 +33,8 @@ export function parseCharacterSheets(raw: string | null): CharacterSheet[] {
             && Object.hasOwn(durationTurns, ability.duration)
             && (!('catalogId' in ability) || ability.catalogId === undefined || typeof ability.catalogId === 'string')
             && (!('remainingTurns' in ability) || ability.remainingTurns === undefined || (Number.isSafeInteger(ability.remainingTurns) && Number(ability.remainingTurns) >= 0))
+            && (!('timed' in ability) || ability.timed === undefined || typeof ability.timed === 'boolean')
+            && (!('description' in ability) || ability.description === undefined || typeof ability.description === 'string')
         )))
         && numericCharacterFields.every((key) => sheet[key] === '' || (sheet[key].trim() !== '' && Number.isSafeInteger(Number(sheet[key]))))
     ) || new Set(value.map((sheet) => sheet.id)).size !== value.length) {
@@ -56,4 +58,10 @@ export function abilitiesFromSheet(sheet: CharacterSheet, ownerId: number, first
     return sheet.abilities.map((ability, index) => ({
         ...ability, id: firstId + index, ownerId, remainingTurns: ability.remainingTurns ?? durationTurns[ability.duration], active: false,
     }))
+}
+
+export function importSheetAbility(abilities: Ability[], sheet: CharacterSheet, ownerId: number, index: number, id: number): Ability[] {
+    const template = sheet.abilities[index]
+    if (!template || abilities.some((ability) => ability.ownerId === ownerId && ability.sheetAbilityIndex === index)) return abilities
+    return [...abilities, { ...template, id, ownerId, sheetAbilityIndex: index, remainingTurns: template.remainingTurns ?? durationTurns[template.duration], active: false }]
 }

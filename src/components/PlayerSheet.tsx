@@ -241,7 +241,7 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
                         </div>)}
                     </section>)}
                 </div>)}</div>
-                <p className="player-hint">Spunta gli incantesimi preparati. Le abilità collegate al combattimento si gestiscono nella sezione sotto la scheda.</p>
+                <p className="player-hint">Spunta gli incantesimi preparati. Magie e abilità compariranno nella card del combattimento: clicca sul nome per aggiungerle alla sezione Abilità.</p>
             </>}
         </div>
         </div>

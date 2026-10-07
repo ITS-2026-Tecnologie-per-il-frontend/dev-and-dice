@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { parseCatalog, searchCatalog, sheetFromCatalog, templateFromCatalog } from '../src/utils/Catalog.ts'
+import { parseCatalog, searchCatalog, sheetFromCatalog, templateFromCatalog, sheetWithCombatSpells } from '../src/utils/Catalog.ts'
 import { abilitiesFromSheet, parseCharacterSheets, newCharacterSheet } from '../src/utils/CharacterSheets.ts'
 
 const raw = JSON.parse(readFileSync(new URL('../public/data/database.json', import.meta.url), 'utf8'))
@@ -44,4 +44,14 @@ assert.throws(() => parseCharacterSheets(JSON.stringify([{ ...sheet, catalogId: 
 const multiattacks = searchCatalog(catalog.abilities, 'Multiattacco')
 assert.ok(new Set(multiattacks.map((entry) => entry.label)).size > 1, 'Same-name abilities must show the creature of origin')
 assert.equal(new Set(catalog.abilities.map((entry) => entry.id)).size, catalog.abilities.length)
+const caster = { ...base, abilities: [aidTemplate], playerDetails: {
+    'spell.2.0.name': 'Aid', 'spell.0.0.name': 'Light', 'spell.1.1.name': 'Magia personale',
+    'spell.1.2.name': 'Magia personale', 'spell.2.0.prepared': 'true', 'spell.1.3.name': ' ',
+} }
+const spellSheet = sheetWithCombatSpells(caster, catalog)
+assert.equal(spellSheet.abilities.length, 3, 'Selected spells should be listed once alongside existing ability templates')
+assert.ok(spellSheet.abilities.some((ability) => ability.name === 'Luce' && ability.catalogId))
+assert.ok(spellSheet.abilities.some((ability) => ability.name === 'Magia personale' && ability.remainingTurns === 0))
+assert.equal(caster.abilities.length, 1, 'Preparing the combat list must not modify the saved sheet')
+assert.equal(sheetWithCombatSpells(sheet, catalog), sheet, 'Monster imports retain their current behavior')
 console.log('Catalog checks passed: substring search, autofill, ownership, persistence and durations')

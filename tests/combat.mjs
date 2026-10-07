@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { newCharacterSheet, parseCharacterSheets, turnFromSheet, abilitiesFromSheet, initiativeBonus } from '../src/utils/CharacterSheets.ts'
+import { newCharacterSheet, parseCharacterSheets, turnFromSheet, abilitiesFromSheet, importSheetAbility, initiativeBonus } from '../src/utils/CharacterSheets.ts'
 import { sortByInitiative, nextCombatTurn, durationTurns, advanceAbilityDurations, activateAbility, removeParticipantAbilities } from '../src/utils/Combat.ts'
 
 const participants = [
@@ -18,7 +18,7 @@ assert.equal(nextCombatTurn([], { activeId: 2, round: 1 }), null)
 // Removing the active participant advances using the old order, then removes it.
 const next = nextCombatTurn(ordered, { activeId: 3, round: 1 })
 assert.ok(ordered.filter(({ id }) => id !== 3).some(({ id }) => id === next.activeId))
-assert.deepEqual(Object.values(durationTurns), [10, 100, 600, 4800, 14400, 0])
+assert.deepEqual(Object.values(durationTurns), [10, 100, 600, 4800, 14400, 0, 0])
 const abilities = [
     { id: 0, name: 'Scudo', ownerId: 2, duration: '1 minuto', remainingTurns: 10, active: true },
     { id: 1, name: 'Luce', ownerId: null, duration: '1 ora', remainingTurns: 1, active: true },
@@ -79,6 +79,9 @@ assert.equal(counted.remainingTurns, 9)
 assert.deepEqual(activateAbility(counted), counted, 'Repeated activation after a round must not refill the duration')
 assert.equal(activateAbility({ ...importedAbilities[0], ownerId: null }).active, false)
 assert.equal(activateAbility({ ...importedAbilities[0], remainingTurns: 0 }).active, false)
+const instantAbility = { ...importedAbilities[0], duration: 'Senza conteggio', remainingTurns: 0, timed: false }
+assert.equal(activateAbility(instantAbility).active, true, 'An ability without a timer can still be activated')
+assert.deepEqual(advanceAbilityDurations([activateAbility(instantAbility)]), [activateAbility(instantAbility)], 'Untimed abilities must not expire at the end of the round')
 assert.equal(activateAbility({ ...importedAbilities[0], name: ' ' }).active, false)
 const secondImport = abilitiesFromSheet(sheetWithAbilities, 43, 7)
 assert.equal(secondImport[0].ownerId, 43)
@@ -102,4 +105,18 @@ assert.equal(removalSample[0].ownerId, 42, 'Removal must not mutate the old stat
 assert.deepEqual(removeParticipantAbilities(removalSample, [42], true).map(({ id }) => id), [52, 53])
 assert.deepEqual(removeParticipantAbilities(removalSample, [42, 43], true).map(({ id }) => id), [53])
 assert.deepEqual(removeParticipantAbilities(removalSample, [], true), removalSample)
+const lazySheet = { ...sheetWithAbilities, abilities: [sheetWithAbilities.abilities[0], { ...sheetWithAbilities.abilities[0] }] }
+const firstImport = importSheetAbility([], lazySheet, 42, 0, 100)
+assert.equal(firstImport.length, 1)
+assert.equal(firstImport[0].ownerId, 42)
+assert.equal(firstImport[0].sheetAbilityIndex, 0)
+assert.equal(firstImport[0].active, false)
+const runningImport = [{ ...activateAbility(firstImport[0]), remainingTurns: 7, name: 'Nome modificato' }]
+assert.equal(importSheetAbility(runningImport, lazySheet, 42, 0, 101), runningImport, 'Repeated clicks must preserve identity, edits, activation and countdown')
+assert.equal(importSheetAbility(firstImport, lazySheet, 42, 1, 102).length, 2, 'Same-name templates are distinct sheet entries')
+assert.equal(importSheetAbility(firstImport, lazySheet, 43, 0, 103).length, 2, 'Import identity includes the participant')
+assert.equal(importSheetAbility(firstImport, lazySheet, 42, 99, 104), firstImport)
+assert.equal(importSheetAbility(removeParticipantAbilities(firstImport, [42], false), lazySheet, 42, 0, 105).length, 2, 'Detached abilities must not prevent imports for a new owner')
+assert.equal(importSheetAbility([], lazySheet, 42, 0, 106)[0].remainingTurns, 10, 'Deleted abilities can be imported again from the template')
+assert.equal(lazySheet.abilities[0].name, 'Scudo', 'Importing must not change the saved template')
 console.log('Combat, ability and character sheet checks passed')

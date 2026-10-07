@@ -325,3 +325,47 @@ I controlli offline verificano checksum, collegamenti, progressioni per livello,
 scelte razziali, casi limite delle formule e conservazione dei file precedenti
 in caso di esportazione non valida. Tutti i documenti vengono validati prima
 della sostituzione; il manifest viene scritto per ultimo.
+
+
+Per i PG salvati, l'aggiunta al combattimento elenca abilità e incantesimi della
+scheda nella card dei turni, senza riempire subito la sezione Abilità. Il primo
+clic su un nome importa solo quella voce, inattiva e collegata al PG; i clic
+successivi scorrono alla card e la evidenziano per due secondi, senza duplicare
+la voce né azzerarne il conteggio. Se una voce viene eliminata, può essere
+importata di nuovo. Le abilità aggiunte direttamente dalla sezione Abilità
+restano visibili fra i collegamenti del proprietario.
+
+## Abilità da attivare nella scheda PDF
+
+La colonna Abilità legge `classFeatures`, `racialTraits` e `additionalTraits`
+dalla scheda PDF. I testi generati hanno il formato `Nome (livello N)` seguito
+dalla descrizione, con una riga vuota tra privilegi; per testi personali usare
+lo stesso formato `Nome` + descrizione su righe separate.
+
+Il database possiede descrizioni, `automationStatus` e alcune `effectRules`,
+ma non un campo universale di attivazione. `requiresPlayerChoice` non indica
+necessariamente un'attivazione: può indicare una scelta di creazione, come uno
+stile di combattimento. Le istruzioni sono in `src/utils/PlayerAbilities.ts`:
+
+- Le azioni, azioni bonus, reazioni e alcune spese volontarie di risorse sono
+  riconosciute nei testi italiani e inglesi. Le frasi negate vengono escluse.
+- Un elenco di privilegi passivi verificati esclude casi come Scurovisione,
+  Difesa senza armatura e Stile di combattimento: Difesa.
+- I testi senza indizi sufficienti rimangono **da verificare**, senza importazione
+  automatica. La conferma o l'esclusione manuale viene salvata in `playerDetails`.
+- Solo alcune durate sono state verificate esplicitamente (per esempio Ira:
+  1 minuto, 10 turni). Non si ricava una durata da una qualsiasi menzione di
+  tempo: potrebbe essere un riposo, un costo o un altro effetto.
+- Ogni voce permette di impostare la durata. **Senza conteggio** consente
+  l'attivazione definitiva senza timer né scadenza automatica, anche per effetti
+  istantanei. Non applica automaticamente danni, cure, risorse o bonus.
+
+Questo riconoscimento è conservativo e non interpreta ogni regola D&D. I casi
+ambigui e le durate condizionali richiedono verifica; i testi originali rimangono
+consultabili con Altro. Le abilità riconosciute seguono l'importazione al primo
+clic dalla card del PG, come le magie. I dati della scheda salvata non vengono
+riscritti aggiungendo copie dei privilegi.
+
+```sh
+node --experimental-strip-types tests/player-abilities.mjs
+```

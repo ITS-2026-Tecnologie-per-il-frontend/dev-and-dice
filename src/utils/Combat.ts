@@ -20,6 +20,7 @@ export const durationTurns = {
     '8 ore': 4800,
     '24 ore': 14400,
     'Personalizzata': 0,
+    'Senza conteggio': 0,
 } as const
 
 export type Ability = {
@@ -30,15 +31,18 @@ export type Ability = {
     ownerId: number | null
     active: boolean
     catalogId?: string
+    sheetAbilityIndex?: number
+    timed?: boolean
+    description?: string
 }
 
 export function advanceAbilityDurations(abilities: Ability[]): Ability[] {
     // il conteggio avanza a fine round; per scadenze nel singolo turno servirà un turno di attivazione.
-    return abilities.map((ability) => ability.active ? { ...ability, remainingTurns: Math.max(0, ability.remainingTurns - 1) } : ability)
+    return abilities.map((ability) => ability.active && ability.timed !== false ? { ...ability, remainingTurns: Math.max(0, ability.remainingTurns - 1) } : ability)
 }
 
 export function activateAbility(ability: Ability): Ability {
-    if (ability.active || ability.remainingTurns === 0 || !ability.name.trim() || ability.ownerId === null) return ability
+    if (ability.active || (ability.remainingTurns === 0 && ability.timed !== false) || !ability.name.trim() || ability.ownerId === null) return ability
     return { ...ability, active: true }
 }
 
