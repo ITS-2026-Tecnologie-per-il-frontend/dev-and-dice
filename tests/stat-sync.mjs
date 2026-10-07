@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { newCharacterSheet, turnFromSheet, patchSheetStats, syncTurnStats, parseCharacterSheets } from '../src/utils/CharacterSheets.ts'
+import { newCharacterSheet, turnFromSheet, patchSheetStats, syncTurnStats, parseCharacterSheets, clampCurrentHitPointsToMaximum } from '../src/utils/CharacterSheets.ts'
 import { hitPointsAfterDamage } from '../src/utils/Combat.ts'
 import { applyCreation, enableCreation } from '../src/utils/PlayerCreation.ts'
 
@@ -34,6 +34,13 @@ for (const kind of ['Mostro', 'PNG']) {
     assert.equal(syncTurnStats(imported, { ...creature, initiative: '12' }).initiative, '12', 'A manually entered monster initiative must be synchronized without being reset')
 }
 for (const invalid of [{ hitPoints: 'NaN' }, { armorClass: '15.5' }, { initiative: 'Infinity' }]) assert.equal(patchSheetStats(original, invalid), null)
+const reducedMaximum = clampCurrentHitPointsToMaximum({ ...original, playerDetails: { ...original.playerDetails, maxHitPoints: '30' } })
+assert.equal(reducedMaximum.playerDetails.maxHitPoints, '30', 'Clamping current HP must preserve the configured maximum')
+assert.equal(reducedMaximum.hitPoints, '30', 'Current HP above the new maximum must be clamped')
+assert.equal(clampCurrentHitPointsToMaximum({ ...original, hitPoints: '25', playerDetails: { ...original.playerDetails, maxHitPoints: '30' } }).hitPoints, '25', 'Current HP below the new maximum must remain unchanged')
+assert.equal(clampCurrentHitPointsToMaximum({ ...original, hitPoints: '45', playerDetails: { ...original.playerDetails, maxHitPoints: '35' } }).hitPoints, '35', 'Current HP above a reduced maximum must be clamped')
+assert.equal(clampCurrentHitPointsToMaximum({ ...original, hitPoints: '45' }).hitPoints, '40', 'Leaving the maximum field clamps current HP even when the maximum is unchanged')
+assert.equal(clampCurrentHitPointsToMaximum({ ...original, hitPoints: '45', playerDetails: { ...original.playerDetails, maxHitPoints: '' } }).hitPoints, '45', 'An empty maximum must not alter current HP')
 const json = (file) => JSON.parse(readFileSync(new URL(`../public/data/${file}.json`, import.meta.url), 'utf8'))
 const data = { ...json('character-options'), ...json('character-equipment'), skills: json('character-rules').skills }
 const automatic = enableCreation({ ...original, level: '1', constitution: '10', dexterity: '10', playerDetails: { 'creation.class': 'fighter', 'creation.race': 'human' } }, data)

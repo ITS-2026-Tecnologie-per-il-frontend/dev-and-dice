@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState, type ReactNode } from 'react'
-import { characterFields, numericCharacterFields, type CharacterSheet } from '../utils/CharacterSheets'
+import { characterFields, clampCurrentHitPointsToMaximum, numericCharacterFields, type CharacterSheet } from '../utils/CharacterSheets'
 import { applyCreation, creationEnabled, enableCreation, labelOf, loadCreationData, resetCreationOverrides, selectedOrigins, spellRules, spellSelection, type CreationData, type Origin } from '../utils/PlayerCreation'
 import { CreationChoices, CreationStatus } from './PlayerCreation'
 import { type Catalog } from '../utils/Catalog'
@@ -39,6 +39,9 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
     function onChange(next: CharacterSheet) {
         emitChange(data ? applyCreation(next, data) : next)
     }
+    function clampHitPointsOnMaximumBlur() {
+        emitChange(clampCurrentHitPointsToMaximum(sheet))
+    }
     function updateBase(key: string, value: string) {
         if (automatic && scores.includes(key as typeof scores[number])) {
             const bonus = Number(sheet[key as typeof scores[number]]) - Number(details[`creation.base.${key}`] || 0)
@@ -70,7 +73,7 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
         const value = Math.floor((Number(score) - 10) / 2)
         return `${value >= 0 ? '+' : ''}${value}`
     }
-    function field(key: string, label: string, options: { base?: boolean; multiline?: boolean; numeric?: boolean; placeholder?: string } = {}) {
+    function field(key: string, label: string, options: { base?: boolean; multiline?: boolean; numeric?: boolean; placeholder?: string; onBlur?: () => void } = {}) {
         const value = options.base ? sheet[key as keyof typeof characterFields] : details[key] ?? ''
         const update = (value: string) => options.base
             ? updateBase(key, value) : detail(key, value)
@@ -79,7 +82,7 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
             <span>{label}</span>
             {options.multiline
                 ? <textarea rows={4} value={value} onChange={(event) => update(event.target.value)} placeholder={options.placeholder} />
-                : <input type={numeric ? 'number' : 'text'} step={numeric ? '1' : undefined} required={options.base && key === 'name'} pattern={options.base && key === 'name' ? '.*\\S.*' : undefined} value={value} onChange={(event) => update(event.target.value)} placeholder={options.placeholder} />}
+                : <input type={numeric ? 'number' : 'text'} step={numeric ? '1' : undefined} required={options.base && key === 'name'} pattern={options.base && key === 'name' ? '.*\\S.*' : undefined} value={value} onChange={(event) => update(event.target.value)} onBlur={options.onBlur} placeholder={options.placeholder} />}
         </label>
     }
     function box(title: string, children: ReactNode, className = '') {
@@ -163,7 +166,7 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
                 <div className="player-column">
                     {box('Combattimento', <>
                         <div className="player-combat-top">{field('armorClass', 'CA', { base: true })}{field('temporaryAC', 'CA temporanea', { numeric: true })}{field('initiative', 'Iniziativa predefinita', { base: true, placeholder: modifier(sheet.dexterity) })}</div>
-                        <div className="player-hitpoints">{field('maxHitPoints', 'PF massimi', { numeric: true })}{field('hitPoints', 'PF attuali', { base: true })}{field('temporaryHitPoints', 'PF temporanei', { numeric: true })}</div>
+                        <div className="player-hitpoints">{field('maxHitPoints', 'PF massimi', { numeric: true, onBlur: clampHitPointsOnMaximumBlur })}{field('hitPoints', 'PF attuali', { base: true })}{field('temporaryHitPoints', 'PF temporanei', { numeric: true })}</div>
                         <div className="player-three-fields">{field('exhaustion', 'Affaticamento', { numeric: true })}{field('vision', 'Visione')}{field('speed', 'Velocità', { base: true })}</div>
                         {check('darkvision', 'Scurovisione')}
                         <div className="player-two-fields">{box('Dadi vita', <div className="player-three-fields">{field('hitDice', 'DV')}{field('hitDiceTotal', 'Totali', { numeric: true })}{field('hitDiceUsed', 'Usati', { numeric: true })}</div>)}

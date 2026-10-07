@@ -56,6 +56,16 @@ export function patchSheetStats(sheet: CharacterSheet, stats: Partial<SheetStats
         ? { playerDetails: { ...sheet.playerDetails, 'creation.override.base.armorClass': 'true' } } : {}) }
 }
 
+export function clampCurrentHitPointsToMaximum(sheet: CharacterSheet): CharacterSheet {
+    const maximum = sheet.playerDetails?.maxHitPoints
+    const current = Number(sheet.hitPoints)
+    const max = Number(maximum)
+    if (maximum === undefined || !maximum.trim()
+        || !Number.isSafeInteger(max) || max < 0
+        || !sheet.hitPoints.trim() || !Number.isSafeInteger(current) || current < 0 || current <= max) return sheet
+    return { ...sheet, hitPoints: maximum }
+}
+
 export function syncTurnStats<T extends SheetStats & { description: string; sheet?: CharacterSheet }>(turn: T, sheet: CharacterSheet): T {
     return { ...turn, description: sheet.name, hitPoints: sheet.hitPoints, armorClass: sheet.armorClass, initiative: sheet.initiative,
         sheet: { ...sheet, abilities: turn.sheet?.abilities ?? sheet.abilities } }
