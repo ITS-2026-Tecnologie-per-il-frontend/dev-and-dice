@@ -174,7 +174,7 @@ export function applyCreation(input: CharacterSheet, data: CreationData): Charac
     put('racialSpells', racialSpells.join('\n'))
     put('racialTraits', [...traits, ...(background ? [background] : [])].map((x) => `${labelOf(x)}\n${x.desc?.join('\n') ?? (x.feature ? `${x.feature.name}\n${x.feature.desc.join('\n')}` : '')}`).join('\n\n'))
     put('classFeatures', data.features.filter((x) => x.class.index === characterClass?.index && (!x.subclass || x.subclass.index === subclass?.index) && x.level <= level).map((x) => `${labelOf(x)} (livello ${x.level})\n${x.desc.join('\n')}`).join('\n\n'))
-    put('hitDice', characterClass?.hit_die ? `${level}d${characterClass.hit_die}` : '')
+    put('hitDice', characterClass?.hit_die ? `1d${characterClass.hit_die}` : '')
     put('hitDiceTotal', characterClass ? level : '')
     if (characterClass?.hit_die && sheet.constitution !== '') {
         const con = modifier(sheet.constitution)

@@ -172,7 +172,11 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
                         <div className="player-hitpoints">{field('maxHitPoints', 'PF massimi', { numeric: true, onBlur: clampHitPointsOnMaximumBlur })}{field('hitPoints', 'PF attuali', { base: true })}{field('temporaryHitPoints', 'PF temporanei', { numeric: true })}</div>
                         <div className="player-three-fields">{field('exhaustion', 'Affaticamento', { numeric: true })}{field('vision', 'Visione')}{field('speed', 'Velocità', { base: true })}</div>
                         {check('darkvision', 'Scurovisione')}
-                        <div className="player-two-fields">{box('Dadi vita', <div className="player-three-fields">{field('hitDice', 'DV')}{field('hitDiceTotal', 'Totali', { numeric: true })}{field('hitDiceUsed', 'Usati', { numeric: true })}</div>)}
+                        <div className="player-two-fields">{box('Dadi vita', <div className="player-three-fields">
+                            <div className="player-field"><span>DV</span><output>{details.hitDice || '—'}</output></div>
+                            <div className="player-field"><span>Totali</span><output>{details.hitDiceTotal || '—'}</output></div>
+                            {field('hitDiceUsed', 'Usati', { numeric: true })}
+                        </div>)}
                         {box('TS contro morte', <>{['Successi', 'Fallimenti'].map((label) => <div className="player-death" key={label}><span>{label}</span>{[0, 1, 2].map((index) => check(`death.${label}.${index}`, `${label} ${index + 1}`))}</div>)}</>)}</div>
                     </>)}
                     {table('Attacchi e incantesimi', 'attacks', ['Arma / attacco', 'Bonus att.', 'Danni / tipo'], 6)}
