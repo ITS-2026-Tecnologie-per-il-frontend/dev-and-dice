@@ -179,7 +179,7 @@ export function CharacterSheets({ onAdd, combatStarted, presentSheetIds, catalog
                         <div className={draft.kind === 'PG' ? 'sheet-ability-columns' : undefined}>
                         <section className="sheet-abilities" aria-labelledby="sheet-abilities-heading">
                             <h3 id="sheet-abilities-heading">Abilità del personaggio</h3>
-                            <p className="library-help">{draft.kind === 'PG' ? 'Abilità e magie sono elencate nella card del combattimento: clicca un nome per importarlo, poi clicca di nuovo per raggiungerlo.' : 'Vengono aggiunte al combattimento come inattive, già collegate al personaggio.'}</p>
+                            <p className="library-help">Abilità e magie sono elencate nella card del combattimento: clicca un nome per importarlo, poi clicca di nuovo per raggiungerlo.</p>
                             {draft.kind === 'PG' && <p className="library-help">Dalla scheda PDF vengono elencati solo i privilegi con attivazione riconoscibile. Modifica i testi sopra usando Nome e descrizione su righe separate, con una riga vuota tra privilegi.</p>}
                             {activePdf.map((item) => <article className="pdf-ability-card" key={item.key}>
                                 <strong>{item.name}</strong><p className="library-help">{item.reason}</p>

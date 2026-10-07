@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { parseCatalog, searchCatalog, sheetFromCatalog, templateFromCatalog, sheetWithCombatSpells } from '../src/utils/Catalog.ts'
-import { abilitiesFromSheet, parseCharacterSheets, newCharacterSheet } from '../src/utils/CharacterSheets.ts'
+import { abilitiesFromSheet, parseCharacterSheets, newCharacterSheet, turnFromSheet, importSheetAbility } from '../src/utils/CharacterSheets.ts'
 
 const raw = JSON.parse(readFileSync(new URL('../public/data/database.json', import.meta.url), 'utf8'))
 const catalog = parseCatalog(raw)
@@ -31,6 +31,16 @@ assert.deepEqual(parseCharacterSheets(JSON.stringify([sheet])), [sheet], 'Catalo
 assert.ok(abilitiesFromSheet(sheet, 42, 0).every((ability) => ability.ownerId === 42 && ability.catalogId && !ability.active))
 const npc = catalog.creatures.find((entry) => entry.data.isNpc)
 assert.equal(sheetFromCatalog(npc, catalog).kind, 'PNG')
+for (const entry of [aboleth, npc]) {
+    const snapshot = turnFromSheet(sheetFromCatalog(entry, catalog), 42)
+    assert.equal(snapshot.sheet.abilities.length, entry.data.abilityIds.length, 'Monster and NPC cards retain all available templates')
+    const imported = importSheetAbility([], snapshot.sheet, snapshot.id, 0, 100)
+    assert.equal(imported.length, 1, 'A click imports only the requested monster or NPC ability')
+    assert.equal(imported[0].catalogId, snapshot.sheet.abilities[0].catalogId)
+    assert.equal(imported[0].ownerId, snapshot.id)
+    assert.equal(imported[0].active, false)
+    assert.equal(importSheetAbility(imported, snapshot.sheet, snapshot.id, 0, 101), imported, 'Repeated clicks keep the same card')
+}
 const aid = catalog.abilities.find((entry) => entry.name === 'Aiuto')
 const aidTemplate = templateFromCatalog(aid)
 assert.equal(aidTemplate.duration, '8 ore')

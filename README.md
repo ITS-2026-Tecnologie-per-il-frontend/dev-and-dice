@@ -369,3 +369,11 @@ riscritti aggiungendo copie dei privilegi.
 ```sh
 node --experimental-strip-types tests/player-abilities.mjs
 ```
+
+L'importazione al primo clic si applica anche a mostri e PNG, sia aggiunti dal
+catalogo sia dalle schede salvate. Le abilità restano elencate come **Aggiungi**
+nella card dei turni, senza crearne tutte le card nella sezione Abilità. I clic
+successivi raggiungono la voce già importata e la evidenziano per due secondi.
+Scegliendo un'altra creatura sulla stessa card, le abilità precedentemente
+importate restano nel combattimento con il loro stato e conteggio, ma non sono
+più associate agli indici dei privilegi della nuova scheda.

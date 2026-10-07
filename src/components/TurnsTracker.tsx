@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type DragEvent } from 
 import { ColumnSeparator } from './ColumnSeparator'
 import { useDialogDismiss } from '../utils/Dialog'
 import { CharacterSheets } from './CharacterSheets'
-import { characterFields, turnFromSheet, abilitiesFromSheet, importSheetAbility, initiativeBonus, type CharacterSheet } from '../utils/CharacterSheets'
+import { characterFields, turnFromSheet, importSheetAbility, initiativeBonus, type CharacterSheet } from '../utils/CharacterSheets'
 import { AbilitiesTracker } from './AbilitiesTracker'
 import { nextCombatTurn, sortByInitiative, advanceAbilityDurations, removeParticipantAbilities, type Ability, type Combat } from '../utils/Combat'
 import { getDropIndex, getDropTargetId, reorderByDrop, reorderById } from '../utils/Reorder'
@@ -64,10 +64,6 @@ export function TurnsTracker() {
         if (combat || presentSheetIds.includes(sheet.id)) return
         const turn = turnFromSheet(sheetWithCombatAbilities(sheet, catalog), nextId.current++)
         setTurns((current) => [...current, turn])
-        if (sheet.kind === 'PG') return
-        const importedAbilities = abilitiesFromSheet(sheet, turn.id, nextAbilityId.current)
-        nextAbilityId.current += importedAbilities.length
-        setAbilities((current) => [...current, ...importedAbilities])
     }
 
     function addAbility() {
@@ -102,14 +98,10 @@ export function TurnsTracker() {
 
     function selectCreature(id: number, entry: CatalogEntry) {
         if (combat) return
-        const current = turns.find((turn) => turn.id === id)
-        if (!current) return
+        if (!turns.some((turn) => turn.id === id)) return
         const sheet = sheetFromCatalog(entry, catalog)
-        const imported = abilitiesFromSheet(sheet, id, nextAbilityId.current)
-        nextAbilityId.current += imported.length
         setTurns((items) => items.map((turn) => turn.id === id ? turnFromSheet(sheet, id) : turn))
-        const previousIds = current.sheet?.abilities.flatMap((ability) => ability.catalogId ? [ability.catalogId] : []) ?? []
-        setAbilities((items) => [...items.filter((ability) => ability.ownerId !== id || ability.active || !ability.catalogId || !previousIds.includes(ability.catalogId)), ...imported.filter((ability) => !items.some((item) => item.ownerId === id && item.active && item.catalogId === ability.catalogId))])
+        setAbilities((items) => items.map((ability) => ability.ownerId === id && ability.sheetAbilityIndex !== undefined ? { ...ability, sheetAbilityIndex: undefined } : ability))
     }
 
     function reorderTurn(sourceId: number, targetId: number) {
@@ -303,15 +295,15 @@ export function TurnsTracker() {
                                         entry={catalog.creatures.find((entry) => entry.id === turn.sheet?.catalogId)}
                                         description={turn.sheet?.notes}
                                         fields={{ ...(turn.sheet?.catalogId ? {} : Object.fromEntries(Object.entries(characterFields).filter(([key]) => !['name', 'notes', 'hitPoints', 'armorClass', 'initiative'].includes(key)).map(([key, label]) => [label, turn.sheet?.[key as keyof typeof characterFields] ?? '']))), hitPoints: turn.hitPoints, armorClass: turn.armorClass, initiativeModifier: initiativeBonus(turn.sheet) || 'Non disponibile', initiative: turn.initiative || 'Da inserire' }} />}</div>
-                                    {(turn.sheet?.kind === 'PG' && turn.sheet.abilities.length > 0 || abilities.some((ability) => ability.ownerId === turn.id)) && (
+                                    {((turn.sheet?.abilities.length ?? 0) > 0 || abilities.some((ability) => ability.ownerId === turn.id)) && (
                                         <div className="participant-abilities" aria-label={`Abilità di ${turn.description || 'creatura'}`}>
-                                            {turn.sheet?.kind === 'PG' && turn.sheet.abilities.map((template, index) => {
+                                            {turn.sheet?.abilities.map((template, index) => {
                                                 const ability = abilities.find((item) => item.ownerId === turn.id && item.sheetAbilityIndex === index)
                                                 return <button className="participant-ability" data-ability-state={!ability ? 'available' : ability.active && (ability.remainingTurns > 0 || ability.timed === false) ? 'active' : 'inactive'} type="button" key={`sheet-${index}`} onClick={() => openSheetAbility(turn, index)}>
                                                     {ability?.name || template.name} · {!ability ? 'Aggiungi' : !ability.active ? 'Inattiva' : ability.timed === false ? 'Attiva · Senza conteggio' : ability.remainingTurns === 0 ? 'Scaduta' : `${ability.remainingTurns} turni`}
                                                 </button>
                                             })}
-                                            {abilities.filter((ability) => ability.ownerId === turn.id && (turn.sheet?.kind !== 'PG' || ability.sheetAbilityIndex === undefined)).map((ability) => (
+                                            {abilities.filter((ability) => ability.ownerId === turn.id && ability.sheetAbilityIndex === undefined).map((ability) => (
                                                 <a key={ability.id} data-ability-state={ability.active && (ability.remainingTurns > 0 || ability.timed === false) ? 'active' : 'inactive'} href={`#ability-${ability.id}`} onClick={(event) => { event.preventDefault(); highlightAbility(ability.id) }}>
                                                     {ability.name || 'Abilità senza nome'} · {!ability.active ? 'Inattiva' : ability.timed === false ? 'Attiva · Senza conteggio' : ability.remainingTurns === 0 ? 'Scaduta' : `${ability.remainingTurns} turni`}
                                                 </a>
