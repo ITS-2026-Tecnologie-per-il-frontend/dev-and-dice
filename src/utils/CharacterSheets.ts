@@ -63,7 +63,8 @@ export function syncTurnStats<T extends SheetStats & { description: string; shee
 
 export function initiativeBonus(sheet?: CharacterSheet): string {
     if (!sheet || !sheet.dexterity.trim() || !Number.isSafeInteger(Number(sheet.dexterity))) return ''
-    const modifier = Math.floor((Number(sheet.dexterity) - 10) / 2)
+    const extra = Number(sheet.playerDetails?.['wizard.initiativeExtra'] || 0)
+    const modifier = Math.floor((Number(sheet.dexterity) - 10) / 2) + (Number.isSafeInteger(extra) ? extra : 0)
     return `${modifier >= 0 ? '+' : ''}${modifier}`
 }
 

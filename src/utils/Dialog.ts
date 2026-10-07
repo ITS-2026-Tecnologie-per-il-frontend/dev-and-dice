@@ -1,6 +1,6 @@
 import { useRef, type PointerEvent } from 'react'
 
-export function useDialogDismiss() {
+export function useDialogDismiss(onDismiss?: () => void) {
     const outsidePointer = useRef<number | null>(null)
 
     function isOutside(event: PointerEvent<HTMLDialogElement>) {
@@ -16,7 +16,10 @@ export function useDialogDismiss() {
         onPointerUp: (event: PointerEvent<HTMLDialogElement>) => {
             const dismiss = outsidePointer.current === event.pointerId && isOutside(event)
             outsidePointer.current = null
-            if (dismiss) event.currentTarget.close()
+            if (dismiss) {
+                if (onDismiss) onDismiss()
+                else event.currentTarget.close()
+            }
         },
         onPointerCancel: () => { outsidePointer.current = null },
     }

@@ -127,3 +127,21 @@
 .player-spell-entry { display: grid; gap: 4px; margin-bottom: 8px; }
 .player-spell-source { display: flex; gap: 4px; padding-left: 24px; }
 .player-spell-source select, .player-spell-source input { width: 100%; min-width: 0; font-size: 11px; padding: 4px; }
+.wizard-rules { margin: 14px 0; }
+.wizard-rules button { padding: 7px 10px; border: 1px solid var(--paper-line); border-radius: 4px; color: var(--paper-ink); background: #e9e9e6; font: inherit; cursor: pointer; }
+.wizard-rules button:disabled { opacity: .5; cursor: default; }
+.wizard-rest { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.player-template-picker { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; }
+.player-template-picker select { padding: 8px; font: inherit; }
+.player-template-picker a { color: var(--text-h); font-size: 13px; }
+.player-paper-wizard .player-brand { font-size: 36px; letter-spacing: 2px; }
+.player-paper-wizard .player-box { border-radius: 12px 3px; border-color: #505050; }
+.player-paper-wizard .player-stat-page { grid-template-columns: 1fr 1fr 1fr; }
+.player-wizard-score { display: grid; grid-template-columns: 85px minmax(0, 1fr); align-items: center; gap: 12px; background: #e4e4e1; }
+.player-wizard-score .player-score { margin-bottom: 14px; }
+.player-wizard-favorite, .player-wizard-item { display: grid; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--paper-line); }
+.player-wizard-favorite:last-child, .player-wizard-item:last-child { border-bottom: 0; }
+.player-wizard-favorite textarea { min-height: 55px; }
+.player-wizard-slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.player-worn-equipment { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 16px 0; }

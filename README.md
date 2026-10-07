@@ -519,3 +519,75 @@ queste modifiche non sono opera di Wizards of the Coast.
 ```sh
 node --experimental-strip-types tests/spellcasting.mjs
 ```
+
+## Salvataggio al clic fuori dalla scheda
+
+Cliccando fuori dalla finestra della scheda, le modifiche vengono validate e
+salvate nello stesso modo del pulsante Salva scheda, aggiornando anche le
+statistiche del combattimento. Le schede invariate e le nuove schede vuote mai
+modificate si chiudono senza scrivere nel browser. Se la validazione o il
+salvataggio fallisce, la finestra resta aperta con il messaggio di errore e il
+draft viene conservato per correggere o riprovare.
+
+Le finestre informative e quelle di conferma usano la stessa chiusura al clic
+fuori; le conferme distruttive richiedono sempre il pulsante dedicato. Le
+finestre annidate non chiudono né salvano la scheda sottostante. X, Esc e Annulla
+mantengono il comportamento di annullamento esplicito.
+
+```sh
+node --experimental-strip-types tests/dialog-autosave.mjs
+```
+
+### Libro e privilegi del mago
+
+Nella pagina **Incantesimi** della scheda del mago compare il riquadro **Libro e privilegi del mago**:
+
+- Le righe distinguono scelte iniziali/di avanzamento, copie aggiuntive e scelte gratuite di Evocation Savant 2024. Il libro non ha un tetto di incantesimi; sono segnalati i limiti delle scelte gratuite.
+- **Copia nel libro** propone magie SRD da mago di livello disponibile, calcola tempo e costo, controlla le MO e registra la copia senza prepararla. Nel 2014 Evocation Savant dimezza tempo e costo delle copie di evocazione; nel 2024 concede scelte gratuite e non dimezza le copie.
+- **Recupero Arcano** permette di scegliere gli slot spesi da recuperare dopo un riposo breve, entro metà livello da mago arrotondato in alto; solo slot 1–5. La conferma registra l'utilizzo. **Riposo lungo / nuova giornata** ripristina gli slot e le risorse del mago; **Riposo breve** ripristina i lanci gratuiti caratteristici. I pulsanti richiedono conferma e non modificano i PF per simulare guarigione da riposo.
+- **Spell Mastery** e **Signature Spells** consentono le scelte dal libro ai livelli 18 e 20. I caratteristici sono sempre preparati e fuori dal limite; ciascuno ha un lancio gratuito per riposo breve/lungo. Mastery 2014 richiede preparazione; nel 2024 le scelte sono sempre preparate e richiedono tempo di lancio di un'azione.
+- **Conferma lancio** consuma lo slot selezionato oppure applica le eccezioni di trucchetti, rituali, Mastery e Signature. I rituali restano utilizzabili dal libro senza preparazione e richiedono 10 minuti aggiuntivi. I privilegi condizionali sono controllati per classe, sottoclasse, livello e scuola.
+- Sculpt Spells registra le creature visibili protette (nomi distinti, massimo 1 + livello del lancio). Empowered Evocation aggiunge Intelligenza a un solo tiro. Potent Cantrip dimezza i danni su TS riuscito, e nel 2024 anche su attacco mancato.
+- Overchannel massimizza un tiro di dadi indicato dal giocatore e registra gli utilizzi. Al riutilizzo richiede il risultato dei d12 necrotici e lo applica a PF temporanei/attuali senza resistenze o immunità. Nel 2024 richiede uno slot 1–5 e il massimo vale nel turno del lancio. Per magie con più tiri il giocatore applica il massimo anche agli altri tiri previsti. Il danno ai bersagli si applica dai turni; il riepilogo del lancio resta nella scheda.
+
+Le regole del mago sono separate mediante `rules.edition`: predefinito 2014, alternativa 2024, in attesa del selettore generale. Le descrizioni e i livelli dei privilegi del mago 2024 sono aggiornati; gli effetti usano i metadati strutturati degli incantesimi SRD presenti, senza dedurre automaticamente condizioni dal testo libero. Scelte, bersagli, risultati dei dadi e conferma del riposo restano al giocatore. Le modifiche usano il salvataggio della scheda e la sincronizzazione con il combattimento già presenti.
+
+Fonti: [SRD 5.1](https://media.dndbeyond.com/compendium-images/srd/5.1/SRD-OGL_V5.1.pdf), [SRD 5.2.1](https://media.dndbeyond.com/compendium-images/srd/5.2/SRD_CC_v5.2.1.pdf), [Wizard](https://dnd5e.wikidot.com/wizard), [Evocation](https://dnd5e.wikidot.com/wizard:evocation). Le regole 2024 riassumono materiale SRD 5.2.1 di Wizards of the Coast LLC, disponibile su https://www.dndbeyond.com/srd, licenza [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); i riassunti italiani e le automazioni sono adattamenti. Per Empowered Evocation si segue il modificatore di Intelligenza dello SRD, senza il minimo +1 riportato da Wikidot.
+
+Verifica: `node tests/wizard.mjs` e `node tests/player-creation-ui.mjs`.
+
+### Integrazione completa della pagina Wizard (2014)
+
+`public/data/wizard-catalog.json` contiene i metadati delle **26 sottoclassi** elencate su Wikidot (13 pubblicate, una UA e 12 UA archiviate), con identificativi distinti, fonti e collegamenti, e la progressione dei 20 livelli. L'estrattore stdlib è `scripts/scrape_wizard.py`: `python scripts/scrape_wizard.py` aggiorna il file; `--input percorso.html` permette l'estrazione senza rete. Il caricamento combina queste opzioni con quelle SRD e conserva l'identificativo esistente di Evocation. Le voci 2014 non diventano automaticamente sottoclassi 2024; Evocation conserva le regole SRD di entrambe le edizioni già implementate.
+
+La tendina mostra anche le opzioni non ancora sbloccate, disabilitate con il livello richiesto. Le sottoclassi della pagina si scelgono al livello 2 del mago 2014. Le UA sono riconoscibili dall'etichetta; la variante pubblicata di Order of Scribes e quella archiviata hanno identificativi separati. La fonte selezionata appare nella scheda. Le pagine collegate sono state lette: il catalogo include **129 privilegi delle altre 25 sottoclassi**, con riassunti italiani originali, livelli, fonte, classificazione attivabile/passiva, durate verificate e risorse. Evocation conserva i privilegi SRD e gli automatismi già presenti. L'estrattore aggiorna i metadati della pagina principale conservando i riassunti revisionati; i cambiamenti alle pagine delle sottoclassi richiedono una nuova revisione delle regole.
+
+Nella pagina delle statistiche, **Regole e avanzamento del mago** riporta i riferimenti per PF, competenze, equipaggiamento, CD, preparazione e requisito di Intelligenza 13 per multiclasse. La progressione multiclasse resta manuale. Gli aumenti ai livelli 4, 8, 12, 16 e 19 del 2014 possono applicare +2 a una caratteristica o +1 a due, con limite 20; in alternativa si annota un talento verificato con il DM. La registrazione impedisce applicazioni ripetute e consente di segnare gli aumenti già inclusi in una scheda esistente. I punteggi base guidati si aggiornano insieme ai valori derivati.
+
+Nella pagina Incantesimi:
+
+- **Cantrip Formulas**, opzionale 2014 dal livello 3, si abilita esplicitamente: dopo la conferma di un riposo lungo permette una sola sostituzione di un trucchetto di classe con uno nuovo della lista del mago. Il privilegio compare anche nella descrizione della scheda quando abilitato.
+- Si può annotare l'aspetto del libro. Una copia di sicurezza costa 10 MO e un'ora per livello di ogni magia trascritta e mantiene un elenco salvato, indipendente dall'ultima ricostruzione.
+- Ricostruire un libro perduto dai preparati applica lo stesso costo e conserva le altre magie come annotazioni di incantesimi perduti. Queste non si possono preparare, lanciare o importare tra le magie disponibili finché non sono ritrovate e copiate. Recuperare fisicamente una copia di sicurezza ripristina le magie presenti in quella copia senza un'altra spesa di trascrizione; le aggiunte successive rimangono da ritrovare. I nomi originali restano conservati anche quando una magia è perduta.
+
+Verifiche aggiuntive: `python tests/wizard_catalog.py` e `node tests/wizard.mjs`.
+
+### Privilegi specifici delle sottoclassi del mago
+
+Nella scheda, **Privilegi** mostra le capacità sbloccate con descrizione e fonte. Le capacità attivabili seguono l'importazione su richiesta già usata nel combattimento; quelle passive restano nella scheda. Le durate non rappresentabili correttamente come round interi (per esempio “fino alla fine del prossimo turno”) restano descritte senza un timer automatico. I tempi verificati lunghi usano la durata personalizzata.
+
+- Le quattro UA di Strixhaven richiedono una scelta distinta ai livelli 6, 10 e 14, rispettando i prerequisiti di ciascun privilegio. Le scelte di competenze, strumenti, arma, lingua, incantesimi bonus e altre opzioni della sottoclasse sono conservate nella scheda. I domini di Theurgy si annotano con il DM: il catalogo del mago non importa ricorsivamente le pagine dei domini clericali.
+- Competenze permanenti, maestrie di Lore Mastery e bonus all'iniziativa di Chronurgy/War Magic vengono calcolati; il risultato del tiro d'iniziativa rimane manuale. Le magie concesse sono aggiunte una sola volta, rispettando preparazione e scelte gratuite. Le righe generate vengono rimosse se non più concesse; le magie già annotate manualmente restano conservate.
+- I contatori rispettano recupero breve/lungo, risorse condivise e capacità basate su competenza/Intelligenza. Portent conserva due d20 (tre dal livello 14) e il loro uso singolo. Power Surge riparte da uno dopo un riposo lungo. Manifest Mind distingue gli usi di lancio dalla creazione della mente.
+- I lanci gratuiti dei privilegi richiedono conferma delle condizioni e consumano gli usi previsti. Expert Divination recupera uno slot inferiore effettivamente speso; Arcane Ward crea/ricarica una riserva separata di PF; Benign Transportation si ricarica anche con un lancio di conjuration. Rune Maven recupera usi con Recupero Arcano.
+- Wizardly Quill distingue la copia pubblicata (2 minuti/livello, costo normale) dalla UA (metà tempo/costo); Awakened Spellbook gestisce il rituale rapido una volta per riposo lungo. Bonus condizionali, concentrazione, bersagli, danni e tabelle speciali sono descritti e si applicano durante il gioco: il programma non simula questi effetti senza conoscerne le condizioni.
+
+Le fonti Wikidot qui integrate sono 2014, incluse le relative UA; non vengono usate come regole 2024. Verifiche: `node tests/wizard.mjs`, `node tests/player-creation-ui.mjs`, `python tests/wizard_catalog.py`.
+
+### Template della scheda Mago
+
+`public/templates/Mago.pdf` conserva il PDF fornito come riferimento. Il modello compilabile **Mago** riproduce le sue quattro sezioni in HTML usando gli stessi dati e controlli della scheda generale. Il selettore **Modello della scheda** permette di scegliere Automatico, Scheda generale o Mago; Automatico usa Mago per la classe Wizard/Mago, anche nelle schede precedenti senza creazione guidata. Il modello è indipendente dall'edizione delle regole e la scelta viene salvata in `playerDetails['sheet.template']`. Cambiare modello conserva tutti i dati.
+
+Le differenze dal modello generale sono le abilità raggruppate per caratteristica, i privilegi ai livelli 2/6/10/14/18/20 (la prima soglia diventa 3 usando le regole 2024), sette annotazioni di incantesimi preferiti, divinità/cicatrici/segni distintivi, dodici oggetti magici con stato di equipaggiamento e sintonia, quantità nell'inventario e una quarta pagina per gli oggetti indossati. Gli incantesimi preferiti sono annotazioni: la preparazione e la disponibilità in combattimento continuano a essere gestite nella pagina Incantesimi. I riquadri dei privilegi modificano lo stesso `classFeatures` usato per individuare le capacità da importare nel combattimento. I campi già presenti mantengono le proprie chiavi; i nuovi usano `favoriteSpell.*`, `magicItem.*` e `worn.*`. Il conteggio delle sintonie legge le spunte degli oggetti magici.
+
+I prossimi PDF di classe si confrontano con questo riferimento: le parti comuni rimangono nella scheda condivisa e si aggiungono solo le differenze del modello specifico. Verifiche: `node tests/player-templates.mjs` e `node tests/player-creation-ui.mjs`.

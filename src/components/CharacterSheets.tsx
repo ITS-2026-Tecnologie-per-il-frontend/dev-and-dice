@@ -14,7 +14,10 @@ export type CharacterSheetsHandle = { open: (sheet: CharacterSheet) => void; pat
 type Props = { onAdd: (sheet: CharacterSheet) => void; onSaved: (sheet: CharacterSheet) => void; combatStarted: boolean; presentSheetIds: string[]; catalog: Catalog; ref?: Ref<CharacterSheetsHandle> }
 
 export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds, catalog, ref }: Props) {
-    const dismissDialog = useDialogDismiss()
+    const dismissDialog = useDialogDismiss(() => {
+        if (draft && JSON.stringify(draft) !== initialDraft.current) saveSheet()
+        else closeDialog()
+    })
     const dismissDeleteDialog = useDialogDismiss()
     const deleteDialog = useRef<HTMLDialogElement>(null)
     const [saved, setSaved] = useState(() => {
@@ -27,9 +30,15 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
     const [draft, setDraft] = useState<CharacterSheet | null>(null)
     const [error, setError] = useState('')
     const dialog = useRef<HTMLDialogElement>(null)
+    const initialDraft = useRef('')
+
+    function openDraft(sheet: CharacterSheet) {
+        initialDraft.current = JSON.stringify(sheet)
+        setDraft({ ...sheet })
+    }
 
     useImperativeHandle(ref, () => ({
-        open: (sheet) => setDraft({ ...(saved.sheets.find((item) => item.id === sheet.id) ?? sheet) }),
+        open: (sheet) => openDraft(saved.sheets.find((item) => item.id === sheet.id) ?? sheet),
         patchStats: (id, stats) => {
             const sheet = saved.sheets.find((item) => item.id === id)
             if (!sheet) return true
@@ -45,7 +54,7 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
     }, [draft])
 
     function writeSheets(sheets: CharacterSheet[]): boolean {
-        if (saved.blocked) return false
+        if (saved.blocked) { setError(saved.error); return false }
         try {
             localStorage.setItem(storageKey, JSON.stringify(sheets))
             setSaved({ sheets, error: '', blocked: false })
@@ -72,7 +81,7 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
     function saveSheet() {
         if (!draft) return
         const sheet = { ...draft, name: draft.name.trim(), abilities: draft.abilities.map((ability) => ({ ...ability, name: ability.name.trim() })) }
-        if (!numericCharacterFields.every((field) => sheet[field] === '' || Number.isSafeInteger(Number(sheet[field])))) {
+        if (!numericCharacterFields.every((field) => sheet[field] === '' || (sheet[field].trim() !== '' && Number.isSafeInteger(Number(sheet[field]))))) {
             setError('Inserisci numeri interi validi nelle statistiche.')
             return
         }
@@ -136,12 +145,12 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
             <h2 id="characters-heading">Schede</h2>
             <p className="library-help">Personaggi e mostri salvati in questo browser.</p>
             {saved.error && <p role="alert">{saved.error}</p>}
-            <button className="sort-turns" type="button" disabled={saved.blocked} onClick={() => setDraft(newCharacterSheet())}>+ Nuova scheda</button>
+            <button className="sort-turns" type="button" disabled={saved.blocked} onClick={() => openDraft(newCharacterSheet())}>+ Nuova scheda</button>
             {saved.sheets.length === 0 && <p className="library-empty">Crea una scheda e aggiungila al combattimento quando serve.</p>}
             <div className="character-list">
                 {saved.sheets.map((sheet) => (
                     <article className="character-card" key={sheet.id}>
-                        <button className="character-open" type="button" onClick={() => setDraft({ ...sheet })} aria-label={`Apri scheda di ${sheet.name}`}>
+                        <button className="character-open" type="button" onClick={() => openDraft(sheet)} aria-label={`Apri scheda di ${sheet.name}`}>
                             <strong>{sheet.name}</strong>
                             <span>{sheet.kind}{sheet.characterClass ? ` · ${sheet.characterClass}` : ''}</span>
                             <span>PF {sheet.hitPoints || '—'} · CA {sheet.armorClass || '—'}</span>
@@ -224,6 +233,7 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                         </div>
                         <p className="library-help">Per mostri e PNG l’iniziativa nel combattimento resta vuota: il modificatore è un suggerimento, inserisci tu il risultato del tiro. Per i PG viene copiata l’iniziativa predefinita.</p>
                         {error && <p role="alert">{error}</p>}
+                        <p className="library-help">Le modifiche si salvano anche cliccando fuori dalla finestra.</p>
                         <div className="turn-actions">
                             <button className="sort-turns" type="submit">Salva scheda</button>
                             <button className="end-combat" type="button" onClick={closeDialog}>Annulla</button>

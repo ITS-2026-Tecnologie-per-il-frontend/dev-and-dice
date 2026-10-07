@@ -89,7 +89,8 @@ assert italian_duration('Fino a dissolvimento')['rounds'] is None
 wikidot = json.loads((root / 'public/data/wikidot-spells.json').read_text())
 database = build_database(catalog, {'total': 1, 'entries': [spell]}, wikidot)
 assert database['spells'][0]['englishName'] == 'Light'
-assert len(database['spellIndex']) == 574
+assert len(database['spellIndex']) == len(wikidot['spells']) - 1
+assert not any(item['name'] == 'Light' for item in database['spellIndex']), 'The translated spell must be excluded from the English fallback index'
 assert database['licenses'][0]['id'] == 'OGL-1.0a'
 live = json.loads((root / 'public/data/database.json').read_text())
 assert len(live['creatures']) == 321 and len(live['spells']) == 319

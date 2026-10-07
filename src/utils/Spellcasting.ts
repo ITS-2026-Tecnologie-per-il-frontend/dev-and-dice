@@ -43,18 +43,22 @@ export function spellRowState(sheet: CharacterSheet, level: number, index: numbe
     const preparedClass = (edition === '2014' ? ['cleric', 'druid', 'paladin', 'wizard'] : ['cleric', 'druid', 'paladin', 'ranger', 'wizard']).includes(id)
     const knownClass = ['bard', 'sorcerer', 'warlock', ...(edition === '2014' ? ['ranger'] : [])].includes(id)
     const classSpell = source === 'class'
+    const signature = classSpell && id === 'wizard' && Number(sheet.level) >= 20 && level === 3 && [d['wizard.signature.0'], d['wizard.signature.1']].includes(root)
+    const mastery = classSpell && id === 'wizard' && edition === '2024' && Number(sheet.level) >= 18 && [1, 2].includes(level) && d[`wizard.mastery.${level}`] === root
+    const alwaysPrepared = signature || mastery || classSpell && id === 'wizard' && d[`${root}.always`] === 'true' && !!d[`${root}.grant`]
     const needsPreparation = classSpell && level > 0 && (preparedClass || !knownClass)
     const selected = !!d[`${root}.name`]?.trim()
-    const canToggle = needsPreparation || !['class', 'always', 'secrets', 'lore'].includes(source)
-    const checked = needsPreparation ? d[`${root}.prepared`] === 'true' : !canToggle || d[`${root}.available`] !== 'false'
+    const canToggle = !alwaysPrepared && (needsPreparation || !['class', 'always', 'secrets', 'lore'].includes(source))
+    const checked = alwaysPrepared || (needsPreparation ? d[`${root}.prepared`] === 'true' : !canToggle || d[`${root}.available`] !== 'false')
     const maxLevel = Math.max(0, ...Array.from({ length: 9 }, (_, i) => Number(d[`slots.${i + 1}.total`]) > 0 ? i + 1 : 0))
     const allowed = source === 'arcanum' ? id === 'warlock' && level >= 6 && level <= 9 && Number(sheet.level) >= level * 2 - 1
         : source === 'secrets' ? id === 'bard' && (Number(sheet.level) >= 10 || (d['creation.subclass'] === 'lore' && Number(sheet.level) >= 6)) && (d['creation.enabled'] !== 'true' || level <= maxLevel)
         : source === 'lore' ? id === 'bard' && d['creation.subclass'] === 'lore' && Number(sheet.level) >= 6 && (d['creation.enabled'] !== 'true' || level <= maxLevel)
         : classSpell && d['creation.enabled'] === 'true' ? level === 0 || level <= maxLevel : true
-    return { source, needsPreparation, checked, canToggle, available: selected && checked && allowed,
-        countsCantrip: classSpell && level === 0, countsKnown: (classSpell && level > 0) || source === 'secrets',
-        countsPrepared: needsPreparation && preparedClass && checked,
+    const lost = classSpell && id === 'wizard' && d[`${root}.lost`] === 'true'
+    return { source, needsPreparation, checked, canToggle, alwaysPrepared, lost, available: selected && checked && allowed && !lost,
+        countsCantrip: classSpell && level === 0 && d[`${root}.learned`] !== 'feature', countsKnown: (classSpell && level > 0) || source === 'secrets',
+        countsPrepared: needsPreparation && preparedClass && checked && !alwaysPrepared,
         checkboxKey: `${root}.${needsPreparation ? 'prepared' : 'available'}` }
 }
 

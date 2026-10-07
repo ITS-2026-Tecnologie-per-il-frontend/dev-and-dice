@@ -1,0 +1,3999 @@
+{
+  "schemaVersion": 1,
+  "source": "https://dnd5e.wikidot.com/wizard",
+  "ruleset": "dnd5e-2014",
+  "scope": "class-progression-subclass-index-and-reviewed-feature-summaries",
+  "multiclassRequirements": {
+    "intelligence": 13
+  },
+  "subclassFeatureLevels": [
+    2,
+    6,
+    10,
+    14
+  ],
+  "levels": [
+    {
+      "level": 1,
+      "proficiencyBonus": 2,
+      "features": "Spellcasting, Arcane Recovery",
+      "cantrips": 3,
+      "slots": [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "level": 2,
+      "proficiencyBonus": 2,
+      "features": "Arcane Tradition",
+      "cantrips": 3,
+      "slots": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "level": 3,
+      "proficiencyBonus": 2,
+      "features": "Cantrip Formulas (Optional)",
+      "cantrips": 3,
+      "slots": [
+        4,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "level": 4,
+      "proficiencyBonus": 2,
+      "features": "Ability Score Improvement",
+      "cantrips": 4,
+      "slots": [
+        4,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "level": 5,
+      "proficiencyBonus": 3,
+      "features": "",
+      "cantrips": 4,
+      "slots": [
+        4,
+        3,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "level": 6,
+      "proficiencyBonus": 3,
+      "features": "Arcane Tradition feature",
+      "cantrips": 4,
+      "slots": [
+        4,
+        3,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "level": 7,
+      "proficiencyBonus": 3,
+      "features": "",
+      "cantrips": 4,
+      "slots": [
+        4,
+        3,
+        3,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "level": 8,
+      "proficiencyBonus": 3,
+      "features": "Ability Score Improvement",
+      "cantrips": 4,
+      "slots": [
+        4,
+        3,
+        3,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "level": 9,
+      "proficiencyBonus": 4,
+      "features": "",
+      "cantrips": 4,
+      "slots": [
+        4,
+        3,
+        3,
+        3,
+        1,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "level": 10,
+      "proficiencyBonus": 4,
+      "features": "Arcane Tradition feature",
+      "cantrips": 5,
+      "slots": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "level": 11,
+      "proficiencyBonus": 4,
+      "features": "",
+      "cantrips": 5,
+      "slots": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "level": 12,
+      "proficiencyBonus": 4,
+      "features": "Ability Score Improvement",
+      "cantrips": 5,
+      "slots": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "level": 13,
+      "proficiencyBonus": 5,
+      "features": "",
+      "cantrips": 5,
+      "slots": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1,
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "level": 14,
+      "proficiencyBonus": 5,
+      "features": "Arcane Tradition feature",
+      "cantrips": 5,
+      "slots": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1,
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "level": 15,
+      "proficiencyBonus": 5,
+      "features": "",
+      "cantrips": 5,
+      "slots": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1,
+        1,
+        1,
+        0
+      ]
+    },
+    {
+      "level": 16,
+      "proficiencyBonus": 5,
+      "features": "Ability Score Improvement",
+      "cantrips": 5,
+      "slots": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1,
+        1,
+        1,
+        0
+      ]
+    },
+    {
+      "level": 17,
+      "proficiencyBonus": 6,
+      "features": "",
+      "cantrips": 5,
+      "slots": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "level": 18,
+      "proficiencyBonus": 6,
+      "features": "Spell Mastery",
+      "cantrips": 5,
+      "slots": [
+        4,
+        3,
+        3,
+        3,
+        3,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "level": 19,
+      "proficiencyBonus": 6,
+      "features": "Ability Score Improvement",
+      "cantrips": 5,
+      "slots": [
+        4,
+        3,
+        3,
+        3,
+        3,
+        2,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "level": 20,
+      "proficiencyBonus": 6,
+      "features": "Signature Spells",
+      "cantrips": 5,
+      "slots": [
+        4,
+        3,
+        3,
+        3,
+        3,
+        2,
+        2,
+        1,
+        1
+      ]
+    }
+  ],
+  "subclasses": [
+    {
+      "index": "wizard-abjuration",
+      "name": "Abjuration",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "published",
+      "sources": [
+        "Player's Handbook"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:abjuration",
+      "referenceUrl": null,
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-abjuration-abjuration-savant",
+          "name": "Abjuration Savant",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-abjuration",
+            "name": "Abjuration"
+          },
+          "desc": [
+            "Copie di abiurazione: costo e tempo dimezzati."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:abjuration",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-abjuration-arcane-ward",
+          "name": "Arcane Ward",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-abjuration",
+            "name": "Abjuration"
+          },
+          "desc": [
+            "Con abiurazione di livello 1+: barriera fino al riposo lungo, PF 2×livello+Int; assorbe danni. Altre abiurazioni ricaricano 2×livello magia, entro il massimo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:abjuration",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        },
+        {
+          "index": "wizard-abjuration-projected-ward",
+          "name": "Projected Ward",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-abjuration",
+            "name": "Abjuration"
+          },
+          "desc": [
+            "Reazione: la barriera assorbe danni a una creatura visibile entro 9 m; gli eccedenti colpiscono il bersaglio."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:abjuration",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        },
+        {
+          "index": "wizard-abjuration-improved-abjuration",
+          "name": "Improved Abjuration",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-abjuration",
+            "name": "Abjuration"
+          },
+          "desc": [
+            "Aggiungi competenza alle prove richieste dalle magie di abiurazione, inclusi Counterspell e Dispel Magic."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:abjuration",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-abjuration-spell-resistance",
+          "name": "Spell Resistance",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-abjuration",
+            "name": "Abjuration"
+          },
+          "desc": [
+            "Vantaggio nei TS contro magie e resistenza ai danni degli incantesimi."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:abjuration",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        }
+      ]
+    },
+    {
+      "index": "wizard-bladesinging",
+      "name": "Bladesinging",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "published",
+      "sources": [
+        "Sword Coast Adventurer's Guide",
+        "Tasha's Cauldron of Everything"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:bladesinging",
+      "referenceUrl": null,
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-bladesinging-training-in-war-and-song",
+          "name": "Training in War and Song",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-bladesinging",
+            "name": "Bladesinging"
+          },
+          "desc": [
+            "Competenza in armature leggere, Intrattenere e un’arma da mischia a una mano scelta."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:bladesinging",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-bladesinging-bladesong",
+          "name": "Bladesong",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-bladesinging",
+            "name": "Bladesinging"
+          },
+          "desc": [
+            "Azione bonus, 1 minuto: CA e concentrazione +Int (minimo 1), velocità +3 m, vantaggio Acrobazia. Usi pari a competenza/riposo lungo. Termina con incapacità, armature medie/pesanti, scudo o attacchi a due mani."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:bladesinging",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "rounds": 10,
+          "resource": {
+            "max": "proficiency",
+            "reset": "long"
+          }
+        },
+        {
+          "index": "wizard-bladesinging-extra-attack",
+          "name": "Extra Attack",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-bladesinging",
+            "name": "Bladesinging"
+          },
+          "desc": [
+            "Due attacchi con l’azione Attaccare; puoi sostituirne uno con un trucchetto."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:bladesinging",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-bladesinging-song-of-defense",
+          "name": "Song of Defense",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-bladesinging",
+            "name": "Bladesinging"
+          },
+          "desc": [
+            "Durante Bladesong, reazione e uno slot: riduci i danni subiti di 5×livello slot."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:bladesinging",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        },
+        {
+          "index": "wizard-bladesinging-song-of-victory",
+          "name": "Song of Victory",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-bladesinging",
+            "name": "Bladesinging"
+          },
+          "desc": [
+            "Durante Bladesong aggiungi Int (minimo 1) ai danni degli attacchi con armi da mischia."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:bladesinging",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        }
+      ]
+    },
+    {
+      "index": "wizard-chronurgy",
+      "name": "Chronurgy",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "published",
+      "sources": [
+        "Explorer's Guide to Wildemount"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:chronurgy",
+      "referenceUrl": null,
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-chronurgy-chronal-shift",
+          "name": "Chronal Shift",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-chronurgy",
+            "name": "Chronurgy"
+          },
+          "desc": [
+            "Reazione entro 9 m: imponi un secondo tiro di attacco, prova o TS dopo l’esito; si usa il nuovo risultato. Due usi/riposo lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:chronurgy",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": 2,
+            "reset": "long"
+          }
+        },
+        {
+          "index": "wizard-chronurgy-temporal-awareness",
+          "name": "Temporal Awareness",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-chronurgy",
+            "name": "Chronurgy"
+          },
+          "desc": [
+            "Bonus di Intelligenza all’iniziativa."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:chronurgy",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-chronurgy-momentary-stasis",
+          "name": "Momentary Stasis",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-chronurgy",
+            "name": "Chronurgy"
+          },
+          "desc": [
+            "Azione, bersaglio Grande o inferiore entro 18 m: TS Costituzione; fallimento incapacitato e velocità zero fino a fine tuo prossimo turno o danni. Usi Int, minimo 1/riposo lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:chronurgy",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": "intelligence",
+            "reset": "long"
+          }
+        },
+        {
+          "index": "wizard-chronurgy-arcane-abeyance",
+          "name": "Arcane Abeyance",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-chronurgy",
+            "name": "Chronurgy"
+          },
+          "desc": [
+            "Condensa magia con slot ≤4 in una perla per un’ora. Un portatore la libera con un’azione usando tuoi CD/attacco. Recupero breve/lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:chronurgy",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "rounds": 600,
+          "resource": {
+            "max": 1,
+            "reset": "short"
+          }
+        },
+        {
+          "index": "wizard-chronurgy-convergent-future",
+          "name": "Convergent Future",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-chronurgy",
+            "name": "Chronurgy"
+          },
+          "desc": [
+            "Reazione entro 18 m: sostituisci il tiro con minimo necessario a riuscire o uno meno. Ottieni affaticamento rimovibile solo con riposo lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:chronurgy",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        }
+      ]
+    },
+    {
+      "index": "wizard-conjuration",
+      "name": "Conjuration",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "published",
+      "sources": [
+        "Player's Handbook"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:conjuration",
+      "referenceUrl": null,
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-conjuration-conjuration-savant",
+          "name": "Conjuration Savant",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-conjuration",
+            "name": "Conjuration"
+          },
+          "desc": [
+            "Copie di evocazione/conjuration: costo e tempo dimezzati."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:conjuration",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-conjuration-minor-conjuration",
+          "name": "Minor Conjuration",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-conjuration",
+            "name": "Conjuration"
+          },
+          "desc": [
+            "Azione: oggetto nonmagico già visto entro 3 m, massimo 90 cm e 4,5 kg; luce 1,5 m. Sparisce dopo un’ora, nuovo uso o danni inflitti/subiti."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:conjuration",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "rounds": 600
+        },
+        {
+          "index": "wizard-conjuration-benign-transportation",
+          "name": "Benign Transportation",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-conjuration",
+            "name": "Conjuration"
+          },
+          "desc": [
+            "Azione: teletrasporto 9 m o scambio con creatura Piccola/Media consenziente. Recupero lungo o lancio di conjuration di livello 1+."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:conjuration",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": 1,
+            "reset": "long"
+          }
+        },
+        {
+          "index": "wizard-conjuration-focused-conjuration",
+          "name": "Focused Conjuration",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-conjuration",
+            "name": "Conjuration"
+          },
+          "desc": [
+            "I danni non interrompono la concentrazione su magie di conjuration."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:conjuration",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-conjuration-durable-summons",
+          "name": "Durable Summons",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-conjuration",
+            "name": "Conjuration"
+          },
+          "desc": [
+            "Le creature create o convocate con conjuration ricevono 30 PF temporanei."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:conjuration",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        }
+      ]
+    },
+    {
+      "index": "wizard-divination",
+      "name": "Divination",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "published",
+      "sources": [
+        "Player's Handbook"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:divination",
+      "referenceUrl": null,
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-divination-divination-savant",
+          "name": "Divination Savant",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-divination",
+            "name": "Divination"
+          },
+          "desc": [
+            "Copie di divinazione: costo e tempo dimezzati."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:divination",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-divination-portent",
+          "name": "Portent",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-divination",
+            "name": "Divination"
+          },
+          "desc": [
+            "Dopo riposo lungo registra due d20; prima di un tiro visibile sostituiscilo con uno dei valori. Una sostituzione per turno; ogni valore è monouso."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:divination",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": 2,
+            "reset": "long"
+          }
+        },
+        {
+          "index": "wizard-divination-expert-divination",
+          "name": "Expert Divination",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-divination",
+            "name": "Divination"
+          },
+          "desc": [
+            "Lancio di divinazione con slot ≥2: recupera uno slot speso inferiore, massimo livello 5."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:divination",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-divination-the-third-eye",
+          "name": "The Third Eye",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-divination",
+            "name": "Divination"
+          },
+          "desc": [
+            "Azione: scurovisione 18 m, vista eterea 18 m, lettura di tutte le lingue oppure invisibilità visibile entro 3 m. Termina con incapacità/riposo; recupero breve/lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:divination",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": 1,
+            "reset": "short"
+          }
+        },
+        {
+          "index": "wizard-divination-greater-portent",
+          "name": "Greater Portent",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-divination",
+            "name": "Divination"
+          },
+          "desc": [
+            "Portent registra tre d20 invece di due."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:divination",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        }
+      ]
+    },
+    {
+      "index": "wizard-enchantment",
+      "name": "Enchantment",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "published",
+      "sources": [
+        "Player's Handbook"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:enchantment",
+      "referenceUrl": null,
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-enchantment-enchantment-savant",
+          "name": "Enchantment Savant",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-enchantment",
+            "name": "Enchantment"
+          },
+          "desc": [
+            "Copie di ammaliamento: costo e tempo dimezzati."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:enchantment",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-enchantment-hypnotic-gaze",
+          "name": "Hypnotic Gaze",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-enchantment",
+            "name": "Enchantment"
+          },
+          "desc": [
+            "Azione entro 1,5 m, TS Saggezza: affascinato, incapacitato, velocità zero fino a fine tuo prossimo turno; rinnova con azione. Termina per distanza, sensi o danni; bersaglio riutilizzabile dopo riposo lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:enchantment",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        },
+        {
+          "index": "wizard-enchantment-instinctive-charm",
+          "name": "Instinctive Charm",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-enchantment",
+            "name": "Enchantment"
+          },
+          "desc": [
+            "Reazione prima dell’esito di un attacco entro 9 m: TS Saggezza, ridirige verso altra creatura più vicina a portata. Immuni agli charme esclusi; TS riuscito blocca riuso sul bersaglio fino al riposo lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:enchantment",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        },
+        {
+          "index": "wizard-enchantment-split-enchantment",
+          "name": "Split Enchantment",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-enchantment",
+            "name": "Enchantment"
+          },
+          "desc": [
+            "Ammaliamento di livello 1+ a bersaglio singolo può colpire una seconda creatura."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:enchantment",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-enchantment-alter-memories",
+          "name": "Alter Memories",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-enchantment",
+            "name": "Enchantment"
+          },
+          "desc": [
+            "Nascondi lo charme; azione e TS Intelligenza per cancellare fino a 1+Car ore (minimo 1), senza superare durata dello charme."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:enchantment",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        }
+      ]
+    },
+    {
+      "index": "evocation",
+      "name": "Evocation",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014",
+        "2024"
+      ],
+      "status": "published",
+      "sources": [
+        "Player's Handbook"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:evocation",
+      "referenceUrl": null,
+      "automationStatus": "implemented"
+    },
+    {
+      "index": "wizard-graviturgy",
+      "name": "Graviturgy",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "published",
+      "sources": [
+        "Explorer's Guide to Wildemount"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:graviturgy",
+      "referenceUrl": null,
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-graviturgy-adjust-density",
+          "name": "Adjust Density",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-graviturgy",
+            "name": "Graviturgy"
+          },
+          "desc": [
+            "Azione entro 9 m, concentrazione 1 minuto: peso dimezzato (+3 m, salto doppio, svantaggio Forza) o doppio (−3 m, vantaggio Forza). Massimo Grande, Enorme dal livello 10."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:graviturgy",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "rounds": 10
+        },
+        {
+          "index": "wizard-graviturgy-gravity-well",
+          "name": "Gravity Well",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-graviturgy",
+            "name": "Graviturgy"
+          },
+          "desc": [
+            "Dopo magia: sposta bersaglio 1,5 m se consenziente, colpito o con TS fallito."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:graviturgy",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-graviturgy-violent-attraction",
+          "name": "Violent Attraction",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-graviturgy",
+            "name": "Graviturgy"
+          },
+          "desc": [
+            "Reazione entro 18 m: arma colpita +1d10 oppure caduta +2d10. Usi Int, minimo 1/riposo lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:graviturgy",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": "intelligence",
+            "reset": "long"
+          }
+        },
+        {
+          "index": "wizard-graviturgy-event-horizon",
+          "name": "Event Horizon",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-graviturgy",
+            "name": "Graviturgy"
+          },
+          "desc": [
+            "Azione, concentrazione 1 minuto: nemici entro 9 m a inizio turno fanno TS Forza; fallimento 2d10 forza e velocità zero, successo metà e movimento costoso. Recupero lungo oppure slot ≥3."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:graviturgy",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "rounds": 10,
+          "resource": {
+            "max": 1,
+            "reset": "long"
+          }
+        }
+      ]
+    },
+    {
+      "index": "wizard-illusion",
+      "name": "Illusion",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "published",
+      "sources": [
+        "Player's Handbook"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:illusion",
+      "referenceUrl": null,
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-illusion-illusion-savant",
+          "name": "Illusion Savant",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-illusion",
+            "name": "Illusion"
+          },
+          "desc": [
+            "Copie di illusione: costo e tempo dimezzati."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:illusion",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-illusion-improved-minor-illusion",
+          "name": "Improved Minor Illusion",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-illusion",
+            "name": "Illusion"
+          },
+          "desc": [
+            "Minor Illusion gratuito fuori limite trucchetti; se già noto scegli un altro trucchetto da mago. Può generare suono e immagine insieme."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:illusion",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive",
+          "grants": [
+            {
+              "index": "minor-illusion",
+              "name": "Minor Illusion",
+              "level": 0
+            }
+          ],
+          "grantOptions": [
+            "wizard-cantrip-if-known"
+          ]
+        },
+        {
+          "index": "wizard-illusion-malleable-illusions",
+          "name": "Malleable Illusions",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-illusion",
+            "name": "Illusion"
+          },
+          "desc": [
+            "Azione: modifica un’illusione visibile con durata almeno un minuto, rispettando i parametri della magia."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:illusion",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        },
+        {
+          "index": "wizard-illusion-illusory-self",
+          "name": "Illusory Self",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-illusion",
+            "name": "Illusion"
+          },
+          "desc": [
+            "Reazione: un attacco contro di te manca automaticamente. Recupero breve/lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:illusion",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": 1,
+            "reset": "short"
+          }
+        },
+        {
+          "index": "wizard-illusion-illusory-reality",
+          "name": "Illusory Reality",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-illusion",
+            "name": "Illusion"
+          },
+          "desc": [
+            "Azione bonus durante illusione di livello 1+: rendi reale un suo oggetto nonmagico per un minuto; non può danneggiare direttamente."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:illusion",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "rounds": 10
+        }
+      ]
+    },
+    {
+      "index": "wizard-necromancy",
+      "name": "Necromancy",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "published",
+      "sources": [
+        "Player's Handbook"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:necromancy",
+      "referenceUrl": null,
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-necromancy-necromancy-savant",
+          "name": "Necromancy Savant",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-necromancy",
+            "name": "Necromancy"
+          },
+          "desc": [
+            "Copie di necromanzia: costo e tempo dimezzati."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:necromancy",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-necromancy-grim-harvest",
+          "name": "Grim Harvest",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-necromancy",
+            "name": "Necromancy"
+          },
+          "desc": [
+            "Una volta per turno: uccisione con magia di livello 1+ cura 2×livello magia, o 3× per necromanzia. Costrutti e non morti esclusi."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:necromancy",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-necromancy-undead-thralls",
+          "name": "Undead Thralls",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-necromancy",
+            "name": "Necromancy"
+          },
+          "desc": [
+            "Animate Dead aggiunto al libro; crea un non morto aggiuntivo. Non morti creati con necromanzia: PF massimi +livello mago e danni armi +competenza."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:necromancy",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive",
+          "grants": [
+            {
+              "index": "animate-dead",
+              "name": "Animate Dead",
+              "level": 3
+            }
+          ]
+        },
+        {
+          "index": "wizard-necromancy-inured-to-undeath",
+          "name": "Inured to Undeath",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-necromancy",
+            "name": "Necromancy"
+          },
+          "desc": [
+            "Resistenza necrotica e PF massimi non riducibili."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:necromancy",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-necromancy-command-undead",
+          "name": "Command Undead",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-necromancy",
+            "name": "Necromancy"
+          },
+          "desc": [
+            "Azione entro 18 m: TS Carisma, non morto controllato fino al nuovo uso. Successo impedisce riuso. Int≥8 dà vantaggio; Int≥12 consente ripetizioni orarie."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:necromancy",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        }
+      ]
+    },
+    {
+      "index": "wizard-order-of-scribes",
+      "name": "Order of Scribes",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "published",
+      "sources": [
+        "Tasha's Cauldron of Everything"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:order-of-scribes",
+      "referenceUrl": null,
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-order-of-scribes-wizardly-quill",
+          "name": "Wizardly Quill",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-order-of-scribes",
+            "name": "Order of Scribes"
+          },
+          "desc": [
+            "Azione bonus: penna magica senza inchiostro; copie richiedono 2 minuti per livello, costo normale; cancella scritte entro 1,5 m."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:order-of-scribes",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        },
+        {
+          "index": "wizard-order-of-scribes-awakened-spellbook",
+          "name": "Awakened Spellbook",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-order-of-scribes",
+            "name": "Order of Scribes"
+          },
+          "desc": [
+            "Libro come focus. Cambia danno usando tipo di una magia nel libro del livello dello slot. Un rituale per riposo lungo usa tempo normale; ricrea libro in un riposo breve."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:order-of-scribes",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-order-of-scribes-manifest-mind",
+          "name": "Manifest Mind",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-order-of-scribes",
+            "name": "Order of Scribes"
+          },
+          "desc": [
+            "Azione bonus: mente spettrale entro 18 m, sensi/scurovisione 18 m; spostala 9 m, limite distanza 90 m. Lanci dalla mente competenza volte/riposo lungo; rievocazione con slot o riposo lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:order-of-scribes",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": "proficiency",
+            "reset": "long"
+          }
+        },
+        {
+          "index": "wizard-order-of-scribes-master-scriviner",
+          "name": "Master Scriviner",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-order-of-scribes",
+            "name": "Order of Scribes"
+          },
+          "desc": [
+            "Dopo riposo lungo: pergamena personale di magia livello 1–2, azione, potenziata di un livello; scade al prossimo riposo lungo. Creare pergamene costa metà tempo/oro."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:order-of-scribes",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        },
+        {
+          "index": "wizard-order-of-scribes-one-with-the-word",
+          "name": "One with the Word",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-order-of-scribes",
+            "name": "Order of Scribes"
+          },
+          "desc": [
+            "Libro: vantaggio Arcano. Reazione con mente: annulla danni e perdi magie per almeno 3d6 livelli, recuperate dopo 1d6 riposi lunghi; libro insufficiente porta PF zero. Recupero lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:order-of-scribes",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": 1,
+            "reset": "long"
+          }
+        }
+      ]
+    },
+    {
+      "index": "wizard-transmutation",
+      "name": "Transmutation",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "published",
+      "sources": [
+        "Player's Handbook"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:transmutation",
+      "referenceUrl": null,
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-transmutation-transmutation-savant",
+          "name": "Transmutation Savant",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-transmutation",
+            "name": "Transmutation"
+          },
+          "desc": [
+            "Copie di trasmutazione: metà costo e tempo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:transmutation",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-transmutation-minor-alchemy",
+          "name": "Minor Alchemy",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-transmutation",
+            "name": "Transmutation"
+          },
+          "desc": [
+            "Dieci minuti per 30 cm cubi: trasforma legno/pietra/ferro/rame/argento in altro materiale della lista. Dura un’ora o fino a perdita di concentrazione."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:transmutation",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "rounds": 600
+        },
+        {
+          "index": "wizard-transmutation-transmuter-s-stone",
+          "name": "Transmuter's Stone",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-transmutation",
+            "name": "Transmutation"
+          },
+          "desc": [
+            "Otto ore: pietra dà scurovisione 18 m, velocità +3 m senza ingombro, competenza TS Cos o resistenza elementale. Cambia effetto con trasmutazione di livello 1+; una pietra."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:transmutation",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        },
+        {
+          "index": "wizard-transmutation-shapechanger",
+          "name": "Shapechanger",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-transmutation",
+            "name": "Transmutation"
+          },
+          "desc": [
+            "Polymorph nel libro: lancio gratuito breve/lungo, solo te stesso in bestia GS≤1. Con slot resta normale."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:transmutation",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": 1,
+            "reset": "short"
+          },
+          "grants": [
+            {
+              "index": "polymorph",
+              "name": "Polymorph",
+              "level": 4,
+              "free": true
+            }
+          ]
+        },
+        {
+          "index": "wizard-transmutation-master-transmuter",
+          "name": "Master Transmuter",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-transmutation",
+            "name": "Transmutation"
+          },
+          "desc": [
+            "Consuma pietra: trasforma oggetto, cura completamente e rimuovi malattie/veleni/maledizioni, Raise Dead senza slot, oppure ringiovanimento apparente 3d10 anni (minimo 13). Ricrea pietra dopo riposo lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:transmutation",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        }
+      ]
+    },
+    {
+      "index": "wizard-war-magic",
+      "name": "War Magic",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "published",
+      "sources": [
+        "Xanathar's Guide to Everything"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:war-magic",
+      "referenceUrl": null,
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-war-magic-arcane-deflection",
+          "name": "Arcane Deflection",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-war-magic",
+            "name": "War Magic"
+          },
+          "desc": [
+            "Reazione su colpo o TS fallito: +2 CA contro quell’attacco o +4 al TS. Solo trucchetti fino a fine prossimo tuo turno."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:war-magic",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        },
+        {
+          "index": "wizard-war-magic-tactical-wit",
+          "name": "Tactical Wit",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-war-magic",
+            "name": "War Magic"
+          },
+          "desc": [
+            "Intelligenza aggiunta all’iniziativa."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:war-magic",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-war-magic-power-surge",
+          "name": "Power Surge",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-war-magic",
+            "name": "War Magic"
+          },
+          "desc": [
+            "Riserva massima Int, minimo 1; riposo lungo imposta 1, breve dà 1 se vuota. Counterspell/Dispel Magic riusciti aggiungono 1. Una volta per turno spendi 1: magia da mago +metà livello danni forza."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:war-magic",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": "intelligence",
+            "reset": "long",
+            "initial": 1,
+            "shortMinimum": 1
+          }
+        },
+        {
+          "index": "wizard-war-magic-durable-magic",
+          "name": "Durable Magic",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-war-magic",
+            "name": "War Magic"
+          },
+          "desc": [
+            "Durante concentrazione: +2 CA e tutti i TS."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:war-magic",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-war-magic-deflecting-shroud",
+          "name": "Deflecting Shroud",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-war-magic",
+            "name": "War Magic"
+          },
+          "desc": [
+            "Arcane Deflection può causare metà livello danni forza a massimo tre creature entro 18 m."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:war-magic",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        }
+      ]
+    },
+    {
+      "index": "wizard-runecrafter-ua",
+      "name": "Runecrafter",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "ua",
+      "sources": [
+        "Unearthed Arcana 83 - Giant Options"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:runecrafter-ua",
+      "referenceUrl": "https://media.wizards.com/2022/dnd/downloads/UA2022-drjwf73f8n.pdf",
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-runecrafter-ua-runes-of-understanding",
+          "name": "Runes of Understanding",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-runecrafter-ua",
+            "name": "Runecrafter"
+          },
+          "desc": [
+            "Comprehend Languages sempre preparato, fuori limite, utilizzabile senza slot."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:runecrafter-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive",
+          "grants": [
+            {
+              "index": "comprehend-languages",
+              "name": "Comprehend Languages",
+              "level": 1,
+              "always": true,
+              "free": true
+            }
+          ]
+        },
+        {
+          "index": "wizard-runecrafter-ua-runic-empowerment",
+          "name": "Runic Empowerment",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-runecrafter-ua",
+            "name": "Runecrafter"
+          },
+          "desc": [
+            "Lancio con slot: una runa, competenza usi/riposo lungo. Vita: 5×slot PF temporanei entro 9 m. Guerra: bonus attacchi contro bersaglio ceil(slot/2). Vento: +1,5×slot m, niente opportunità fino a prossimo turno."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:runecrafter-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": "proficiency",
+            "reset": "long"
+          }
+        },
+        {
+          "index": "wizard-runecrafter-ua-sigils-of-warding",
+          "name": "Sigils of Warding",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-runecrafter-ua",
+            "name": "Runecrafter"
+          },
+          "desc": [
+            "Reazione e un uso di Runic Empowerment: trasforma TS Forza, Des o Cos fallito in successo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:runecrafter-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": "proficiency",
+            "reset": "long",
+            "key": "wizard-runecrafter-ua-runic-empowerment"
+          }
+        },
+        {
+          "index": "wizard-runecrafter-ua-rune-maven",
+          "name": "Rune Maven",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-runecrafter-ua",
+            "name": "Runecrafter"
+          },
+          "desc": [
+            "Recupero Arcano recupera fino a ceil(Int/2), minimo 1, usi di Runic Empowerment spesi."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:runecrafter-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-runecrafter-ua-engraved-emnity",
+          "name": "Engraved Emnity",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-runecrafter-ua",
+            "name": "Runecrafter"
+          },
+          "desc": [
+            "Azione bonus entro 18 m, TS Saggezza: marchio un minuto/concentrazione; svantaggio TS magie, invisibilità impedita. Bonus successivi: prossimo alleato colpito +1d8 forza. Recupero lungo o slot ≥3."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:runecrafter-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "rounds": 10,
+          "resource": {
+            "max": 1,
+            "reset": "long"
+          }
+        }
+      ]
+    },
+    {
+      "index": "wizard-artificer-ua",
+      "name": "Artificer",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "archived-ua",
+      "sources": [
+        "Unearthed Arcana 1 - Eberron"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:artificer-ua",
+      "referenceUrl": "https://media.wizards.com/2015/downloads/dnd/UA_Eberron_v1.pdf",
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-artificer-ua-infuse-potions",
+          "name": "Infuse Potions",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-artificer-ua",
+            "name": "Artificer"
+          },
+          "desc": [
+            "Dieci minuti e slot 1–4: pozioni secondo tabella della fonte, massimo tre; slot bloccato fino a consumo o una settimana."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:artificer-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        },
+        {
+          "index": "wizard-artificer-ua-infuse-scrolls",
+          "name": "Infuse Scrolls",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-artificer-ua",
+            "name": "Artificer"
+          },
+          "desc": [
+            "Dopo riposo breve, dieci minuti: pergamena di magia nota; riduci budget Recupero Arcano del livello fino a uso della pergamena e riposo lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:artificer-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        },
+        {
+          "index": "wizard-artificer-ua-infuse-weapons-and-armor",
+          "name": "Infuse Weapons and Armor",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-artificer-ua",
+            "name": "Artificer"
+          },
+          "desc": [
+            "Dieci minuti e slot: un’arma/armatura/scudo o 20 munizioni infusi secondo tabella; durata otto ore o uso. Slot bloccato finché oggetto magico."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:artificer-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "rounds": 4800
+        },
+        {
+          "index": "wizard-artificer-ua-superior-artificer",
+          "name": "Superior Artificer",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-artificer-ua",
+            "name": "Artificer"
+          },
+          "desc": [
+            "Massimo due oggetti infusi; una pozione o pergamena aggiuntiva."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:artificer-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-artificer-ua-master-artificer",
+          "name": "Master Artificer",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-artificer-ua",
+            "name": "Artificer"
+          },
+          "desc": [
+            "Una settimana per creare un oggetto delle tabelle A/B del DMG; poi un mese prima di ripetere."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:artificer-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        }
+      ]
+    },
+    {
+      "index": "wizard-invention-ua",
+      "name": "Invention",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "archived-ua",
+      "sources": [
+        "Unearthed Arcana 46 - Three Subclasses"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:invention-ua",
+      "referenceUrl": "https://media.wizards.com/2018/dnd/downloads/UA-3Subclasses0108.pdf",
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-invention-ua-tools-of-the-inventor",
+          "name": "Tools of the Inventor",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-invention-ua",
+            "name": "Invention"
+          },
+          "desc": [
+            "Competenza in due strumenti scelti."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:invention-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-invention-ua-arcanomechanical-armor",
+          "name": "Arcanomechanical Armor",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-invention-ua",
+            "name": "Invention"
+          },
+          "desc": [
+            "Competenza leggere; armatura armonizzata CA 12+Des, resistenza forza. Ricreabile da cuoio borchiato dopo riposo lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:invention-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-invention-ua-reckless-casting",
+          "name": "Reckless Casting",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-invention-ua",
+            "name": "Invention"
+          },
+          "desc": [
+            "Azione: tabelle d10 per trucchetto o magia non preparata; con slot scegli fra due risultati, tabella massimo livello 5. Risultato 10 richiede altri tiri; secondo 10 fallisce."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:invention-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        },
+        {
+          "index": "wizard-invention-ua-alchemical-casting",
+          "name": "Alchemical Casting",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-invention-ua",
+            "name": "Invention"
+          },
+          "desc": [
+            "Con armatura armonizzata: slot extra 1 cambia danno acido/freddo/fuoco/fulmine/tuono; slot extra 2 aggiunge 2d10 forza a un bersaglio nel turno del lancio."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:invention-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        },
+        {
+          "index": "wizard-invention-ua-prodigious-inspiration",
+          "name": "Prodigious Inspiration",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-invention-ua",
+            "name": "Invention"
+          },
+          "desc": [
+            "Azione bonus: sostituisci una magia preparata con altra del libro; recupero breve/lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:invention-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": 1,
+            "reset": "short"
+          }
+        },
+        {
+          "index": "wizard-invention-ua-controlled-chaos",
+          "name": "Controlled Chaos",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-invention-ua",
+            "name": "Invention"
+          },
+          "desc": [
+            "Reckless Casting non trucchetto può usare tabella un livello superiore allo slot speso."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:invention-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        }
+      ]
+    },
+    {
+      "index": "wizard-lore-mastery-ua",
+      "name": "Lore Mastery",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "archived-ua",
+      "sources": [
+        "Unearthed Arcana 29 - Warlock and Wizard"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:lore-mastery-ua",
+      "referenceUrl": "https://media.wizards.com/2017/dnd/downloads/20170213_wizrd_wrlck_uav2_i48nf.pdf",
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-lore-mastery-ua-lore-mastery",
+          "name": "Lore Mastery",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-lore-mastery-ua",
+            "name": "Lore Mastery"
+          },
+          "desc": [
+            "Raddoppia competenza nelle prove di Arcano, Storia, Natura, Religione se competente. Iniziativa: scegli Int oppure Des."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:lore-mastery-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-lore-mastery-ua-spell-secrets",
+          "name": "Spell Secrets",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-lore-mastery-ua",
+            "name": "Lore Mastery"
+          },
+          "desc": [
+            "Con slot cambia un tipo di danno tra quelli elencati nella fonte. Cambiare caratteristica del TS richiede recupero breve/lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:lore-mastery-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": 1,
+            "reset": "short"
+          }
+        },
+        {
+          "index": "wizard-lore-mastery-ua-alchemical-casting",
+          "name": "Alchemical Casting",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-lore-mastery-ua",
+            "name": "Lore Mastery"
+          },
+          "desc": [
+            "Slot extra: 1 aggiunge 2d10 forza a ogni bersaglio nel turno; 2 estende portata ≥9 m a un miglio; 3 dà +2 CD."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:lore-mastery-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        },
+        {
+          "index": "wizard-lore-mastery-ua-prodigious-memory",
+          "name": "Prodigious Memory",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-lore-mastery-ua",
+            "name": "Lore Mastery"
+          },
+          "desc": [
+            "Azione bonus: sostituisci una magia preparata dal libro; recupero breve/lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:lore-mastery-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": 1,
+            "reset": "short"
+          }
+        },
+        {
+          "index": "wizard-lore-mastery-ua-master-of-magic",
+          "name": "Master of Magic",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-lore-mastery-ua",
+            "name": "Lore Mastery"
+          },
+          "desc": [
+            "Azione bonus: rendi lanciabile una magia non preparata di qualsiasi classe, di livello con slot. Consuma normalmente slot; scade al lancio o fine turno. Recupero lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:lore-mastery-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": 1,
+            "reset": "long"
+          }
+        }
+      ]
+    },
+    {
+      "index": "wizard-mage-of-lorehold-ua",
+      "name": "Mage of Lorehold",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "archived-ua",
+      "sources": [
+        "Unearthed Arcana 79 - Mages of Strixhaven"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-lorehold-ua",
+      "referenceUrl": "https://media.wizards.com/2021/dnd/downloads/UA2021_06_08_MagesStrixhaven.pdf",
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-mage-of-lorehold-ua-lorehold-spells",
+          "name": "Lorehold Spells",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-mage-of-lorehold-ua",
+            "name": "Mage of Lorehold"
+          },
+          "desc": [
+            "Magie aggiuntive ai livelli indicati nella fonte; per maghi libro gratuito e preparazione normale."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-lorehold-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive",
+          "grants": [
+            {
+              "index": "sacred-flame",
+              "name": "Sacred Flame",
+              "level": 0
+            },
+            {
+              "index": "comprehend-languages",
+              "name": "Comprehend Languages",
+              "level": 1
+            },
+            {
+              "index": "knock",
+              "name": "Knock",
+              "level": 2,
+              "minimum": 3
+            },
+            {
+              "index": "locate-object",
+              "name": "Locate Object",
+              "level": 2,
+              "minimum": 3
+            },
+            {
+              "index": "speak-with-dead",
+              "name": "Speak with Dead",
+              "level": 3,
+              "minimum": 5
+            },
+            {
+              "index": "spirit-guardians",
+              "name": "Spirit Guardians",
+              "level": 3,
+              "minimum": 5
+            },
+            {
+              "index": "arcane-eye",
+              "name": "Arcane Eye",
+              "level": 4,
+              "minimum": 7
+            },
+            {
+              "index": "stone-shape",
+              "name": "Stone Shape",
+              "level": 4,
+              "minimum": 7
+            },
+            {
+              "index": "destructive-wave",
+              "name": "Destructive Wave",
+              "level": 5,
+              "minimum": 9
+            },
+            {
+              "index": "legend-lore",
+              "name": "Legend Lore",
+              "level": 5,
+              "minimum": 9
+            }
+          ]
+        },
+        {
+          "index": "wizard-mage-of-lorehold-ua-ancient-companion",
+          "name": "Ancient Companion",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-mage-of-lorehold-ua",
+            "name": "Mage of Lorehold"
+          },
+          "desc": [
+            "Dopo riposo evoca statua Guaritore/Saggio/Guerriero; PF 5+5×livello, CA 14 (16 Guerriero). Agisce dopo di te; comando bonus, altrimenti Schivata; azione e slot curano 10×slot."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-lorehold-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        },
+        {
+          "index": "wizard-mage-of-lorehold-ua-lessons-of-the-past",
+          "name": "Lessons of the Past",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-mage-of-lorehold-ua",
+            "name": "Mage of Lorehold"
+          },
+          "desc": [
+            "Scelta: Guaritore +livello PF e +1d8 alle cure magiche; Saggio vantaggio sapere e +1d8 forza/turno; Guerriero attacco dopo trucchetto e +1d8 radiante."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-lorehold-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive",
+          "choice": true
+        },
+        {
+          "index": "wizard-mage-of-lorehold-ua-war-echoes",
+          "name": "War Echoes",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-mage-of-lorehold-ua",
+            "name": "Mage of Lorehold"
+          },
+          "desc": [
+            "Reazione dopo colpo visibile: TS Saggezza, vulnerabilità a un danno dell’attacco fino al prossimo turno. Competenza usi/riposo lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-lorehold-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": "proficiency",
+            "reset": "long"
+          },
+          "choice": true
+        },
+        {
+          "index": "wizard-mage-of-lorehold-ua-history-s-whims",
+          "name": "History’s Whims",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-mage-of-lorehold-ua",
+            "name": "Mage of Lorehold"
+          },
+          "desc": [
+            "Bonus, un minuto: alterna +d6 TS dannosi, resistenza fisica, oppure +4,5 m senza opportunità. Niente scelta consecutiva uguale. Recupero lungo o slot ≥4."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-lorehold-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "rounds": 10,
+          "resource": {
+            "max": 1,
+            "reset": "long"
+          },
+          "choice": true
+        }
+      ]
+    },
+    {
+      "index": "wizard-mage-of-prismari-ua",
+      "name": "Mage of Prismari",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "archived-ua",
+      "sources": [
+        "Unearthed Arcana 79 - Mages of Strixhaven"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-prismari-ua",
+      "referenceUrl": "https://media.wizards.com/2021/dnd/downloads/UA2021_06_08_MagesStrixhaven.pdf",
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-mage-of-prismari-ua-creative-skills",
+          "name": "Creative Skills",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-mage-of-prismari-ua",
+            "name": "Mage of Prismari"
+          },
+          "desc": [
+            "Due competenze: Acrobazia, Atletica, Natura o Intrattenere."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-prismari-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-mage-of-prismari-ua-kinetic-artistry",
+          "name": "Kinetic Artistry",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-mage-of-prismari-ua",
+            "name": "Mage of Prismari"
+          },
+          "desc": [
+            "Scatto bonus, competenza usi/riposo lungo: cammina sull’acqua e TS Forza contro prono; oppure area 1,5 m TS Des, 1d4+mod fuoco; oppure attraversa creature senza opportunità."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-prismari-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": "proficiency",
+            "reset": "long"
+          }
+        },
+        {
+          "index": "wizard-mage-of-prismari-ua-favored-medium",
+          "name": "Favored Medium",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-mage-of-prismari-ua",
+            "name": "Mage of Prismari"
+          },
+          "desc": [
+            "Scegli resistenza freddo/fuoco/fulmine dopo riposo lungo. Magia con slot di quel danno dà aura 1,5 m di resistenza agli alleati fino a prossimo turno."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-prismari-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive",
+          "choice": true
+        },
+        {
+          "index": "wizard-mage-of-prismari-ua-focused-expression",
+          "name": "Focused Expression",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-mage-of-prismari-ua",
+            "name": "Mage of Prismari"
+          },
+          "desc": [
+            "Una volta per turno: +1d6 del mezzo scelto; freddo TS Cos rallenta, fuoco dà 1d6 PF temporanei, fulmine TS Des blocca reazioni."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-prismari-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive",
+          "choice": true
+        },
+        {
+          "index": "wizard-mage-of-prismari-ua-impeccable-physicality",
+          "name": "Impeccable Physicality",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-mage-of-prismari-ua",
+            "name": "Mage of Prismari"
+          },
+          "desc": [
+            "Competenza TS Des; d20 ≤9 si considera 10."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-prismari-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive",
+          "choice": true
+        }
+      ]
+    },
+    {
+      "index": "wizard-mage-of-quandrix-ua",
+      "name": "Mage of Quandrix",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "archived-ua",
+      "sources": [
+        "Unearthed Arcana 79 - Mages of Strixhaven"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-quandrix-ua",
+      "referenceUrl": "https://media.wizards.com/2021/dnd/downloads/UA2021_06_08_MagesStrixhaven.pdf",
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-mage-of-quandrix-ua-quandrix-spells",
+          "name": "Quandrix Spells",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-mage-of-quandrix-ua",
+            "name": "Mage of Quandrix"
+          },
+          "desc": [
+            "Guidance, Guiding Bolt e magie aggiuntive ai livelli della fonte; libro gratuito, preparazione normale."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-quandrix-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive",
+          "grants": [
+            {
+              "index": "guidance",
+              "name": "Guidance",
+              "level": 0
+            },
+            {
+              "index": "guiding-bolt",
+              "name": "Guiding Bolt",
+              "level": 1
+            },
+            {
+              "index": "enlarge-reduce",
+              "name": "Enlarge/Reduce",
+              "level": 2,
+              "minimum": 3
+            },
+            {
+              "index": "spike-growth",
+              "name": "Spike Growth",
+              "level": 2,
+              "minimum": 3
+            },
+            {
+              "index": "aura-of-vitality",
+              "name": "Aura of Vitality",
+              "level": 3,
+              "minimum": 5
+            },
+            {
+              "index": "haste",
+              "name": "Haste",
+              "level": 3,
+              "minimum": 5
+            },
+            {
+              "index": "control-water",
+              "name": "Control Water",
+              "level": 4,
+              "minimum": 7
+            },
+            {
+              "index": "freedom-of-movement",
+              "name": "Freedom of Movement",
+              "level": 4,
+              "minimum": 7
+            },
+            {
+              "index": "circle-of-power",
+              "name": "Circle of Power",
+              "level": 5,
+              "minimum": 9
+            },
+            {
+              "index": "passwall",
+              "name": "Passwall",
+              "level": 5,
+              "minimum": 9
+            }
+          ]
+        },
+        {
+          "index": "wizard-mage-of-quandrix-ua-functions-of-probability",
+          "name": "Functions of Probability",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-mage-of-quandrix-ua",
+            "name": "Mage of Quandrix"
+          },
+          "desc": [
+            "Lancio con slot: creatura entro 9 m dal bersaglio riceve d6 da sottrarre al prossimo attacco (TS Saggezza), oppure d6 da aggiungere a attacco/TS entro prossimo turno."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-quandrix-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        },
+        {
+          "index": "wizard-mage-of-quandrix-ua-velocity-shift",
+          "name": "Velocity Shift",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-mage-of-quandrix-ua",
+            "name": "Mage of Quandrix"
+          },
+          "desc": [
+            "Reazione su creatura entro 9 m a inizio turno/movimento: TS Carisma, teletrasporto fino a 9 m. Competenza usi/riposo lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-quandrix-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": "proficiency",
+            "reset": "long"
+          },
+          "choice": true
+        },
+        {
+          "index": "wizard-mage-of-quandrix-ua-null-equation",
+          "name": "Null Equation",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-mage-of-quandrix-ua",
+            "name": "Mage of Quandrix"
+          },
+          "desc": [
+            "Una volta per turno dopo danni: TS Cos; svantaggio TS Forza/Des e armi a metà danno fino al prossimo turno. Competenza usi/riposo lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-quandrix-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": "proficiency",
+            "reset": "long"
+          },
+          "choice": true
+        },
+        {
+          "index": "wizard-mage-of-quandrix-ua-quantum-tunneling",
+          "name": "Quantum Tunneling",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-mage-of-quandrix-ua",
+            "name": "Mage of Quandrix"
+          },
+          "desc": [
+            "Resistenza danni fisici; attraversa creature/oggetti come terreno difficile subendo 1d10 forza ogni 1,5 m. Espulsione se termini dentro."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-quandrix-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive",
+          "choice": true
+        }
+      ]
+    },
+    {
+      "index": "wizard-mage-of-silverquill-ua",
+      "name": "Mage of Silverquill",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "archived-ua",
+      "sources": [
+        "Unearthed Arcana 79 - Mages of Strixhaven"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-silverquill-ua",
+      "referenceUrl": "https://media.wizards.com/2021/dnd/downloads/UA2021_06_08_MagesStrixhaven.pdf",
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-mage-of-silverquill-ua-eloquent-apprentice",
+          "name": "Eloquent Apprentice",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-mage-of-silverquill-ua",
+            "name": "Mage of Silverquill"
+          },
+          "desc": [
+            "Sacred Flame o Vicious Mockery fuori limite; due competenze fra Inganno, Intimidire, Intrattenere, Persuasione, Intuizione."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-silverquill-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive",
+          "grantOptions": [
+            "sacred-flame",
+            "vicious-mockery"
+          ]
+        },
+        {
+          "index": "wizard-mage-of-silverquill-ua-silvery-barbs",
+          "name": "Silvery Barbs",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-mage-of-silverquill-ua",
+            "name": "Mage of Silverquill"
+          },
+          "desc": [
+            "Reazione entro 18 m dopo successo: ritira d20 prendendo minimo; immuni charme esclusi. Se fallisce, altro alleato ritira prendendo massimo entro un minuto. Recupero lungo o slot dopo primo fallimento causato."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-silverquill-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": 1,
+            "reset": "long"
+          }
+        },
+        {
+          "index": "wizard-mage-of-silverquill-ua-inky-shroud",
+          "name": "Inky Shroud",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-mage-of-silverquill-ua",
+            "name": "Mage of Silverquill"
+          },
+          "desc": [
+            "Darkness nel libro: un lancio gratuito/riposo lungo; vedi attraverso e puoi causare 2d10 psichici a inizio turno. Con slot lancio normale."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-silverquill-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": 1,
+            "reset": "long"
+          },
+          "choice": true,
+          "grants": [
+            {
+              "index": "darkness",
+              "name": "Darkness",
+              "level": 2,
+              "free": true
+            }
+          ]
+        },
+        {
+          "index": "wizard-mage-of-silverquill-ua-infusion-of-eloquence",
+          "name": "Infusion of Eloquence",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-mage-of-silverquill-ua",
+            "name": "Mage of Silverquill"
+          },
+          "desc": [
+            "Magia dannosa diventa psichica/radiante, +competenza danni e spaventato/affascinato fino al prossimo turno. Competenza usi/riposo lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-silverquill-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": "proficiency",
+            "reset": "long"
+          },
+          "choice": true
+        },
+        {
+          "index": "wizard-mage-of-silverquill-ua-word-of-power",
+          "name": "Word of Power",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-mage-of-silverquill-ua",
+            "name": "Mage of Silverquill"
+          },
+          "desc": [
+            "Silvery Barbs può dare vulnerabilità fino a prossimo turno; oppure reazione entro 18 m: alleato resiste al danno e tu subisci altrettanto psichico."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/multisubclass:mage-of-silverquill-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "choice": true
+        }
+      ]
+    },
+    {
+      "index": "wizard-onomancy-ua",
+      "name": "Onomancy",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "archived-ua",
+      "sources": [
+        "Unearthed Arcana 63 - Cleric, Druid, Wizard"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:onomancy-ua",
+      "referenceUrl": "https://media.wizards.com/2019/dnd/downloads/UA-TwilightFireNames.pdf",
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-onomancy-ua-bonus-proficiencies",
+          "name": "Bonus Proficiencies",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-onomancy-ua",
+            "name": "Onomancy"
+          },
+          "desc": [
+            "Un linguaggio scelto e strumenti da calligrafo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:onomancy-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-onomancy-ua-extract-name",
+          "name": "Extract Name",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-onomancy-ua",
+            "name": "Onomancy"
+          },
+          "desc": [
+            "Bonus entro 18 m: TS Saggezza, apprendi nome vero e affascini fino al prossimo turno. Successo blocca riuso sul bersaglio. Usi Int minimo 1/riposo lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:onomancy-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": "intelligence",
+            "reset": "long"
+          }
+        },
+        {
+          "index": "wizard-onomancy-ua-fateful-naming",
+          "name": "Fateful Naming",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-onomancy-ua",
+            "name": "Onomancy"
+          },
+          "desc": [
+            "Bane/Bless nel libro, sempre preparati fuori limite; nomina un bersaglio per lancio gratuito, Int usi (minimo 1)/riposo lungo condivisi."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:onomancy-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive",
+          "resource": {
+            "max": "intelligence",
+            "reset": "long"
+          },
+          "grants": [
+            {
+              "index": "bane",
+              "name": "Bane",
+              "level": 1,
+              "always": true,
+              "free": true
+            },
+            {
+              "index": "bless",
+              "name": "Bless",
+              "level": 1,
+              "always": true,
+              "free": true
+            }
+          ]
+        },
+        {
+          "index": "wizard-onomancy-ua-resonant-utterance",
+          "name": "Resonant Utterance",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-onomancy-ua",
+            "name": "Onomancy"
+          },
+          "desc": [
+            "Scegli due Risonanze; slot e nome vero: assorbimento PF temporanei, svantaggio TS, forza extra, dissoluzione, movimento/prono o ignorare copertura. Metà livello usi/riposo lungo; dettagli nella fonte."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:onomancy-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": "half-level",
+            "reset": "long"
+          }
+        },
+        {
+          "index": "wizard-onomancy-ua-inexorable-pronouncement",
+          "name": "Inexorable Pronouncement",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-onomancy-ua",
+            "name": "Onomancy"
+          },
+          "desc": [
+            "Due Risonanze aggiuntive."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:onomancy-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-onomancy-ua-relentless-naming",
+          "name": "Relentless Naming",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-onomancy-ua",
+            "name": "Onomancy"
+          },
+          "desc": [
+            "Con nome vero puoi convertire danni della magia in forza o psichici."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:onomancy-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        }
+      ]
+    },
+    {
+      "index": "wizard-order-of-scribes-ua",
+      "name": "Order of Scribes",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "archived-ua",
+      "sources": [
+        "Unearthed Arcana 72 - Subclasses Revisited"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:order-of-scribes-ua",
+      "referenceUrl": "https://media.wizards.com/2020/dnd/downloads/UA2020_SubclassesRevisited_0512.pdf",
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-order-of-scribes-ua-wizardly-quill",
+          "name": "Wizardly Quill",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-order-of-scribes-ua",
+            "name": "Order of Scribes"
+          },
+          "desc": [
+            "Penna con azione bonus; costo e tempo delle copie dimezzati; cancellazione entro 1,5 m."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:order-of-scribes-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        },
+        {
+          "index": "wizard-order-of-scribes-ua-awakened-spellbook",
+          "name": "Awakened Spellbook",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-order-of-scribes-ua",
+            "name": "Order of Scribes"
+          },
+          "desc": [
+            "Focus, sostituzione danno da altra magia del libro senza vincolo di livello; un rituale rapido/riposo lungo. Ricostituzione del libro al riposo breve."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:order-of-scribes-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-order-of-scribes-ua-master-scrivener",
+          "name": "Master Scrivener",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-order-of-scribes-ua",
+            "name": "Order of Scribes"
+          },
+          "desc": [
+            "Pergamena personale dopo riposo lungo: magia livello 1–2 con azione, potenziata di un livello; scade al prossimo riposo lungo. Pergamene a metà costo/tempo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:order-of-scribes-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active"
+        },
+        {
+          "index": "wizard-order-of-scribes-ua-manifest-mind",
+          "name": "Manifest Mind",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-order-of-scribes-ua",
+            "name": "Order of Scribes"
+          },
+          "desc": [
+            "Mente entro 18 m: PF livello+Int, tuoi CA/TS, scurovisione 18 m, percezione con azione/concentrazione. Lanci e spostamenti come descritti nella fonte; limite 90 m."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:order-of-scribes-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": "proficiency",
+            "reset": "long"
+          }
+        },
+        {
+          "index": "wizard-order-of-scribes-ua-one-with-the-word",
+          "name": "One with the Word",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-order-of-scribes-ua",
+            "name": "Order of Scribes"
+          },
+          "desc": [
+            "Azione: scambio con mente, competenza usi/riposo lungo. Morte: risorgi dopo un minuto a 1 PF perdendo almeno 3d6 livelli di magie, recuperabili solo con Wish."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:order-of-scribes-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": "proficiency",
+            "reset": "long"
+          }
+        }
+      ]
+    },
+    {
+      "index": "wizard-psionics-ua",
+      "name": "Psionics",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "archived-ua",
+      "sources": [
+        "Unearthed Arcana 66 - Fighter, Rogue, Wizard"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:psionics-ua",
+      "referenceUrl": "https://media.wizards.com/2019/dnd/downloads/UA-PsychicSoulPsionics.pdf",
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-psionics-ua-psionic-focus",
+          "name": "Psionic Focus",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-psionics-ua",
+            "name": "Psionics"
+          },
+          "desc": [
+            "Focus psionico; ritira una volta i dadi da 1 dei danni psichici/forza. Ricrea focus meditando un’ora durante riposo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:psionics-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-psionics-ua-psionic-devotion",
+          "name": "Psionic Devotion",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-psionics-ua",
+            "name": "Psionics"
+          },
+          "desc": [
+            "Friends, Mage Hand o Message fuori limite; con focus, bonus senza componenti e modifiche specifiche della fonte."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:psionics-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive",
+          "grantOptions": [
+            "friends",
+            "mage-hand",
+            "message"
+          ]
+        },
+        {
+          "index": "wizard-psionics-ua-thought-form",
+          "name": "Thought Form",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-psionics-ua",
+            "name": "Psionics"
+          },
+          "desc": [
+            "Bonus: forma dieci minuti, resistenza psichica/fisica nonmagica; magie senza componenti non costosi. Termina bonus, incapacità o morte. Usi Int minimo 1/riposo lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:psionics-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "rounds": 100,
+          "resource": {
+            "max": "intelligence",
+            "reset": "long"
+          }
+        },
+        {
+          "index": "wizard-psionics-ua-empowered-psionics",
+          "name": "Empowered Psionics",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-psionics-ua",
+            "name": "Psionics"
+          },
+          "desc": [
+            "Int ai danni psichici/forza di una magia da mago contro un bersaglio."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:psionics-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-psionics-ua-mental-discipline",
+          "name": "Mental Discipline",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-psionics-ua",
+            "name": "Psionics"
+          },
+          "desc": [
+            "Scegli Dominate Person, Scrying o Telekinesis nel libro; senza componenti, un lancio gratuito/riposo lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:psionics-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": 1,
+            "reset": "long"
+          },
+          "grantOptions": [
+            "dominate-person",
+            "scrying",
+            "telekinesis"
+          ],
+          "grants": []
+        },
+        {
+          "index": "wizard-psionics-ua-thought-travel",
+          "name": "Thought Travel",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-psionics-ua",
+            "name": "Psionics"
+          },
+          "desc": [
+            "In Thought Form voli con fluttuazione e attraversi materia; danni forza se termini dentro o ritorni normale all’interno."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:psionics-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        }
+      ]
+    },
+    {
+      "index": "wizard-technomancy-ua",
+      "name": "Technomancy",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "archived-ua",
+      "sources": [
+        "Unearthed Arcana 7 - Modern Magic"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:technomancy-ua",
+      "referenceUrl": "https://media.wizards.com/2015/downloads/dnd/UA_ModernMagic.pdf",
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-technomancy-ua-bonus-proficiencies",
+          "name": "Bonus Proficiencies",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-technomancy-ua",
+            "name": "Technomancy"
+          },
+          "desc": [
+            "Competenza armi corte e strumenti di hacking."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:technomancy-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-technomancy-ua-technological-savant",
+          "name": "Technological Savant",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-technomancy-ua",
+            "name": "Technomancy"
+          },
+          "desc": [
+            "Dispositivo almeno tablet come libro; copie a metà costo, tempo normale. Un solo dispositivo armonizzato."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:technomancy-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-technomancy-ua-program-spell",
+          "name": "Program Spell",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-technomancy-ua",
+            "name": "Technomancy"
+          },
+          "desc": [
+            "Registra una magia in un dispositivo almeno telefono per 48 ore; attivala con azione. Un dispositivo/magia; vincoli concentrazione; recupero lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:technomancy-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "rounds": 28800,
+          "resource": {
+            "max": 1,
+            "reset": "long"
+          }
+        },
+        {
+          "index": "wizard-technomancy-ua-online-casting",
+          "name": "Online Casting",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-technomancy-ua",
+            "name": "Technomancy"
+          },
+          "desc": [
+            "Lancia magie a bersagli specifici tramite dispositivi in rete, rispettando visibilità, audio e portate su entrambi i lati. Usi Int minimo 1 al giorno."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:technomancy-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": "intelligence",
+            "reset": "long"
+          }
+        },
+        {
+          "index": "wizard-technomancy-ua-chained-device",
+          "name": "Chained Device",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-technomancy-ua",
+            "name": "Technomancy"
+          },
+          "desc": [
+            "Un dispositivo almeno tablet portato mantiene concentrazione; distruzione, separazione o spegnimento interrompono. Recupero lungo."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:technomancy-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": 1,
+            "reset": "long"
+          }
+        }
+      ]
+    },
+    {
+      "index": "wizard-theurgy-ua",
+      "name": "Theurgy",
+      "class": {
+        "index": "wizard",
+        "name": "Wizard"
+      },
+      "minimumLevel": 2,
+      "editions": [
+        "2014"
+      ],
+      "status": "archived-ua",
+      "sources": [
+        "Unearthed Arcana 33 - Wizard Revisited"
+      ],
+      "sourceUrl": "https://dnd5e.wikidot.com/wizard:theurgy-ua",
+      "referenceUrl": "https://media.wizards.com/2017/dnd/downloads/MJ320UAWizardVF2017.pdf",
+      "automationStatus": "reviewed-feature-summaries",
+      "features": [
+        {
+          "index": "wizard-theurgy-ua-divine-inspiration",
+          "name": "Divine Inspiration",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-theurgy-ua",
+            "name": "Theurgy"
+          },
+          "desc": [
+            "Scegli un dominio clericale consentito dalla divinità."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:theurgy-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-theurgy-ua-arcane-initiate",
+          "name": "Arcane Initiate",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-theurgy-ua",
+            "name": "Theurgy"
+          },
+          "desc": [
+            "Agli avanzamenti sostituisci una scelta da mago con magia del dominio; completato il dominio puoi scegliere magie clericali. Contano come magie da mago, non copiabili da altri."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:theurgy-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-theurgy-ua-channel-arcana",
+          "name": "Channel Arcana",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-theurgy-ua",
+            "name": "Theurgy"
+          },
+          "desc": [
+            "Incanala effetto del dominio o Divine Arcana usando CD mago. Usi per riposo breve/lungo: uno, due dal livello 6, tre dal 18."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:theurgy-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": "channel-arcana",
+            "reset": "short"
+          }
+        },
+        {
+          "index": "wizard-theurgy-ua-channel-arcana-divine-arcana",
+          "name": "Channel Arcana: Divine Arcana",
+          "level": 2,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-theurgy-ua",
+            "name": "Theurgy"
+          },
+          "desc": [
+            "Azione bonus, un uso condiviso di Channel Arcana: prossima magia +2 all’attacco o alla CD."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:theurgy-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "active",
+          "resource": {
+            "max": "channel-arcana",
+            "reset": "short",
+            "key": "wizard-theurgy-ua-channel-arcana"
+          }
+        },
+        {
+          "index": "wizard-theurgy-ua-arcane-acolyte",
+          "name": "Arcane Acolyte",
+          "level": 6,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-theurgy-ua",
+            "name": "Theurgy"
+          },
+          "desc": [
+            "Benefici di dominio clericale livello 1, escluse competenze armi/armature."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:theurgy-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-theurgy-ua-arcane-priest",
+          "name": "Arcane Priest",
+          "level": 10,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-theurgy-ua",
+            "name": "Theurgy"
+          },
+          "desc": [
+            "Benefici di dominio clericale livello 6."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:theurgy-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        },
+        {
+          "index": "wizard-theurgy-ua-arcane-high-priest",
+          "name": "Arcane High Priest",
+          "level": 14,
+          "class": {
+            "index": "wizard",
+            "name": "Wizard"
+          },
+          "subclass": {
+            "index": "wizard-theurgy-ua",
+            "name": "Theurgy"
+          },
+          "desc": [
+            "Benefici di dominio clericale livello 17."
+          ],
+          "sourceUrl": "https://dnd5e.wikidot.com/wizard:theurgy-ua",
+          "editions": [
+            "2014"
+          ],
+          "activation": "passive"
+        }
+      ]
+    }
+  ]
+}

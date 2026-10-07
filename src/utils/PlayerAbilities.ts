@@ -1,5 +1,6 @@
 import { durationTurns } from './Combat.ts'
 import type { CharacterSheet, SheetAbility } from './CharacterSheets.ts'
+import { savedWizardFeatures } from './Wizard.ts'
 
 const passiveNames = new Set([
     'unarmored defense', 'difesa senza armatura', 'darkvision', 'scurovisione', 'extra attack', 'attacco extra',
@@ -9,7 +10,11 @@ const passiveNames = new Set([
     'expertise', 'maestria', 'fast movement', 'movimento veloce', 'primal champion', 'campione primordiale',
     'aura of protection', 'aura di protezione', 'aura of courage', 'aura di coraggio', 'superior inspiration',
     'improved divine smite', 'punizione divina migliorata', 'fighting style: defense', 'stile di combattimento: difesa',
+    'spellcasting', 'ritual adept', 'evocation savant', 'potent cantrip', 'empowered evocation',
+    'spell mastery', 'signature spells', 'scholar', 'wizard subclass', 'arcane tradition',
+    'cantrip formulas', 'spellcasting: wizard',
 ])
+const wizardActivations: Record<string, string> = { 'overchannel': 'Scelta durante il lancio; gestita nella pagina Incantesimi', 'sculpt spells': 'Scelta delle creature durante il lancio', 'arcane recovery': 'Recupero dopo riposo breve; gestito nella pagina Incantesimi', 'memorize spell': 'Sostituzione dopo riposo breve' }
 // Solo durate verificate: riposi, costi e durate di altre magie nel testo non sono timer del privilegio.
 const reviewedRounds: Record<string, number> = {
     rage: 10, ira: 10, 'bardic inspiration': 100, 'ispirazione bardica': 100,
@@ -40,18 +45,20 @@ export function pdfAbilities(sheet: CharacterSheet): PdfAbility[] {
             const key = `combatFeature.${encodeURIComponent(`${source}:${normalized(name)}`)}`
             const text = normalized(description).split(/(?<=[.!?])\s+/).filter((sentence) => !/\b(?:cannot|can't|non puoi|non puo)\b/.test(sentence)).join(' ')
             const rule = actionRules.find(([, pattern]) => pattern.test(text))
-            const passive = passiveNames.has(baseName(name))
-            const automatic = !description ? 'review' : passive ? 'passive' : rule ? 'active' : 'review'
+            const reviewedFeature = source === 'classFeatures' ? savedWizardFeatures(sheet).find((x) => x.name === name) : undefined
+            const passive = reviewedFeature ? reviewedFeature.activation === 'passive' : passiveNames.has(baseName(name))
+            const wizardActivation = wizardActivations[baseName(name)]
+            const automatic = reviewedFeature?.activation ?? (!description ? 'review' : passive ? 'passive' : rule || wizardActivation ? 'active' : 'review')
             const override = details[key]
             const activation = override === 'include' ? 'active' : override === 'exclude' ? 'passive' : automatic
-            const rounds = reviewedRounds[baseName(name)]
-            const suggested = (Object.keys(durationTurns) as SheetAbility['duration'][]).find((duration) => rounds !== undefined && durationTurns[duration] === rounds) ?? 'Senza conteggio'
+            const rounds = reviewedFeature?.rounds ?? reviewedRounds[baseName(name)]
+            const suggested = (Object.keys(durationTurns) as SheetAbility['duration'][]).find((duration) => rounds !== undefined && durationTurns[duration] === rounds) ?? (rounds ? 'Personalizzata' : 'Senza conteggio')
             const duration = Object.hasOwn(durationTurns, details[`${key}.duration`] ?? '') ? details[`${key}.duration`] as SheetAbility['duration'] : suggested
-            const customTurns = Number(details[`${key}.turns`] ?? 0)
+            const customTurns = Number(details[`${key}.turns`] ?? rounds ?? 0)
             const remainingTurns = duration === 'Personalizzata' ? (Number.isSafeInteger(customTurns) && customTurns >= 0 ? customTurns : 0) : durationTurns[duration]
             return {
                 key, name, description: description || block.trim(), activation,
-                reason: override === 'include' ? 'Confermato manualmente' : override === 'exclude' ? 'Escluso manualmente' : passive ? 'Privilegio passivo' : rule?.[0] ?? 'Attivazione da verificare',
+                reason: override === 'include' ? 'Confermato manualmente' : override === 'exclude' ? 'Escluso manualmente' : passive ? 'Privilegio passivo / effetto condizionale' : wizardActivation ?? rule?.[0] ?? 'Attivazione da verificare',
                 template: { name, description: description || block.trim(), duration, remainingTurns, timed: duration !== 'Senza conteggio' },
             }
         }),
