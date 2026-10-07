@@ -212,7 +212,7 @@ export function applyCreation(input: CharacterSheet, data: CreationData): Charac
     put('classFeatures', characterClass?.index === 'wizard' && sheet.playerDetails?.['rules.edition'] === '2024' ? wizardFeatures2024({ ...sheet, playerDetails: { ...d, 'creation.subclass': subclass?.index ?? '' } }) : data.features.filter((x) => x.class.index === characterClass?.index && (!x.subclass || x.subclass.index === subclass?.index) && x.level <= level && (!x.editions || x.editions.includes(spellEdition(sheet))) && (!x.choice || wizardFeatureSelected(sheet, x, data))).map((x) => `${labelOf(x)} (livello ${x.level})\n${x.desc.join('\n')}${x.activation && x.sourceUrl ? `\nFonte: ${x.sourceUrl}` : ''}`).join('\n\n'))
     put('wizard.featureRules', JSON.stringify(characterClass?.index === 'wizard' ? selectedWizardFeatures(sheet, data) : []))
     if (characterClass?.index === 'wizard' && spellEdition(sheet) === '2014' && level >= 3 && d['wizard.cantripFormulas'] === 'true') put('classFeatures', next.classFeatures + '\n\nCantrip Formulas (livello 3)\nRegola opzionale: dopo un riposo lungo puoi sostituire un trucchetto da mago consultando il libro.')
-    put('hitDice', characterClass?.hit_die ? `${level}d${characterClass.hit_die}` : '')
+    put('hitDice', characterClass?.hit_die ? `1d${characterClass.hit_die}` : '')
     put('hitDiceTotal', characterClass ? level : '')
     if (characterClass?.hit_die && sheet.constitution !== '') {
         const con = modifier(sheet.constitution)

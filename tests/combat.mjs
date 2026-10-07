@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { newCharacterSheet, parseCharacterSheets, turnFromSheet, abilitiesFromSheet, importSheetAbility, initiativeBonus } from '../src/utils/CharacterSheets.ts'
-import { sortByInitiative, nextCombatTurn, durationTurns, advanceAbilityDurations, activateAbility, removeParticipantAbilities, hitPointsAfterDamage, hitPointsAfterHealing } from '../src/utils/Combat.ts'
+import { sortByInitiative, nextCombatTurn, durationTurns, advanceAbilityDurations, activateAbility, removeParticipantAbilities, hitPointsAfterDamage, hitPointsAfterDamageWithTemporary, hitPointsAfterHealing } from '../src/utils/Combat.ts'
 
 const participants = [
     { id: 0, initiative: '-2' },
@@ -12,6 +12,11 @@ const ordered = sortByInitiative(participants)
 assert.equal(hitPointsAfterDamage('32', '7'), '25')
 assert.equal(hitPointsAfterDamage('5', '9'), '0', 'Damage must not make hit points negative')
 assert.equal(hitPointsAfterDamage('0', '2'), '0')
+assert.deepEqual(hitPointsAfterDamageWithTemporary('20', '8', '5'), { hitPoints: '20', temporaryHitPoints: '3' })
+assert.deepEqual(hitPointsAfterDamageWithTemporary('20', '8', '8'), { hitPoints: '20', temporaryHitPoints: '0' })
+assert.deepEqual(hitPointsAfterDamageWithTemporary('20', '8', '11'), { hitPoints: '17', temporaryHitPoints: '0' })
+assert.deepEqual(hitPointsAfterDamageWithTemporary('20', '', '5'), { hitPoints: '15', temporaryHitPoints: '' })
+assert.equal(hitPointsAfterDamageWithTemporary('20', '-1', '5'), null)
 for (const [hp, damage] of [['', '5'], ['10', ''], ['10', '-2'], ['10', '0'], ['10', '2.5'], ['-1', '1'], ['Infinity', '2'], ['10', '9007199254740992']]) assert.equal(hitPointsAfterDamage(hp, damage), null, 'Invalid values must leave hit points unchanged')
 assert.deepEqual(ordered.map(({ id }) => id), [2, 1, 3, 0])
 assert.equal(participants[0].id, 0, 'Sorting must not mutate the original list')

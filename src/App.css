@@ -39,12 +39,12 @@
 }
 
 .turn-row {
-    grid-template-columns: 36px minmax(0, 1fr) minmax(85px, 110px) repeat(2, minmax(70px, 100px)) 36px;
+    grid-template-columns: 36px minmax(0, 1fr) minmax(85px, 110px) repeat(3, minmax(70px, 100px)) 36px;
     grid-template-areas:
-        "drag name initiative pf ca delete"
-        ". details . damage damage ."
-        ". abilities abilities abilities abilities ."
-        ". active active active active .";
+        "drag name initiative pf temporary-pf ca delete"
+        ". details . damage damage damage ."
+        ". abilities abilities abilities abilities abilities ."
+        ". active active active active active .";
 }
 
 .ability-row {
@@ -70,6 +70,7 @@
 .ability-name { grid-area: name; }
 .initiative-field { grid-area: initiative; }
 .turn-pf { grid-area: pf; }
+.turn-temporary-pf { grid-area: temporary-pf; }
 .turn-hitpoints { display: flex; align-items: center; gap: 4px; }
 .turn-row .turn-hitpoints input { width: 50px; flex: 1; padding-inline: 4px; }
 .turn-max-hitpoints { flex-shrink: 0; font-size: 13px; color: var(--text-h); }
@@ -464,13 +465,13 @@ html { scroll-behavior: smooth; }
 
 @media (max-width: 1400px) {
     .tracker-main .turn-row {
-        grid-template-columns: 36px repeat(3, minmax(0, 1fr)) 36px;
+        grid-template-columns: 36px repeat(4, minmax(0, 1fr)) 36px;
         grid-template-areas:
-            "drag name name name delete"
-            ". initiative pf ca ."
-            ". details damage damage ."
-            ". abilities abilities abilities ."
-            ". active active active .";
+            "drag name name name name delete"
+            ". initiative pf temporary-pf ca ."
+            ". details damage damage damage ."
+            ". abilities abilities abilities abilities ."
+            ". active active active active .";
         gap: 8px;
     }
 }

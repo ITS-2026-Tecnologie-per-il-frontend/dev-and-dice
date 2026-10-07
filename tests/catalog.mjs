@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { parseCatalog, searchCatalog, sheetFromCatalog, templateFromCatalog, sheetWithCombatSpells } from '../src/utils/Catalog.ts'
+import { parseCatalog, searchCatalog, sheetFromCatalog, templateFromCatalog, sheetWithCombatSpells, sheetWithCombatAbilities } from '../src/utils/Catalog.ts'
 import { abilitiesFromSheet, parseCharacterSheets, newCharacterSheet, turnFromSheet, importSheetAbility } from '../src/utils/CharacterSheets.ts'
 
 const raw = JSON.parse(readFileSync(new URL('../public/data/database.json', import.meta.url), 'utf8'))
@@ -16,6 +16,10 @@ assert.throws(() => parseCatalog({ ...raw, creatures: [{ id: 'bad', name: 'Bad',
 assert.throws(() => parseCatalog({ ...raw, spells: [{ ...raw.spells[0], durationInfo: { rounds: -1 } }] }))
 const aboleth = catalog.creatures.find((entry) => entry.name === 'Aboleth')
 const base = { ...newCharacterSheet(), name: 'Personalizzato' }
+const { abilities: _abilities, ...legacySheet } = base
+assert.deepEqual(turnFromSheet(legacySheet, 41).sheet.abilities, [], 'Legacy cards without ability arrays must still convert into combat turns')
+assert.deepEqual(sheetWithCombatSpells(legacySheet, catalog).abilities, [], 'Combat ability expansion must tolerate legacy cards')
+assert.deepEqual(sheetWithCombatAbilities(legacySheet, catalog).abilities, [], 'Combat ability conversion must tolerate legacy cards')
 const sheet = sheetFromCatalog(aboleth, catalog, base)
 assert.equal(sheet.id, base.id, 'Selecting a catalog entry while editing must preserve the saved sheet identity')
 assert.equal(sheet.catalogId, aboleth.id)

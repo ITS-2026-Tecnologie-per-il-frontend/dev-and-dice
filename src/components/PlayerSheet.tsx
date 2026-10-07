@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState, type ReactNode } from 'react'
-import { characterFields, numericCharacterFields, initiativeBonus, type CharacterSheet } from '../utils/CharacterSheets'
+import { characterFields, clampCurrentHitPointsToMaximum, normalizeHitPoints, numericCharacterFields, initiativeBonus, type CharacterSheet } from '../utils/CharacterSheets'
 import { applyCreation, creationEnabled, enableCreation, labelOf, loadCreationData, resetCreationOverrides, selectedOrigins, spellRules, spellSelection, subclassOptions, subclassMinimumLevel, type CreationData, type Origin } from '../utils/PlayerCreation'
 import { CreationChoices, CreationStatus } from './PlayerCreation'
 import { spellRowState, spellSources, savedSpellGrants, landNames2014, landNames2024 } from '../utils/Spellcasting'
@@ -50,14 +50,18 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
             && entry.data.aliases.some((alias) => typeof alias === 'string' && alias.toLowerCase() === name.toLowerCase()))?.name ?? name
     }
     const selectedMagic = data && automatic ? spellSelection({ ...sheet, playerDetails: Object.fromEntries(Object.entries(details).map(([key, value]) => [key, /^spell\.\d+\.\d+\.name$/.test(key) ? spellLabel(value) : value])) }, data) : undefined
-    function onChange(next: CharacterSheet) {
-        emitChange(data ? applyCreation(next, data) : next)
+    function onChange(next: CharacterSheet, clampHitPoints = false) {
+        const updated = data ? applyCreation(next, data) : next
+        emitChange(clampHitPoints ? clampCurrentHitPointsToMaximum(updated) : updated)
+    }
+    function clampHitPointsOnMaximumBlur() {
+        emitChange(clampCurrentHitPointsToMaximum(sheet))
     }
     function updateBase(key: string, value: string) {
         if (automatic && scores.includes(key as typeof scores[number])) {
             const bonus = Number(sheet[key as typeof scores[number]]) - Number(details[`creation.base.${key}`] || 0)
             onChange({ ...sheet, playerDetails: { ...details, [`creation.base.${key}`]: value === '' ? '' : String(Number(value) - bonus) } })
-        } else onChange({ ...sheet, [key]: value, playerDetails: { ...details, ...(automatic && ['armorClass', 'speed'].includes(key) ? { [`creation.override.base.${key}`]: 'true' } : {}) } })
+        } else onChange({ ...sheet, [key]: value, playerDetails: { ...details, ...(automatic && ['armorClass', 'speed'].includes(key) ? { [`creation.override.base.${key}`]: 'true' } : {}) } }, key === 'hitPoints')
     }
     function originSelect(kind: 'class' | 'race' | 'subrace' | 'subclass' | 'background', label: string, options: Origin[], base?: 'characterClass' | 'race') {
         const key = `creation.${kind}`
@@ -85,16 +89,18 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
         const value = Math.floor((Number(score) - 10) / 2)
         return `${value >= 0 ? '+' : ''}${value}`
     }
-    function field(key: string, label: string, options: { base?: boolean; multiline?: boolean; numeric?: boolean; placeholder?: string } = {}) {
+    function field(key: string, label: string, options: { base?: boolean; multiline?: boolean; numeric?: boolean; placeholder?: string; onBlur?: () => void } = {}) {
         const value = options.base ? sheet[key as keyof typeof characterFields] : details[key] ?? ''
-        const update = (value: string) => options.base
-            ? updateBase(key, value) : detail(key, value)
+        const update = (value: string) => {
+            const normalized = ['maxHitPoints', 'hitPoints', 'temporaryHitPoints'].includes(key) ? normalizeHitPoints(value) : value
+            return options.base ? updateBase(key, normalized) : detail(key, normalized)
+        }
         const numeric = options.numeric || (options.base && (numericCharacterFields as readonly string[]).includes(key))
         return <label className={`player-field${options.multiline ? ' player-field-prose' : ''}`} key={key}>
             <span>{label}</span>
             {options.multiline
                 ? <textarea rows={4} value={value} onChange={(event) => update(event.target.value)} placeholder={options.placeholder} />
-                : <input type={numeric ? 'number' : 'text'} step={numeric ? '1' : undefined} required={options.base && key === 'name'} pattern={options.base && key === 'name' ? '.*\\S.*' : undefined} value={value} onChange={(event) => update(event.target.value)} placeholder={options.placeholder} />}
+                : <input type={numeric ? 'number' : 'text'} step={numeric ? '1' : undefined} required={options.base && key === 'name'} pattern={options.base && key === 'name' ? '.*\\S.*' : undefined} value={value} onChange={(event) => update(event.target.value)} onBlur={options.onBlur} placeholder={options.placeholder} />}
         </label>
     }
     function box(title: string, children: ReactNode, className = '') {
@@ -242,10 +248,14 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
                 <div className="player-column">
                     {box('Combattimento', <>
                         <div className="player-combat-top">{field('armorClass', 'CA', { base: true })}{field('temporaryAC', 'CA temporanea', { numeric: true })}{field('initiative', 'Iniziativa predefinita', { base: true, placeholder: initiativeBonus(sheet) })}</div>
-                        <div className="player-hitpoints">{field('maxHitPoints', 'PF massimi', { numeric: true })}{field('hitPoints', 'PF attuali', { base: true })}{field('temporaryHitPoints', 'PF temporanei', { numeric: true })}</div>
+                        <div className="player-hitpoints">{field('maxHitPoints', 'PF massimi', { numeric: true, onBlur: clampHitPointsOnMaximumBlur })}{field('hitPoints', 'PF attuali', { base: true })}{field('temporaryHitPoints', 'PF temporanei', { numeric: true })}</div>
                         <div className="player-three-fields">{field('exhaustion', 'Affaticamento', { numeric: true })}{field('vision', 'Visione')}{field('speed', 'Velocità', { base: true })}</div>
                         {check('darkvision', 'Scurovisione')}
-                        <div className="player-two-fields">{box('Dadi vita', <div className="player-three-fields">{field('hitDice', 'DV')}{field('hitDiceTotal', 'Totali', { numeric: true })}{field('hitDiceUsed', 'Usati', { numeric: true })}</div>)}
+                        <div className="player-two-fields">{box('Dadi vita', <div className="player-three-fields">
+                            <div className="player-field"><span>DV</span><output>{details.hitDice || '—'}</output></div>
+                            <div className="player-field"><span>Totali</span><output>{details.hitDiceTotal || '—'}</output></div>
+                            {field('hitDiceUsed', 'Usati', { numeric: true })}
+                        </div>)}
                         {box('TS contro morte', <>{['Successi', 'Fallimenti'].map((label) => <div className="player-death" key={label}><span>{label}</span>{[0, 1, 2].map((index) => check(`death.${label}.${index}`, `${label} ${index + 1}`))}</div>)}</>)}</div>
                     </>)}
                     {table('Attacchi e incantesimi', 'attacks', ['Arma / attacco', 'Bonus att.', 'Danni / tipo'], wizardTemplate ? 4 : 6)}

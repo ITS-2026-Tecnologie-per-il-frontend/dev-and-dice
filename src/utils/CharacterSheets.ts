@@ -45,19 +45,41 @@ export function parseCharacterSheets(raw: string | null): CharacterSheet[] {
 
 export function turnFromSheet(sheet: CharacterSheet, id: number) {
     const initiative = sheet.kind === 'PG' ? sheet.initiative : ''
-    return { id, description: sheet.name, initiative, hitPoints: sheet.hitPoints, armorClass: sheet.armorClass, sheet: { ...sheet, initiative, abilities: sheet.abilities.map((ability) => ({ ...ability })) } }
+    return { id, description: sheet.name, initiative, hitPoints: sheet.hitPoints, armorClass: sheet.armorClass, temporaryHitPoints: sheet.playerDetails?.temporaryHitPoints ?? '', sheet: { ...sheet, initiative, abilities: (sheet.abilities ?? []).map((ability) => ({ ...ability })) } }
 }
 
-export type SheetStats = Pick<CharacterSheet, 'hitPoints' | 'armorClass' | 'initiative'>
+export type SheetStats = Pick<CharacterSheet, 'hitPoints' | 'armorClass' | 'initiative'> & { temporaryHitPoints?: string }
 
 export function patchSheetStats(sheet: CharacterSheet, stats: Partial<SheetStats>): CharacterSheet | null {
-    if (Object.values(stats).some((value) => value !== '' && (!value.trim() || !Number.isSafeInteger(Number(value))))) return null
-    return { ...sheet, ...stats, ...(stats.armorClass !== undefined && stats.armorClass !== sheet.armorClass && sheet.playerDetails?.['creation.enabled'] === 'true'
+    if (Object.values(stats).some((value) => value !== '' && (!value.trim() || !Number.isSafeInteger(Number(value))))
+        || (stats.temporaryHitPoints !== undefined && stats.temporaryHitPoints !== '' && Number(stats.temporaryHitPoints) < 0)) return null
+    const { temporaryHitPoints, ...baseStats } = stats
+    return { ...sheet, ...baseStats, ...(temporaryHitPoints !== undefined ? { playerDetails: { ...sheet.playerDetails, temporaryHitPoints } } : {}), ...(baseStats.armorClass !== undefined && baseStats.armorClass !== sheet.armorClass && sheet.playerDetails?.['creation.enabled'] === 'true'
         ? { playerDetails: { ...sheet.playerDetails, 'creation.override.base.armorClass': 'true' } } : {}) }
 }
 
-export function syncTurnStats<T extends SheetStats & { description: string; sheet?: CharacterSheet }>(turn: T, sheet: CharacterSheet): T {
+export function clampCurrentHitPointsToMaximum(sheet: CharacterSheet): CharacterSheet {
+    const maximum = sheet.playerDetails?.maxHitPoints
+    if (maximum === undefined) return sheet
+    const hitPoints = clampHitPointsToMaximum(sheet.hitPoints, maximum)
+    return hitPoints === sheet.hitPoints ? sheet : { ...sheet, hitPoints }
+}
+
+export function clampHitPointsToMaximum(hitPoints: string, maximum: string): string {
+    const current = Number(hitPoints)
+    const max = Number(maximum)
+    if (!hitPoints.trim() || !maximum.trim() || !Number.isSafeInteger(current) || current < 0
+        || !Number.isSafeInteger(max) || max < 0 || current <= max) return hitPoints
+    return maximum
+}
+
+export function normalizeHitPoints(value: string): string {
+    return value.replace(/^0+(?=\d)/, '')
+}
+
+export function syncTurnStats<T extends SheetStats & { description: string; sheet?: CharacterSheet; temporaryHitPoints?: string }>(turn: T, sheet: CharacterSheet): T {
     return { ...turn, description: sheet.name, hitPoints: sheet.hitPoints, armorClass: sheet.armorClass, initiative: sheet.initiative,
+    ...(turn.temporaryHitPoints !== undefined ? { temporaryHitPoints: sheet.playerDetails?.temporaryHitPoints ?? '' } : {}),
         sheet: { ...sheet, abilities: turn.sheet?.abilities ?? sheet.abilities } }
 }
 
