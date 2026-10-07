@@ -395,3 +395,127 @@ finestra PDF si applicano alle card solo quando vengono salvate.
 ```sh
 node --experimental-strip-types tests/stat-sync.mjs
 ```
+
+## Incantesimi inglesi e traduzioni mancanti
+
+`public/data/wikidot-spells.json` conserva tutti i 574 incantesimi dell'indice
+Wikidot in inglese, con livello, scuola, tempo di lancio, gittata, componenti,
+durata, concentrazione, rituale, flag UA e URL della fonte.
+
+In `public/data/database.json`:
+
+- `englishSpells` contiene tutte le voci inglesi. Per 319 sono disponibili anche
+  descrizioni, testo ai livelli superiori e dati SRD inglesi con licenza aperta,
+  provenienti da `character-options.json`, con fonte e licenze esplicite.
+  Gli altri incantesimi hanno i metadati e il link Wikidot, senza copia integrale
+  dei testi non SRD.
+- `spells` conserva i 319 incantesimi italiani originali.
+- `spellIndex` contiene solo i 255 incantesimi senza corrispondenza italiana:
+  sono disponibili nell'app in inglese, senza duplicare quelli già tradotti.
+- `spellComparison` contiene le corrispondenze per ID, l'elenco
+  `missingItalian` da usare per cercare le traduzioni e le discrepanze di livello.
+  Le traduzioni future vanno aggiunte a `spells` con `language: "it"` e
+  `englishName`; la sincronizzazione aggiorna automaticamente il confronto.
+
+Il confronto usa il nome inglese normalizzato e una lista esplicita di varianti
+SRD e refusi verificati. Non usa somiglianze approssimative e mantiene distinte
+le versioni UA. La fonte italiana indica Danza Irresistibile al livello 8,
+mentre quella inglese indica livello 6: il report segnala la differenza e
+conserva il dato originale.
+
+```sh
+python3 scripts/scrape_wikidot.py
+python3 scripts/sync_spells.py
+python3 tests/sync_spells.py
+```
+
+Anche `scripts/build_database.py` applica lo stesso confronto quando rigenera
+il database. La sincronizzazione valida gli input e sostituisce il JSON solo
+quando l'elaborazione è terminata, conservando il file precedente in caso di errore.
+
+Il selettore **Lingua** sopra il combattimento permette di
+scegliere Italiano o English. Italiano mostra le 319 traduzioni disponibili e
+le 255 voci mancanti in inglese; English mostra tutte le 574 voci in inglese.
+La preferenza viene salvata in `dev-and-dice.spell-language` nel browser.
+La ricerca riconosce anche i nomi dell'altra lingua e le varianti SRD.
+Il cambio lingua conserva i collegamenti delle schede, le abilità importate,
+il loro stato e i turni rimanenti. I testi inseriti manualmente e le altre
+sezioni dell'interfaccia rimangono quelli originali.
+
+## Preparazione e disponibilità degli incantesimi · 2014 e 2024
+
+Le logiche delle due edizioni sono separate in `src/utils/Spellcasting.ts`.
+Il profilo 2014 resta quello attivo; il selettore dell'edizione non è ancora
+presente. Le tabelle 2024 di trucchetti, preparati e slot, dal livello 1 al 20,
+sono in `src/data/Spellcasting2024.ts`, estratte dallo SRD 5.2.1 ufficiale.
+`spellProfile(sheet, data, edition)` e `spellRules(sheet, data, edition)`
+permettono di verificare entrambe le edizioni; la chiave interna
+`playerDetails['rules.edition']` è pronta per la futura impostazione.
+Questo profilo riguarda gli incantesimi, non converte tutta la creazione
+personaggio né sostituisce i testi 2014 del catalogo con quelli 2024.
+
+Nel 2014 chierico, druido, paladino e mago preparano incantesimi; bardo,
+ranger, stregone e warlock utilizzano la lista degli incantesimi conosciuti.
+I trucchetti non consumano preparazioni. Le formule sono livello + modificatore
+per chierico, druido e mago; metà livello, arrotondata per difetto, + Carisma
+per il paladino, minimo uno quando ha accesso agli incantesimi.
+Il libro del mago parte da 6 incantesimi e riceve 2 incantesimi per livello
+successivo, ma non ha un tetto che impedisca le copie aggiuntive.
+
+Nel 2024 il numero degli incantesimi preparati usa le tabelle, incluso il mago;
+paladino e ranger iniziano a lanciare al livello 1 e cambiano un incantesimo
+per riposo lungo. Chierico, druido e mago cambiano la lista al riposo lungo;
+bardo, stregone e warlock cambiano le scelte con l'aumento di livello.
+I profili conservano questa distinzione (`changePolicy`): l'app non registra
+ancora i riposi né la cronologia delle sostituzioni.
+
+Le spunte della pagina Incantesimi:
+
+- per le classi che preparano, selezionano i preparati e rispettano il limite;
+- per trucchetti e incantesimi conosciuti, risultano automaticamente selezionate;
+- per razza/specie, oggetti e privilegi manuali indicano la disponibilità,
+  separata dal limite della classe; un campo consente di annotare fonte, usi e cariche;
+- gli incantesimi sempre preparati, compresi i privilegi di sottoclasse
+  riconosciuti, non consumano il limite delle preparazioni;
+- Segreti Magici e Segreti aggiuntivi della Sapienza sono fonti distinte,
+  rispettivamente dentro e fuori dal numero degli incantesimi di classe;
+- Arcanum Mistico ha una scelta per livello dal 6° al 9°, sbloccata ai livelli
+  11, 13, 15 e 17 del warlock, indipendente dagli slot del patto.
+
+Le magie concesse automaticamente sono salvate come dati strutturati in
+`playerDetails.spellGrants`: Dominio della Vita, Giuramento di Devozione,
+Circolo della Terra con terreno scelto e magie razziali SRD supportate.
+Il profilo 2024 comprende anche le liste rivedute di Immondo e Stirpe Draconica
+oltre alle magie concesse dalle classi e dai lignaggi implementati.
+Gli oggetti non vengono riconosciuti interpretando il testo libero dell'inventario:
+la fonte Oggetto e la spunta Disponibile rappresentano la conferma del giocatore
+che l'oggetto sia posseduto, utilizzabile e, quando richiesto, sintonizzato.
+Slot, usi gratuiti, cariche e condizioni di lancio si gestiscono manualmente;
+la spunta non consuma risorse e non rappresenta l'avvenuto lancio.
+Multiclasse e privilegi fuori dalle opzioni SRD supportate richiedono compilazione
+manuale delle fonti e verifica con il DM.
+
+Quando il personaggio viene aggiunto al combattimento, nella sua lista compaiono
+solo gli incantesimi disponibili. Gli altri rimangono nella scheda e nel libro;
+i rituali non preparati del mago rimangono consultabili nella scheda. I privilegi
+razziali e sempre preparati vengono ricalcolati anche per le schede salvate prima
+di questa modifica. Nessun incantesimo viene attivato o importato nella sezione
+Abilità senza il clic del giocatore. Gli slot spesi non cancellano la preparazione.
+
+Fonti ufficiali:
+
+- [Classi 2014](https://www.dndbeyond.com/sources/dnd/basic-rules-2014/classes)
+- [Razze 2014](https://www.dndbeyond.com/sources/dnd/basic-rules-2014/races)
+- [Oggetti magici 2014](https://www.dndbeyond.com/sources/dnd/basic-rules-2014/magic-items)
+- [SRD 5.2.1, regole 2024, CC BY 4.0](https://media.dndbeyond.com/compendium-images/srd/5.2/SRD_CC_v5.2.1.pdf)
+
+This work includes material from the System Reference Document 5.2.1 (“SRD 5.2.1”)
+by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd.
+The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International
+License, available at https://creativecommons.org/licenses/by/4.0/legalcode.
+Le tabelle sono state convertite in dati numerici e le regole in logiche applicative;
+queste modifiche non sono opera di Wizards of the Coast.
+
+```sh
+node --experimental-strip-types tests/spellcasting.mjs
+```

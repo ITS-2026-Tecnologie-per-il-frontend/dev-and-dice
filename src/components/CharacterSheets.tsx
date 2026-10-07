@@ -96,7 +96,7 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                                         <CatalogSearch
                                             required
                                             pattern={'.*\\S.*'}
-                                            value={ability.name}
+                                            value={catalog.abilities.find((entry) => entry.id === ability.catalogId)?.name ?? ability.name}
                                             aria-label={`Nome abilità ${index + 1} della scheda`}
                                             entries={catalog.abilities}
                                             onChange={(name) => setDraft({ ...draft, abilities: draft.abilities.map((item, i) => i === index ? { ...item, name, catalogId: undefined } : item) })}
@@ -116,7 +116,7 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                                         const remainingTurns = event.target.valueAsNumber
                                         if (Number.isSafeInteger(remainingTurns) && remainingTurns >= 0) setDraft({ ...draft, abilities: draft.abilities.map((item, i) => i === index ? { ...item, remainingTurns } : item) })
                                     }} /></label>}
-                                    <InfoButton name={ability.name} description={ability.description} entry={catalog.abilities.find((entry) => entry.id === ability.catalogId)} fields={{ duration: ability.duration, remainingTurns: ability.remainingTurns ?? durationTurns[ability.duration] }} />
+                                    <InfoButton name={catalog.abilities.find((entry) => entry.id === ability.catalogId)?.name ?? ability.name} description={ability.description} entry={catalog.abilities.find((entry) => entry.id === ability.catalogId)} fields={{ duration: ability.duration, remainingTurns: ability.remainingTurns ?? durationTurns[ability.duration] }} />
                                     <button className="delete-turn" type="button" aria-label={`Elimina ${ability.name || `abilità ${index + 1}`} dalla scheda`} onClick={() => setDraft({ ...draft, abilities: draft.abilities.filter((_, i) => i !== index) })}>×</button>
                                 </div>)
     }

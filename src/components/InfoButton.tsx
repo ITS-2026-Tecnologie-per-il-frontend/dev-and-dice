@@ -86,7 +86,7 @@ export function InfoButton({ entry, name, description, fields = {} }: Props) {
     const details = { ...entry?.data, ...fields }
     const grouped = ['abilityScores', 'stats', 'durationInfo', 'facts', 'sections']
     const summary = Object.fromEntries(Object.entries(details).filter(([key]) => ![
-        'id', 'name', 'description', 'sourceUrl', 'slug', 'abilityIds', 'creatureId', 'catalogId', 'licenseId', ...grouped,
+        'id', 'name', 'description', 'sourceUrl', 'srdData', 'slug', 'abilityIds', 'creatureId', 'catalogId', 'licenseId', ...grouped,
     ].includes(key)))
     const text = entry?.description || description
     const sections = entry?.type === 'creature' ? creatureSections(entry) : []

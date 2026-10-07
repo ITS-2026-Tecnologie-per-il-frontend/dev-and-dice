@@ -2,6 +2,8 @@ import { useEffect, useId, useMemo, useState, type ReactNode } from 'react'
 import { characterFields, numericCharacterFields, type CharacterSheet } from '../utils/CharacterSheets'
 import { applyCreation, creationEnabled, enableCreation, labelOf, loadCreationData, resetCreationOverrides, selectedOrigins, spellRules, spellSelection, type CreationData, type Origin } from '../utils/PlayerCreation'
 import { CreationChoices, CreationStatus } from './PlayerCreation'
+import { spellRowState, spellSources, savedSpellGrants, landNames2014, landNames2024 } from '../utils/Spellcasting'
+import { CatalogSearch } from './CatalogSearch'
 import { type Catalog } from '../utils/Catalog'
 import '../PlayerSheet.css'
 
@@ -21,7 +23,7 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
     const [rawData, setData] = useState<CreationData>()
     const data = useMemo(() => {
         if (!rawData) return undefined
-        const translated = new Map(catalog?.abilities.filter((x) => x.label === 'Incantesimo · italiano' && typeof x.data.englishName === 'string').map((x) => [String(x.data.englishName).toLowerCase(), x.name]))
+        const translated = new Map(catalog?.abilities.filter((x) => typeof x.data.level === 'number').flatMap((x) => (Array.isArray(x.data.aliases) ? x.data.aliases : [x.name]).filter((name): name is string => typeof name === 'string').map((name) => [name.toLowerCase(), x.name] as const)))
         return { ...rawData, spells: rawData.spells.map((x) => ({ ...x, nameIt: translated.get(x.name.toLowerCase()) })) }
     }, [rawData, catalog])
     const [dataError, setDataError] = useState('')
@@ -35,7 +37,11 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
     const details = sheet.playerDetails ?? {}
     const automatic = creationEnabled(sheet) && !!data
     const magic = data && automatic ? spellRules(sheet, data) : undefined
-    const selectedMagic = data && automatic ? spellSelection(sheet, data) : undefined
+    function spellLabel(name: string) {
+        return catalog?.abilities.find((entry) => typeof entry.data.level === 'number' && Array.isArray(entry.data.aliases)
+            && entry.data.aliases.some((alias) => typeof alias === 'string' && alias.toLowerCase() === name.toLowerCase()))?.name ?? name
+    }
+    const selectedMagic = data && automatic ? spellSelection({ ...sheet, playerDetails: Object.fromEntries(Object.entries(details).map(([key, value]) => [key, /^spell\.\d+\.\d+\.name$/.test(key) ? spellLabel(value) : value])) }, data) : undefined
     function onChange(next: CharacterSheet) {
         emitChange(data ? applyCreation(next, data) : next)
     }
@@ -86,8 +92,49 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
         return <section className={`player-box ${className}`}><h3>{title}</h3>{children}</section>
     }
     function check(key: string, label: string) {
-        const atPreparationLimit = magic?.prepared && selectedMagic && selectedMagic.prepared >= magic.preparedLimit && key.startsWith('spell.') && key.endsWith('.prepared') && details[key] !== 'true'
-        return <label className="player-check" key={key}><input type="checkbox" aria-label={label} checked={details[key] === 'true'} disabled={!!atPreparationLimit} onChange={(event) => detail(key, String(event.target.checked))} /><span>{label}</span></label>
+        return <label className="player-check" key={key}><input type="checkbox" aria-label={label} checked={details[key] === 'true'} onChange={(event) => detail(key, String(event.target.checked))} /><span>{label}</span></label>
+    }
+    function spellRow(level: number, index: number) {
+        const root = `spell.${level}.${index}`
+        const state = spellRowState(sheet, level, index)
+        const name = spellLabel(details[`${root}.name`] ?? '')
+        const limit = state.needsPreparation && magic?.prepared && selectedMagic && selectedMagic.prepared >= magic.preparedLimit && !state.checked
+        const choices = state.source === 'arcanum' ? (magic?.arcanumLevels.includes(level) ? data?.spells.filter((x) => x.level === level && x.classes.some((c) => c.index === 'warlock')) ?? [] : [])
+            : ['secrets', 'lore'].includes(state.source) ? data?.spells.filter((x) => x.level === level && level <= (magic?.maxLevel ?? 0) && (magic?.edition !== '2024' || state.source === 'lore' || x.classes.some((c) => ['bard', 'cleric', 'druid', 'wizard'].includes(c.index)))) ?? []
+            : magic?.spells.filter((x) => x.level === level) ?? []
+        const fullKnown = state.countsKnown && selectedMagic && selectedMagic.knownLimit !== undefined && details['creation.class'] !== 'wizard'
+            && selectedMagic.spells >= selectedMagic.knownLimit
+        const fullCantrips = state.countsCantrip && selectedMagic && magic && selectedMagic.cantrips >= magic.cantrips
+        const fullLore = state.source === 'lore' && Object.entries(details).filter(([key, value]) => /^spell\.\d+\.\d+\.name$/.test(key) && value.trim() && spellRowState(sheet, Number(key.split('.')[1]), Number(key.split('.')[2])).source === 'lore').length >= 2
+        const fullArcanum = state.source === 'arcanum' && Object.entries(details).some(([key, value]) => key.startsWith(`spell.${level}.`) && key.endsWith('.name') && key !== `${root}.name` && value.trim() && spellRowState(sheet, level, Number(key.split('.')[2])).source === 'arcanum')
+        const label = state.needsPreparation ? 'Preparato' : state.canToggle ? 'Disponibile' : level === 0 ? 'Trucchetto conosciuto' : magic?.edition === '2024' ? 'Preparato nella lista di classe' : 'Conosciuto / sempre disponibile'
+        return <div className="player-spell-entry" key={index}>
+            <div className="player-spell-row">
+                <label className="player-check"><input type="checkbox" aria-label={`${label}: livello ${level}, incantesimo ${index + 1}`} title={label}
+                    checked={!!name && state.checked} disabled={!name || !state.canToggle || !!limit}
+                    onChange={(event) => detail(state.checkboxKey, String(event.target.checked))} /><span>{label}</span></label>
+                {magic && ['class', 'arcanum', 'secrets', 'lore'].includes(state.source) ? <select aria-label={`Incantesimo livello ${level}, ${index + 1}`} value={name}
+                    onChange={(event) => onChange({ ...sheet, playerDetails: { ...details, [`${root}.name`]: event.target.value, [`${root}.index`]: choices.find((x) => labelOf(x) === event.target.value)?.index ?? '', [`${root}.prepared`]: 'false' } })}>
+                    <option value="">Seleziona…</option>
+                    {name && !choices.some((x) => labelOf(x) === name) && <option value={name}>{name} (verifica con il DM)</option>}
+                    {choices.map((x) => <option key={x.index} value={labelOf(x)} disabled={Object.entries(details).some(([key, value]) => key.startsWith('spell.') && key.endsWith('.name') && key !== `${root}.name` && spellLabel(value) === labelOf(x) && spellRowState(sheet, Number(key.split('.')[1]), Number(key.split('.')[2])).source === state.source)
+                        || (!name && !!(fullKnown || fullCantrips || fullArcanum || fullLore))}>{labelOf(x)}</option>)}
+                </select> : <CatalogSearch aria-label={`Incantesimo livello ${level}, ${index + 1}`} value={name}
+                    entries={catalog?.abilities.filter((entry) => entry.data.level === level) ?? []}
+                    onChange={(value) => detail(`${root}.name`, value)} onSelect={(entry) => detail(`${root}.name`, entry.name)} />}
+            </div>
+            <div className="player-spell-source">
+                <select aria-label={`Fonte dell’incantesimo livello ${level}, ${index + 1}`} value={state.source} onChange={(event) => detail(`${root}.source`, event.target.value)}>
+                    {Object.entries(spellSources).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+                </select>
+                {!['class', 'arcanum', 'secrets', 'lore'].includes(state.source) && <input aria-label={`Fonte e usi dell’incantesimo ${index + 1} di livello ${level}`} placeholder="Fonte e usi / cariche" value={details[`${root}.note`] ?? ''} onChange={(event) => detail(`${root}.note`, event.target.value)} />}
+            </div>
+        </div>
+    }
+    // Limite di 500 righe per livello per proteggere il rendering; oltre serve una lista paginata.
+    function spellRowCount(level: number) {
+        const requested = Number(details[`spell.rows.${level}`])
+        return Number.isSafeInteger(requested) && requested > 0 ? Math.min(500, Math.max(level >= 6 ? 6 : 8, requested)) : level >= 6 ? 6 : 8
     }
     function rollRow(key: string, label: string, score: typeof scores[number], mastery = false) {
         return <div className="player-roll" key={key}>
@@ -223,25 +270,21 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
             </>}
             {page === 2 && <>
                 <div className="player-casting">{field('castingClass', 'Classe da incantatore')}{field('castingAbility', 'Caratteristica da incantatore')}{field('spellDC', 'CD tiro salvezza incantesimi', { numeric: true })}{field('spellAttackBonus', 'Bonus attacco incantesimi', { numeric: true })}</div>
-                {magic && <p className="player-hint">Trucchetti conosciuti: {magic.cantrips}. {magic.known !== undefined && `Incantesimi ${details['creation.class'] === 'wizard' ? 'nel libro (minimo senza copie aggiuntive)' : 'conosciuti'}: ${magic.known}. `}{magic.prepared && `Preparabili: ${magic.preparedLimit}. `}{details['creation.class'] === 'warlock' && 'Gli slot della magia del patto si recuperano con un riposo breve. '}Il menu mostra solo incantesimi SRD della classe e del livello disponibile. Per magie razziali, sottoclassi o contenuti aggiuntivi usa la compilazione manuale.</p>}
-                {selectedMagic && <p className="player-hint">Selezionati: {selectedMagic.cantrips} trucchetti, {selectedMagic.spells} incantesimi, {selectedMagic.prepared} preparati.</p>}
+                {magic && <p className="player-hint">Trucchetti conosciuti: {magic.cantrips}. {magic.known !== undefined && `Incantesimi ${details['creation.class'] === 'wizard' ? 'nel libro (minimo senza copie aggiuntive)' : magic.edition === '2024' ? 'nella lista preparata' : 'conosciuti'}: ${magic.known}. `}{magic.prepared && `Preparabili: ${magic.preparedLimit}. `}{details['creation.class'] === 'warlock' && 'Gli slot della magia del patto si recuperano con un riposo breve. '}Gli incantesimi di classe seguono i limiti indicati. Razza, oggetti e privilegi hanno una fonte separata; gli usi e le cariche si annotano nel campo dedicato.</p>}
+                {selectedMagic && <p className="player-hint">Selezionati: {selectedMagic.cantrips} trucchetti, {selectedMagic.spells} incantesimi, {selectedMagic.prepared} preparati, {selectedMagic.extra} da altre fonti.</p>}
                 {selectedMagic && selectedMagic.issues.length > 0 && <p className="creation-warning" role="alert">{selectedMagic.issues.join(' ')}</p>}
+                {details['creation.class'] === 'druid' && details['creation.subclass'] === 'land' && <label className="player-field"><span>Terra del Circolo</span><select value={details['creation.land'] ?? ''} onChange={(event) => detail('creation.land', event.target.value)}><option value="">Seleziona…</option>{Object.entries(magic?.edition === '2024' ? landNames2024 : landNames2014).map(([key, name]) => <option key={key} value={key}>{name}</option>)}</select></label>}
+                {savedSpellGrants(sheet).length > 0 && box('Incantesimi concessi da razza e sottoclasse', <ul>{savedSpellGrants(sheet).map((grant) => <li key={`${grant.source}:${grant.index}`}><strong>{spellLabel(grant.name)}</strong> · {grant.note}</li>)}</ul>)}
                 {automatic && details.racialSpells && box('Magie razziali (indipendenti dagli slot di classe)', field('racialSpells', 'Incantesimi e usi', { multiline: true }))}
                 <div className="player-spell-page">{[[0, 1, 2], [3, 4, 5], [6, 7, 8, 9]].map((levels, column) => <div className="player-column" key={column}>
                     {levels.map((level) => <section className="player-box player-spell-level" key={level}>
                         <h3><span>{level}</span>{level === 0 ? 'Trucchetti' : `Incantesimi di livello ${level}`}</h3>
                         {level > 0 && <div className="player-two-fields">{field(`slots.${level}.total`, 'Slot totali', { numeric: true })}{field(`slots.${level}.used`, 'Slot spesi', { numeric: true })}</div>}
-                        {Array.from({ length: level >= 6 ? 6 : 8 }, (_, index) => <div className="player-spell-row" key={index}>
-                            {level > 0 && check(`spell.${level}.${index}.prepared`, `Preparato: livello ${level}, incantesimo ${index + 1}`)}
-                            {magic ? <select aria-label={`${level === 0 ? 'Trucchetto' : `Incantesimo livello ${level}`} ${index + 1}`} value={details[`spell.${level}.${index}.name`] ?? ''} onChange={(event) => detail(`spell.${level}.${index}.name`, event.target.value)}>
-                                <option value="">Seleziona…</option>
-                                {details[`spell.${level}.${index}.name`] && !magic.spells.some((x) => x.level === level && labelOf(x) === details[`spell.${level}.${index}.name`]) && <option value={details[`spell.${level}.${index}.name`]}>{details[`spell.${level}.${index}.name`]} (verifica con il DM)</option>}
-                                {magic.spells.filter((x) => x.level === level).map((x) => <option key={x.index} value={labelOf(x)} disabled={Object.entries(details).some(([key, value]) => key.startsWith(`spell.${level}.`) && key.endsWith('.name') && key !== `spell.${level}.${index}.name` && value === labelOf(x)) || (!details[`spell.${level}.${index}.name`] && !!selectedMagic && (level === 0 ? selectedMagic.cantrips >= magic.cantrips : magic.known !== undefined && details['creation.class'] !== 'wizard' && selectedMagic.spells >= magic.known))}>{labelOf(x)}</option>)}
-                            </select> : <input aria-label={`${level === 0 ? 'Trucchetto' : `Incantesimo livello ${level}`} ${index + 1}`} value={details[`spell.${level}.${index}.name`] ?? ''} onChange={(event) => detail(`spell.${level}.${index}.name`, event.target.value)} />}
-                        </div>)}
+                        {Array.from({ length: spellRowCount(level) }, (_, index) => spellRow(level, index))}
+                        <button type="button" disabled={spellRowCount(level) >= 500} onClick={() => detail(`spell.rows.${level}`, String(spellRowCount(level) + 1))}>+ Incantesimo</button>
                     </section>)}
                 </div>)}</div>
-                <p className="player-hint">Spunta gli incantesimi preparati. Magie e abilità compariranno nella card del combattimento: clicca sul nome per aggiungerle alla sezione Abilità.</p>
+                <p className="player-hint">Le spunte selezionano i preparati per le classi che preparano; trucchetti e incantesimi conosciuti sono disponibili automaticamente. Per le altre fonti la spunta indica disponibilità. Solo le magie disponibili compariranno nella card del combattimento: clicca sul nome per aggiungerle alla sezione Abilità.</p>
             </>}
         </div>
         </div>

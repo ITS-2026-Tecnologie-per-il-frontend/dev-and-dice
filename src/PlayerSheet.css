@@ -123,3 +123,7 @@
 .creation-choice select, .player-spell-row select { width: 100%; min-width: 0; }
 .creation-warning { padding: .75rem; border: 1px solid #b65335; color: #81351e; background: #fff0da; }
 @media (max-width: 700px) { .creation-scores { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.player-spell-entry { display: grid; gap: 4px; margin-bottom: 8px; }
+.player-spell-source { display: flex; gap: 4px; padding-left: 24px; }
+.player-spell-source select, .player-spell-source input { width: 100%; min-width: 0; font-size: 11px; padding: 4px; }

@@ -11,6 +11,7 @@ import sys
 sys.dont_write_bytecode = True
 from scrape_bestiary import StatBlocks, download, normalized
 from scrape_wikidot import duration_metadata
+from sync_spells import sync_spells
 
 DATA = Path(__file__).resolve().parents[1] / 'public/data'
 SPELL_SOURCE = 'https://dungeonedraghi.it/compendio/incantesimi/'
@@ -73,7 +74,7 @@ def build_database(bestiary, raw_spells, wikidot):
         for creature in creatures for ability_id in creature['abilityIds']
     ):
         raise ValueError('Collegamenti tra creature e abilità non validi')
-    return {
+    database = {
         'schemaVersion': 1, 'generatedAt': datetime.now(timezone.utc).isoformat(), 'roundSeconds': 6,
         'sources': [
             {'url': bestiary['source'], 'exportedAt': bestiary['exportedAt'], 'content': 'Creature e abilità con testi completi SRD'},
@@ -83,6 +84,8 @@ def build_database(bestiary, raw_spells, wikidot):
         'licenses': [{**bestiary['license'], 'appliesTo': 'Open Game Content in creatures, abilities and Italian SRD spells; images, Product Identity and the Wikidot index excluded'}],
         'creatures': creatures, 'abilities': abilities, 'spells': spells, 'spellIndex': wikidot['spells'],
     }
+    options = json.loads((DATA / 'character-options.json').read_text(encoding='utf-8'))
+    return sync_spells(database, wikidot, options)
 
 
 def main():

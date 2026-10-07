@@ -1,4 +1,5 @@
 import { type CharacterSheet } from './CharacterSheets.ts'
+import { spellProfile, spellRowState, grantedSpells, type RulesEdition } from './Spellcasting.ts'
 
 export const abilityKeys = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const
 export type AbilityKey = typeof abilityKeys[number]
@@ -109,20 +110,17 @@ export function creationChoices(sheet: CharacterSheet, data: CreationData): { ch
     return result
 }
 
-export function spellRules(sheet: CharacterSheet, data: CreationData) {
-    const { characterClass } = selectedOrigins(sheet, data)
-    const level = Math.max(1, Math.min(20, Number(sheet.level) || 1))
-    const progression = data.levels.find((x) => x.index === `${characterClass?.index}-${level}`)?.spellcasting ?? {}
-    const maxLevel = Math.max(0, ...Array.from({ length: 9 }, (_, i) => progression[`spell_slots_level_${i + 1}`] ? i + 1 : 0))
-    const key = characterClass?.castingAbility
-    const castingMod = key && sheet[key] !== '' ? modifier(sheet[key]) : 0
-    const prepared = ['cleric', 'druid', 'paladin', 'wizard'].includes(characterClass?.index ?? '')
-    const preparedLimit = maxLevel ? Math.max(1, castingMod + (characterClass?.index === 'paladin' ? Math.floor(level / 2) : level)) : 0
-    return {
-        progression, maxLevel, cantrips: progression.cantrips_known ?? 0, prepared, preparedLimit,
-        known: characterClass?.index === 'wizard' ? 6 + (level - 1) * 2 : progression.spells_known,
-        spells: data.spells.filter((x) => x.level <= maxLevel && x.classes.some((c) => c.index === characterClass?.index) && (x.level > 0 || progression.cantrips_known > 0)),
-    }
+export function sheetWithSpellGrants(sheet: CharacterSheet, data: CreationData): CharacterSheet {
+    if (!creationEnabled(sheet)) return sheet
+    const chosen = creationChoices(sheet, data).filter((x) => x.choice.type === 'racial-spells').flatMap(({ choice, path }) => resolveChoice(choice, path, sheet.playerDetails ?? {}, data)).map((x) => x.ref.index)
+    return { ...sheet, playerDetails: { ...sheet.playerDetails, spellGrants: JSON.stringify(grantedSpells(sheet, data, chosen)) } }
+}
+
+export function spellRules(sheet: CharacterSheet, data: CreationData, edition?: RulesEdition) {
+    const profile = spellProfile(sheet, data, edition)
+    const { characterClass, subclass } = selectedOrigins(sheet, data)
+    const fiend = profile.edition === '2014' && subclass?.index === 'fiend' ? ['burning-hands', 'command', 'blindness-deafness', 'scorching-ray', 'fireball', 'stinking-cloud', 'fire-shield', 'wall-of-fire', 'flame-strike', 'hallow'] : []
+    return { ...profile, spells: data.spells.filter((x) => x.level <= profile.maxLevel && (x.classes.some((c) => c.index === characterClass?.index) || fiend.includes(x.index)) && (x.level > 0 || profile.cantrips > 0)) }
 }
 
 /** Reconcile only fields still owned by automation; edits to generated fields become overrides. */
@@ -172,6 +170,7 @@ export function applyCreation(input: CharacterSheet, data: CreationData): Charac
         }
     }
     put('racialSpells', racialSpells.join('\n'))
+    put('spellGrants', sheetWithSpellGrants(sheet, data).playerDetails!.spellGrants)
     put('racialTraits', [...traits, ...(background ? [background] : [])].map((x) => `${labelOf(x)}\n${x.desc?.join('\n') ?? (x.feature ? `${x.feature.name}\n${x.feature.desc.join('\n')}` : '')}`).join('\n\n'))
     put('classFeatures', data.features.filter((x) => x.class.index === characterClass?.index && (!x.subclass || x.subclass.index === subclass?.index) && x.level <= level).map((x) => `${labelOf(x)} (livello ${x.level})\n${x.desc.join('\n')}`).join('\n\n'))
     put('hitDice', characterClass?.hit_die ? `${level}d${characterClass.hit_die}` : '')
@@ -280,14 +279,29 @@ export function resetCreationOverrides(sheet: CharacterSheet, data: CreationData
 export function spellSelection(sheet: CharacterSheet, data: CreationData) {
     const rules = spellRules(sheet, data)
     const d = sheet.playerDetails ?? {}
-    const entries = Object.entries(d).filter(([key, value]) => /^spell\.\d+\.\d+\.name$/.test(key) && value.trim())
-    const cantrips = entries.filter(([key]) => key.startsWith('spell.0.')).length
-    const spells = entries.length - cantrips
-    const prepared = entries.filter(([key]) => !key.startsWith('spell.0.') && d[key.replace(/\.name$/, '.prepared')] === 'true').length
+    const entries = Object.entries(d).filter(([key, value]) => /^spell\.\d+\.\d+\.name$/.test(key) && value.trim()).map(([key, name]) => {
+        const [, level, index] = key.split('.')
+        return { name, level: Number(level), ...spellRowState(sheet, Number(level), Number(index)) }
+    })
+    const cantrips = entries.filter((entry) => entry.countsCantrip).length
+    const spells = entries.filter((entry) => entry.countsKnown).length
+    const prepared = entries.filter((entry) => entry.countsPrepared).length
+    const extra = entries.filter((entry) => !entry.countsKnown && !entry.countsCantrip).length
+    const secrets = entries.filter((entry) => entry.source === 'secrets').length
+    const loreSpells = entries.filter((entry) => entry.source === 'lore').length
+    const lore = d['creation.class'] === 'bard' && d['creation.subclass'] === 'lore' && Number(sheet.level) >= 6
+    const knownLimit = rules.known
     const issues: string[] = []
-    if (cantrips > rules.cantrips) issues.push(`Troppi trucchetti: ${cantrips}/${rules.cantrips}.`)
-    if (rules.known !== undefined && spells > rules.known && sheet.playerDetails?.['creation.class'] !== 'wizard') issues.push(`Troppi incantesimi conosciuti: ${spells}/${rules.known}.`)
+    if (cantrips > rules.cantrips) issues.push(`Troppi trucchetti di classe: ${cantrips}/${rules.cantrips}.`)
+    if (knownLimit !== undefined && spells > knownLimit && d['creation.class'] !== 'wizard') issues.push(`Troppi incantesimi di classe: ${spells}/${knownLimit}.`)
     if (rules.prepared && prepared > rules.preparedLimit) issues.push(`Troppi incantesimi preparati: ${prepared}/${rules.preparedLimit}.`)
-    if (entries.some(([, name]) => !rules.spells.some((x) => labelOf(x) === name))) issues.push('Alcuni incantesimi non appartengono alla lista attuale: verifica quelli segnalati con il DM.')
-    return { cantrips, spells, prepared, issues }
+    if (entries.some((entry) => entry.source === 'class' && !rules.spells.some((x) => labelOf(x) === entry.name))) issues.push('Alcuni incantesimi non appartengono alla lista o al livello di classe: verifica con il DM.')
+    const secretLimit = (Number(sheet.level) >= 10 ? 2 : 0) + (Number(sheet.level) >= 14 ? 2 : 0) + (Number(sheet.level) >= 18 ? 2 : 0)
+    if (secrets && (d['creation.class'] !== 'bard' || (rules.edition === '2014' && secrets > secretLimit))) issues.push('Le scelte di Segreti Magici superano quelle concesse dal livello o dalla classe.')
+    if (loreSpells && (!lore || loreSpells > 2)) issues.push('Segreti Magici aggiuntivi: massimo due, dal livello 6 del Collegio della Sapienza.')
+    for (let level = 6; level <= 9; level++) {
+        const arcanums = entries.filter((entry) => entry.source === 'arcanum' && entry.level === level)
+        if (arcanums.length > 1 || (arcanums.length && !rules.arcanumLevels.includes(level))) issues.push(`Arcanum di livello ${level}: massimo uno, sbloccato al livello ${level * 2 - 1} da warlock.`)
+    }
+    return { cantrips, spells, prepared: rules.edition === '2024' && !rules.prepared ? spells : prepared, extra, secrets, knownLimit, issues }
 }

@@ -8,6 +8,7 @@ import { nextCombatTurn, sortByInitiative, advanceAbilityDurations, removePartic
 import { getDropIndex, getDropTargetId, reorderByDrop, reorderById } from '../utils/Reorder'
 import { parseCatalog, sheetFromCatalog, sheetWithCombatAbilities, type Catalog, type CatalogEntry } from '../utils/Catalog'
 import { CatalogSearch } from './CatalogSearch'
+import { loadCreationData, sheetWithSpellGrants, type CreationData } from '../utils/PlayerCreation'
 import { InfoButton } from './InfoButton'
 
 type Turn = {
@@ -25,7 +26,20 @@ export function TurnsTracker() {
     const dismissRemovalDialog = useDialogDismiss()
     const [libraryWidth, setLibraryWidth] = useState('220px')
     const [abilitiesWidth, setAbilitiesWidth] = useState('380px')
-    const [catalog, setCatalog] = useState<Catalog>({ creatures: [], abilities: [] })
+    const [language, setLanguage] = useState<'it' | 'en'>(() => {
+        try { return localStorage.getItem('dev-and-dice.spell-language') === 'en' ? 'en' : 'it' } catch { return 'it' }
+    })
+    const [languageError, setLanguageError] = useState('')
+    const [catalogs, setCatalogs] = useState<Record<'it' | 'en', Catalog>>({ it: { creatures: [], abilities: [] }, en: { creatures: [], abilities: [] } })
+    const catalog = catalogs[language]
+    const [creationData, setCreationData] = useState<CreationData>()
+
+    function changeLanguage(value: string) {
+        if (value !== 'it' && value !== 'en') return
+        setLanguage(value)
+        try { localStorage.setItem('dev-and-dice.spell-language', value); setLanguageError('') }
+        catch { setLanguageError('La lingua è cambiata, ma la preferenza non è stata salvata nel browser.') }
+    }
     const [catalogStatus, setCatalogStatus] = useState('Caricamento del catalogo…')
     const [turns, setTurns] = useState<Turn[]>([])
     const [abilities, setAbilities] = useState<Ability[]>([])
@@ -42,9 +56,9 @@ export function TurnsTracker() {
 
     useEffect(() => {
         const controller = new AbortController()
-        fetch(`${import.meta.env.BASE_URL}data/database.json`, { signal: controller.signal })
-            .then((response) => { if (!response.ok) throw new Error('Database non disponibile.'); return response.json() })
-            .then((raw: unknown) => { setCatalog(parseCatalog(raw)); setCatalogStatus('') })
+        Promise.all([fetch(`${import.meta.env.BASE_URL}data/database.json`, { signal: controller.signal })
+            .then((response) => { if (!response.ok) throw new Error('Database non disponibile.'); return response.json() }), loadCreationData()])
+            .then(([raw, data]: [unknown, CreationData]) => { setCreationData(data); setCatalogs({ it: parseCatalog(raw, 'it'), en: parseCatalog(raw, 'en') }); setCatalogStatus('') })
             .catch((error: unknown) => { if (!controller.signal.aborted) setCatalogStatus(`Catalogo non disponibile: ${error instanceof Error ? error.message : String(error)} Puoi inserire i dati manualmente.`) })
         return () => controller.abort()
     }, [])
@@ -63,7 +77,7 @@ export function TurnsTracker() {
 
     function addCharacter(sheet: CharacterSheet) {
         if (combat || presentSheetIds.includes(sheet.id)) return
-        const turn = turnFromSheet(sheetWithCombatAbilities(sheet, catalog), nextId.current++)
+        const turn = turnFromSheet(sheetWithCombatAbilities(creationData ? sheetWithSpellGrants(sheet, creationData) : sheet, catalog), nextId.current++)
         if (sheet.initiative !== turn.initiative && sheetEditor.current?.patchStats(sheet.id, { initiative: turn.initiative }) === false) return
         setTurns((current) => [...current, turn])
     }
@@ -205,8 +219,15 @@ export function TurnsTracker() {
     }
 
     return (
+        <>
+        <div className="catalog-settings">
+            <label>Lingua <select value={language} onChange={(event) => changeLanguage(event.target.value)}>
+                <option value="it">Italiano</option><option value="en">English</option>
+            </select></label>
+            {languageError && <span role="status">{languageError}</span>}
+        </div>
         <div className="tracker-layout" style={{ '--library-width': libraryWidth } as CSSProperties}>
-            <CharacterSheets ref={sheetEditor} onAdd={addCharacter} onSaved={syncSavedSheet} combatStarted={combat !== null} presentSheetIds={presentSheetIds} catalog={catalog} />
+            <CharacterSheets ref={sheetEditor} onAdd={addCharacter} onSaved={syncSavedSheet} combatStarted={combat !== null || catalogStatus === 'Caricamento del catalogo…'} presentSheetIds={presentSheetIds} catalog={catalog} />
             <ColumnSeparator label="Ridimensiona schede e combattimento" side="left" minimum={160} otherMinimum={600} onResize={setLibraryWidth} />
             <main className="tracker-main" style={{ '--abilities-width': abilitiesWidth } as CSSProperties}>
                 <section className="combat-tracker" aria-labelledby="turns-heading">
@@ -350,12 +371,12 @@ export function TurnsTracker() {
                                             {turn.sheet?.abilities.map((template, index) => {
                                                 const ability = abilities.find((item) => item.ownerId === turn.id && item.sheetAbilityIndex === index)
                                                 return <button className="participant-ability" data-ability-state={!ability ? 'available' : ability.active && (ability.remainingTurns > 0 || ability.timed === false) ? 'active' : 'inactive'} type="button" key={`sheet-${index}`} onClick={() => openSheetAbility(turn, index)}>
-                                                    {ability?.name || template.name} · {!ability ? 'Aggiungi' : !ability.active ? 'Inattiva' : ability.timed === false ? 'Attiva · Senza conteggio' : ability.remainingTurns === 0 ? 'Scaduta' : `${ability.remainingTurns} turni`}
+                                                    {catalog.abilities.find((entry) => entry.id === (ability?.catalogId ?? template.catalogId))?.name || ability?.name || template.name} · {!ability ? 'Aggiungi' : !ability.active ? 'Inattiva' : ability.timed === false ? 'Attiva · Senza conteggio' : ability.remainingTurns === 0 ? 'Scaduta' : `${ability.remainingTurns} turni`}
                                                 </button>
                                             })}
                                             {abilities.filter((ability) => ability.ownerId === turn.id && ability.sheetAbilityIndex === undefined).map((ability) => (
                                                 <a key={ability.id} data-ability-state={ability.active && (ability.remainingTurns > 0 || ability.timed === false) ? 'active' : 'inactive'} href={`#ability-${ability.id}`} onClick={(event) => { event.preventDefault(); highlightAbility(ability.id) }}>
-                                                    {ability.name || 'Abilità senza nome'} · {!ability.active ? 'Inattiva' : ability.timed === false ? 'Attiva · Senza conteggio' : ability.remainingTurns === 0 ? 'Scaduta' : `${ability.remainingTurns} turni`}
+                                                    {catalog.abilities.find((entry) => entry.id === ability.catalogId)?.name || ability.name || 'Abilità senza nome'} · {!ability.active ? 'Inattiva' : ability.timed === false ? 'Attiva · Senza conteggio' : ability.remainingTurns === 0 ? 'Scaduta' : `${ability.remainingTurns} turni`}
                                                 </a>
                                             ))}
                                         </div>
@@ -396,7 +417,7 @@ export function TurnsTracker() {
                                 <div className="removal-warning" role="alert">
                                     <strong>Ci sono abilità attivate che devono ancora scadere:</strong>
                                     <ul>
-                                        {unexpiredAbilities.map((ability) => <li key={ability.id}>{ability.name || 'Abilità senza nome'} · {ability.remainingTurns} turni rimanenti</li>)}
+                                        {unexpiredAbilities.map((ability) => <li key={ability.id}>{catalog.abilities.find((entry) => entry.id === ability.catalogId)?.name || ability.name || 'Abilità senza nome'} · {ability.remainingTurns} turni rimanenti</li>)}
                                     </ul>
                                 </div>
                             )}
@@ -411,5 +432,6 @@ export function TurnsTracker() {
                 </dialog>
             </main>
         </div>
+        </>
     )
 }

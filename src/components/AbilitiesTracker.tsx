@@ -96,7 +96,7 @@ export function AbilitiesTracker({ abilities, setAbilities, participants, onAdd,
                             className="ability-name"
                             type="text"
                             placeholder="Nome abilità"
-                            value={ability.name}
+                            value={catalog.abilities.find((entry) => entry.id === ability.catalogId)?.name ?? ability.name}
                             disabled={ability.active}
                             entries={catalog.abilities}
                             onChange={(value) => updateAbilityName(ability.id, value)}
@@ -155,7 +155,7 @@ export function AbilitiesTracker({ abilities, setAbilities, participants, onAdd,
                                 ))}
                             </select>
                         </label>
-                        <InfoButton name={ability.name}
+                        <InfoButton name={catalog.abilities.find((entry) => entry.id === ability.catalogId)?.name ?? ability.name}
                             description={ability.description}
                             entry={catalog.abilities.find((entry) => entry.id === ability.catalogId)}
                             fields={{ duration: ability.duration, remainingTurns: ability.remainingTurns, active: ability.active, owner: participants.find((participant) => participant.id === ability.ownerId)?.description ?? 'Nessuno' }} />
