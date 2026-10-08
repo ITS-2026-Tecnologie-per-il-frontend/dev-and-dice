@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import re
 import unicodedata
+from json_utils import write_json
 
 DATA = Path(__file__).resolve().parents[1] / 'public/data'
 # Varianti SRD e refusi verificati: nessun confronto approssimativo tra nomi.
@@ -120,9 +121,7 @@ def main():
         wikidot = json.loads((DATA / 'wikidot-spells.json').read_text(encoding='utf-8'))
         options = json.loads((DATA / 'character-options.json').read_text(encoding='utf-8'))
         result = sync_spells(database, wikidot, options)
-        temporary = DATA / 'database.json.tmp'
-        temporary.write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-        temporary.replace(DATA / 'database.json')
+        write_json(DATA / 'database.json', result)
         report = result['spellComparison']
         print(f"English: {report['englishCount']}; Italian: {report['italianCount']}; matched: {report['matchedCount']}; missing Italian: {report['missingItalianCount']}")
     except (OSError, ValueError, KeyError, TypeError) as error:

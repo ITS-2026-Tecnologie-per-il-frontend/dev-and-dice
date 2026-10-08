@@ -8,6 +8,7 @@ from tempfile import TemporaryDirectory
 
 sys.dont_write_bytecode = True
 root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(root / 'scripts'))
 script = root / 'scripts/scrape_bestiary.py'
 spec = importlib.util.spec_from_file_location('scrape_bestiary', script)
 scraper = importlib.util.module_from_spec(spec)
@@ -66,7 +67,6 @@ for creature in catalog['creatures']:
     assert all(lookup[ability_id]['creatureId'] == creature['id'] for ability_id in creature['abilityIds'])
 assert all(ability['description'].strip() for ability in catalog['abilities'])
 assert 'OPEN GAME LICENSE Version 1.0a' in catalog['license']['text']
-sys.path.insert(0, str(root / 'scripts'))
 from build_database import parse_spell, italian_duration, build_database
 
 spell = {
