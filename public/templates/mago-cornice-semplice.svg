@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="776" viewBox="0 0 500 776" preserveAspectRatio="none">
+  <g fill="none" stroke="#4b4746" stroke-linejoin="miter">
+    <path stroke-width="4" d="M24 9H472L487 24V750L472 765H24L9 750V24Z"/>
+    <path stroke-width="1.5" d="M24 14H472L480 24V750L472 760H24L16 750V24Z"/>
+    <path stroke-width="1.5" d="M9 69C9 36 36 9 69 9M427 9C460 9 487 36 487 69M487 705C487 738 460 765 427 765M69 765C36 765 9 738 9 705"/>
+  </g>
+</svg>

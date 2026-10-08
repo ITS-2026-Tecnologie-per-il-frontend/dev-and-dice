@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <g fill="none" stroke="#252323" stroke-linejoin="miter">
+    <path stroke-width="1.6" d="M12 3H84L93 12V84L84 93H12L3 84V12Z"/>
+    <path stroke-width=".8" d="M12 6H84Q86 10 90 12V84Q87 86 84 90H12Q10 87 6 84V12Q10 10 12 6Z"/>
+    <path stroke-width="1" d="M12 3Q4 4 3 12M84 3Q86 10 93 12M3 84Q10 86 12 93M93 84Q86 86 84 93M3 12L5 38L3 61L1 76Q-1 80 3 84M93 12L91 38L93 61L95 76Q97 80 93 84"/>
+  </g>
+</svg>

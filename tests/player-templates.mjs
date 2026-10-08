@@ -10,6 +10,8 @@ assert.equal(playerTemplate({ ...legacy,playerDetails:{'sheet.template':'generic
 assert.equal(playerTemplate({ ...legacy,characterClass:'Guerriero',playerDetails:{'sheet.template':'wizard'} }),'wizard')
 assert.equal(playerTemplate({ ...legacy,playerDetails:{'sheet.template':'unknown'} }),'wizard')
 assert.equal(sheetTemplates.wizard.pages.length,4)
+assert.equal(playerTemplate({ ...legacy, playerDetails: { 'sheet.template': 'wizard-pdf' } }), 'wizard-pdf')
+assert.deepEqual(sheetTemplates['wizard-pdf'].pages, sheetTemplates.wizard.pages, 'The PDF-style copy must retain the original pages')
 assert.equal(sheetTemplates.generic.pages.length,3)
 const features = 'Spellcasting (livello 1)\nLibro.\n\nArcane Ward (livello 2)\nBarriera.\n\nAbjuration Savant (livello 2)\nCopie.\n\nProjected Ward (livello 6)\nReazione.'
 assert.ok(featuresAtLevel(features,2).includes('Arcane Ward'))
@@ -25,6 +27,9 @@ assert.equal(featuresAtLevel(updateFeaturesAtLevel(features,2,'Testo libero'),2)
 const sheet = { ...legacy,hitPoints:'20',playerDetails:{'sheet.template':'wizard','classFeatures':edited,'worn.Testa':'Cappello','magicItem.0.name':'Bacchetta','magicItem.0.attuned':'true','favoriteSpell.0.name':'Scudo','favoriteSpell.0.level':'1','inventory.0.2':'3','slots.1.used':'2'} }
 assert.deepEqual(parseCharacterSheets(JSON.stringify([sheet]))[0],sheet)
 assert.deepEqual(turnFromSheet(sheet,1).sheet.playerDetails,sheet.playerDetails)
+const pdfCopy = { ...sheet, playerDetails: { ...sheet.playerDetails, 'sheet.template': 'wizard-pdf', unarmoredAC: '13', unshieldedAC: '15' } }
+assert.deepEqual(parseCharacterSheets(JSON.stringify([pdfCopy]))[0], pdfCopy)
+assert.deepEqual(turnFromSheet(pdfCopy,1).sheet.playerDetails, pdfCopy.playerDetails)
 const generic = { ...sheet,playerDetails:{...sheet.playerDetails,'sheet.template':'generic'} }
 assert.equal(playerTemplate(generic),'generic')
 assert.equal(generic.playerDetails['worn.Testa'],'Cappello','Changing only the template must preserve class-specific details')

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { newCharacterSheet, parseCharacterSheets, turnFromSheet } from '../src/utils/CharacterSheets.ts'
+import { inventoryTotalWeight, newCharacterSheet, parseCharacterSheets, turnFromSheet } from '../src/utils/CharacterSheets.ts'
 
 const oldSheet = { ...newCharacterSheet(), name: 'Personaggio precedente', kind: 'PG' }
 assert.deepEqual(parseCharacterSheets(JSON.stringify([oldSheet])), [oldSheet], 'Existing sheets must load without player details')
@@ -19,4 +19,9 @@ assert.deepEqual(turn.sheet.playerDetails, sheet.playerDetails, 'Player details 
 for (const playerDetails of [null, [], { level: 5 }, { proficient: true }]) {
     assert.throws(() => parseCharacterSheets(JSON.stringify([{ ...oldSheet, playerDetails }])), 'Invalid new fields must not silently corrupt saved sheets')
 }
-console.log('Player sheet checks passed: legacy compatibility, three-page persistence, combat HP and data validation')
+for (const [quantity, weight, total] of [
+    ['3', '1.25', '3.75'], ['', '1.25', '1.25'], ['  ', '1,25', '1.25'],
+    ['0', '1.25', '0'], ['3', '0', '0'], ['3', '0.1', '0.3'], ['3', '', ''],
+    ['-1', '2', ''], ['1.5', '2', ''], ['3', '-2', ''], ['3', 'testo', ''], ['3', '1e308', ''],
+]) assert.equal(inventoryTotalWeight(quantity, weight), total, `Inventory total for quantity ${quantity} and weight ${weight}`)
+console.log('Player sheet checks passed: persistence, combat HP, data validation and automatic inventory weights')

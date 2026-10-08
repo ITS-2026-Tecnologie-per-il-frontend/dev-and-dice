@@ -1,13 +1,16 @@
 import type { CharacterSheet } from './CharacterSheets.ts'
 
+const wizardPages = ['Statistiche e tradizione arcana', 'Personaggio e inventario', 'Incantesimi', 'Equipaggiamento indossato'] as const
+
 export const sheetTemplates = {
     generic: { name: 'Scheda generale', pages: ['Statistiche e combattimento', 'Personaggio e inventario', 'Incantesimi'] },
-    wizard: { name: 'Mago', pages: ['Statistiche e tradizione arcana', 'Personaggio e inventario', 'Incantesimi', 'Equipaggiamento indossato'] },
+    wizard: { name: 'Mago', pages: wizardPages },
+    'wizard-pdf': { name: 'Mago · stile PDF', pages: wizardPages },
 } as const
 
 export function playerTemplate(sheet: CharacterSheet): keyof typeof sheetTemplates {
     const explicit = sheet.playerDetails?.['sheet.template']
-    if (explicit === 'generic' || explicit === 'wizard') return explicit
+    if (explicit === 'generic' || explicit === 'wizard' || explicit === 'wizard-pdf') return explicit
     return sheet.playerDetails?.['creation.class'] === 'wizard' || /^(mago|wizard)$/i.test(sheet.characterClass.trim()) ? 'wizard' : 'generic'
 }
 

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="140" viewBox="0 0 800 140">
+  <g stroke="#4b4746" stroke-linejoin="miter">
+    <path fill="white" stroke-width="4" d="M20 25H774V84H20L20 76L5 64V46L20 34Z"/>
+    <g fill="white" stroke-width="4">
+      <path d="M106 8H194L229 54L194 100H106L71 54Z"/>
+      <path d="M251 8H339L374 54L339 100H251L216 54Z"/>
+      <path d="M396 8H484L519 47V61L484 100H396L361 61V47Z"/>
+      <path d="M541 8H629L664 47V61L629 100H541L506 61V47Z"/>
+      <path d="M686 8H774L799 38V70L774 100H686L661 70V38Z"/>
+    </g>
+    <g fill="none" stroke-width="1.5">
+      <path d="M112 12H188L221 54L188 96H112L79 54Z"/>
+      <path d="M257 12H333L365 48Q357 54 365 60L333 96H257L225 60Q233 54 225 48Z"/>
+      <path d="M408 12H472Q495 12 498 33Q515 40 510 49Q503 54 510 59Q515 68 498 75Q495 96 472 96H408Q385 96 382 75Q365 68 370 59Q377 54 370 49Q365 40 382 33Q385 12 408 12Z"/>
+      <path d="M546 12L554 17L565 12H605L616 17L624 12L654 46Q644 54 654 62L624 96L616 91L605 96H565L554 91L546 96L516 62Q526 54 516 46Z"/>
+      <path d="M693 13Q711 7 719 15Q730 22 741 15Q749 7 767 13Q786 20 786 38Q779 48 791 54Q779 60 786 70Q786 88 767 95Q749 101 741 93Q730 86 719 93Q711 101 693 95Q674 88 674 70Q681 60 669 54Q681 48 674 38Q674 20 693 13Z"/>
+    </g>
+    <g fill="white" stroke-width="1.5">
+      <circle cx="228" cy="54" r="3"/><circle cx="362" cy="54" r="3"/>
+      <circle cx="373" cy="54" r="3"/><circle cx="507" cy="54" r="3"/>
+      <circle cx="518" cy="54" r="4"/><circle cx="652" cy="54" r="4"/>
+    </g>
+  </g>
+</svg>

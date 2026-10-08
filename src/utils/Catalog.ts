@@ -101,6 +101,21 @@ export function sheetWithCombatAbilities(sheet: CharacterSheet, catalog: Catalog
     return sheet.kind === 'PG' ? { ...result, abilities } : sheet
 }
 
+export function refreshCombatSheetAbilities(previous: CharacterSheet, current: CharacterSheet, catalog: Catalog) {
+    const latest = sheetWithCombatAbilities(current, catalog)
+    const templates = [...previous.abilities], availableIndexes = new Set<number>()
+    // ponytail: scansioni O(n²) e voci ritirate mantenute per preservare gli indici del combattimento.
+    // Per liste molto grandi usare un indice per chiave; reinserire il personaggio ricostruisce la lista.
+    for (const template of latest.abilities) {
+        let index = templates.findIndex((item, i) => !availableIndexes.has(i) && item.duration === template.duration &&
+            (item.catalogId && template.catalogId ? item.catalogId === template.catalogId : item.name.trim().toLowerCase() === template.name.trim().toLowerCase()))
+        if (index < 0) { index = templates.length; templates.push(template) }
+        else templates[index] = template
+        availableIndexes.add(index)
+    }
+    return { sheet: { ...latest, abilities: templates }, availableAbilityIndexes: [...availableIndexes] }
+}
+
 export function sheetFromCatalog(entry: CatalogEntry, catalog: Catalog, base: CharacterSheet = newCharacterSheet()): CharacterSheet {
     const data = entry.data
     const scores = data.abilityScores as Record<string, { score?: unknown; modifier?: unknown }> | undefined

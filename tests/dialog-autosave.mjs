@@ -4,6 +4,8 @@ import { registerHooks } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 import { newCharacterSheet } from '../src/utils/CharacterSheets.ts'
+import { newTutorial, tutorialDraftKey } from '../src/utils/CharacterTutorial.ts'
+import { withWizardCatalog } from '../src/utils/PlayerCreation.ts'
 
 const hooks = { values: [], cursor: 0, effects: [] }
 globalThis.dialogTestHooks = hooks
@@ -24,6 +26,8 @@ registerHooks({
             export function useState(initial) { const i = h.cursor++; if (!(i in h.values)) h.values[i] = typeof initial === 'function' ? initial() : initial; return [h.values[i], value => { h.values[i] = typeof value === 'function' ? value(h.values[i]) : value; }]; }
             export function useRef(initial) { const i = h.cursor++; return h.values[i] ??= { current: initial }; }
             export function useEffect(effect) { h.effects.push(effect); }
+            export function useMemo(create) { return create(); }
+            export function useCallback(callback) { return callback; }
             export function useImperativeHandle(ref, create) { if (ref) ref.current = create(); }
         ` }
         if (url.endsWith('.css')) return { format: 'module', shortCircuit: true, source: '' }
@@ -35,16 +39,18 @@ registerHooks({
 })
 const { CharacterSheets } = await import('../src/components/CharacterSheets.tsx')
 const original = { ...newCharacterSheet(), name: 'Aria', hitPoints: '30' }
-let stored = JSON.stringify([original]), writes = 0, fail = false
+let stored = JSON.stringify([original]), progress = null, writes = 0, fail = false
 const savedEvents = []
-globalThis.localStorage = { getItem: () => stored, setItem: (_, value) => {
+globalThis.localStorage = { getItem: (key) => key === tutorialDraftKey ? progress : stored, setItem: (key, value) => {
     if (fail) throw new Error('Quota exceeded')
-    stored = value; writes++
-} }
+    if (key === tutorialDraftKey) progress = value
+    else { stored = value; writes++ }
+}, removeItem: (key) => { if (key === tutorialDraftKey) progress = null } }
 const ref = { current: null }
 const props = { ref, onAdd() {}, onSaved: (sheet) => savedEvents.push(sheet), combatStarted: false, presentSheetIds: [], catalog: { creatures: [], abilities: [] } }
-let nodes = [], sheetDialog
+let nodes = [], sheetDialog, cleanups = []
 function render() {
+    cleanups.forEach((cleanup) => cleanup()); cleanups = []
     hooks.cursor = 0; hooks.effects = []; nodes = []
     function visit(node) {
         if (!node || typeof node !== 'object') return
@@ -57,7 +63,7 @@ function render() {
     }
     visit(CharacterSheets(props))
     sheetDialog = nodes.find((node) => node.type === 'dialog')
-    hooks.effects.forEach((effect) => effect())
+    hooks.effects.forEach((effect) => { const cleanup = effect(); if (typeof cleanup === 'function') cleanups.push(cleanup) })
 }
 function pointer(x, target = sheetDialog.props.ref.current) {
     return { currentTarget: sheetDialog.props.ref.current, target, clientX: x, clientY: x, isPrimary: true, button: 0, pointerId: 1 }
@@ -122,3 +128,23 @@ sheetDialog.props.ref.current.open = true
 readOnly.onPointerDown(pointer(0)); readOnly.onPointerUp(pointer(0))
 assert.equal(sheetDialog.props.ref.current.open, false, 'Read-only dialogs still close on backdrop clicks')
 console.log('Dialog autosave checks passed: changed/unchanged drafts, persistence, combat sync, validation, retry, nested dialogs and cancel')
+const json = (file) => JSON.parse(readFileSync(new URL(`../public/data/${file}.json`, import.meta.url), 'utf8'))
+props.creationData = withWizardCatalog({ ...json('character-options'), ...json('character-equipment'), skills:json('character-rules').skills }, json('wizard-catalog'))
+ref.current.open(newTutorial()); render()
+const libraryBeforeTutorial = stored
+const pause = () => nodes.find((node) => node.type === 'button' && node.props.children === 'Salva e riprendi più tardi').props.onClick()
+fail = true; pause(); render()
+assert.equal(sheetDialog.props.ref.current.open,true,'Failed tutorial save keeps the draft open')
+assert.equal(progress,null)
+assert.equal(stored,libraryBeforeTutorial,'Draft errors must not overwrite the normal library')
+fail = false; pause(); render()
+assert.equal(sheetDialog.props.ref.current.open,false)
+assert.equal(JSON.parse(progress).name,'','Incomplete tutorial can pause without a name')
+nodes.find((node) => node.type === 'button' && node.props.className?.includes('tutorial-resume')).props.onClick(); render()
+edit({ name:'Bozza ripresa',playerDetails:{'creation.enabled':'true','tutorial.active':'true','tutorial.step':'3','tutorial.method':'points','creation.base.strength':'9.5'} })
+await outside()
+assert.equal(JSON.parse(progress).playerDetails['tutorial.step'],'3')
+assert.equal(JSON.parse(progress).playerDetails['creation.base.strength'],'9.5','Unfinished input survives pause and resume')
+assert.equal(stored,libraryBeforeTutorial)
+cleanups.forEach((cleanup) => cleanup())
+console.log('Tutorial dialog checks passed: separate draft, incomplete input, pause/resume and storage failure recovery.')

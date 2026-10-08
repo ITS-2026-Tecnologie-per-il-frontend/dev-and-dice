@@ -1,0 +1,951 @@
+/* Stile della copia del modello Mago, ispirato alle cornici del PDF. */
+.player-paper-wizard-pdf {
+    --paper-ink: #252323;
+    --paper-line: #302d2c;
+    --wizard-frame: url('../public/templates/mago-cornice.svg') 12 / 12px / 2px stretch;
+    --wizard-scroll: url('../public/templates/mago-pergamena.svg') 12 / 12px / 2px stretch;
+    color: var(--paper-ink);
+    background: white;
+}
+.player-paper-wizard-pdf :is(.player-box, .player-score, .player-wizard-bio, .player-wizard-appearance, .player-wizard-competence, .player-wizard-hitpoints > .player-field, .player-combat-top > .player-field, .player-wizard-ac, .player-casting > .player-field) {
+    border-color: transparent;
+    border-radius: 0;
+    border-image: var(--wizard-frame);
+    background-color: white;
+}
+.player-paper-wizard-pdf .player-box.player-wizard-privilege { border-image: var(--wizard-scroll); }
+.player-paper-wizard-pdf .player-box h3 {
+    color: var(--paper-ink);
+    border-color: transparent;
+    background: linear-gradient(90deg, transparent, #867b72 48%, transparent) center bottom / 75% 1px no-repeat;
+    font-variant: small-caps;
+    text-shadow: none;
+}
+.player-paper-wizard-pdf :is(input, select, textarea) {
+    color: #252323;
+    border-bottom-color: #8e8984;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+.player-paper-wizard-pdf textarea { border-bottom-color: transparent; }
+.player-paper-wizard-pdf :is(input, select, textarea):focus {
+    background: #fffdf4;
+    outline: 2px solid #147d72;
+    outline-offset: 1px;
+}
+.player-paper-wizard-pdf :is(input, textarea)::placeholder { color: #77716c; opacity: 1; }
+.player-paper-wizard-pdf input[type='number'] { appearance: textfield; }
+.player-paper-wizard-pdf input[type='number']::-webkit-inner-spin-button { appearance: none; }
+.player-paper-wizard-pdf input[type='checkbox'] {
+    appearance: none;
+    padding: 0;
+    border: 1px solid var(--paper-line);
+    border-radius: 50%;
+    background: white;
+}
+.player-paper-wizard-pdf input[type='checkbox']:checked {
+    background: radial-gradient(circle, #302d2c 0 40%, white 45%);
+}
+.player-paper-wizard-pdf input[type='checkbox']:disabled { opacity: .5; cursor: default; }
+.player-paper-wizard-pdf .player-wizard-identity { position: relative; isolation: isolate; }
+.player-paper-wizard-pdf .player-wizard-identity::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: -12px -18px;
+    background: #dedddd;
+    clip-path: polygon(0 4%, 10% 0, 6% 7%, 45% 4%, 62% 11%, 96% 5%, 90% 14%, 100% 19%, 81% 22%, 100% 29%, 92% 37%, 100% 48%, 94% 62%, 100% 77%, 91% 80%, 98% 92%, 85% 90%, 88% 100%, 60% 93%, 44% 98%, 23% 89%, 4% 95%, 8% 83%, 0 81%, 7% 69%, 0 63%, 5% 46%, 0 33%, 8% 21%, 0 17%);
+    pointer-events: none;
+}
+.player-paper-wizard-pdf .player-wizard-identity .player-name {
+    border-color: transparent;
+    border-radius: 0;
+    background: url('../public/templates/mago-nastro.svg') center / 100% 100% no-repeat;
+}
+.player-paper-wizard-pdf .player-name input { border-bottom-color: transparent; }
+.player-paper-wizard-pdf .player-wizard-class > strong {
+    position: relative;
+    border-color: transparent;
+    background: url('../public/templates/mago-nastro.svg') center / 100% 100% no-repeat;
+}
+.player-paper-wizard-pdf .player-wizard-class > strong::before {
+    content: '';
+    position: absolute;
+    top: -18px;
+    left: -24px;
+    width: 64px;
+    height: 64px;
+    background: url('../public/templates/mago-simbolo.png') center / contain no-repeat;
+    clip-path: circle(49%);
+    pointer-events: none;
+}
+.player-paper-wizard-pdf .player-wizard-identity-0 {
+    container-type: inline-size;
+    grid-template-columns: 1.08fr 1fr 1.06fr;
+    gap: 0;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.player-paper-wizard-pdf .player-wizard-identity-0::before {
+    inset: -18px -18px -8px;
+    clip-path: polygon(0 6%, 15% 0, 48% 3%, 70% 11%, 96% 8%, 89% 15%, 100% 21%, 93% 32%, 100% 40%, 95% 57%, 100% 74%, 94% 80%, 100% 90%, 79% 94%, 86% 100%, 63% 93%, 47% 99%, 34% 91%, 16% 98%, 23% 89%, 0 85%, 5% 71%, 0 59%, 6% 43%, 0 30%, 6% 22%, 0 20%);
+}
+.player-paper-wizard-pdf .player-wizard-identity-0 .player-field > span {
+    font-size: clamp(10px, 1cqw, 15px);
+    font-weight: 400;
+    letter-spacing: 0;
+}
+.player-paper-wizard-pdf .player-wizard-identity-0 :is(input, select) {
+    height: 30px;
+    padding: 0 4px;
+    font-size: clamp(18px, 1.75cqw, 26px);
+    line-height: 1.2;
+    text-align: center;
+}
+.player-paper-wizard-pdf .player-wizard-identity-0 .player-name {
+    position: relative;
+    box-sizing: border-box;
+    height: clamp(98px, 11cqw, 160px);
+    margin-top: 18px;
+    padding: 38px 26px 0;
+    border: 0;
+    background-image: url('../public/templates/mago-testata.svg#nome');
+}
+.player-paper-wizard-pdf .player-wizard-identity-0 .player-name input {
+    height: 64px;
+    font-family: inherit;
+    font-size: clamp(32px, 3.7cqw, 56px);
+}
+.player-paper-wizard-pdf .player-wizard-identity-0 .player-name .player-field > span {
+    position: absolute;
+    left: 48px;
+    bottom: 0;
+    padding: 0 3px;
+    background: white;
+}
+.player-paper-wizard-pdf .player-wizard-identity-0 .player-wizard-bio {
+    box-sizing: border-box;
+    min-height: clamp(140px, 14cqw, 210px);
+    gap: 4px 0;
+    padding: 24px 18px 18px;
+    border: 0;
+    border-image: none;
+    background: url('../public/templates/mago-testata.svg#anagrafica') center / 100% 100% no-repeat;
+}
+.player-paper-wizard-pdf .player-wizard-identity-0 .player-wizard-bio .player-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.player-paper-wizard-pdf .player-wizard-identity-0 .player-wizard-bio .player-field > span { order: 1; padding-left: 4px; }
+.player-paper-wizard-pdf .player-wizard-identity-0 .player-wizard-bio :is(input, select) { border-bottom-color: #dedddd; }
+.player-paper-wizard-pdf .player-wizard-identity-0 .player-wizard-class {
+    position: relative;
+    padding: 18px 0 16px;
+}
+.player-paper-wizard-pdf .player-wizard-identity-0 .player-wizard-class > strong {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-height: clamp(72px, 7.4cqw, 110px);
+    padding: 8px 12px 8px clamp(80px, 8.6cqw, 128px);
+    border: 0;
+    background-image: url('../public/templates/mago-testata.svg#classe');
+    font-size: clamp(28px, 2.9cqw, 44px);
+    letter-spacing: 1px;
+}
+.player-paper-wizard-pdf .player-wizard-identity-0 .player-wizard-class-title > span { font-size: .8em; text-transform: uppercase; }
+.player-paper-wizard-pdf .player-wizard-identity-0 .player-wizard-class > strong::before {
+    top: -10px;
+    left: 14px;
+    width: clamp(80px, 8.6cqw, 128px);
+    height: clamp(80px, 8.6cqw, 128px);
+    z-index: 1;
+}
+.player-paper-wizard-pdf .player-wizard-identity-0 .player-wizard-class-fields {
+    grid-template-columns: clamp(52px, 5.2cqw, 80px) minmax(0, 1fr);
+    align-items: start;
+    gap: 6px;
+    margin: -2px 22px 0 28px;
+}
+.player-paper-wizard-pdf .player-wizard-identity-0 .player-wizard-class-fields > .player-field:first-child {
+    position: relative;
+    transform: translateY(-10px);
+    display: flex;
+    flex-direction: column;
+    min-height: clamp(52px, 5.2cqw, 80px);
+    gap: 0;
+    padding: 16px 4px 4px;
+    box-sizing: border-box;
+    text-align: center;
+    background: url('../public/templates/mago-ispirazione.svg') center / 100% 100% no-repeat;
+}
+.player-paper-wizard-pdf .player-wizard-identity-0 .player-wizard-class-fields > .player-field:first-child > span { font-size: 8px; line-height: 8px; font-weight: 700; }
+.player-paper-wizard-pdf .player-wizard-identity-0 .player-wizard-class-fields > .player-field:first-child :is(input, select) { height: 28px; padding: 0; border: 0; font-size: clamp(22px, 2cqw, 30px); }
+.player-paper-wizard-pdf .player-wizard-identity-0 .player-wizard-class-fields > .player-field:nth-child(2) {
+    position: relative;
+    padding: 6px;
+    border: 0;
+    background: url('../public/templates/mago-testata.svg#tradizione') center / 100% 100% no-repeat;
+}
+.player-paper-wizard-pdf .player-wizard-identity-0 .player-wizard-class-fields > .player-field:nth-child(2) > span { position: absolute; top: calc(100% + 2px); left: 0; right: 0; text-align: center; white-space: nowrap; }
+.player-paper-wizard-pdf .player-wizard-identity-0 .player-wizard-class-fields > .player-field:nth-child(2) :is(input, select) { border: 0; }
+.player-paper-wizard-pdf .player-wizard-identity-0 select { appearance: none; cursor: pointer; }
+.player-paper-wizard-pdf :is(.player-wizard-abilities, .player-wizard-combat, .player-wizard-magic-combat) {
+    position: relative;
+    border-radius: 0;
+    background: linear-gradient(#e2e2e2, #e8e8e8);
+}
+.player-paper-wizard-pdf :is(.player-wizard-abilities, .player-wizard-combat, .player-wizard-magic-combat)::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border: 1px solid white;
+    outline: 1px solid white;
+    outline-offset: 3px;
+    clip-path: polygon(0 9px, 9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px));
+    pointer-events: none;
+}
+.player-paper-wizard-pdf .player-score output,
+.player-paper-wizard-pdf .player-wizard-hit-die,
+.player-paper-wizard-pdf .player-wizard-level {
+    border-color: transparent;
+    background: url('../public/templates/mago-stemma.svg') center / 100% 100% no-repeat;
+}
+.player-paper-wizard-pdf .player-score output { background-color: white; border-radius: 50%; }
+.player-paper-wizard-pdf .player-wizard-level {
+    box-sizing: border-box;
+    width: 76px;
+    height: 76px;
+    font-size: 34px;
+    font-weight: 400;
+    line-height: 1;
+    top: -2px;
+    right: -2px;
+    transform: translate(25%, -25%);
+    z-index: 1;
+    border-radius: 0;
+    background: url('../public/templates/cornicetonda.svg') center / contain no-repeat, radial-gradient(circle closest-side, white 84%, transparent 85%);
+}
+.player-paper-wizard-pdf .player-wizard-privilege { margin: 26px 0 0; }
+.player-paper-wizard-pdf .player-wizard-privilege h3 { display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 22px; padding-right: 0; padding-bottom: 1px; }
+.player-paper-wizard-pdf .player-wizard-left .player-wizard-competence {
+    box-sizing: border-box;
+    width: 66%;
+    padding: 0;
+    border: 0;
+    border-image: none;
+    background: url('../public/templates/mago-cartiglio.svg') left center / calc(100% - 24px) 44px no-repeat;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.player-paper-wizard-pdf .player-wizard-competence .player-field {
+    position: relative;
+    isolation: isolate;
+    grid-template-columns: minmax(0, 1fr) 54px;
+    min-height: 64px;
+}
+.player-paper-wizard-pdf .player-wizard-competence .player-field::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    top: 50%;
+    right: -5px;
+    width: 64px;
+    height: 64px;
+    transform: translateY(-50%) rotate(90deg);
+    background: url('../public/templates/cornicetonda.svg') center / contain no-repeat, radial-gradient(circle closest-side, white 84%, transparent 85%);
+    pointer-events: none;
+}
+.player-paper-wizard-pdf .player-wizard-competence .player-field > span { font-size: 17px; font-weight: 700; letter-spacing: 0; text-align: center; }
+.player-paper-wizard-pdf .player-wizard-competence input { height: 48px; padding: 0; border: 0; background: none; font-size: 24px; }
+.player-paper-wizard-pdf .player-wizard-perception { gap: 12px; font-family: Arial, Helvetica, sans-serif; }
+.player-paper-wizard-pdf .player-wizard-perception > .player-field { grid-template-columns: 52px minmax(0, 1fr); gap: 0; }
+.player-paper-wizard-pdf .player-wizard-perception > .player-field input {
+    position: relative;
+    z-index: 1;
+    height: 52px;
+    padding: 0;
+    border: 0;
+    background: url('../public/templates/mago-percezione.svg') center / 100% 100% no-repeat;
+    font-size: 24px;
+}
+.player-paper-wizard-pdf .player-wizard-perception > .player-field > span,
+.player-paper-wizard-pdf .player-wizard-perception > .player-check > span {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    min-height: 42px;
+    padding: 4px 10px;
+    background: url('../public/templates/mago-cartiglio.svg') center / 100% 100% no-repeat;
+    font-size: 10px;
+    font-weight: 400;
+    line-height: 12px;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+.player-paper-wizard-pdf .player-wizard-perception > .player-field > span { margin-left: -4px; }
+.player-paper-wizard-pdf .player-wizard-perception > .player-check { display: grid; grid-template-columns: minmax(0, 1fr) 52px; gap: 0; }
+.player-paper-wizard-pdf .player-wizard-perception > .player-check > span { grid-area: 1 / 1; margin-right: -12px; }
+.player-paper-wizard-pdf .player-wizard-perception input[type='checkbox'] {
+    position: relative;
+    grid-area: 1 / 2;
+    width: 52px;
+    height: 52px;
+    border: 0;
+    border-radius: 0;
+    background: url('../public/templates/mago-ispirazione.svg') center / 100% 100% no-repeat;
+}
+.player-paper-wizard-pdf .player-wizard-perception input[type='checkbox']:checked { background-image: radial-gradient(circle, #252323 0 18%, transparent 20%), url('../public/templates/mago-ispirazione.svg'); }
+.player-paper-wizard-pdf .player-wizard-score { grid-template-columns: 88px minmax(0, 1fr); gap: 8px; min-height: 124px; }
+.player-paper-wizard-pdf .player-wizard-score .player-score {
+    position: relative;
+    box-sizing: border-box;
+    height: 120px;
+    padding: 6px 4px 0;
+    border: 0;
+    border-image: none;
+    border-radius: 0;
+    background: url('../public/templates/mago-caratteristica.svg') center / 100% 100% no-repeat;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.player-paper-wizard-pdf .player-wizard-score .player-score .player-field { height: 82px; grid-template-rows: 14px 1fr; gap: 0; }
+.player-paper-wizard-pdf .player-wizard-score .player-score .player-field > span { font-size: 9px; font-weight: 700; line-height: 14px; letter-spacing: .3px; }
+.player-paper-wizard-pdf .player-wizard-score .player-score input { align-self: center; height: 54px; padding: 0; border: 0; font-size: 42px; }
+.player-paper-wizard-pdf .player-wizard-score .player-score > output {
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    width: 52px;
+    height: 28px;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    font-size: 18px;
+    font-weight: 400;
+}
+.player-paper-wizard-pdf .player-wizard-score .player-score > .player-wizard-score-base {
+    z-index: 1;
+    bottom: -2px;
+    left: -14px;
+    transform: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    padding-top: 3px;
+    background: url('../public/templates/cornicetonda.svg') center / contain no-repeat, radial-gradient(circle closest-side, white 84%, transparent 85%);
+    font-size: 13px;
+    line-height: 15px;
+}
+.player-paper-wizard-pdf .player-wizard-score-base small { font-size: 7px; line-height: 8px; }
+.player-paper-wizard-pdf .player-wizard-traits > .player-field:first-of-type textarea { min-height: 0; height: calc(2lh + 13px); }
+.player-paper-wizard-pdf .player-wizard-score .player-roll { display: grid; grid-template-columns: 14px 14px 25px minmax(0, 1fr); }
+.player-paper-wizard-pdf .player-wizard-score .player-roll > .player-check { justify-content: center; }
+.player-paper-wizard-pdf .player-wizard-score .player-roll > .player-check:nth-child(2) { display: none; }
+.player-paper-wizard-pdf .player-wizard-score .player-roll > .player-check:first-child { grid-column: 2; }
+.player-paper-wizard-pdf .player-wizard-score .player-roll > input { grid-column: 3; }
+.player-paper-wizard-pdf .player-wizard-score .player-roll > span { grid-column: 4; }
+.player-paper-wizard-pdf .player-wizard-score .player-roll > span { font-family: Arial, Helvetica, sans-serif; font-size: 11px; line-height: 13px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; }
+.player-paper-wizard-pdf .player-wizard-score .player-roll:first-child input[type='checkbox'] { width: 10px; height: 10px; border-radius: 0; transform: rotate(45deg); }
+.player-paper-wizard-pdf .player-wizard-score .player-column { padding-top: 12px; }
+.player-paper-wizard-pdf .player-wizard-score .player-column { position: relative; }
+.player-paper-wizard-pdf .player-wizard-score .player-column::before {
+    content: '';
+    position: absolute;
+    top: 1px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: radial-gradient(circle at right, #302d2c 0 1.5px, transparent 2px) right / 4px 3px no-repeat, linear-gradient(#302d2c, #302d2c) left center / calc(100% - 2px) 1px no-repeat;
+    pointer-events: none;
+}
+.player-paper-wizard-pdf .player-table input,
+.player-paper-wizard-pdf .player-wizard-favorite textarea {
+    border-radius: 3px;
+    outline: 1px solid #605b57;
+    outline-offset: -1px;
+}
+.player-paper-wizard-pdf .player-spell-level h3 > span {
+    border-color: transparent;
+    border-radius: 0;
+    background: url('../public/templates/mago-cornice.svg') center / 100% 100% no-repeat;
+}
+.player-paper-wizard-pdf .player-box.player-spell-level {
+    border-image: var(--wizard-scroll);
+}
+.player-paper-wizard-pdf .player-spell-level h3 { position: relative; isolation: isolate; background: none; }
+.player-paper-wizard-pdf .player-spell-level h3::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: -3px -2px 0;
+    border: 2px solid transparent;
+    border-image: var(--wizard-frame);
+    background: white;
+    pointer-events: none;
+}
+.player-paper-wizard-pdf .player-wizard-item { border-image: linear-gradient(90deg, transparent, #8e8984 12%, #8e8984 88%, transparent) 1; }
+.player-paper-wizard-pdf .player-coins .player-field input {
+    border-color: transparent;
+    background: url('../public/templates/mago-cornice.svg') center / 100% 100% no-repeat;
+    text-align: center;
+}
+.player-paper-wizard-pdf :is(.player-spell-level > button, .player-wizard-extra button) {
+    color: var(--paper-ink);
+    background: #f1f0ed;
+    border-color: var(--paper-line);
+    cursor: pointer;
+}
+.player-paper-wizard-pdf :is(button, summary):focus-visible { outline: 2px solid #147d72; outline-offset: 2px; }
+.player-paper-wizard-pdf .player-box.player-wizard-extra { border-image: none; border-color: #b8b1aa; border-radius: 3px; background: #faf9f6; }
+
+/* Le cornici del combattimento riprendono il PDF senza spostare le sezioni della scheda. */
+.player-paper-wizard-pdf .player-wizard-combat {
+    background: #dedddd;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #252323;
+}
+.player-paper-wizard-pdf .player-wizard-combat::before {
+    inset: 0;
+    border: 0;
+    outline: 0;
+    clip-path: none;
+    background: url('../public/templates/mago-combattimento.svg#pannello') center / 100% 100% no-repeat;
+}
+.player-paper-wizard-pdf .player-wizard-combat .player-combat-top > .player-field {
+    border-image: none;
+    background: url('../public/templates/mago-riquadro.svg') center / 100% 100% no-repeat;
+}
+.player-paper-wizard-pdf .player-wizard-combat .player-wizard-ac {
+    position: relative;
+    border-image: none;
+    background: url('../public/templates/mago-combattimento.svg#ca') center / 100% 100% no-repeat;
+}
+.player-paper-wizard-pdf .player-wizard-defenses { position: absolute; inset: 0; pointer-events: none; }
+.player-paper-wizard-pdf .player-wizard-defense {
+    position: absolute;
+    bottom: -5px;
+    width: 42%;
+    height: 50%;
+    background: url('../public/templates/mago-scudo-vuoto.svg') center / 100% 100% no-repeat;
+    pointer-events: auto;
+}
+.player-paper-wizard-pdf .player-wizard-no-armor { left: -4px; }
+.player-paper-wizard-pdf .player-wizard-no-shield { right: -4px; }
+.player-paper-wizard-pdf .player-wizard-defense .player-field { gap: 1px; align-content: start; justify-items: center; padding: 10px 0 0; border: 0; border-radius: 0; background: transparent; }
+.player-paper-wizard-pdf .player-wizard-defense .player-field > span { font-size: 7px; line-height: 7.5px; letter-spacing: 0; font-weight: 700; }
+.player-paper-wizard-pdf .player-wizard-combat .player-wizard-defense input { width: 66%; height: 18px; padding: 0; font-size: 12px; line-height: 18px; text-align: center; }
+.player-paper-wizard-pdf .player-wizard-ac > .player-field + .player-field input {
+    width: 30%;
+    margin: 0 auto;
+    padding: 0;
+    font-size: 20px;
+    line-height: 22px;
+    transform: translateY(-8px);
+}
+.player-paper-wizard-pdf .player-wizard-ac > .player-field + .player-field > span { font-size: 8px; line-height: 12.6px; letter-spacing: 0; transform: translateY(-8px); }
+.player-paper-wizard-pdf .player-wizard-combat .player-combat-top input { border-bottom-color: transparent; }
+.player-paper-wizard-pdf .player-wizard-combat .player-combat-top > .player-field > input { height: 44px; padding: 0; font-size: 34px; line-height: 40px; }
+.player-paper-wizard-pdf .player-wizard-combat .player-field > span { font-variant: small-caps; text-transform: none; font-weight: 700; }
+.player-paper-wizard-pdf .player-wizard-combat .player-combat-top > .player-field > span,
+.player-paper-wizard-pdf .player-wizard-ac > .player-field:first-child > span { font-size: 14px; line-height: 12.6px; letter-spacing: .6px; }
+.player-paper-wizard-pdf .player-wizard-ac > .player-field:first-child > span { transform: translateY(4px); }
+.player-paper-wizard-pdf .player-wizard-hitpoints > .player-field {
+    border-image: none;
+    background: url('../public/templates/mago-combattimento.svg#pf') center / 100% 100% no-repeat;
+}
+.player-paper-wizard-pdf .player-wizard-hitpoints > .player-field:first-child {
+    position: relative;
+    z-index: 1;
+    grid-area: 1 / 1;
+    align-self: start;
+    box-sizing: border-box;
+    height: 54px;
+    padding: 5px 4px;
+    background-image: url('../public/templates/mago-riquadro.svg');
+}
+.player-paper-wizard-pdf .player-wizard-hitpoints > .player-field:first-child > span { position: absolute; bottom: 5px; left: 0; right: 0; font-size: 11px; }
+.player-paper-wizard-pdf .player-wizard-hitpoints > .player-field:first-child input { height: 30px; padding: 0; }
+.player-paper-wizard-pdf .player-wizard-hitpoints input { border-bottom-color: transparent; }
+.player-paper-wizard-pdf .player-wizard-hitpoints > .player-field:nth-child(2) { grid-area: 1 / 1 / 2 / 3; display: flex; flex-direction: column; }
+.player-paper-wizard-pdf .player-wizard-hitpoints > .player-field:nth-child(2) > span { margin-left: 54px; font-size: 14px; line-height: 16px; letter-spacing: .4px; }
+.player-paper-wizard-pdf .player-wizard-hitpoints > .player-field:nth-child(2) input { height: 40px; margin-top: auto; padding: 0; font-size: 36px; line-height: 40px; }
+.player-paper-wizard-pdf .player-wizard-hitpoints > .player-field:nth-child(3) { grid-area: 1 / 3; }
+.player-paper-wizard-pdf .player-wizard-hitpoints > .player-field:nth-child(3) > span { font-size: 9.5px; line-height: 10.5px; letter-spacing: 0; }
+.player-paper-wizard-pdf .player-wizard-hp-caption { position: absolute; top: calc(100% + 6px); left: 4px; font-size: 9px; line-height: 12px; letter-spacing: .4px; }
+.player-paper-wizard-pdf .player-wizard-hitpoints > .player-field:not(:first-child) > span {
+    position: relative;
+    isolation: isolate;
+}
+.player-paper-wizard-pdf .player-wizard-hitpoints > .player-field:not(:first-child) > span::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: -5px -2px;
+    background: url('../public/templates/mago-combattimento.svg#cartiglio') center / 100% 100% no-repeat;
+    pointer-events: none;
+}
+.player-paper-wizard-pdf .player-wizard-vitality > .player-box {
+    border-image: none;
+    background: url('../public/templates/mago-combattimento.svg#dadi-vita') center bottom / 100% calc(100% - 25px) no-repeat;
+}
+.player-paper-wizard-pdf .player-wizard-vitality .player-box h3 { font-family: Arial, Helvetica, sans-serif; font-size: 12px; line-height: 14px; font-weight: 700; letter-spacing: .3px; }
+.player-paper-wizard-pdf .player-wizard-vitality > .player-box h3 { background: none; font-size: 14px; }
+.player-paper-wizard-pdf .player-wizard-vitality > .player-box .player-two-fields { padding: 0 7px; }
+.player-paper-wizard-pdf .player-wizard-vitality > .player-box .player-field { text-align: center; }
+.player-paper-wizard-pdf .player-wizard-vitality > .player-box .player-field > span { font-size: 9.5px; line-height: 12.6px; }
+.player-paper-wizard-pdf .player-wizard-vitality > .player-box .player-field > output { font-size: 24px; line-height: 22px; }
+.player-paper-wizard-pdf .player-wizard-vitality > .player-box input { text-align: center; padding: 0; font-size: 24px; line-height: 25px; border-bottom: 0; }
+.player-paper-wizard-pdf .player-wizard-hit-die {
+    position: relative;
+    isolation: isolate;
+    box-sizing: border-box;
+    width: 50px;
+    padding: 3px 0;
+    border-color: transparent;
+    background: none;
+    text-align: center;
+    font-size: 20px;
+    line-height: 25.2px;
+}
+.player-paper-wizard-pdf .player-wizard-hit-die-frame {
+    position: absolute;
+    z-index: -1;
+    top: 50%;
+    left: 50%;
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    background: radial-gradient(circle closest-side, white 84%, transparent 85%);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+.player-paper-wizard-pdf .player-wizard-vitality .player-box:has(.player-death) { border-image: none; background: transparent; gap: 2px; }
+.player-paper-wizard-pdf .player-wizard-vitality .player-box:has(.player-death) h3 { text-transform: none; }
+.player-paper-wizard-pdf .player-wizard-vitality .player-death { position: relative; isolation: isolate; font-size: 10px; }
+.player-paper-wizard-pdf .player-wizard-vitality .player-death::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    top: 50%;
+    right: 10px;
+    width: 46px;
+    height: 2px;
+    background: var(--paper-line);
+    pointer-events: none;
+}
+.player-paper-wizard-pdf .player-wizard-vitality .player-death input[type='checkbox'] {
+    width: 20px;
+    height: 20px;
+    border-color: transparent;
+    background: url('../public/templates/mago-combattimento.svg#cuore') center / 20px 20px no-repeat;
+}
+.player-paper-wizard-pdf .player-wizard-vitality .player-death input[type='checkbox']:checked { background-image: url('../public/templates/mago-combattimento.svg#cuore-selezionato'); }
+.player-paper-wizard-pdf .player-wizard-vitality .player-death + .player-death input[type='checkbox'] { background-image: url('../public/templates/mago-combattimento.svg#teschio'); }
+.player-paper-wizard-pdf .player-wizard-vitality .player-death + .player-death input[type='checkbox']:checked { background-image: url('../public/templates/mago-combattimento.svg#teschio-selezionato'); }
+.player-paper-wizard-pdf .player-wizard-exhaustion { position: relative; }
+.player-paper-wizard-pdf .player-wizard-exhaustion .player-field > span { font-size: 10.5px; line-height: 12.6px; letter-spacing: 0; }
+.player-paper-wizard-pdf .player-wizard-exhaustion .player-field input { width: 24px; justify-self: end; text-align: center; }
+.player-paper-wizard-pdf .player-wizard-exhaustion-levels {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 28px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(var(--paper-line), var(--paper-line)) center / calc(100% - 16px) 2px no-repeat;
+}
+.player-paper-wizard-pdf .player-wizard-exhaustion-levels button {
+    box-sizing: border-box;
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 1.5px solid var(--paper-line);
+    border-radius: 50%;
+    color: var(--paper-ink);
+    background: white;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.player-paper-wizard-pdf .player-wizard-exhaustion-levels button[aria-pressed='true'] { color: white; background: var(--paper-line); }
+
+.player-paper-wizard-pdf .player-box.player-wizard-slot-box {
+    position: relative;
+    container-type: inline-size;
+    padding: 6px 10px 8px;
+    gap: 0;
+    border-image: none;
+    background: url('../public/templates/mago-slot-incantesimo.svg') center / 100% 100% no-repeat;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.player-paper-wizard-pdf .player-wizard-slot-box > h3 {
+    font-size: 4.3cqw;
+    line-height: 1.15;
+    letter-spacing: .5px;
+    text-transform: none;
+    padding-bottom: 2px;
+}
+.player-paper-wizard-pdf .player-wizard-slot-diagram { position: relative; padding-bottom: 2px; }
+.player-paper-wizard-pdf .player-wizard-slot-caption {
+    height: 4.5cqw;
+    text-align: center;
+    font-size: 3.1cqw;
+    font-variant: small-caps;
+    letter-spacing: .6px;
+    line-height: 4.5cqw;
+}
+.player-paper-wizard-pdf .player-wizard-slot-circles { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); }
+.player-paper-wizard-pdf .player-wizard-slot-level { display: flex; flex-direction: column; align-items: center; gap: 2.4cqw; position: relative; }
+.player-paper-wizard-pdf .player-wizard-slot-level > span { font-size: 3.8cqw; line-height: 5cqw; }
+.player-paper-wizard-pdf .player-wizard-slot-level button {
+    flex-shrink: 0;
+    box-sizing: border-box;
+    width: 3.7cqw;
+    height: 3.7cqw;
+    padding: 0;
+    border: 1.5px solid var(--paper-line);
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+}
+.player-paper-wizard-pdf .player-wizard-slot-level button[aria-pressed='true'] { background: radial-gradient(circle, var(--paper-line) 0 45%, white 50%); }
+.player-paper-wizard-pdf .player-wizard-slot-level button:focus-visible { outline: 2px solid #147d72; outline-offset: 2px; }
+.player-paper-wizard-pdf .player-wizard-slot-level > small { position: absolute; bottom: -3cqw; font-size: 2.5cqw; }
+.player-paper-wizard-pdf .player-wizard-spell-count {
+    position: absolute;
+    right: -3.5cqw;
+    width: 37cqw;
+    height: 18cqw;
+    display: flex;
+    align-items: end;
+}
+.player-paper-wizard-pdf .player-wizard-prepared-count { top: 16cqw; }
+.player-paper-wizard-pdf .player-wizard-cantrip-count { bottom: -2cqw; }
+.player-paper-wizard-pdf .player-wizard-spell-count > span {
+    flex: 1;
+    padding: 1.3cqw 1cqw;
+    margin: 0 -1.5cqw 1cqw 0;
+    background: url('../public/templates/mago-cartiglio.svg') center / 100% 100% no-repeat;
+    font-size: 2.4cqw;
+    font-weight: 700;
+    font-variant: small-caps;
+    text-align: center;
+    line-height: 1.3;
+    letter-spacing: .3px;
+}
+.player-paper-wizard-pdf .player-wizard-spell-count > output {
+    display: grid;
+    place-items: center;
+    width: 19cqw;
+    height: 18cqw;
+    background: url('../public/templates/mago-riquadro.svg') center / 100% 100% no-repeat;
+    font-size: 7cqw;
+}
+.player-paper-wizard-pdf .player-wizard-slot-edit { margin-top: 2px; font-size: 7px; }
+.player-paper-wizard-pdf .player-wizard-slot-edit > summary { cursor: pointer; width: fit-content; }
+.player-paper-wizard-pdf .player-wizard-slot-edit[open] { padding-bottom: 5px; }
+
+.player-paper-wizard-pdf .player-wizard-magic-combat {
+    grid-template-columns: 1.3fr 1.15fr 2.15fr;
+    align-items: start;
+    gap: 6px;
+    padding: 14px 12px 12px;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.player-paper-wizard-pdf .player-wizard-magic-combat::before {
+    border: 0;
+    outline: 0;
+    clip-path: none;
+    background: url('../public/templates/mago-combattimento.svg#pannello') center / 100% 100% no-repeat;
+}
+.player-paper-wizard-pdf .player-wizard-magic-combat > .player-field {
+    position: relative;
+    isolation: isolate;
+    grid-template-rows: 28px 62px;
+    gap: 4px;
+    justify-items: center;
+}
+.player-paper-wizard-pdf .player-wizard-magic-combat > .player-field > span {
+    text-align: center;
+    font-size: 8px;
+    font-weight: 400;
+    line-height: 10px;
+    letter-spacing: 0;
+    align-self: center;
+}
+.player-paper-wizard-pdf .player-wizard-magic-combat > .player-field::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    bottom: 0;
+    left: 50%;
+    width: 62px;
+    height: 62px;
+    background: url('../public/templates/cornicetonda.svg') center / contain no-repeat, radial-gradient(circle closest-side, white 84%, transparent 85%);
+    transform: translateX(-50%) rotate(-90deg);
+    pointer-events: none;
+}
+.player-paper-wizard-pdf .player-wizard-magic-combat > .player-field:nth-child(2)::after {
+    background: url('../public/templates/mago-percezione.svg') center / contain no-repeat;
+    transform: translateX(-50%) rotate(90deg);
+}
+.player-paper-wizard-pdf .player-wizard-magic-combat input { height: 62px; padding: 0; border: 0; background: transparent; font-size: 24px; text-align: center; }
+.player-paper-wizard-pdf .player-wizard-magic-combat > .player-field input { width: 48px; }
+.player-paper-wizard-pdf .player-wizard-tradition-uses {
+    height: 94px;
+    background: url('../public/templates/mago-combattimento.svg#dadi-vita') center bottom / 100% 62px no-repeat;
+}
+.player-paper-wizard-pdf .player-wizard-tradition-uses h3 {
+    height: 28px;
+    margin: 0 0 4px;
+    font-size: 10px;
+    line-height: 12px;
+    font-variant: small-caps;
+    text-align: center;
+    letter-spacing: .3px;
+}
+.player-paper-wizard-pdf .player-wizard-tradition-uses .player-two-fields { padding: 3px 10px 0; gap: 6px; }
+.player-paper-wizard-pdf .player-wizard-tradition-uses .player-field { gap: 0; }
+.player-paper-wizard-pdf .player-wizard-tradition-uses .player-field > span { font-size: 7px; line-height: 10px; text-align: center; letter-spacing: 0; }
+.player-paper-wizard-pdf .player-wizard-tradition-uses input { height: 42px; }
+.player-paper-wizard-pdf .player-wizard-magic-combat > details { grid-column: 1 / -1; }
+.player-paper-wizard-pdf .player-wizard-magic-combat > details > summary { font-size: 7px; }
+.player-paper-wizard-pdf .player-wizard-magic-combat .player-table input { height: 22px; font-size: 14px; text-align: start; }
+
+.player-paper-wizard-pdf .player-box.player-wizard-attacks {
+    border-image: none;
+    background: url('../public/templates/mago-slot-incantesimo.svg') center / 100% 100% no-repeat;
+    padding: 4px 6px 8px;
+    gap: 0;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.player-paper-wizard-pdf .player-wizard-attacks > h3 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.player-paper-wizard-pdf .player-wizard-attacks .player-table { border-collapse: separate; border-spacing: 4px 4px; }
+.player-paper-wizard-pdf .player-wizard-attacks .player-table th {
+    padding: 0;
+    font-size: 10px;
+    line-height: 14px;
+    font-weight: 700;
+    font-variant: small-caps;
+    text-align: center;
+    white-space: nowrap;
+}
+.player-paper-wizard-pdf .player-wizard-attacks .player-table th:first-child { width: 52%; font-size: 13px; }
+.player-paper-wizard-pdf .player-wizard-attacks .player-table th:nth-child(2) { width: 14%; }
+.player-paper-wizard-pdf .player-wizard-attacks .player-table th:nth-child(3) { width: 24%; }
+.player-paper-wizard-pdf .player-wizard-attacks .player-table th:last-child { width: 10%; }
+.player-paper-wizard-pdf .player-wizard-attacks .player-table td { padding: 0; }
+.player-paper-wizard-pdf .player-wizard-attacks .player-table input {
+    height: 26px;
+    padding: 2px 4px;
+    border: 1.5px solid var(--paper-line);
+    border-radius: 4px;
+    background: white;
+    font-size: 12px;
+}
+
+.player-paper-wizard-pdf .player-box.player-wizard-favorites {
+    border-image: url('../public/templates/mago-incantesimi-preferiti.svg') 12 / 10px / 0 stretch;
+    flex: none;
+    padding: 6px 10px 10px;
+    gap: 0;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.player-paper-wizard-pdf .player-wizard-favorites > h3 { font-size: 13px; line-height: 16px; padding-bottom: 3px; text-transform: none; }
+.player-paper-wizard-pdf .player-wizard-favorite {
+    position: relative;
+    flex: none;
+    grid-template-columns: 22px minmax(0, 1fr) 40px 42px 42px;
+    grid-template-rows: 36px 32px;
+    gap: 8px 3px;
+    padding: 6px 0;
+    border-bottom: 0;
+    background: linear-gradient(90deg, transparent, #867b72 48%, transparent) center bottom / 100% 1px no-repeat;
+}
+.player-paper-wizard-pdf .player-wizard-favorite:last-child { background: none; }
+.player-paper-wizard-pdf .player-wizard-favorite-top,
+.player-paper-wizard-pdf .player-wizard-favorite-extra { display: contents; }
+.player-paper-wizard-pdf .player-wizard-favorite-top > .player-field { grid-row: 1; grid-template-rows: 14px 22px; gap: 0; }
+.player-paper-wizard-pdf .player-wizard-favorite-top > .player-field:nth-child(1) { grid-column: 1; position: relative; isolation: isolate; }
+.player-paper-wizard-pdf .player-wizard-favorite-top > .player-field:nth-child(2) { grid-column: 2; }
+.player-paper-wizard-pdf .player-wizard-favorite-top > .player-field:nth-child(3) { grid-column: 4; }
+.player-paper-wizard-pdf .player-wizard-favorite-top > .player-field:nth-child(4) { grid-column: 5; }
+.player-paper-wizard-pdf .player-wizard-favorite-top .player-field > span { align-self: end; font-size: 9px; line-height: 10px; font-variant: small-caps; text-transform: none; letter-spacing: .2px; }
+.player-paper-wizard-pdf .player-wizard-favorite-top > .player-field:nth-child(-n+2) > span { transform: translateY(-5px); }
+.player-paper-wizard-pdf .player-wizard-favorite-top .player-field:nth-child(n+3) > span { text-align: center; font-size: 8px; }
+.player-paper-wizard-pdf .player-wizard-favorite-top input,
+.player-paper-wizard-pdf .player-wizard-favorite > .player-field textarea { border: 1.2px solid var(--paper-line); border-radius: 2px; outline: none; background: white; }
+.player-paper-wizard-pdf .player-wizard-favorite-top .player-field:first-child::after { content: ''; position: absolute; z-index: -1; bottom: -1px; left: -3px; width: 28px; height: 26px; background: url('../public/templates/cornicetonda.svg') center / contain no-repeat, radial-gradient(circle closest-side, white 84%, transparent 85%); pointer-events: none; }
+.player-paper-wizard-pdf .player-wizard-favorite-top .player-field:first-child input { border: 0; background: transparent; text-align: center; }
+.player-paper-wizard-pdf .player-wizard-favorite-top input:focus,
+.player-paper-wizard-pdf .player-wizard-favorite > .player-field textarea:focus { outline: 2px solid #147d72; outline-offset: 1px; }
+.player-paper-wizard-pdf .player-wizard-favorite > .player-field { grid-area: 2 / 1 / 3 / -1; }
+.player-paper-wizard-pdf .player-wizard-favorite > .player-field textarea { height: 32px; min-height: 32px; padding: 3px; font-size: 11px; }
+.player-paper-wizard-pdf .player-wizard-favorite-components { grid-area: 1 / 2; z-index: 1; display: flex; justify-self: end; align-self: end; transform: translateY(4px); }
+.player-paper-wizard-pdf .player-wizard-component { display: flex; align-items: center; gap: 1px; padding: 0 1px; border: 1px solid #777; border-radius: 6px; background: white; font-size: 7px; line-height: 9px; cursor: pointer; }
+.player-paper-wizard-pdf .player-wizard-component input[type='checkbox'] { width: 7px; height: 7px; border-color: var(--paper-line); }
+.player-paper-wizard-pdf .player-wizard-favorite-notes { grid-area: 1 / 3; align-self: start; }
+.player-paper-wizard-pdf .player-wizard-favorite-notes > summary { font-size: 9px; line-height: 12px; font-weight: 700; font-variant: small-caps; list-style: none; cursor: pointer; }
+.player-paper-wizard-pdf .player-wizard-favorite-notes > summary::-webkit-details-marker { display: none; }
+.player-paper-wizard-pdf .player-wizard-favorite-notes[open] > .player-field { position: absolute; z-index: 2; top: 24px; right: 0; width: 200px; padding: 6px; border: 1px solid var(--paper-line); background: white; }
+.player-paper-wizard-pdf .player-wizard-favorite-extra > .player-check { grid-area: 1 / 3; align-self: start; margin-top: 13px; justify-content: space-between; gap: 2px; font-size: 9px; line-height: 10px; font-weight: 700; }
+.player-paper-wizard-pdf .player-wizard-favorite-extra > .player-check:last-child { margin-top: 25px; }
+.player-paper-wizard-pdf .player-wizard-favorite-extra > .player-check > span { order: -1; }
+.player-paper-wizard-pdf .player-wizard-favorite-extra > .player-check input[type='checkbox'] { width: 10px; height: 10px; border-width: 1.2px; }
+.player-paper-wizard-pdf .player-wizard-favorite-extra > .player-check:not(:last-child) input[type='checkbox'] { border: 0; border-radius: 0; background: url('../public/templates/mago-rituale.svg') center / contain no-repeat; }
+.player-paper-wizard-pdf .player-wizard-favorite-extra > .player-check:not(:last-child) input[type='checkbox']:checked { background-image: radial-gradient(circle, var(--paper-line) 0 28%, transparent 30%), url('../public/templates/mago-rituale.svg'); }
+
+.player-paper-wizard-pdf .player-wizard-identity-1 {
+    display: block;
+    container-type: inline-size;
+    aspect-ratio: 2480 / 390;
+    background: url('../public/templates/mago-inventario-testata.webp') center / 100% 100% no-repeat;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.player-paper-wizard-pdf .player-wizard-identity-1::before { display: none; }
+.player-paper-wizard-pdf .player-wizard-identity-1 .player-name {
+    position: absolute;
+    top: 37%;
+    left: 3.2%;
+    width: 36%;
+    height: 39%;
+    box-sizing: border-box;
+    padding: 0;
+    border: 0;
+    background: none;
+}
+.player-paper-wizard-pdf .player-wizard-identity-1 .player-name .player-field { display: block; height: 100%; }
+.player-paper-wizard-pdf .player-wizard-identity-1 .player-name input { height: 100%; padding: 0; border: 0; font-family: inherit; font-size: clamp(24px, 3.7cqw, 56px); }
+.player-paper-wizard-pdf .player-wizard-identity-1 .player-field > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.player-paper-wizard-pdf .player-wizard-identity-1 .player-wizard-appearance {
+    position: absolute;
+    inset: 0;
+    padding: 0;
+    border: 0;
+    border-image: none;
+    background: none;
+    pointer-events: none;
+}
+.player-paper-wizard-pdf .player-wizard-identity-1 .player-wizard-appearance > div {
+    position: absolute;
+    left: 40.8%;
+    right: 3%;
+    margin: 0;
+    gap: 0;
+}
+.player-paper-wizard-pdf .player-wizard-identity-1 .player-six-fields { top: 23%; height: 23%; }
+.player-paper-wizard-pdf .player-wizard-identity-1 .player-three-fields { top: 55%; height: 20%; }
+.player-paper-wizard-pdf .player-wizard-identity-1 .player-wizard-appearance .player-field { display: block; height: 100%; }
+.player-paper-wizard-pdf .player-wizard-identity-1 .player-wizard-appearance input { height: 100%; padding: 0 4px; border: 0; font-size: clamp(12px, 1.5cqw, 22px); text-align: center; pointer-events: auto; }
+
+.player-paper-wizard-pdf .player-wizard-identity-2 {
+    container-type: inline-size;
+    aspect-ratio: 2475 / 470;
+    background: url('../public/templates/mago-incantesimi-testata.webp') center / 100% 100% no-repeat;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.player-paper-wizard-pdf .player-wizard-identity-2::before { display: none; }
+.player-paper-wizard-pdf .player-wizard-identity-2 .player-casting { position: absolute; inset: 0; display: block; margin: 0; }
+.player-paper-wizard-pdf .player-wizard-identity-2 .player-casting > .player-field {
+    position: absolute;
+    top: 41%;
+    width: 11.6%;
+    height: 27%;
+    display: block;
+    padding: 0;
+    border: 0;
+    border-image: none;
+    background: none;
+}
+.player-paper-wizard-pdf .player-wizard-identity-2 .player-field > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.player-paper-wizard-pdf .player-wizard-identity-2 .player-field input { height: 100%; padding: 0 4px; border: 0; font-size: clamp(22px, 2.6cqw, 36px); text-align: center; }
+.player-paper-wizard-pdf .player-wizard-identity-2 .player-casting > .player-field:first-child { left: 6.5%; top: 44%; width: 35.5%; height: 33%; }
+.player-paper-wizard-pdf .player-wizard-identity-2 .player-casting > .player-field:first-child input { font-size: clamp(24px, 3cqw, 42px); }
+.player-paper-wizard-pdf .player-wizard-identity-2 .player-casting > .player-field:nth-child(2) { left: 46.1%; }
+.player-paper-wizard-pdf .player-wizard-identity-2 .player-casting > .player-field:nth-child(2) input { font-size: clamp(14px, 1.8cqw, 24px); }
+.player-paper-wizard-pdf .player-wizard-identity-2 .player-casting > .player-field:nth-child(3) { left: 63.15%; }
+.player-paper-wizard-pdf .player-wizard-identity-2 .player-casting > .player-field:nth-child(4) { left: 80.5%; }
+
+.player-paper-wizard-pdf .player-wizard-personality {
+    display: grid;
+    grid-template-rows: repeat(4, minmax(0, 1fr));
+    aspect-ratio: 800 / 1080;
+    background: url('../public/templates/mago-personalita.webp') center / 100% 100% no-repeat;
+}
+.player-paper-wizard-pdf .player-wizard-personality > .player-box {
+    position: relative;
+    min-height: 0;
+    padding: 26px 12px 10px;
+    border: 0;
+    border-image: none;
+    background: none;
+    gap: 0;
+}
+.player-paper-wizard-pdf .player-wizard-personality h3,
+.player-paper-wizard-pdf .player-wizard-personality .player-field > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.player-paper-wizard-pdf .player-wizard-personality .player-field { display: flex; flex: 1; min-height: 0; }
+.player-paper-wizard-pdf .player-wizard-personality textarea { flex: 1; height: 100%; min-height: 0; padding: 2px; resize: none; }
+
+.player-paper-wizard-pdf .player-wizard-story > .player-column:first-child > .player-wizard-portrait-box {
+    position: relative;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-image: none;
+    background: none;
+    gap: 4px;
+}
+.player-paper-wizard-pdf .player-wizard-portrait-box > h3 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.player-paper-wizard-pdf .player-wizard-portrait-frame { position: relative; aspect-ratio: 825 / 745; background: url('../public/templates/mago-aspetto.webp') center / 100% 100% no-repeat; }
+.player-paper-wizard-pdf .player-wizard-portrait-frame .player-portrait { position: absolute; inset: 6.5% 4% 15%; min-height: 0; border: 0; background: transparent; }
+.player-paper-wizard-pdf .player-wizard-portrait-frame .player-portrait > span { display: none; }
+.player-paper-wizard-pdf .player-wizard-portrait-frame .player-portrait img { position: absolute; inset: 0; height: 100%; max-height: none; }
+
+.player-paper-wizard-pdf .player-box.player-wizard-additional { padding: 24px 20px 10px; border-image: none; background: url('../public/templates/mago-cornice-semplice.svg') center / 100% 100% no-repeat; }
+.player-paper-wizard-pdf .player-box.player-wizard-backpack,
+.player-paper-wizard-pdf .player-box.player-wizard-background,
+.player-paper-wizard-pdf .player-box.player-wizard-magic-items,
+.player-paper-wizard-pdf .player-wizard-allies > .player-box {
+    padding: 24px 20px 10px;
+    background: white;
+    border-image: url('../public/templates/mago-cornice-semplice.svg') 69 / 46px / 4px stretch;
+}
+.player-paper-wizard-pdf .player-box.player-wizard-backpack { margin-left: 6px; }
+.player-paper-wizard-pdf .player-wizard-inventory-row { grid-template-columns: minmax(0, 1fr) repeat(3, 45px); }
+.player-paper-wizard-pdf .player-wizard-weights { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: auto; margin-bottom: 8px; }
+.player-paper-wizard-pdf .player-wizard-weights .player-field { display: flex; flex-direction: column; text-align: center; }
+.player-paper-wizard-pdf .player-wizard-weights .player-field > span { order: 1; font-size: 10px; font-weight: 400; }
+.player-paper-wizard-pdf .player-wizard-weights input { width: 50%; align-self: center; aspect-ratio: 160 / 96; padding: 2px 10px; border: 0; background: url('../public/templates/mago-peso.svg') center / 100% 100% no-repeat; font-size: 18px; text-align: center; }
+.player-paper-wizard-pdf .player-wizard-backpack .player-coins {
+    box-sizing: border-box;
+    aspect-ratio: 800 / 140;
+    grid-template-columns: 9.6875% repeat(5, 18.125%);
+    margin-right: -22px;
+    margin-top: 0;
+    margin-bottom: 14px;
+    margin-left: -22px;
+    transform: translateX(-10px);
+    padding: 0;
+    gap: 0;
+    background: url('../public/templates/mago-monete.svg') center / 100% 100% no-repeat;
+}
+.player-paper-wizard-pdf .player-wizard-backpack .player-coins .player-field { grid-template-rows: 76% 24%; gap: 0; text-align: center; }
+.player-paper-wizard-pdf .player-wizard-backpack .player-coins .player-field:first-child { grid-column: 2; }
+.player-paper-wizard-pdf .player-wizard-backpack .player-coins .player-field > span { grid-row: 2; font-size: 12px; font-weight: 400; letter-spacing: 0; }
+.player-paper-wizard-pdf .player-wizard-backpack .player-coins .player-field input { grid-row: 1; height: 100%; padding: 6px 12px; border: 0; border-radius: 0; background: none; font-size: 20px; appearance: textfield; }
+.player-paper-wizard-pdf .player-wizard-backpack .player-coins input::-webkit-inner-spin-button { appearance: none; }

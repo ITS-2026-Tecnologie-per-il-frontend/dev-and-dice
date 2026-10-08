@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="220" viewBox="0 0 200 220" preserveAspectRatio="none">
+  <view id="ca" viewBox="0 0 200 220"/>
+  <view id="ottagono" viewBox="220 0 200 220"/>
+  <view id="pf" viewBox="440 0 200 220"/>
+  <view id="dadi-vita" viewBox="660 0 200 220"/>
+  <view id="cuore" viewBox="0 240 40 40"/>
+  <view id="teschio" viewBox="50 240 40 40"/>
+  <view id="cuore-selezionato" viewBox="100 240 40 40"/>
+  <view id="teschio-selezionato" viewBox="150 240 40 40"/>
+  <view id="cartiglio" viewBox="300 240 200 50"/>
+  <view id="pannello" viewBox="300 300 200 220"/>
+  <g stroke="#252323" stroke-linejoin="miter">
+    <g fill="white">
+      <path stroke-width="5" d="M100 7L31 28C27 54 21 65 8 70V111C8 157 43 198 100 213C157 198 192 157 192 111V70C179 65 173 54 169 28Z"/>
+      <path fill="none" stroke-width="1.8" d="M100 16L39 35C34 60 27 70 17 76V110C17 151 48 190 100 204C152 190 183 151 183 110V76C173 70 166 60 161 35Z"/>
+      <circle cx="100" cy="16" r="3.5" fill="#252323" stroke="none"/>
+      <circle cx="17" cy="76" r="3.5" fill="#252323" stroke="none"/>
+      <circle cx="183" cy="76" r="3.5" fill="#252323" stroke="none"/>
+      <circle cx="100" cy="204" r="3.5" fill="#252323" stroke="none"/>
+    </g>
+    <g transform="translate(220)" fill="white">
+      <path stroke-width="5" d="M23 5H177L195 23V197L177 215H23L5 197V23Z"/>
+      <path fill="none" stroke-width="1.5" d="M25 10H175L190 25V195L175 210H25L10 195V25Z"/>
+      <path fill="none" stroke-width="1.5" d="M23 5L14 23V197L23 215M177 5L186 23V197L177 215M5 23L23 14H177L195 23M5 197L23 206H177L195 197"/>
+    </g>
+    <g transform="translate(440)" fill="white">
+      <path stroke-width="4" d="M21 4H179L188 17L197 21V213C186 213 186 203 177 211L169 215H31L23 211C14 203 14 213 3 213V21L12 17Z"/>
+      <path fill="none" stroke-width="1.2" d="M5 27L9 75L7 122L5 192M195 27L191 75L193 122L195 192M21 4L24 10H176L179 4"/>
+      <circle cx="16" cy="209" r="2.5" fill="#252323" stroke="none"/>
+      <circle cx="184" cy="209" r="2.5" fill="#252323" stroke="none"/>
+    </g>
+    <g transform="translate(660)" fill="white">
+      <path stroke-width="4" d="M22 5H85L100 23L115 5H178L196 27V193L178 215H22L4 193V27Z"/>
+      <path fill="none" stroke-width="1.3" d="M24 10H82L100 25L118 10H176L190 29V191L176 209H24L10 191V29Z"/>
+      <path fill="none" stroke-width="1.2" d="M22 5L15 28V192L22 215M178 5L185 28V192L178 215"/>
+    </g>
+    <g transform="translate(0 240)">
+      <circle cx="20" cy="20" r="17" fill="white" stroke-width="3"/>
+      <path fill="white" stroke-width="2.3" stroke-linejoin="round" d="M20 30C15 25 9 21 9 15C9 9 17 8 20 14C23 8 31 9 31 15C31 21 25 25 20 30Z"/>
+    </g>
+    <g transform="translate(50 240)">
+      <circle cx="20" cy="20" r="17" fill="white" stroke-width="3"/>
+      <path stroke-width="2" stroke-linecap="round" d="M10 26L29 32M11 32L30 26"/>
+      <path fill="#252323" stroke="none" d="M20 7C9 7 7 22 13 24V28H27V24C33 22 31 7 20 7Z"/>
+      <g fill="white" stroke="none"><circle cx="15" cy="17" r="3"/><circle cx="25" cy="17" r="3"/><path d="M20 21L17 25H23Z"/></g>
+    </g>
+    <g transform="translate(100 240)">
+      <circle cx="20" cy="20" r="17" fill="#252323" stroke-width="3"/>
+      <path fill="white" stroke="white" stroke-width="1" d="M20 30C15 25 9 21 9 15C9 9 17 8 20 14C23 8 31 9 31 15C31 21 25 25 20 30Z"/>
+    </g>
+    <g transform="translate(150 240)">
+      <circle cx="20" cy="20" r="17" fill="#252323" stroke-width="3"/>
+      <path stroke="white" stroke-width="2" stroke-linecap="round" d="M10 26L29 32M11 32L30 26"/>
+      <path fill="white" stroke="none" d="M20 7C9 7 7 22 13 24V28H27V24C33 22 31 7 20 7Z"/>
+      <g fill="#252323" stroke="none"><circle cx="15" cy="17" r="3"/><circle cx="25" cy="17" r="3"/><path d="M20 21L17 25H23Z"/></g>
+    </g>
+    <g transform="translate(300 240)" fill="white">
+      <path stroke-width="2.5" d="M14 3H186L197 14V36L186 47H14L3 36V14Z"/>
+      <path fill="none" stroke-width="1" d="M15 7H185L193 15V35L185 43H15L7 35V15Z"/>
+    </g>
+    <g transform="translate(300 300)" fill="none" stroke="white" stroke-width=".8">
+      <path d="M84 4H14Q4 4 4 16V204Q4 216 14 216H84M116 4H186Q196 4 196 16V204Q196 216 186 216H116"/>
+      <path d="M84 1H10L1 10V210L10 219H84M116 1H190L199 10V210L190 219H116M1 10Q6 5 14 4M199 10Q194 5 186 4M1 210Q6 215 14 216M199 210Q194 215 186 216"/>
+      <g fill="white" stroke="none"><circle cx="84" cy="4" r="1"/><circle cx="116" cy="4" r="1"/><circle cx="84" cy="216" r="1"/><circle cx="116" cy="216" r="1"/></g>
+    </g>
+  </g>
+</svg>

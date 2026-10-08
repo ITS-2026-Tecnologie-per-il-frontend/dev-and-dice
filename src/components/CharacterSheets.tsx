@@ -1,21 +1,24 @@
 import { durationTurns } from '../utils/Combat'
-import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react'
-import { characterFields, numericCharacterFields, newCharacterSheet, parseCharacterSheets, initiativeBonus, patchSheetStats, type SheetStats, type CharacterSheet, type SheetAbility } from '../utils/CharacterSheets'
+import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from 'react'
+import { characterFields, clampCurrentHitPointsToMaximum, numericCharacterFields, newCharacterSheet, parseCharacterSheets, initiativeBonus, type SheetStats, type CharacterSheet, type SheetAbility } from '../utils/CharacterSheets'
 import { sheetFromCatalog, sheetWithCombatSpells, templateFromCatalog, type Catalog } from '../utils/Catalog'
 import { CatalogSearch } from './CatalogSearch'
 import { InfoButton } from './InfoButton'
 import { useDialogDismiss } from '../utils/Dialog'
 import { PlayerSheet } from './PlayerSheet'
 import { pdfAbilities } from '../utils/PlayerAbilities'
+import { applyCreation, patchCalculatedSheetStats, characterCalculationIssues, type CreationData } from '../utils/PlayerCreation'
+import { newTutorial, parseTutorialDraft, tutorialDraftKey, tutorialIssues } from '../utils/CharacterTutorial'
 
 const storageKey = 'dev-and-dice.character-sheets.v1'
 
 export type CharacterSheetsHandle = { open: (sheet: CharacterSheet) => void; patchStats: (id: string, stats: Partial<SheetStats>) => boolean }
-type Props = { onAdd: (sheet: CharacterSheet) => void; onSaved: (sheet: CharacterSheet) => void; combatStarted: boolean; presentSheetIds: string[]; catalog: Catalog; ref?: Ref<CharacterSheetsHandle> }
+type Props = { onAdd: (sheet: CharacterSheet) => void; onSaved: (sheet: CharacterSheet) => void; combatStarted: boolean; presentSheetIds: string[]; catalog: Catalog; creationData?: CreationData; ref?: Ref<CharacterSheetsHandle> }
 
-export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds, catalog, ref }: Props) {
+export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds, catalog, creationData, ref }: Props) {
     const dismissDialog = useDialogDismiss(() => {
-        if (draft && JSON.stringify(draft) !== initialDraft.current) saveSheet()
+        if (draft?.playerDetails?.['tutorial.active'] === 'true') closeDialog()
+        else if (draft && JSON.stringify(draft) !== initialDraft.current) saveSheet()
         else closeDialog()
     })
     const dismissDeleteDialog = useDialogDismiss()
@@ -27,24 +30,39 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
             return { sheets: [] as CharacterSheet[], error: `Impossibile leggere le schede: ${error instanceof Error ? error.message : String(error)}`, blocked: true }
         }
     })
-    const [draft, setDraft] = useState<CharacterSheet | null>(null)
+    const [rawDraft, setDraft] = useState<CharacterSheet | null>(null)
+    const draft = useMemo(() => rawDraft && creationData ? applyCreation(rawDraft, creationData) : rawDraft, [rawDraft, creationData])
     const [error, setError] = useState('')
+    const [tutorial, setTutorial] = useState(() => {
+        try {
+            const draft = parseTutorialDraft(localStorage.getItem(tutorialDraftKey))
+            return { draft: saved.sheets.some((s) => s.id === draft?.id && s.playerDetails?.['tutorial.completed'] === 'true') ? null : draft, error: '' }
+        }
+        catch { return { draft: null as CharacterSheet | null, error: 'Impossibile leggere la bozza del tutorial. I dati originali sono conservati; non avviare una nuova creazione prima di recuperarli.' } }
+    })
+    const guided = draft?.playerDetails?.['tutorial.active'] === 'true'
+    const [progressSnapshot, setProgressSnapshot] = useState<CharacterSheet | null>(null)
+    const progressSaved = progressSnapshot === draft
     const dialog = useRef<HTMLDialogElement>(null)
     const initialDraft = useRef('')
 
     function openDraft(sheet: CharacterSheet) {
-        initialDraft.current = JSON.stringify(sheet)
-        setDraft({ ...sheet })
+        const updated = creationData ? applyCreation(sheet, creationData) : sheet
+        initialDraft.current = JSON.stringify(updated)
+        setDraft({ ...updated })
     }
+
 
     useImperativeHandle(ref, () => ({
         open: (sheet) => openDraft(saved.sheets.find((item) => item.id === sheet.id) ?? sheet),
         patchStats: (id, stats) => {
             const sheet = saved.sheets.find((item) => item.id === id)
             if (!sheet) return true
-            const updated = patchSheetStats(sheet, stats)
+            const updated = patchCalculatedSheetStats(sheet, stats, creationData)
             if (!updated || !writeSheets(saved.sheets.map((item) => item.id === id ? updated : item))) return false
-            setDraft((current) => current?.id === id ? patchSheetStats(current, stats) ?? current : current)
+            setDraft((current) => {
+                return current?.id === id ? patchCalculatedSheetStats(current, stats, creationData) ?? current : current
+            })
             return true
         },
     }))
@@ -53,7 +71,20 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
         if (draft && !dialog.current?.open) dialog.current?.showModal()
     }, [draft])
 
-    function writeSheets(sheets: CharacterSheet[]): boolean {
+    function saveProgress(sheet: CharacterSheet) {
+        try {
+            localStorage.setItem(tutorialDraftKey, JSON.stringify(sheet))
+            setTutorial({ draft: sheet, error: '' }); setProgressSnapshot(sheet); setError('')
+            return true
+        } catch { setError('Impossibile salvare i progressi. La bozza resta aperta: libera spazio e riprova.'); setProgressSnapshot(null); return false }
+    }
+    useEffect(() => {
+        if (!guided || !draft) return
+        const timer = setTimeout(() => saveProgress(draft), 350)
+        return () => clearTimeout(timer)
+    }, [guided, draft])
+
+    const writeSheets = useCallback((sheets: CharacterSheet[]): boolean => {
         if (saved.blocked) { setError(saved.error); return false }
         try {
             localStorage.setItem(storageKey, JSON.stringify(sheets))
@@ -66,13 +97,22 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
             setSaved((current) => ({ ...current, error: message }))
             return false
         }
-    }
+    }, [saved.blocked, saved.error])
+
+    useEffect(() => {
+        if (!creationData) return
+        const sheets = saved.sheets.map((sheet) => applyCreation(sheet, creationData))
+        if (JSON.stringify(sheets) !== JSON.stringify(saved.sheets) && writeSheets(sheets)) {
+            for (const sheet of sheets) onSaved(sheet)
+        }
+    }, [creationData, saved.sheets, writeSheets, onSaved])
 
     async function persist(sheets: CharacterSheet[]): Promise<boolean> {
         return writeSheets(sheets)
     }
 
     function closeDialog() {
+        if (guided && draft && !saveProgress(draft)) return
         dialog.current?.close()
         setDraft(null)
         setError('')
@@ -80,7 +120,15 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
 
     function saveSheet() {
         if (!draft) return
-        const sheet = { ...draft, name: draft.name.trim(), abilities: draft.abilities.map((ability) => ({ ...ability, name: ability.name.trim() })) }
+        if (guided) {
+            if (!creationData) { setError('Attendi il caricamento delle opzioni prima di completare il tutorial.'); return }
+            const required = tutorialIssues(draft, creationData, 8)
+            if (required.length) { setError(required.join(' ')); return }
+        }
+        const calculated = clampCurrentHitPointsToMaximum(creationData ? applyCreation(draft, creationData) : draft)
+        const sheet = { ...calculated, ...(guided ? { playerDetails: { ...calculated.playerDetails, 'tutorial.active': 'false', 'tutorial.completed': 'true' } } : {}), name: calculated.name.trim(), abilities: calculated.abilities.map((ability) => ({ ...ability, name: ability.name.trim() })) }
+        const issues = sheet.kind === 'PG' ? characterCalculationIssues(sheet) : []
+        if (issues.length) { setError(issues.join(' ')); return }
         if (!numericCharacterFields.every((field) => sheet[field] === '' || (sheet[field].trim() !== '' && Number.isSafeInteger(Number(sheet[field]))))) {
             setError('Inserisci numeri interi validi nelle statistiche.')
             return
@@ -93,7 +141,14 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
             ? saved.sheets.map((item) => item.id === sheet.id ? sheet : item)
             : [...saved.sheets, sheet]
         void persist(sheets).then((success) => {
-            if (success) { onSaved(sheet); closeDialog() }
+            if (success) {
+                if (guided) {
+                    try { localStorage.removeItem(tutorialDraftKey) } catch { /* La scheda completa è già salvata; la bozza residua viene ignorata alla riapertura. */ }
+                    setTutorial({ draft: null, error: '' })
+                    dialog.current?.close(); setDraft(null); setError('')
+                } else closeDialog()
+                onSaved(sheet)
+            }
         })
     }
 
@@ -146,6 +201,9 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
             <p className="library-help">Personaggi e mostri salvati in questo browser.</p>
             {saved.error && <p role="alert">{saved.error}</p>}
             <button className="sort-turns" type="button" disabled={saved.blocked} onClick={() => openDraft(newCharacterSheet())}>+ Nuova scheda</button>
+            <button className="sort-turns" type="button" disabled={saved.blocked || !creationData || !!tutorial.draft || !!tutorial.error} onClick={() => openDraft(newTutorial())}>+ Crea personaggio guidato</button>
+            {tutorial.error && <p role="alert">{tutorial.error}</p>}
+            {tutorial.draft && !saved.sheets.some((s) => s.id === tutorial.draft!.id && s.playerDetails?.['tutorial.completed'] === 'true') && <button className="character-open tutorial-resume" type="button" disabled={!creationData} onClick={() => openDraft(tutorial.draft!)}>Riprendi creazione · {tutorial.draft.name || 'Personaggio senza nome'}</button>}
             {saved.sheets.length === 0 && <p className="library-empty">Crea una scheda e aggiungila al combattimento quando serve.</p>}
             <div className="character-list">
                 {saved.sheets.map((sheet) => (
@@ -174,7 +232,7 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                             <h2 id="character-dialog-heading">{draft.name || 'Nuova scheda'}</h2>
                             <button className="delete-turn" type="button" aria-label="Chiudi scheda" onClick={closeDialog}>×</button>
                         </div>
-                        {draft.kind === 'PG' ? <PlayerSheet sheet={draft} catalog={catalog} onChange={setDraft} /> : <div className="character-fields">
+                        {draft.kind === 'PG' ? <PlayerSheet sheet={draft} catalog={catalog} creationData={creationData} onChange={setDraft} /> : <div className="character-fields">
                             {(Object.entries(characterFields) as [keyof typeof characterFields, string][]).map(([field, label]) => (
                                 <label key={field} className={field === 'notes' ? 'character-notes' : undefined}>
                                     <span>{field === 'initiative' && draft.kind !== 'PG' ? 'Iniziativa inserita' : label}</span>
@@ -200,7 +258,7 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                                 </label>
                             ))}
                         </div>}
-                        <div className={draft.kind === 'PG' ? 'sheet-ability-columns' : undefined}>
+                        {!guided && <><div className={draft.kind === 'PG' ? 'sheet-ability-columns' : undefined}>
                         <section className="sheet-abilities" aria-labelledby="sheet-abilities-heading">
                             <h3 id="sheet-abilities-heading">Abilità del personaggio</h3>
                             <p className="library-help">Abilità e magie sono elencate nella card del combattimento: clicca un nome per importarlo, poi clicca di nuovo per raggiungerlo.</p>
@@ -232,11 +290,12 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                         </section>}
                         </div>
                         <p className="library-help">Per mostri e PNG l’iniziativa nel combattimento resta vuota: il modificatore è un suggerimento, inserisci tu il risultato del tiro. Per i PG viene copiata l’iniziativa predefinita.</p>
+                        </>}
                         {error && <p role="alert">{error}</p>}
-                        <p className="library-help">Le modifiche si salvano anche cliccando fuori dalla finestra.</p>
+                        <p className="library-help" role="status">{guided ? progressSaved ? 'Progressi salvati in questo browser.' : 'Salvataggio dei progressi…' : 'Le modifiche si salvano anche cliccando fuori dalla finestra.'}</p>
                         <div className="turn-actions">
-                            <button className="sort-turns" type="submit">Salva scheda</button>
-                            <button className="end-combat" type="button" onClick={closeDialog}>Annulla</button>
+                            {!guided && <button className="sort-turns" type="submit">Salva scheda</button>}
+                            <button className="end-combat" type="button" onClick={closeDialog}>{guided ? 'Salva e riprendi più tardi' : 'Annulla'}</button>
                             {saved.sheets.some((sheet) => sheet.id === draft.id) && (
                                 <button className="clear-turns" type="button" onClick={() => deleteDialog.current?.showModal()}>Elimina scheda</button>
                             )}

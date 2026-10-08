@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import type { CharacterSheet } from '../utils/CharacterSheets'
+import { abilityModifier, type CharacterSheet } from '../utils/CharacterSheets'
 import { labelOf, type CreationData } from '../utils/PlayerCreation'
-import { featureResourceKey, featureResourceMax, featureResourceRemaining, selectedWizardFeatures, spendWizardFeature, spendWizardPortent, wizardRules } from '../utils/Wizard'
+import { featureResourceKey, featureResourceMax, featureResourceRemaining, selectedWizardFeatures, spendWizardFeature, spendWizardPortent, wizardRules, wizardWardMaximum } from '../utils/Wizard'
 
 export function WizardSubclassFeatures({ sheet, data, onChange }: { sheet: CharacterSheet; data: CreationData; onChange: (sheet: CharacterSheet) => void }) {
     const [error, setError] = useState('')
     const r = wizardRules(sheet), d = sheet.playerDetails ?? {}
+    const creating = d['tutorial.active'] === 'true'
     const subclass = data.subclasses.find((x) => x.index === d['creation.subclass'])
     if (!r.wizard || r.edition !== '2014' || r.level < 2 || !subclass?.features?.length) return null
     const features = selectedWizardFeatures(sheet, data)
@@ -16,11 +17,12 @@ export function WizardSubclassFeatures({ sheet, data, onChange }: { sheet: Chara
     }
     const skillOptions = names.has('Creative Skills') ? ['acrobatics','athletics','nature','performance'] : names.has('Eloquent Apprentice') ? ['deception','intimidation','performance','persuasion','insight'] : []
     const tools = data.equipmentCategories.find((x) => x.index === 'tools')?.equipment ?? []
-    const intelligence = Math.floor((Number(sheet.intelligence || 10) - 10) / 2)
+    const intelligence = abilityModifier(sheet.intelligence) ?? 0
+    const wardMaximum = wizardWardMaximum(sheet) ?? 0
     const resources = new Set<string>()
     return <section className="player-box wizard-rules">
         <h3>Privilegi · {labelOf(subclass)}</h3>
-        <p className="player-hint">Privilegi sbloccati al livello {r.level}. Le capacità attivabili compaiono nella lista della scheda e si importano nel combattimento quando le selezioni. I contatori registrano gli usi; bersagli, dadi e condizioni si verificano durante il gioco.</p>
+        <p className="player-hint">{creating ? `Privilegi sbloccati al livello ${r.level}. Completa le eventuali scelte richieste. Potrai usare le capacità e gestire i contatori nella scheda, dopo la creazione.` : `Privilegi sbloccati al livello ${r.level}. Le capacità attivabili compaiono nella lista della scheda e si importano nel combattimento quando le selezioni. I contatori registrano gli usi; bersagli, dadi e condizioni si verificano durante il gioco.`}</p>
         {subclass.features.some((x) => x.choice) && <div className="player-three-fields">{[6,10,14].filter((tier) => tier <= r.level).map((tier) => select(`wizard.subclass.choice.${tier}`, `Privilegio scelto al livello ${tier}`, subclass.features!.filter((x) => x.choice && x.level <= tier), [6,10,14].filter((x) => x !== tier).map((x) => d[`wizard.subclass.choice.${x}`])))}</div>}
         <div className="player-two-fields">
             {names.has('Training in War and Song') && select('wizard.weapon', 'Competenza · arma da mischia a una mano', data.equipment.filter((x) => x.weapon_range === 'Melee' && !x.properties?.some((p) => p.index === 'two-handed')))}
@@ -43,11 +45,11 @@ export function WizardSubclassFeatures({ sheet, data, onChange }: { sheet: Chara
             })}
         </div>
         {names.has('Bladesong') && <p className="player-hint">Bladesong: CA e TS di Costituzione per concentrazione +{Math.max(1, intelligence)}, velocità +10 piedi (circa 3 m), vantaggio ad Acrobazia, per 10 turni. Applica questi bonus solo mentre la capacità è attiva e sono rispettate le restrizioni sull’equipaggiamento.</p>}
-        {names.has('Portent') && <section className="player-box"><h3>Portent · d20 dopo riposo lungo</h3><p className="player-hint">Sostituisci un tiro prima che venga effettuato, al massimo una volta per turno. Ogni risultato si usa una sola volta; il riposo lungo cancella i risultati precedenti.</p><div className="player-three-fields">{Array.from({ length:r.level >= 14 ? 3 : 2 },(_,i) => <div key={i}><label className="player-field"><span>d20 {i + 1}{d[`wizard.portent.${i}.used`] === 'true' ? ' · usato' : ''}</span><input type="number" min="1" max="20" step="1" disabled={d[`wizard.portent.${i}.used`] === 'true'} value={d[`wizard.portent.${i}`] || ''} onChange={(e) => { const n = Number(e.target.value); if (e.target.value === '' || Number.isInteger(n) && n >= 1 && n <= 20) detail(`wizard.portent.${i}`, e.target.value) }} /></label><button type="button" disabled={!d[`wizard.portent.${i}`] || d[`wizard.portent.${i}.used`] === 'true'} onClick={() => { try { onChange(spendWizardPortent(sheet,i)); setError('') } catch (e) { setError(e instanceof Error ? e.message : 'Uso non riuscito.') } }}>Usa questo risultato</button></div>)}</div></section>}
-        {names.has('Arcane Ward') && <label className="player-field"><span>Arcane Ward · PF della protezione / {Math.max(0, 2 * r.level + intelligence)} (separati dai PF del personaggio)</span><input type="number" min="0" max={Math.max(0, 2 * r.level + intelligence)} step="1" value={d['wizard.ward.current'] || '0'} onChange={(e) => { const n = Number(e.target.value); if (Number.isInteger(n) && n >= 0 && n <= Math.max(0,2 * r.level + intelligence)) detail('wizard.ward.current', String(n)) }} /></label>}
+        {names.has('Portent') && <section className="player-box"><h3>{creating ? 'Presagi · risultati facoltativi' : 'Portent · d20 dopo riposo lungo'}</h3><p className="player-hint">{creating ? 'Puoi annotare i risultati di due d20 (tre dal livello 14), oppure lasciare questi campi vuoti. Due risultati uguali sono validi. Potrai usarli nella scheda dopo la creazione; qui sono sempre modificabili.' : 'Sostituisci un tiro prima che venga effettuato, al massimo una volta per turno. Ogni risultato si usa una sola volta; il riposo lungo cancella i risultati precedenti.'}</p><div className="player-three-fields">{Array.from({ length:r.level >= 14 ? 3 : 2 },(_,i) => <div key={i}><label className="player-field"><span>d20 {i + 1}{!creating && d[`wizard.portent.${i}.used`] === 'true' ? ' · usato' : ''}</span><input type="number" min="1" max="20" step="1" disabled={!creating && d[`wizard.portent.${i}.used`] === 'true'} value={d[`wizard.portent.${i}`] || ''} onChange={(e) => { const n = Number(e.target.value); if (e.target.value === '' || Number.isInteger(n) && n >= 1 && n <= 20) detail(`wizard.portent.${i}`, e.target.value) }} /></label>{!creating && <button type="button" disabled={!d[`wizard.portent.${i}`] || d[`wizard.portent.${i}.used`] === 'true'} onClick={() => { try { onChange(spendWizardPortent(sheet,i)); setError('') } catch (e) { setError(e instanceof Error ? e.message : 'Uso non riuscito.') } }}>Usa questo risultato</button>}</div>)}</div></section>}
+        {!creating && names.has('Arcane Ward') && <label className="player-field"><span>Arcane Ward · PF della protezione / {wardMaximum} (separati dai PF del personaggio)</span><input type="number" min="0" max={wardMaximum} step="1" value={d['wizard.ward.current'] || '0'} onChange={(e) => { const n = Number(e.target.value); if (Number.isInteger(n) && n >= 0 && n <= wardMaximum) detail('wizard.ward.current', String(n)) }} /></label>}
         <div className="player-two-fields">{features.map((feature) => {
             const resourceKey = featureResourceKey(feature)
-            const showResource = feature.resource && feature.name !== 'Portent' && !resources.has(resourceKey)
+            const showResource = !creating && feature.resource && feature.name !== 'Portent' && !resources.has(resourceKey)
             resources.add(resourceKey)
             let remaining = 0
             try { remaining = featureResourceRemaining(sheet, feature) } catch { /* Valore salvato non valido: il controllo mostra zero e permette di correggerlo. */ }

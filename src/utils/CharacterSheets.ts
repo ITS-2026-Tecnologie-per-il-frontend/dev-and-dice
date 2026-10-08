@@ -14,6 +14,24 @@ export type SheetAbility = { name: string; duration: keyof typeof durationTurns;
 
 export type CharacterSheet = { id: string; abilities: SheetAbility[]; catalogId?: string; playerDetails?: Record<string, string> } & Record<keyof typeof characterFields, string>
 
+export function integerValue(value: string | undefined): number | undefined {
+    if (!value?.trim()) return undefined
+    const number = Number(value)
+    return Number.isSafeInteger(number) ? number : undefined
+}
+
+export function characterLevel(sheet: CharacterSheet): number | undefined {
+    const level = integerValue(sheet.level)
+    return level !== undefined && level >= 1 && level <= 20 ? level : undefined
+}
+
+export function abilityModifier(score: string): number | undefined {
+    const value = integerValue(score)
+    return value !== undefined && value >= 1 && value <= 30 ? Math.floor((value - 10) / 2) : undefined
+}
+
+export const signedBonus = (value: number | undefined): string => value === undefined ? '' : `${value >= 0 ? '+' : ''}${value}`
+
 export function newCharacterSheet(): CharacterSheet {
     return { id: crypto.randomUUID(), abilities: [], ...(Object.fromEntries(Object.keys(characterFields).map((key) => [key, key === 'kind' ? 'PG' : ''])) as Record<keyof typeof characterFields, string>) }
 }
@@ -52,10 +70,13 @@ export type SheetStats = Pick<CharacterSheet, 'hitPoints' | 'armorClass' | 'init
 
 export function patchSheetStats(sheet: CharacterSheet, stats: Partial<SheetStats>): CharacterSheet | null {
     if (Object.values(stats).some((value) => value !== '' && (!value.trim() || !Number.isSafeInteger(Number(value))))
+        || (stats.hitPoints !== undefined && stats.hitPoints !== '' && Number(stats.hitPoints) < 0)
         || (stats.temporaryHitPoints !== undefined && stats.temporaryHitPoints !== '' && Number(stats.temporaryHitPoints) < 0)) return null
     const { temporaryHitPoints, ...baseStats } = stats
-    return { ...sheet, ...baseStats, ...(temporaryHitPoints !== undefined ? { playerDetails: { ...sheet.playerDetails, temporaryHitPoints } } : {}), ...(baseStats.armorClass !== undefined && baseStats.armorClass !== sheet.armorClass && sheet.playerDetails?.['creation.enabled'] === 'true'
-        ? { playerDetails: { ...sheet.playerDetails, 'creation.override.base.armorClass': 'true' } } : {}) }
+    return { ...sheet, ...baseStats, playerDetails: { ...sheet.playerDetails,
+        ...(temporaryHitPoints !== undefined ? { temporaryHitPoints } : {}),
+        ...(baseStats.armorClass !== undefined && baseStats.armorClass !== sheet.armorClass && sheet.playerDetails?.['creation.enabled'] === 'true' ? { 'creation.override.base.armorClass': 'true' } : {}),
+    } }
 }
 
 export function clampCurrentHitPointsToMaximum(sheet: CharacterSheet): CharacterSheet {
@@ -77,6 +98,16 @@ export function normalizeHitPoints(value: string): string {
     return value.replace(/^0+(?=\d)/, '')
 }
 
+export function inventoryTotalWeight(quantity: string, weight: string): string {
+    if (!weight.trim()) return ''
+    const count = Number(quantity.trim() || 1)
+    const unitWeight = Number(weight.trim().replace(',', '.'))
+    const total = count * unitWeight
+    if (!Number.isSafeInteger(count) || count < 0 || !Number.isFinite(unitWeight) || unitWeight < 0 || !Number.isFinite(total)) return ''
+    // ponytail: 15 cifre significative eliminano gli artefatti dei float; per maggiore precisione serve aritmetica decimale.
+    return String(Number(total.toPrecision(15)))
+}
+
 export function syncTurnStats<T extends SheetStats & { description: string; sheet?: CharacterSheet; temporaryHitPoints?: string }>(turn: T, sheet: CharacterSheet): T {
     return { ...turn, description: sheet.name, hitPoints: sheet.hitPoints, armorClass: sheet.armorClass, initiative: sheet.initiative,
     ...(turn.temporaryHitPoints !== undefined ? { temporaryHitPoints: sheet.playerDetails?.temporaryHitPoints ?? '' } : {}),
@@ -84,10 +115,11 @@ export function syncTurnStats<T extends SheetStats & { description: string; shee
 }
 
 export function initiativeBonus(sheet?: CharacterSheet): string {
-    if (!sheet || !sheet.dexterity.trim() || !Number.isSafeInteger(Number(sheet.dexterity))) return ''
-    const extra = Number(sheet.playerDetails?.['wizard.initiativeExtra'] || 0)
-    const modifier = Math.floor((Number(sheet.dexterity) - 10) / 2) + (Number.isSafeInteger(extra) ? extra : 0)
-    return `${modifier >= 0 ? '+' : ''}${modifier}`
+    if (!sheet) return ''
+    if (sheet.playerDetails?.['creation.enabled'] === 'true' && sheet.playerDetails.initiativeBonus !== undefined) return signedBonus(integerValue(sheet.playerDetails.initiativeBonus))
+    const dex = abilityModifier(sheet.dexterity)
+    const extra = integerValue(sheet.playerDetails?.['wizard.initiativeExtra']) ?? 0
+    return signedBonus(dex === undefined ? undefined : dex + extra)
 }
 
 export function abilitiesFromSheet(sheet: CharacterSheet, ownerId: number, firstId: number): Ability[] {

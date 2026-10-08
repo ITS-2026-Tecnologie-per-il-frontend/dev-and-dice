@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="160" viewBox="0 0 400 160" preserveAspectRatio="none">
+  <view id="anagrafica" viewBox="0 0 400 160"/>
+  <view id="nome" viewBox="500 0 400 100"/>
+  <view id="classe" viewBox="1000 0 400 80"/>
+  <view id="tradizione" viewBox="1500 0 400 50"/>
+  <g fill="white" stroke="#252323" stroke-linejoin="round">
+    <path stroke-width="2" d="M5 3L11 16C19 16 19 10 28 12C89 8 164 17 235 13C298 10 345 16 372 12C381 11 385 16 391 16L397 3V157L391 144C382 144 381 150 372 148C303 152 234 143 165 148C96 151 54 144 28 148C19 149 14 144 11 144L5 157Z"/>
+    <path fill="none" stroke-width="1.3" d="M11 16H389Q392 20 392 29V130Q392 140 389 144H11Q8 140 8 130V29Q8 20 11 16ZM11 16Q18 18 16 29V130Q16 140 11 144M389 16Q382 18 384 29V130Q384 140 389 144"/>
+    <g transform="translate(500)">
+      <path stroke-width="1.7" d="M2 22C112 5 253 36 398 24V82C251 94 112 64 2 81Z"/>
+      <path fill="none" stroke-width=".9" d="M5 27C112 10 253 41 395 29V77C251 89 112 59 5 76"/>
+      <path stroke-width="1.6" d="M2 81L45 89L3 97M45 89V98L92 91"/>
+    </g>
+    <g transform="translate(1000)">
+      <path stroke-width="2" d="M5 3L11 8C72 2 132 14 203 7C276 1 337 11 385 8L395 3V77L385 72C326 78 271 67 202 72C132 78 74 67 11 72L5 77Z"/>
+      <path fill="none" stroke-width="1.2" d="M11 8H385Q391 12 391 22V60Q391 69 385 72H11Q8 68 8 59V21Q8 12 11 8"/>
+    </g>
+    <g transform="translate(1500)">
+      <path stroke-width="2" d="M5 2H395V48H5ZM2 3L5 8V43L2 47M398 3L395 8V43L398 47"/>
+      <path fill="none" stroke-width=".8" d="M9 4H391V46H9Z"/>
+    </g>
+  </g>
+</svg>

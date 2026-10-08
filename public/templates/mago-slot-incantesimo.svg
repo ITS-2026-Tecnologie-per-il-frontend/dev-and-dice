@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="650" height="430" viewBox="0 0 650 430" preserveAspectRatio="none">
+  <g fill="white" stroke="#252323" stroke-linejoin="miter">
+    <path stroke-width="4" d="M27 5H623L645 27V403L623 425H27L5 403V27Z"/>
+    <path fill="none" stroke-width="1.5" d="M27 10H623Q631 25 640 27V403Q630 405 623 420H27Q18 408 10 403V27Q20 24 27 10Z"/>
+    <path fill="none" stroke-width="2" d="M27 5Q6 8 5 27M623 5Q626 23 645 27M5 403Q24 407 27 425M645 403Q628 405 623 425M5 27L8 155L5 278L1 359Q-1 374 5 391M645 27L642 157L645 290V403"/>
+  </g>
+</svg>

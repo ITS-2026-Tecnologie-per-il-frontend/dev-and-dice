@@ -302,7 +302,7 @@ html { scroll-behavior: smooth; }
 
 .tracker-layout {
     display: grid;
-    grid-template-columns: minmax(160px, var(--library-width, 220px)) 16px minmax(0, 1fr);
+    grid-template-columns: minmax(160px, var(--library-width, calc((100% - 32px) / 4))) 16px minmax(0, 1fr);
     gap: 0;
     padding: 24px;
     text-align: left;
@@ -310,7 +310,7 @@ html { scroll-behavior: smooth; }
 
 .tracker-main {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 16px minmax(280px, var(--abilities-width, 380px));
+    grid-template-columns: minmax(0, 1fr) 16px minmax(0, var(--abilities-width, calc((100% - 16px) / 3)));
     align-items: start;
     gap: 0;
     min-width: 0;

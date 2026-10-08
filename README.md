@@ -593,3 +593,47 @@ Le differenze dal modello generale sono le abilità raggruppate per caratteristi
 I prossimi PDF di classe si confrontano con questo riferimento: le parti comuni rimangono nella scheda condivisa e si aggiungono solo le differenze del modello specifico. Verifiche: `node tests/player-templates.mjs` e `node tests/player-creation-ui.mjs`.
 
 Il layout del Mago segue l'ordine del PDF: intestazione in tre blocchi; caratteristiche e competenze a sinistra, combattimento e incantesimi preferiti al centro, privilegi e slot a destra. La seconda pagina pone aspetto, talenti, background e alleati/nemici a sinistra, personalità e zaino al centro, oggetti magici a destra; le monete sono sotto lo zaino. Le informazioni e i controlli aggiuntivi restano accessibili nei riquadri espandibili. La quarta pagina usa `public/templates/mago-equipaggiamento.jpg`, renderizzato dalla pagina originale del PDF, con i campi salvati sovrapposti alle rispettive caselle. Le fonti e l'acquisizione delle magie si espandono dal pulsante accanto a ogni riga.
+
+**Mago · stile PDF** è una copia estetica selezionabile dello stesso modello: conserva posizioni, pagine, campi e automatismi, aggiungendo cornici decorate, nastri, stemmi, riquadri grigi e spunte circolari. Il modello **Mago** e la selezione automatica conservano l'aspetto precedente. La copia usa `src/WizardPdf.css`, cornici SVG e il simbolo estratto dall'intestazione del PDF originale; cambiando modello si mantengono i dati del personaggio, senza creare una seconda scheda o un secondo partecipante.
+
+Il combattimento della copia riprende anche lo scudo della CA, i piccoli scudi del PDF, i riquadri di iniziativa/velocità e PF, la cornice dei dadi vita con lo stemma d6 e le spunte a cuore/teschio. I titoli usano caratteri sans serif e dimensioni proporzionate al riferimento; le etichette dei PF sono separate in Punti ferita/Attuali e Punti ferita/Temporanei. I campi **No armatura** e **No scudo**, salvati rispettivamente in `playerDetails.unarmoredAC` e `playerDetails.unshieldedAC`, sono calcolati quando la creazione guidata è attiva e consentono un valore manuale. No armatura conserva l'eventuale scudo; No scudo conserva l'eventuale armatura. Rimangono anche nel combattimento e cambiando modello. `public/templates/mago-combattimento.svg` contiene i disegni vettoriali. I sei cerchi dell'indebolimento modificano il campo `exhaustion` esistente: selezionare il livello attuale azzera il valore, che resta anche modificabile numericamente. I successi/fallimenti dei tiri salvezza usano le stesse spunte salvate. Lo stemma mostra `d6` quando il valore è `1d6`, senza modificare il dato originale.
+
+### Calcoli condivisi e verifica delle regole
+
+`src/utils/PlayerCreation.ts` contiene la pipeline esistente `applyCreation`, ora usata anche alla riapertura, al salvataggio e nel combattimento. `characterFieldValue`, `characterFieldMode` e `updateCharacterField` leggono, classificano e modificano i campi per chiave; non ricevono pagina, posizione o template. Le chiavi salvate restano compatibili con le schede precedenti. I modificatori, le regole degli incantesimi e le risorse del mago riutilizzano le rispettive utility condivise.
+
+| Campi / chiavi | Comportamento |
+| --- | --- |
+| `modifier.strength` … `modifier.charisma` | Automatici, sola lettura; punteggi validi da 1 a 30, nessun modificatore per un punteggio mancante/non valido. |
+| `proficiencyBonus`, `save.*`, `skill.*`, `initiativeBonus`, `passivePerception` | Calcolati e personalizzabili nella creazione guidata; i totali dipendono anche dalla competenza e dalle spunte personalizzate. Maestria raddoppia solo la competenza di un'abilità competente. |
+| `armorClass`, `speed`, `unarmoredAC`, `unshieldedAC` | Calcolati dall'equipaggiamento selezionato e dai privilegi supportati; modificabili manualmente. L'armatura pesante non richiede Destrezza per il suo calcolo. |
+| `maxHitPoints`, `hitDiceTotal` | PF al primo livello e avanzamenti medi, Costituzione retroattiva e bonus supportati; modificabili. PF tirati si inseriscono come override del massimo. |
+| `spellDC`, `spellAttackBonus`, `slots.N.total` | Calcolati da classe, livello, edizione e caratteristica d'incantatore; personalizzabili. Preparati/conosciuti/trucchetti e Recupero Arcano usano le utility condivise. |
+| `inventory.N.3` | Totale della riga, sola lettura: quantità × peso in kg; quantità vuota = 1, quantità zero = 0. |
+| `carriedWeight`, `maximumWeight` | Somma delle righe con peso noto e delle monete, e capacità per Forza/taglia; personalizzabili. Un oggetto con peso mancante rende il totale automatico incompleto. |
+| `hitPoints`, `temporaryHitPoints`, `initiative`, `hitDiceUsed`, `slots.N.used`, `exhaustion`, ispirazione, salvezza da morte, `arcaneTradition.*`, `limitedTraits.*` | Stato manuale; i contatori generici dei privilegi non identificano una capacità specifica. L'iniziativa memorizzata è il risultato del tiro; il bonus è separato. Danni e valori zero rimangono dopo il ricalcolo; un massimo PF digitato manualmente limita i PF al termine del campo/salvataggio. |
+
+Le modifiche esplicite usano `creation.override.*`; `creation.auto.*` conserva il valore generato precedente. Gli override sono valori finali, non incrementi: un massimo PF personalizzato deve includere gli effetti desiderati di Costituzione/condizioni. Il ripristino esistente annulla gli override. La modalità manuale mantiene i valori già inseriti; i modificatori visualizzati e i totali di riga restano calcolati. Il salvataggio segnala numeri non validi, contatori negativi o slot/dadi vita spesi oltre il totale, conservando il draft. I pesi accettano decimali e la virgola nei campi testuali.
+
+Salvare una diversa preparazione aggiorna anche gli incantesimi offerti dalla card. Gli indici delle capacità precedenti restano stabili: una capacità già importata conserva identità e contatori, anche se l'incantesimo viene successivamente rimosso dai preparati. Le voci ritirate non vengono offerte per nuovi import; reinserire il personaggio nel combattimento ricostruisce la lista.
+
+**Correzioni verificate:** competenza personalizzata nei dipendenti; metà competenza del bardo nell'iniziativa solo 2014; robustezza draconica e soglia delle sottoclassi 2024; esclusione degli aumenti razziali nelle regole 2024; competenze nelle armi riviste; nessuna competenza automatica nelle armature pesanti per Vita 2024; indebolimento distinto per edizione; CA senza armatura/scudo; pesi aggregati; aggiornamento dei valori obsoleti; conservazione contemporanea di CA e PF temporanei dalla card. Il massimo di Arcane Ward e il conteggio degli incantesimi non sono più duplicati nei componenti. Cambiare lingua conserva il riconoscimento degli incantesimi sempre preparati; slot personalizzati non concedono automaticamente conoscenza di magie oltre il livello di classe.
+
+**Gestione manuale ancora necessaria:** multiclasse; nuovi background/specie 2024 non presenti nel catalogo, aumenti del background e talenti non strutturati; privilegi 2024 non catalogati delle altre classi; scelta della maestria e delle opzioni di classe; PF tirati; bonus di oggetti magici, Bladesong/altre condizioni temporanee e vantaggio/svantaggio situazionale. I testi liberi non vengono interpretati come regole. La CA usa armatura/scudo selezionati nelle opzioni di creazione; gli acquisti successivi annotati liberamente richiedono selezione strutturata o override. Oggetti indossati/magici senza peso vanno riportati nell'inventario una sola volta o inclusi nel totale manuale; contenitori speciali, capacità eccezionali e ingombro variante restano manuali. I privilegi descrittivi del catalogo 2014 non vengono proposti automaticamente come privilegi 2024 delle altre classi.
+
+Fonti confrontate: [regole 2014](https://www.dndbeyond.com/sources/dnd/basic-rules-2014/classes), [classi 2024](https://www.dndbeyond.com/sources/dnd/br-2024/character-classes), [compatibilità di background/specie](https://www.dndbeyond.com/sources/dnd/br-2024/creating-a-character) e [SRD 5.2.1 italiano](https://media.dndbeyond.com/compendium-images/srd/5.2/IT_SRD_CC_v5.2.1.pdf). Le unità di gioco italiane sono kg e metri: capacità base Forza × 7,5 kg per taglie Piccola/Media e circa 10 g per moneta.
+
+```sh
+node tests/character-calculations.mjs
+for check in tests/*.mjs; do node "$check" || exit; done
+npm run build
+npm run lint
+```
+
+Verificato anche nel browser: riparazione di un tiro salvezza obsoleto, modifica della competenza e delle caratteristiche, override della CA, inventario decimale, passaggio Generico → Mago → Mago stile PDF, salvataggio/riapertura e sincronizzazione dalla card con PF a zero e PF temporanei. Nessuna modifica alla grafica durante questa verifica.
+
+### Tutorial di creazione del personaggio
+
+La colonna Schede offre **Crea personaggio guidato**: nove passaggi con spiegazioni, scelte del catalogo, punteggi, dotazioni, magie, personalità e riepilogo. **Riprendi creazione** recupera la bozza salvata automaticamente nel browser; il salvataggio finale produce una scheda normale, utilizzabile in combattimento. I template grafici restano invariati.
+
+La guida Fandom di riferimento descrive il 2014; il percorso 2024 distingue gli adattamenti ufficiali delle opzioni storiche e le applicazioni ancora manuali. Fonti, dipendenze, verifiche e limiti del catalogo sono descritti in [docs/tutorial-creazione-personaggio.md](docs/tutorial-creazione-personaggio.md). Check mirato: `node tests/character-tutorial.mjs`.

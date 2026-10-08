@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="96" viewBox="70 6 160 96">
+  <g stroke="#4b4746" stroke-linejoin="miter">
+    <path fill="white" stroke-width="2" vector-effect="non-scaling-stroke" d="M106 8H194L229 54L194 100H106L71 54Z"/>
+    <path fill="none" stroke-width="0.75" vector-effect="non-scaling-stroke" d="M112 12H188L221 54L188 96H112L79 54Z"/>
+  </g>
+</svg>

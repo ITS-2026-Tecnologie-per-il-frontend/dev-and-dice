@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState, type CSSProperties, type DragEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent } from 'react'
 import { ColumnSeparator } from './ColumnSeparator'
 import { useDialogDismiss } from '../utils/Dialog'
 import { CharacterSheets, type CharacterSheetsHandle } from './CharacterSheets'
-import { characterFields, clampHitPointsToMaximum, normalizeHitPoints, turnFromSheet, importSheetAbility, initiativeBonus, patchSheetStats, syncTurnStats, type CharacterSheet } from '../utils/CharacterSheets'
+import { characterFields, clampHitPointsToMaximum, normalizeHitPoints, turnFromSheet, importSheetAbility, initiativeBonus, syncTurnStats, type CharacterSheet } from '../utils/CharacterSheets'
 import { AbilitiesTracker } from './AbilitiesTracker'
 import { nextCombatTurn, sortByInitiative, advanceAbilityDurations, removeParticipantAbilities, hitPointsAfterDamageWithTemporary, hitPointsAfterHealing, type Ability, type Combat } from '../utils/Combat'
 import { getDropIndex, getDropTargetId, reorderByDrop, reorderById } from '../utils/Reorder'
-import { parseCatalog, sheetFromCatalog, sheetWithCombatAbilities, type Catalog, type CatalogEntry } from '../utils/Catalog'
+import { parseCatalog, refreshCombatSheetAbilities, sheetFromCatalog, sheetWithCombatAbilities, type Catalog, type CatalogEntry } from '../utils/Catalog'
 import { CatalogSearch } from './CatalogSearch'
-import { loadCreationData, sheetWithSpellGrants, type CreationData } from '../utils/PlayerCreation'
+import { applyCreation, translatedCreationData, patchCalculatedSheetStats, loadCreationData, type CreationData } from '../utils/PlayerCreation'
 import { InfoButton } from './InfoButton'
 
 type Turn = {
@@ -19,21 +19,23 @@ type Turn = {
     armorClass: string
     temporaryHitPoints: string
     sheet?: CharacterSheet
+    availableAbilityIndexes?: number[]
     damage?: string
 }
 
 export function TurnsTracker() {
     const sheetEditor = useRef<CharacterSheetsHandle>(null)
     const dismissRemovalDialog = useDialogDismiss()
-    const [libraryWidth, setLibraryWidth] = useState('220px')
-    const [abilitiesWidth, setAbilitiesWidth] = useState('380px')
+    const [libraryWidth, setLibraryWidth] = useState<string>()
+    const [abilitiesWidth, setAbilitiesWidth] = useState<string>()
     const [language, setLanguage] = useState<'it' | 'en'>(() => {
         try { return localStorage.getItem('dev-and-dice.spell-language') === 'en' ? 'en' : 'it' } catch { return 'it' }
     })
     const [languageError, setLanguageError] = useState('')
     const [catalogs, setCatalogs] = useState<Record<'it' | 'en', Catalog>>({ it: { creatures: [], abilities: [] }, en: { creatures: [], abilities: [] } })
     const catalog = catalogs[language]
-    const [creationData, setCreationData] = useState<CreationData>()
+    const [rawCreationData, setCreationData] = useState<CreationData>()
+    const creationData = useMemo(() => rawCreationData ? translatedCreationData(rawCreationData, catalog) : undefined, [rawCreationData, catalog])
 
     function changeLanguage(value: string) {
         if (value !== 'it' && value !== 'en') return
@@ -78,13 +80,13 @@ export function TurnsTracker() {
 
     function addCharacter(sheet: CharacterSheet) {
         if (combat || presentSheetIds.includes(sheet.id)) return
-        const turn = turnFromSheet(sheetWithCombatAbilities(creationData ? sheetWithSpellGrants(sheet, creationData) : sheet, catalog), nextId.current++)
+        const turn = turnFromSheet(sheetWithCombatAbilities(creationData ? applyCreation(sheet, creationData) : sheet, catalog), nextId.current++)
         if (sheet.initiative !== turn.initiative && sheetEditor.current?.patchStats(sheet.id, { initiative: turn.initiative }) === false) return
         setTurns((current) => [...current, turn])
     }
 
     function syncSavedSheet(sheet: CharacterSheet) {
-        setTurns((current) => current.map((turn) => turn.sheet?.id === sheet.id ? syncTurnStats(turn, sheet) : turn))
+        setTurns((current) => current.map((turn) => turn.sheet?.id === sheet.id ? { ...syncTurnStats(turn, sheet), ...refreshCombatSheetAbilities(turn.sheet, sheet, catalog) } : turn))
     }
 
     function addAbility() {
@@ -104,6 +106,7 @@ export function TurnsTracker() {
         if (!turn.sheet) return
         const existing = abilities.find((ability) => ability.ownerId === turn.id && ability.sheetAbilityIndex === index)
         if (existing) { highlightAbility(existing.id); return }
+        if (turn.availableAbilityIndexes && !turn.availableAbilityIndexes.includes(index)) return
         const id = nextAbilityId.current++
         const sheet = turn.sheet
         setAbilities((current) => importSheetAbility(current, sheet, turn.id, index, id))
@@ -121,12 +124,12 @@ export function TurnsTracker() {
             ? { ...(isSheetStat ? { [field]: updatedValue } : {}), ...(nextTemporaryHitPoints !== undefined ? { temporaryHitPoints: nextTemporaryHitPoints } : {}) }
             : null
         if (stats && turn.sheet) {
-            if (!patchSheetStats(turn.sheet, stats) || sheetEditor.current?.patchStats(turn.sheet.id, stats) === false) return
+            if (!patchCalculatedSheetStats(turn.sheet, stats, creationData) || sheetEditor.current?.patchStats(turn.sheet.id, stats) === false) return
         }
         setTurns((currentTurns) =>
             currentTurns.map((turn) =>
                 turn.id === id ? { ...turn, [field]: updatedValue, ...(nextTemporaryHitPoints !== undefined ? { temporaryHitPoints: nextTemporaryHitPoints } : {}), ...(clearAdjustment ? { [clearAdjustment]: '' } : {}), sheet: turn.sheet
-                    ? stats ? patchSheetStats(turn.sheet, stats) ?? turn.sheet : field === 'description' ? { ...turn.sheet, name: value, catalogId: undefined } : turn.sheet
+                    ? stats ? patchCalculatedSheetStats(turn.sheet, stats, creationData) ?? turn.sheet : field === 'description' ? { ...turn.sheet, name: value, catalogId: undefined } : turn.sheet
                     : undefined } : turn,
             ),
         )
@@ -236,7 +239,7 @@ export function TurnsTracker() {
             {languageError && <span role="status">{languageError}</span>}
         </div>
         <div className="tracker-layout" style={{ '--library-width': libraryWidth } as CSSProperties}>
-            <CharacterSheets ref={sheetEditor} onAdd={addCharacter} onSaved={syncSavedSheet} combatStarted={combat !== null || catalogStatus === 'Caricamento del catalogo…'} presentSheetIds={presentSheetIds} catalog={catalog} />
+            <CharacterSheets ref={sheetEditor} onAdd={addCharacter} onSaved={syncSavedSheet} combatStarted={combat !== null || catalogStatus === 'Caricamento del catalogo…'} presentSheetIds={presentSheetIds} catalog={catalog} creationData={creationData} />
             <ColumnSeparator label="Ridimensiona schede e combattimento" side="left" minimum={160} otherMinimum={600} onResize={setLibraryWidth} />
             <main className="tracker-main" style={{ '--abilities-width': abilitiesWidth } as CSSProperties}>
                 <section className="combat-tracker" aria-labelledby="turns-heading">
@@ -385,10 +388,11 @@ export function TurnsTracker() {
                                             </div>
                                         </div>
                                     </div>
-                                    {((turn.sheet?.abilities?.length ?? 0) > 0 || abilities.some((ability) => ability.ownerId === turn.id)) && (
+                                    {((turn.availableAbilityIndexes?.length ?? turn.sheet?.abilities?.length ?? 0) > 0 || abilities.some((ability) => ability.ownerId === turn.id)) && (
                                         <div className="participant-abilities" aria-label={`Abilità di ${turn.description || 'creatura'}`}>
                                             {turn.sheet?.abilities?.map((template, index) => {
                                                 const ability = abilities.find((item) => item.ownerId === turn.id && item.sheetAbilityIndex === index)
+                                                if (!ability && turn.availableAbilityIndexes && !turn.availableAbilityIndexes.includes(index)) return null
                                                 return <button className="participant-ability" data-ability-state={!ability ? 'available' : ability.active && (ability.remainingTurns > 0 || ability.timed === false) ? 'active' : 'inactive'} type="button" key={`sheet-${index}`} onClick={() => openSheetAbility(turn, index)}>
                                                     {catalog.abilities.find((entry) => entry.id === (ability?.catalogId ?? template.catalogId))?.name || ability?.name || template.name} · {!ability ? 'Aggiungi' : !ability.active ? 'Inattiva' : ability.timed === false ? 'Attiva · Senza conteggio' : ability.remainingTurns === 0 ? 'Scaduta' : `${ability.remainingTurns} turni`}
                                                 </button>

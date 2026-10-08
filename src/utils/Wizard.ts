@@ -1,22 +1,27 @@
-import type { CharacterSheet } from './CharacterSheets.ts'
+import { abilityModifier, characterLevel, integerValue, type CharacterSheet } from './CharacterSheets.ts'
 import type { CreationData } from './PlayerCreation.ts'
 import { classId, spellEdition, spellRowState } from './Spellcasting.ts'
 
 // Regole 2014: SRD 5.1; regole 2024: SRD 5.2.1 (CC BY 4.0), https://www.dndbeyond.com/srd.
 export function wizardRules(sheet: CharacterSheet) {
-    const edition = spellEdition(sheet), level = Math.max(1, Math.min(20, Math.trunc(Number(sheet.level) || 1)))
+    const edition = spellEdition(sheet), level = characterLevel(sheet) ?? 0
     const wizard = classId(sheet) === 'wizard'
     const subclass = sheet.playerDetails?.['creation.subclass']
     const evocation = wizard && subclass === 'evocation'
     const school = subclass === 'evocation' ? 'evocation' : subclass?.replace(/^wizard-/, '')
     const savantSchool = wizard && edition === '2014' && level >= 2 && ['abjuration','conjuration','divination','enchantment','evocation','illusion','necromancy','transmutation'].includes(school ?? '') ? school : undefined
-    return { wizard, edition, level, bookMinimum: 6 + 2 * (level - 1), recoveryBudget: Math.ceil(level / 2),
+    return { wizard, edition, level, bookMinimum: level ? 6 + 2 * (level - 1) : 0, recoveryBudget: Math.ceil(level / 2),
         savantSchool, savantDiscount: !!savantSchool,
         savantChoices: evocation && edition === '2024' && level >= 3 ? 2 + Math.max(0, Math.min(9, Math.ceil(level / 2)) - 2) : 0,
         sculpt: evocation && level >= (edition === '2014' ? 2 : 6),
         potent: evocation && level >= (edition === '2014' ? 6 : 3),
         empowered: evocation && level >= 10, overchannel: evocation && level >= 14,
         mastery: wizard && level >= 18, signature: wizard && level >= 20 }
+}
+
+export function wizardWardMaximum(sheet: CharacterSheet): number | undefined {
+    const level = characterLevel(sheet), intelligence = abilityModifier(sheet.intelligence)
+    return level === undefined || intelligence === undefined ? undefined : Math.max(0, 2 * level + intelligence)
 }
 
 export function wizardBook(sheet: CharacterSheet, data: CreationData) {
@@ -62,7 +67,7 @@ export function recoverWizardSlots(sheet: CharacterSheet, counts: Record<number,
     if (!cost || cost > rules.recoveryBudget) throw new Error(`Scegli slot per un totale di livelli tra 1 e ${rules.recoveryBudget}.`)
     const rune = savedWizardFeatures(sheet).find((x) => x.name === 'Runic Empowerment')
     if (rune && savedWizardFeatures(sheet).some((x) => x.name === 'Rune Maven')) {
-        const gain = Math.max(1, Math.ceil(Math.floor((Number(sheet.intelligence || 10) - 10) / 2) / 2))
+        const gain = Math.max(1, Math.ceil((abilityModifier(sheet.intelligence) ?? 0) / 2))
         d[featureResourceKey(rune)] = String(Math.min(featureResourceMax(sheet,rune), featureResourceRemaining(sheet,rune) + gain))
     }
     d['wizard.recovery.used'] = 'true'
@@ -163,8 +168,8 @@ export function castWizardSpell(sheet: CharacterSheet, data: CreationData, cast:
     const wardEligible = rules.edition === '2014' && subclass === 'wizard-abjuration' && rules.level >= 2 && spell.school?.index === 'abjuration' && cast.slot >= 1
     if (cast.createWard && (!wardEligible || d['wizard.ward.created'] === 'true')) throw new Error('Arcane Ward si crea con abiurazione di livello 1+ una sola volta per riposo lungo.')
     if (wardEligible && (cast.createWard || d['wizard.ward.created'] === 'true')) {
-        if (!sheet.intelligence.trim()) throw new Error('Inserisci Intelligenza per calcolare i PF della barriera.')
-        const max = Math.max(0, 2 * rules.level + Math.floor((Number(sheet.intelligence) - 10) / 2))
+        const max = wizardWardMaximum(sheet)
+        if (max === undefined) throw new Error('Inserisci livello e Intelligenza validi per calcolare i PF della barriera.')
         d['wizard.ward.current'] = String(cast.createWard ? max : Math.min(max, integer(d['wizard.ward.current'], 'PF barriera') + 2 * cast.slot))
         d['wizard.ward.created'] = 'true'
         messages.push(`Arcane Ward: ${d['wizard.ward.current']}/${max} PF.`)
@@ -362,8 +367,11 @@ export function featureResourceMax(sheet: CharacterSheet, feature: import('./Pla
     const value = feature.resource?.max, level = wizardRules(sheet).level
     if (feature.name === 'Portent' && level >= 14) return 3
     if (typeof value === 'number') return Math.max(0, Math.min(1000, Math.trunc(value)))
-    if (value === 'proficiency') return 2 + Math.floor((level - 1) / 4)
-    if (value === 'intelligence') return Math.max(1, Math.floor((Number(sheet.intelligence || 10) - 10) / 2))
+    if (value === 'proficiency') return Math.max(0, integerValue(sheet.playerDetails?.proficiencyBonus) ?? (level ? 2 + Math.floor((level - 1) / 4) : 0))
+    if (value === 'intelligence') {
+        const intelligence = abilityModifier(sheet.intelligence)
+        return intelligence === undefined ? 0 : Math.max(1, intelligence)
+    }
     if (value === 'half-level') return Math.floor(level / 2)
     if (value === 'channel-arcana') return level >= 18 ? 3 : level >= 6 ? 2 : 1
     return 0

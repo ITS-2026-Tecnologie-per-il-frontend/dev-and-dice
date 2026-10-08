@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <g fill="none" stroke="#302d2c" stroke-linejoin="miter">
+    <path stroke-width="1.6" d="M12 3H84L93 12V84L84 93H12L3 84V12Z"/>
+    <path stroke-width=".8" d="M13 6H83L90 13V83L83 90H13L6 83V13Z"/>
+    <path stroke-width="1" d="M3 12H8L12 8V3M84 3V8L88 12H93M93 84H88L84 88V93M12 93V88L8 84H3"/>
+  </g>
+</svg>

@@ -1,14 +1,19 @@
-import type { CharacterSheet } from './CharacterSheets.ts'
+import { abilityModifier, characterFields, characterLevel, type CharacterSheet } from './CharacterSheets.ts'
 import type { CreationData } from './PlayerCreation.ts'
 import { spellcasting2024 } from '../data/Spellcasting2024.ts'
 
 export type RulesEdition = '2014' | '2024'
 export const spellEdition = (sheet: CharacterSheet): RulesEdition => sheet.playerDetails?.['rules.edition'] === '2024' ? '2024' : '2014'
-export const classId = (sheet: CharacterSheet) => sheet.playerDetails?.['creation.class'] || ({ bardo: 'bard', chierico: 'cleric', druido: 'druid', paladino: 'paladin', ranger: 'ranger', stregone: 'sorcerer', warlock: 'warlock', mago: 'wizard' } as Record<string, string>)[sheet.characterClass.trim().toLowerCase()] || sheet.characterClass.trim().toLowerCase()
+export const classId = (sheet: CharacterSheet) => sheet.playerDetails?.['creation.class'] || ({ barbaro: 'barbarian', bardo: 'bard', chierico: 'cleric', druido: 'druid', guerriero: 'fighter', monaco: 'monk', ladro: 'rogue', paladino: 'paladin', ranger: 'ranger', stregone: 'sorcerer', warlock: 'warlock', mago: 'wizard' } as Record<string, string>)[sheet.characterClass.trim().toLowerCase()] || sheet.characterClass.trim().toLowerCase()
+
+export function castingAbilityKey(sheet: CharacterSheet, fallback?: import('./PlayerCreation.ts').AbilityKey) {
+    const custom = sheet.playerDetails?.castingAbility?.trim().toLowerCase().replace(/\.$/, '')
+    return custom ? (['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const).find((key) => [key, characterFields[key], key.slice(0, 3), characterFields[key].slice(0, 3)].some((name) => name.toLowerCase() === custom)) : fallback
+}
 
 export function spellProfile(sheet: CharacterSheet, data: CreationData, edition = spellEdition(sheet)) {
     const id = classId(sheet)
-    const level = Math.max(1, Math.min(20, Math.trunc(Number(sheet.level) || 1)))
+    const level = characterLevel(sheet) ?? 0
     const characterClass = data.classes.find((item) => item.index === id)
     const progression = { ...(data.levels.find((item) => item.index === `${id}-${level}`)?.spellcasting ?? {}) }
     const revised = edition === '2024' ? spellcasting2024[id]?.[level - 1] : undefined
@@ -18,13 +23,13 @@ export function spellProfile(sheet: CharacterSheet, data: CreationData, edition 
     }
     const maxLevel = Math.max(0, ...Array.from({ length: 9 }, (_, i) => progression[`spell_slots_level_${i + 1}`] ? i + 1 : 0))
     const daily = (edition === '2014' ? ['cleric', 'druid', 'paladin', 'wizard'] : ['cleric', 'druid', 'paladin', 'ranger', 'wizard']).includes(id)
-    const key = characterClass?.castingAbility
-    const modifier = key && sheet[key] !== '' ? Math.floor((Number(sheet[key]) - 10) / 2) : 0
-    const preparedLimit = !maxLevel ? 0 : revised ? revised[1] : Math.max(1, modifier + (id === 'paladin' ? Math.floor(level / 2) : level))
+    const key = castingAbilityKey(sheet, characterClass?.castingAbility)
+    const modifier = key ? abilityModifier(sheet[key]) : undefined
+    const preparedLimit = !maxLevel ? 0 : revised ? revised[1] : modifier === undefined ? 0 : Math.max(1, modifier + (id === 'paladin' ? Math.floor(level / 2) : level))
     return {
         edition, progression, maxLevel, cantrips: progression.cantrips_known ?? 0,
         prepared: daily, preparedLimit: daily ? preparedLimit : 0,
-        known: id === 'wizard' ? 6 + (level - 1) * 2 : revised ? revised[1] : progression.spells_known,
+        known: id === 'wizard' ? level ? 6 + (level - 1) * 2 : 0 : revised ? revised[1] : progression.spells_known,
         changePolicy: daily ? (edition === '2024' && ['paladin', 'ranger'].includes(id) ? 'one-per-long-rest' : 'long-rest') : 'level-up',
         arcanumLevels: id === 'warlock' ? [6, 7, 8, 9].filter((spellLevel) => level >= spellLevel * 2 - 1) : [],
     }
@@ -38,7 +43,7 @@ export function spellRowState(sheet: CharacterSheet, level: number, index: numbe
     const id = classId(sheet), edition = spellEdition(sheet)
     const rawSource = d[`${root}.source`]
     let source: SpellSource = Object.hasOwn(spellSources, rawSource ?? '') ? rawSource as SpellSource : id === 'warlock' && level >= 6 ? 'arcanum' : 'class'
-    const granted = savedSpellGrants(sheet).find((grant) => grant.index === d[`${root}.index`] || grant.name.toLowerCase() === d[`${root}.name`]?.trim().toLowerCase())
+    const granted = savedSpellGrants(sheet).find((grant) => grant.index === d[`${root}.index`] || [grant.name, ...(grant.aliases ?? [])].some((name) => name.toLowerCase() === d[`${root}.name`]?.trim().toLowerCase()))
     if (source === 'class' && granted?.source === 'always') source = 'always'
     const preparedClass = (edition === '2014' ? ['cleric', 'druid', 'paladin', 'wizard'] : ['cleric', 'druid', 'paladin', 'ranger', 'wizard']).includes(id)
     const knownClass = ['bard', 'sorcerer', 'warlock', ...(edition === '2014' ? ['ranger'] : [])].includes(id)
@@ -50,7 +55,11 @@ export function spellRowState(sheet: CharacterSheet, level: number, index: numbe
     const selected = !!d[`${root}.name`]?.trim()
     const canToggle = !alwaysPrepared && (needsPreparation || !['class', 'always', 'secrets', 'lore'].includes(source))
     const checked = alwaysPrepared || (needsPreparation ? d[`${root}.prepared`] === 'true' : !canToggle || d[`${root}.available`] !== 'false')
-    const maxLevel = Math.max(0, ...Array.from({ length: 9 }, (_, i) => Number(d[`slots.${i + 1}.total`]) > 0 ? i + 1 : 0))
+    const maxLevel = Math.max(0, ...Array.from({ length: 9 }, (_, i) => {
+        const key = `slots.${i + 1}.total`
+        const capacity = d['creation.enabled'] === 'true' ? d[`creation.auto.${key}`] ?? d[key] : d[key]
+        return Number(capacity) > 0 ? i + 1 : 0
+    }))
     const allowed = source === 'arcanum' ? id === 'warlock' && level >= 6 && level <= 9 && Number(sheet.level) >= level * 2 - 1
         : source === 'secrets' ? id === 'bard' && (Number(sheet.level) >= 10 || (d['creation.subclass'] === 'lore' && Number(sheet.level) >= 6)) && (d['creation.enabled'] !== 'true' || level <= maxLevel)
         : source === 'lore' ? id === 'bard' && d['creation.subclass'] === 'lore' && Number(sheet.level) >= 6 && (d['creation.enabled'] !== 'true' || level <= maxLevel)
@@ -62,7 +71,18 @@ export function spellRowState(sheet: CharacterSheet, level: number, index: numbe
         checkboxKey: `${root}.${needsPreparation ? 'prepared' : 'available'}` }
 }
 
-export type SpellGrant = { index: string; name: string; level: number; source: 'racial' | 'always'; note: string }
+export function spellCounts(sheet: CharacterSheet) {
+    const entries = Object.entries(sheet.playerDetails ?? {}).filter(([key, value]) => /^spell\.\d+\.\d+\.name$/.test(key) && value.trim()).map(([key, name]) => {
+        const [, level, index] = key.split('.')
+        return { name, level: Number(level), ...spellRowState(sheet, Number(level), Number(index)) }
+    })
+    return { entries, cantrips: entries.filter((entry) => entry.countsCantrip).length,
+        spells: entries.filter((entry) => entry.countsKnown).length, prepared: entries.filter((entry) => entry.countsPrepared).length,
+        extra: entries.filter((entry) => !entry.countsKnown && !entry.countsCantrip).length,
+        secrets: entries.filter((entry) => entry.source === 'secrets').length, loreSpells: entries.filter((entry) => entry.source === 'lore').length }
+}
+
+export type SpellGrant = { index: string; name: string; aliases?: string[]; level: number; source: 'racial' | 'always'; note: string }
 const life2014: [number, string[]][] = [[1, ['bless', 'cure-wounds']], [3, ['lesser-restoration', 'spiritual-weapon']], [5, ['beacon-of-hope', 'revivify']], [7, ['death-ward', 'guardian-of-faith']], [9, ['mass-cure-wounds', 'raise-dead']]]
 const devotion2014: [number, string[]][] = [[3, ['protection-from-evil-and-good', 'sanctuary']], [5, ['lesser-restoration', 'zone-of-truth']], [9, ['beacon-of-hope', 'dispel-magic']], [13, ['freedom-of-movement', 'guardian-of-faith']], [17, ['commune', 'flame-strike']]]
 const life2024: [number, string[]][] = [[3, ['aid', 'bless', 'cure-wounds', 'lesser-restoration']], [5, ['mass-healing-word', 'revivify']], [7, ['aura-of-life', 'death-ward']], [9, ['greater-restoration', 'mass-cure-wounds']]]
@@ -99,7 +119,7 @@ export function grantedSpells(sheet: CharacterSheet, data: CreationData, racialC
     const d = sheet.playerDetails ?? {}, level = Number(sheet.level) || 1, result: SpellGrant[] = []
     function add(index: string, source: SpellGrant['source'], note: string) {
         const spell = data.spells.find((item) => item.index === index) ?? additionalSpells[index]
-        if (spell) result.push({ index, name: ('nameIt' in spell && typeof spell.nameIt === 'string' ? spell.nameIt : spell.name), level: spell.level, source, note })
+        if (spell) result.push({ index, name: ('nameIt' in spell && typeof spell.nameIt === 'string' ? spell.nameIt : spell.name), aliases: [spell.name, ...('aliases' in spell && Array.isArray(spell.aliases) ? spell.aliases.filter((name: unknown): name is string => typeof name === 'string') : [])], level: spell.level, source, note })
     }
     const id = classId(sheet), subclass = d['creation.subclass']
     const table = id === 'cleric' && subclass === 'life' ? (edition === '2014' ? life2014 : life2024)
@@ -141,6 +161,6 @@ export function grantedSpells(sheet: CharacterSheet, data: CreationData, racialC
 export function savedSpellGrants(sheet: CharacterSheet): SpellGrant[] {
     try {
         const value: unknown = JSON.parse(sheet.playerDetails?.spellGrants || '[]')
-        return Array.isArray(value) ? value.filter((x): x is SpellGrant => x && typeof x.index === 'string' && typeof x.name === 'string' && Number.isInteger(x.level) && x.level >= 0 && x.level <= 9 && ['racial', 'always'].includes(x.source) && typeof x.note === 'string') : []
+        return Array.isArray(value) ? value.filter((x): x is SpellGrant => x && typeof x.index === 'string' && typeof x.name === 'string' && (x.aliases === undefined || Array.isArray(x.aliases) && x.aliases.every((name: unknown) => typeof name === 'string')) && Number.isInteger(x.level) && x.level >= 0 && x.level <= 9 && ['racial', 'always'].includes(x.source) && typeof x.note === 'string') : []
     } catch { return [] }
 }

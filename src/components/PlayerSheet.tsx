@@ -1,8 +1,9 @@
 import { useEffect, useId, useMemo, useState, type ReactNode } from 'react'
 import { characterFields, clampCurrentHitPointsToMaximum, normalizeHitPoints, numericCharacterFields, initiativeBonus, type CharacterSheet } from '../utils/CharacterSheets'
-import { applyCreation, creationEnabled, enableCreation, labelOf, loadCreationData, resetCreationOverrides, selectedOrigins, spellRules, spellSelection, subclassOptions, subclassMinimumLevel, type CreationData, type Origin } from '../utils/PlayerCreation'
+import { applyCreation, translatedCreationData, characterFieldValue, updateCharacterField, creationEnabled, enableCreation, labelOf, loadCreationData, resetCreationOverrides, selectedOrigins, spellRules, spellSelection, subclassOptions, subclassMinimumLevel, type CreationData, type Origin } from '../utils/PlayerCreation'
 import { CreationChoices, CreationStatus } from './PlayerCreation'
-import { spellRowState, spellSources, savedSpellGrants, landNames2014, landNames2024 } from '../utils/Spellcasting'
+import { CharacterTutorial } from './CharacterTutorial'
+import { spellCounts, spellRowState, spellSources, savedSpellGrants, landNames2014, landNames2024 } from '../utils/Spellcasting'
 import { CatalogSearch } from './CatalogSearch'
 import { WizardSubclassFeatures } from './WizardSubclassFeatures'
 import { WizardSpellcasting, WizardAdvancement } from './WizardSpellcasting'
@@ -10,6 +11,7 @@ import { copyCost, wizardRules } from '../utils/Wizard'
 import { type Catalog } from '../utils/Catalog'
 import { sheetTemplates, playerTemplate, wizardPrivilegeLevels, featuresAtLevel, updateFeaturesAtLevel } from '../utils/PlayerTemplates'
 import '../PlayerSheet.css'
+import '../WizardPdf.css'
 
 const scores = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const
 const skills = [
@@ -21,25 +23,22 @@ const skills = [
     ['Religione', 'intelligence'], ['Sopravvivenza', 'wisdom'], ['Storia', 'intelligence'],
 ] as const
 
-export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: CharacterSheet; catalog?: Catalog; onChange: (sheet: CharacterSheet) => void }) {
+export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChange: emitChange }: { sheet: CharacterSheet; catalog?: Catalog; creationData?: CreationData; onChange: (sheet: CharacterSheet) => void }) {
     const [page, setPage] = useState(0)
     const [portraitError, setPortraitError] = useState('')
     const [rawData, setData] = useState<CreationData>()
-    const data = useMemo(() => {
-        if (!rawData) return undefined
-        const translated = new Map(catalog?.abilities.filter((x) => typeof x.data.level === 'number').flatMap((x) => (Array.isArray(x.data.aliases) ? x.data.aliases : [x.name]).filter((name): name is string => typeof name === 'string').map((name) => [name.toLowerCase(), x] as const)))
-        return { ...rawData, spells: rawData.spells.map((x) => { const entry = translated.get(x.name.toLowerCase()); return { ...x, nameIt: entry?.name, aliases: Array.isArray(entry?.data.aliases) ? entry.data.aliases.filter((name): name is string => typeof name === 'string') : x.aliases } }) }
-    }, [rawData, catalog])
+    const data = useMemo(() => suppliedData ?? (rawData ? translatedCreationData(rawData, catalog) : undefined), [suppliedData, rawData, catalog])
     const [dataError, setDataError] = useState('')
     const [retry, setRetry] = useState(0)
     useEffect(() => {
+        if (suppliedData) return
         let active = true
         loadCreationData().then((value) => { if (active) { setData(value); setDataError('') } }).catch(() => { if (active) setDataError('Impossibile caricare le opzioni di creazione. Puoi continuare a compilare manualmente.') })
         return () => { active = false }
-    }, [retry])
+    }, [retry, suppliedData])
     const prefix = useId()
     const details = sheet.playerDetails ?? {}
-    const template = playerTemplate(sheet), wizardTemplate = template === 'wizard'
+    const template = playerTemplate(sheet), wizardTemplate = template === 'wizard' || template === 'wizard-pdf'
     const pages = sheetTemplates[template].pages
     const visiblePage = page < pages.length ? page : 0
     const automatic = creationEnabled(sheet) && !!data
@@ -51,17 +50,14 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
     }
     const selectedMagic = data && automatic ? spellSelection({ ...sheet, playerDetails: Object.fromEntries(Object.entries(details).map(([key, value]) => [key, /^spell\.\d+\.\d+\.name$/.test(key) ? spellLabel(value) : value])) }, data) : undefined
     function onChange(next: CharacterSheet, clampHitPoints = false) {
-        const updated = data ? applyCreation(next, data) : next
+        const updated = !suppliedData && data ? applyCreation(next, data) : next
         emitChange(clampHitPoints ? clampCurrentHitPointsToMaximum(updated) : updated)
     }
     function clampHitPointsOnMaximumBlur() {
         emitChange(clampCurrentHitPointsToMaximum(sheet))
     }
     function updateBase(key: string, value: string) {
-        if (automatic && scores.includes(key as typeof scores[number])) {
-            const bonus = Number(sheet[key as typeof scores[number]]) - Number(details[`creation.base.${key}`] || 0)
-            onChange({ ...sheet, playerDetails: { ...details, [`creation.base.${key}`]: value === '' ? '' : String(Number(value) - bonus) } })
-        } else onChange({ ...sheet, [key]: value, playerDetails: { ...details, ...(automatic && ['armorClass', 'speed'].includes(key) ? { [`creation.override.base.${key}`]: 'true' } : {}) } }, key === 'hitPoints')
+        onChange(updateCharacterField(sheet, key, value), key === 'hitPoints')
     }
     function originSelect(kind: 'class' | 'race' | 'subrace' | 'subclass' | 'background', label: string, options: Origin[], base?: 'characterClass' | 'race') {
         const key = `creation.${kind}`
@@ -78,18 +74,16 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
             if (kind === 'background') nextDetails.background = origin ? labelOf(origin) : value
             const next = { ...sheet, ...(base ? { [base]: origin ? labelOf(origin) : value } : {}), playerDetails: nextDetails }
             onChange(origin && data ? enableCreation(next, data) : next)
-        }}><option value="">{value ? `Personalizzato: ${value}` : 'Seleziona…'}</option>{options.map((x) => <option key={x.index} value={x.index} disabled={kind === 'subclass' && !!data && Number(sheet.level) < subclassMinimumLevel(sheet, x, data)}>{labelOf(x)}{kind === 'subclass' && data ? ` · livello ${subclassMinimumLevel(sheet, x, data)}${x.status === 'archived-ua' ? ' · UA archiviata' : x.status === 'ua' ? ' · UA' : ''}` : ''}</option>)}</select>
+        }}><option value="">{value ? `Personalizzato: ${value}` : 'Seleziona…'}</option>{options.map((x) => <option key={x.index} value={x.index} disabled={kind === 'subclass' && !!data && Number(sheet.level) < subclassMinimumLevel(sheet, x, data)}>{labelOf(x)}{kind === 'subclass' && data && !(template === 'wizard-pdf' && label === 'Tradizione arcana') ? ` · livello ${subclassMinimumLevel(sheet, x, data)}${x.status === 'archived-ua' ? ' · UA archiviata' : x.status === 'ua' ? ' · UA' : ''}` : ''}</option>)}</select>
         {!options.some((x) => x.index === details[key]) && <input aria-label={`${label} personalizzato`} value={value} placeholder="Valore personalizzato" onChange={(event) => base ? updateBase(base, event.target.value) : detail(kind, event.target.value)} />}</label>
     }
     function detail(key: string, value: string) {
-        onChange({ ...sheet, playerDetails: { ...details, [key]: value, ...(automatic && details[`creation.auto.${key}`] !== undefined ? { [`creation.override.${key}`]: 'true' } : {}) } })
+        onChange(updateCharacterField(sheet, key, value))
     }
-    function modifier(score: string) {
-        if (!score.trim() || !Number.isSafeInteger(Number(score))) return ''
-        const value = Math.floor((Number(score) - 10) / 2)
-        return `${value >= 0 ? '+' : ''}${value}`
+    function modifier(score: typeof scores[number]) {
+        return characterFieldValue(sheet, `modifier.${score}`)
     }
-    function field(key: string, label: string, options: { base?: boolean; multiline?: boolean; numeric?: boolean; placeholder?: string; onBlur?: () => void } = {}) {
+    function field(key: string, label: ReactNode, options: { base?: boolean; multiline?: boolean; numeric?: boolean; placeholder?: string; onBlur?: () => void } = {}) {
         const value = options.base ? sheet[key as keyof typeof characterFields] : details[key] ?? ''
         const update = (value: string) => {
             const normalized = ['maxHitPoints', 'hitPoints', 'temporaryHitPoints'].includes(key) ? normalizeHitPoints(value) : value
@@ -105,6 +99,22 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
     }
     function box(title: string, children: ReactNode, className = '') {
         return <section className={`player-box ${className}`} key={title}><h3>{title}</h3>{children}</section>
+    }
+    function slotCircles(kind: 'total' | 'used') {
+        return <div className={`player-wizard-slot-circles player-wizard-slot-${kind}`}>
+            {[4, 3, 3, 3, 3, 2, 2, 1, 1].map((capacity, index) => {
+                const key = `slots.${index + 1}.${kind}`, count = Number(details[key]) || 0
+                return <div className="player-wizard-slot-level" key={key}>
+                    {kind === 'total' && <span>{index + 1}{index === 0 ? 'st' : index === 1 ? 'nd' : index === 2 ? 'rd' : 'th'}</span>}
+                    {Array.from({ length: capacity }, (_, slot) => <button type="button" key={slot} aria-label={`Slot livello ${index + 1}, ${kind === 'total' ? 'totali' : 'lanciati'}: ${slot + 1}`} aria-pressed={count > slot}
+                        onClick={() => detail(key, String(count === slot + 1 ? slot : slot + 1))} />)}
+                    {count > capacity && <small aria-label={`Conteggio ${kind === 'total' ? 'totale' : 'lanciato'} livello ${index + 1}`}>{count}</small>}
+                </div>
+            })}
+        </div>
+    }
+    function selectedSpellCount(kind: 'prepared' | 'cantrips') {
+        return (selectedMagic ?? spellCounts(sheet))[kind]
     }
     const attunedCount = Object.entries(details).filter(([key,value]) => /^magicItem\.\d+\.attuned$/.test(key) && value === 'true').length
     function check(key: string, label: string) {
@@ -169,9 +179,18 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
         return <div className="player-roll" key={key}>
             {check(`${key}.proficient`, `Competenza in ${label}`)}
             {mastery && check(`${key}.expertise`, `Maestria in ${label}`)}
-            <input type="number" step="1" aria-label={`Bonus ${label}`} value={details[key] ?? ''} placeholder={modifier(sheet[score])} onChange={(event) => detail(key, event.target.value)} />
-            <span>{label} {mastery && <small>({characterFields[score].slice(0, 3)})</small>}</span>
+            <input type="number" step="1" aria-label={`Bonus ${label}`} value={details[key] ?? ''} placeholder={modifier(score)} onChange={(event) => detail(key, event.target.value)} />
+            <span>{template === 'wizard-pdf' && key.startsWith('save.') ? 'Tiro salvezza' : label} {mastery && <small>({characterFields[score].slice(0, 3)})</small>}</span>
         </div>
+    }
+    function favoriteComponent(index: number, component: string) {
+        const key = `favoriteSpell.${index}.components`, value = details[key] ?? ''
+        const token = new RegExp(`\\b${component}\\b`, 'g')
+        return <label className="player-wizard-component" key={component}><span>{component}</span><input type="checkbox" aria-label={`Componente ${component}, incantesimo preferito ${index + 1}`} checked={token.test(value)} onChange={(event) => {
+            const next = event.target.checked ? `${value.trim()}${value.trim() ? ', ' : ''}${component}`
+                : value.replace(token, '').replace(/([,;/])(?:\s*[,;/])+/g, '$1').replace(/^[\s,;/]+|[\s,;/]+$/g, '')
+            detail(key, next)
+        }} /></label>
     }
     function table(title: string, key: string, columns: string[], count: number) {
         return box(title, <div className="player-table-scroll"><table className="player-table">
@@ -179,11 +198,14 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
             <tbody>{Array.from({ length: count }, (_, row) => <tr key={row}>{columns.map((label, column) => <td key={column}>
                 <input aria-label={`${title}: ${label}, riga ${row + 1}`} value={details[`${key}.${row}.${column}`] ?? ''} onChange={(event) => detail(`${key}.${row}.${column}`, event.target.value)} />
             </td>)}</tr>)}</tbody>
-        </table></div>)
+        </table></div>, key === 'attacks' ? 'player-wizard-attacks' : '')
     }
+    const slotFields = <div className="player-wizard-slots">{Array.from({length:9},(_,i) => <div key={i}>{field(`slots.${i+1}.total`,`${i+1} · totali`,{numeric:true})}{field(`slots.${i+1}.used`,'Lanciati',{numeric:true})}</div>)}</div>
+    const personalityFields = ['Tratti caratteriali','Ideali','Legami','Difetti'].map((label) => box(label,field(`personality.${label}`,label,{multiline:true})))
 
+    if (details['tutorial.active'] === 'true') return <div className="player-sheet">{data ? <CharacterTutorial sheet={sheet} data={data} onChange={onChange} /> : <p role="status">{dataError || 'Caricamento delle opzioni per il tutorial…'}{dataError && <button type="button" onClick={() => setRetry(retry + 1)}>Riprova</button>}</p>}</div>
     return <div className="player-sheet">
-        <div className="player-template-picker"><label className="player-field"><span>Modello della scheda</span><select value={details['sheet.template'] === 'generic' || details['sheet.template'] === 'wizard' ? details['sheet.template'] : 'auto'} onChange={(event) => { detail('sheet.template',event.target.value); setPage(0) }}><option value="auto">Automatico in base alla classe</option>{Object.entries(sheetTemplates).map(([id,model]) => <option key={id} value={id}>{model.name}</option>)}</select></label>{wizardTemplate && <a href={`${import.meta.env?.BASE_URL ?? '/'}templates/Mago.pdf`} target="_blank" rel="noreferrer">Apri PDF originale · Mago</a>}</div>
+        <div className="player-template-picker"><label className="player-field"><span>Modello della scheda</span><select value={Object.hasOwn(sheetTemplates, details['sheet.template'] ?? '') ? details['sheet.template'] : 'auto'} onChange={(event) => { detail('sheet.template',event.target.value); setPage(0) }}><option value="auto">Automatico in base alla classe</option>{Object.entries(sheetTemplates).map(([id,model]) => <option key={id} value={id}>{model.name}</option>)}</select></label>{wizardTemplate && <a href={`${import.meta.env?.BASE_URL ?? '/'}templates/Mago.pdf`} target="_blank" rel="noreferrer">Apri PDF originale · Mago</a>}</div>
         {data ? <CreationStatus sheet={sheet} enable={() => emitChange(enableCreation(sheet, data))} disable={() => emitChange({ ...sheet, playerDetails: { ...details, 'creation.enabled': 'false' } })} /> : <p className="player-hint" role="status">{dataError || 'Caricamento opzioni del personaggio…'}{dataError && <button type="button" onClick={() => setRetry(retry + 1)}>Riprova</button>}</p>}
         {automatic && data && <button type="button" onClick={() => emitChange(resetCreationOverrides(sheet, data))}>Ripristina i campi generati (annulla le loro modifiche manuali)</button>}
         <div className="player-sheet-tabs" role="tablist" aria-label="Pagine della scheda">
@@ -203,7 +225,7 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
             >{index + 1}. {label}</button>)}
         </div>
         <div className="player-paper-viewport" tabIndex={0}>
-        <div className={`player-paper${visiblePage === 0 ? ' player-paper-statistics' : ''}${wizardTemplate ? ' player-paper-wizard' : ''}`} role="tabpanel" id={`${prefix}-page`} aria-labelledby={`${prefix}-tab-${visiblePage}`}>
+        <div className={`player-paper${visiblePage === 0 ? ' player-paper-statistics' : ''}${wizardTemplate ? ' player-paper-wizard' : ''}${template === 'wizard-pdf' ? ' player-paper-wizard-pdf' : ''}`} role="tabpanel" id={`${prefix}-page`} aria-labelledby={`${prefix}-tab-${visiblePage}`}>
             {!wizardTemplate && <header className="player-identity">
                 <div className="player-name"><span className="player-brand">DUNGEONS & DRAGONS</span>{field('name', 'Nome personaggio', { base: true })}</div>
                 <div className="player-identity-fields">
@@ -226,13 +248,13 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
                         {data ? originSelect('background','Background',data.backgrounds) : field('background','Background')}
                         {field('alignment','Allineamento')}{field('playerName','Giocatore')}
                     </div>
-                    <div className="player-wizard-class"><strong>MAGO</strong><div className="player-wizard-class-fields">
-                        {automatic ? <label className="player-field"><span>Livello</span><select value={sheet.level} onChange={(e) => updateBase('level',e.target.value)}>{Array.from({length:20},(_,i) => <option key={i} value={i+1}>{i+1}</option>)}</select></label> : field('level','Livello',{base:true})}
+                    <div className="player-wizard-class"><strong>{template === 'wizard-pdf' ? <span className="player-wizard-class-title">M<span>ago</span></span> : 'MAGO'}</strong><div className="player-wizard-class-fields">
+                        {automatic ? <label className="player-field"><span>{template === 'wizard-pdf' ? 'Liv' : 'Livello'}</span><select value={sheet.level} onChange={(e) => updateBase('level',e.target.value)}>{Array.from({length:20},(_,i) => <option key={i} value={i+1}>{i+1}</option>)}</select></label> : field('level',template === 'wizard-pdf' ? 'Liv' : 'Livello',{base:true})}
                         {data ? originSelect('subclass','Tradizione arcana',subclassOptions(sheet,data)) : field('subclass','Tradizione arcana')}
                     </div></div>
                 </>}
                 {visiblePage === 1 && <div className="player-wizard-appearance">
-                    <div className="player-six-fields">{['Età','Altezza','Peso','Carnagione','Occhi','Capelli'].map((label) => field(`appearance.${label}`,label))}</div>
+                    <div className="player-six-fields">{['Età','Altezza','Peso','Carnagione','Occhi','Capelli'].map((label) => field(`appearance.${label}`,template === 'wizard-pdf' && label === 'Carnagione' ? 'Pelle' : label))}</div>
                     <div className="player-three-fields">{field('deity','Divinità')}{field('scars','Cicatrici')}{field('distinctiveMarks','Segni di riconoscimento')}</div>
                 </div>}
                 {visiblePage === 2 && <div className="player-casting">{field('castingClass','Classe da incantatore')}{field('castingAbility','Caratteristica da incantatore')}{field('spellDC','CD tiro salvezza incantesimi',{numeric:true})}{field('spellAttackBonus','Bonus attacco incantesimi',{numeric:true})}</div>}
@@ -246,7 +268,7 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
                     <div className="player-wizard-competence">{field('proficiencyBonus','Competenza',{numeric:true})}</div>
                     <div className="player-two-fields player-wizard-perception">{field('passivePerception','Percezione passiva',{numeric:true})}{check('inspiration','Ispirazione')}</div>
                     <div className="player-wizard-abilities">{scores.map((score) => <section className="player-wizard-score" key={score}>
-                        <div className="player-score">{field(score,characterFields[score],{base:true})}<output aria-label={`Modificatore ${characterFields[score]}`}>{modifier(sheet[score]) || '—'}</output></div>
+                        <div className="player-score">{field(score,characterFields[score],{base:true})}<output aria-label={`Modificatore ${characterFields[score]}`}>{modifier(score) || '—'}</output>{template === 'wizard-pdf' && <output className="player-wizard-score-base" aria-label={`Valore base ${characterFields[score]}`}>{(creationEnabled(sheet) ? details[`creation.base.${score}`] : sheet[score]) || '—'}<small>Base</small></output>}</div>
                         <div className="player-column">{rollRow(`save.${score}`,`Tiro salvezza ${characterFields[score]}`,score)}{skills.filter(([,ability]) => ability === score).map(([label]) => rollRow(`skill.${label}`,label,score,true))}</div>
                     </section>)}</div>
                     {box('Linguaggi, tratti e privilegi aggiuntivi',<>{field('languages','Linguaggi',{multiline:true})}{field('racialTraits','Tratti razziali e privilegi da background',{multiline:true})}</>,'player-wizard-traits')}
@@ -257,35 +279,57 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
                 </div>
                 <div className="player-column player-wizard-middle">
                     <section className="player-wizard-combat">
-                        <div className="player-combat-top"><div className="player-wizard-ac">{field('armorClass','CA',{base:true})}{field('temporaryAC','CA temporanea',{numeric:true})}</div>{field('initiative','Iniziativa',{base:true,placeholder:initiativeBonus(sheet)})}{field('speed','Velocità',{base:true})}</div>
-                        <div className="player-wizard-hitpoints">{field('maxHitPoints','PF massimi',{numeric:true,onBlur:clampHitPointsOnMaximumBlur})}{field('hitPoints','Punti ferita attuali',{base:true})}{field('temporaryHitPoints','PF temporanei',{numeric:true})}</div>
+                        <div className="player-combat-top"><div className="player-wizard-ac">{field('armorClass','CA',{base:true})}{field('temporaryAC','CA temporanea',{numeric:true})}{template === 'wizard-pdf' && <div className="player-wizard-defenses"><div className="player-wizard-defense player-wizard-no-armor">{field('unarmoredAC',<>No<br /> armatura</>,{numeric:true})}</div><div className="player-wizard-defense player-wizard-no-shield">{field('unshieldedAC',<>No<br /> scudo</>,{numeric:true})}</div></div>}</div>{field('initiative','Iniziativa',{base:true,placeholder:initiativeBonus(sheet)})}{field('speed','Velocità',{base:true})}</div>
+                        <div className="player-wizard-hitpoints">{field('maxHitPoints',template === 'wizard-pdf' ? 'Max' : 'PF massimi',{numeric:true,onBlur:clampHitPointsOnMaximumBlur})}{field('hitPoints',template === 'wizard-pdf' ? <>Punti ferita<small className="player-wizard-hp-caption">Attuali</small></> : 'Punti ferita attuali',{base:true})}{field('temporaryHitPoints',template === 'wizard-pdf' ? <>Punti ferita<br /> temporanei</> : 'PF temporanei',{numeric:true})}</div>
                         <div className="player-wizard-vitality">
-                            {box('Dadi vita',<><div className="player-two-fields"><label className="player-field"><span>Totali</span><output>{details.hitDiceTotal || '—'}</output></label>{field('hitDiceUsed','Usati',{numeric:true})}</div><output className="player-wizard-hit-die">{details.hitDice || 'd6'}</output></>)}
-                            <div className="player-column">{field('exhaustion','Livelli di indebolimento',{numeric:true})}{box('Salvezza da morte',<>{['Successi','Fallimenti'].map((label) => <div className="player-death" key={label}><span>{label}</span>{[0,1,2].map((i) => check(`death.${label}.${i}`,`${label} ${i+1}`))}</div>)}</>)}</div>
+                            {box('Dadi vita',<><div className="player-two-fields"><label className="player-field"><span>Totali</span><output>{details.hitDiceTotal || '—'}</output></label>{field('hitDiceUsed','Usati',{numeric:true})}</div><output className="player-wizard-hit-die">{template === 'wizard-pdf' ? (details.hitDice || 'd6').replace(/^1(?=d\d+$)/,'') : details.hitDice || 'd6'}{template === 'wizard-pdf' && <img className="player-wizard-hit-die-frame" src={`${import.meta.env?.BASE_URL ?? '/'}templates/cornicetonda.svg`} alt="" />}</output></>)}
+                            <div className="player-column"><div className="player-wizard-exhaustion">{field('exhaustion','Livelli di indebolimento',{numeric:true})}{template === 'wizard-pdf' && <div className="player-wizard-exhaustion-levels" role="group" aria-label="Livelli di indebolimento">{[1,2,3,4,5,6].map((level) => <button key={level} type="button" aria-label={`Indebolimento: livello ${level}`} aria-pressed={Number(details.exhaustion) >= level} title={`Imposta livello ${level}; riclicca sul livello attuale per azzerare`} onClick={() => detail('exhaustion',String(Number(details.exhaustion) === level ? 0 : level))}>{level}</button>)}</div>}</div>{box('Salvezza da morte',<>{['Successi','Fallimenti'].map((label) => <div className="player-death" key={label}><span>{label}</span>{[0,1,2].map((i) => check(`death.${label}.${i}`,`${label} ${i+1}`))}</div>)}</>)}</div>
                         </div>
                     </section>
                     {table('Attacco','attacks',['Attacco','Bonus TpC','Danni','Tipo'],4)}
-                    <div className="player-wizard-magic-combat">{field('spellAttackBonus','Bonus attacco incantesimi',{numeric:true})}{field('spellDC','CD salvezza incantesimi',{numeric:true})}<details><summary>Utilizzi della tradizione arcana</summary>{table('Privilegi e tratti limitati','limitedTraits',['Nome','Recupero','Totale','Usi'],6)}</details></div>
+                    <div className="player-wizard-magic-combat">
+                        {field('spellAttackBonus',template === 'wizard-pdf' ? <>Bonus di<br />attacco incantesimi</> : 'Bonus attacco incantesimi',{numeric:true})}
+                        {field('spellDC',template === 'wizard-pdf' ? <>CD salvezza<br />incantesimi</> : 'CD salvezza incantesimi',{numeric:true})}
+                        {template === 'wizard-pdf' && <section className="player-wizard-tradition-uses">
+                            <h3>Utilizzi della<br />tradizione arcana</h3>
+                            <div className="player-two-fields">{field('arcaneTradition.total','Totali',{numeric:true})}{field('arcaneTradition.used','Usati',{numeric:true})}</div>
+                        </section>}
+                        <details><summary>{template === 'wizard-pdf' ? 'Privilegi e tratti limitati' : 'Utilizzi della tradizione arcana'}</summary>{table('Privilegi e tratti limitati','limitedTraits',['Nome','Recupero','Totale','Usi'],6)}</details>
+                    </div>
                     {box('Incantesimi preferiti',<>{Array.from({length:7},(_,i) => <section className="player-wizard-favorite" key={i}>
                         <div className="player-wizard-favorite-top">{field(`favoriteSpell.${i}.level`,'Liv.',{numeric:true})}{field(`favoriteSpell.${i}.name`,'Nome')}{field(`favoriteSpell.${i}.attack`,'TS / TpC')}{field(`favoriteSpell.${i}.castingTime`,'Tempo di lancio')}</div>
-                        <div className="player-wizard-favorite-extra">{field(`favoriteSpell.${i}.components`,'Componenti / extra')}{check(`favoriteSpell.${i}.ritual`,'Rit.')}{check(`favoriteSpell.${i}.concentration`,'Conc.')}</div>
+                        <div className="player-wizard-favorite-extra">
+                            {template === 'wizard-pdf' ? <><div className="player-wizard-favorite-components" role="group" aria-label={`Componenti dell’incantesimo preferito ${i + 1}`}>{['M','S','V'].map((component) => favoriteComponent(i,component))}</div><details className="player-wizard-favorite-notes"><summary>Extra</summary>{field(`favoriteSpell.${i}.components`,'Componenti / extra')}</details></> : field(`favoriteSpell.${i}.components`,'Componenti / extra')}
+                            {check(`favoriteSpell.${i}.ritual`,'Rit.')}{check(`favoriteSpell.${i}.concentration`,'Conc.')}
+                        </div>
                         {field(`favoriteSpell.${i}.effect`,'Effetto',{multiline:true})}
                     </section>)}</>,'player-wizard-favorites')}
                 </div>
                 <div className="player-column player-wizard-right">
-                    {box('Recupero Arcano · livello 1',<p className="player-hint">Durante un riposo breve puoi recuperare slot per un totale massimo di {Math.ceil(Math.max(1,Number(sheet.level)||1)/2)} livelli. Nessuno slot può essere di livello 6 o superiore. Puoi usare questo privilegio una volta {details['rules.edition'] === '2024' ? 'per riposo lungo' : 'al giorno'}. Registri il recupero nella pagina Incantesimi.</p>,'player-wizard-recovery')}
+                    {box('Recupero Arcano · livello 1',<p className="player-hint">Durante un riposo breve puoi recuperare slot per un totale massimo di {wizardRules(sheet).recoveryBudget} livelli. Nessuno slot può essere di livello 6 o superiore. Puoi usare questo privilegio una volta {details['rules.edition'] === '2024' ? 'per riposo lungo' : 'al giorno'}. Registri il recupero nella pagina Incantesimi.</p>,'player-wizard-recovery')}
                     {wizardPrivilegeLevels.map((level) => level === 2 && details['rules.edition'] === '2024' ? 3 : level).map((level) => <section className="player-box player-wizard-privilege" key={level}>
                         <h3>{level === 18 ? 'Maestria negli incantesimi' : level === 20 ? 'Incantesimi personali' : 'Privilegi della tradizione arcana'}<span className="player-wizard-level">{level}</span></h3>
                         <label className="player-field"><span>{Number(sheet.level) < level ? `Si sblocca al livello ${level}` : 'Privilegi e descrizione'}</span><textarea rows={5} value={featuresAtLevel(details.classFeatures || '',level)} onChange={(e) => detail('classFeatures',updateFeaturesAtLevel(details.classFeatures || '',level,e.target.value))} /></label>
                     </section>)}
-                    {box('Slot incantesimo',<><div className="player-wizard-slots">{Array.from({length:9},(_,i) => <div key={i}>{field(`slots.${i+1}.total`,`${i+1} · totali`,{numeric:true})}{field(`slots.${i+1}.used`,'Lanciati',{numeric:true})}</div>)}</div>{selectedMagic && <p className="player-hint">{selectedMagic.prepared} incantesimi preparati · {selectedMagic.cantrips} trucchetti conosciuti</p>}</>,'player-wizard-slot-box')}
+                    {box('Slot incantesimo',<>
+                        {template === 'wizard-pdf' && <div className="player-wizard-slot-diagram">
+                            <div className="player-wizard-slot-caption">Totali</div>
+                            {slotCircles('total')}
+                            <div className="player-wizard-slot-caption">Lanciati</div>
+                            {slotCircles('used')}
+                            <div className="player-wizard-spell-count player-wizard-prepared-count"><span>Incantesimi<br />preparati</span><output aria-label="Incantesimi preparati">{selectedSpellCount('prepared')}</output></div>
+                            <div className="player-wizard-spell-count player-wizard-cantrip-count"><span>Trucchetti<br />conosciuti</span><output aria-label="Trucchetti conosciuti">{selectedSpellCount('cantrips')}</output></div>
+                        </div>}
+                        {template === 'wizard-pdf' ? <details className="player-wizard-slot-edit"><summary>Modifica conteggi</summary>{slotFields}</details>
+                            : <>{slotFields}{selectedMagic && <p className="player-hint">{selectedMagic.prepared} incantesimi preparati · {selectedMagic.cantrips} trucchetti conosciuti</p>}</>}
+                    </>,'player-wizard-slot-box')}
                 </div>
             </div>}
             {visiblePage === 0 && !wizardTemplate && <div className="player-stat-page">
                 <div className="player-column">
                    <div className="player-score-skills">
                         <div className="player-scores">{scores.map((key) => <div className="player-score" key={key}>
-                            {field(key, characterFields[key], { base: true })}<output aria-label={`Modificatore ${characterFields[key]}`}>{modifier(sheet[key]) || '—'}</output>
+                            {field(key, characterFields[key], { base: true })}<output aria-label={`Modificatore ${characterFields[key]}`}>{modifier(key) || '—'}</output>
                         </div>)}</div>
                         <div className="player-column">
                             {box('Ispirazione', check('inspiration', 'Ispirazione'))}
@@ -339,7 +383,7 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
                 <div className={`player-story-page${wizardTemplate ? ' player-wizard-story' : ''}`}>
                     <div className="player-column">
                         {box('Aspetto del personaggio', <>
-                            <div className="player-portrait">{details.portrait ? <img src={details.portrait} alt={`Ritratto di ${sheet.name || 'personaggio'}`} /> : <span>Ritratto del personaggio</span>}</div>
+                            <div className="player-wizard-portrait-frame"><div className="player-portrait">{details.portrait ? <img src={details.portrait} alt={`Ritratto di ${sheet.name || 'personaggio'}`} /> : <span>Ritratto del personaggio</span>}</div></div>
                             <details className="player-portrait-controls" open={!wizardTemplate}><summary>Modifica ritratto e aspetto</summary>
                             <label className="player-field"><span>Carica ritratto (PNG, JPEG o WebP, massimo 2 MB)</span><input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => {
                                 const file = event.target.files?.[0]
@@ -357,14 +401,33 @@ export function PlayerSheet({ sheet, catalog, onChange: emitChange }: { sheet: C
                             {details.portrait && <button type="button" className="end-combat" onClick={() => detail('portrait', '')}>Rimuovi ritratto</button>}
                             {field('appearanceDescription', 'Aspetto', { multiline: true })}
                             </details>
-                        </>)}
+                        </>,'player-wizard-portrait-box')}
                         {box(wizardTemplate ? 'Talenti e tratti aggiuntivi' : 'Tratti e privilegi aggiuntivi', <>{wizardTemplate && field('feats','Talenti',{multiline:true})}{field('additionalTraits','Tratti e privilegi aggiuntivi',{multiline:true})}</>, 'player-box-grow player-wizard-additional')}
                         {wizardTemplate && <>{box('Background',field('backgroundStory','Storia e background',{multiline:true}),'player-wizard-background')}<div className="player-two-fields player-wizard-allies">{box('Alleati',field('faction','Alleati',{multiline:true}))}{box('Nemici',field('personality.Nemici','Nemici',{multiline:true}))}</div></>}
                     </div>
                     <div className="player-column">
                         {!wizardTemplate && box('Fazione', <>{field('factionName', 'Nome')}{field('factionSymbol', 'Simbolo e descrizione', { multiline: true })}{field('faction', 'Fazione e alleati', { multiline: true })}</>)}
-                        {wizardTemplate && ['Tratti caratteriali','Ideali','Legami','Difetti'].map((label) => box(label,field(`personality.${label}`,label,{multiline:true})))}
-                        {wizardTemplate ? box('Zaino e borse', <>{Array.from({length:12},(_,i) => <div className="player-wizard-inventory-row" key={i}>{field(`inventory.${i}.0`,i === 0 ? 'Oggetto' : `Oggetto ${i+1}`)}{field(`inventory.${i}.2`,i === 0 ? 'Qtà' : `Qtà ${i+1}`,{numeric:true})}</div>)}<div className="player-coins">{['MR','MA','ME','MO','MP'].map((coin) => field(`coins.${coin}`,coin,{numeric:true}))}</div></>, 'player-wizard-backpack') : table('Inventario','inventory',['Equipaggiamento','Peso'],12)}
+                        {wizardTemplate && (template === 'wizard-pdf' ? <div className="player-wizard-personality">{personalityFields}</div> : personalityFields)}
+                        {wizardTemplate ? box('Zaino e borse', <>
+                            {Array.from({length:12},(_,i) => <div className="player-wizard-inventory-row" key={i}>
+                                {field(`inventory.${i}.0`,i === 0 ? 'Oggetto' : `Oggetto ${i+1}`)}
+                                {field(`inventory.${i}.2`,i === 0 ? 'Qtà' : `Qtà ${i+1}`,{numeric:true})}
+                                {template === 'wizard-pdf' && <>
+                                    {field(`inventory.${i}.1`,i === 0 ? 'Peso' : `Peso ${i+1}`)}
+                                    <label className="player-field">
+                                        <span>{i === 0 ? 'Peso tot' : `Peso totale ${i+1}`}</span>
+                                        <input readOnly value={characterFieldValue(sheet, `inventory.${i}.3`)} />
+                                    </label>
+                                </>}
+                            </div>)}
+                            {template === 'wizard-pdf' && <div className="player-wizard-weights">
+                                {[['carriedWeight', 'Peso trasportato (kg)'], ['maximumWeight', 'Peso massimo (kg)']].map(([key, label]) => <label className="player-field" key={key}>
+                                    <span>{label}</span>
+                                    <input type="number" min="0" step="any" value={details[key] ?? ''} onChange={(event) => detail(key, event.target.value)} />
+                                </label>)}
+                            </div>}
+                            <div className="player-coins">{['MR','MA','ME','MO','MP'].map((coin) => field(`coins.${coin}`,coin,{numeric:true}))}</div>
+                        </>, 'player-wizard-backpack') : table('Inventario','inventory',['Equipaggiamento','Peso'],12)}
                         {!wizardTemplate && <div className="player-two-fields">{field('carriedWeight', 'Peso trasportato (kg)')}{field('maximumWeight', 'Peso massimo trasportabile (kg)')}</div>}
                     </div>
                     <div className="player-column">{!wizardTemplate && ['Tratti caratteriali', 'Ideali', 'Legami', 'Difetti', 'Nemici'].map((label) => <div key={label}>{box(label, field(`personality.${label}`, label, { multiline: true }))}</div>)}
