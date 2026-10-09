@@ -669,6 +669,30 @@ Verificato anche nel browser: riparazione di un tiro salvezza obsoleto, modifica
 
 ### Tutorial di creazione del personaggio
 
+La pagina incantesimi usa indici condivisi dei nomi tradotti e dei duplicati per
+fonte, evitando ricerche ripetute nel catalogo per ogni opzione. Misure, confronto
+del rendering e controlli sono in [reports/spell-page-performance.md](reports/spell-page-performance.md).
+Test mirato: `node tests/spell-page.mjs`.
+
+Nella finestra Personaggio casuale, **Genera e rivedi** apre la bozza nel tutorial,
+mentre **Genera veloce** salva direttamente una nuova scheda con classe, razza e
+livello selezionati, senza aprire la revisione o creare una bozza da riprendere.
+Il personaggio resta modificabile aprendo la scheda salvata. Entrambe le modalità
+usano gli stessi controlli del generatore; la modalità veloce non registra conferme
+manuali sulle scelte di avanzamento o sui privilegi non automatizzati.
+
+La creazione casuale compila anche età, altezza in cm, peso corporeo in kg,
+carnagione, occhi, capelli, cicatrici, segni di riconoscimento e descrizione
+dell'aspetto. Sono suggerimenti narrativi modificabili nel passaggio Personalità;
+le fasce di generazione tengono conto dell'origine, senza imporre regole al
+personaggio. Il peso corporeo è distinto dal peso dell'inventario.
+
+Tutorial e schede condividono i campi `appearance.*` e `appearanceDescription`:
+i valori compaiono nella seconda pagina anche dei modelli Mago e Mago stile PDF.
+Le vecchie bozze con `age`, `height`, `weight`, `eyes`, `hair` e `appearance`
+restano leggibili; modificare o svuotare un campo aggiorna il valore condiviso.
+Verifica di compatibilità e rendering: `node tests/character-appearance.mjs`.
+
 La colonna Schede offre **Crea personaggio guidato**: nove passaggi con spiegazioni, scelte del catalogo, punteggi, dotazioni, magie, personalità e riepilogo. **Riprendi creazione** recupera la bozza salvata automaticamente nel browser; il salvataggio finale produce una scheda normale, utilizzabile in combattimento. I template grafici restano invariati.
 
 La guida Fandom di riferimento descrive il 2014; il percorso 2024 distingue gli adattamenti ufficiali delle opzioni storiche e le applicazioni ancora manuali. Fonti, dipendenze, verifiche e limiti del catalogo sono descritti in [docs/tutorial-creazione-personaggio.md](docs/tutorial-creazione-personaggio.md). Check mirato: `node tests/character-tutorial.mjs`.

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="it">
+<meta charset="utf-8">
+<title>Verifica esportazione scheda</title>
+<style>
+.test-privilege { display: flex; flex-direction: column; box-sizing: border-box; width: 340px; height: 170px; border: 2px solid; }
+.test-privilege label { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.test-privilege textarea { box-sizing: border-box; width: 100%; flex: 1; min-height: 0; font: 13px/1.4 Arial; }
+.player-paper output { clip-path: inset(50%); }
+</style>
+<p id="result">Verifica in corso…</p>
+<script type="module">
+// Run with the existing Vite server: /tests/print-character-sheet.html.
+import { prepareCharacterPrint } from '../src/utils/PrintCharacterSheet.ts'
+const assert = (condition, message) => { if (!condition) throw new Error(message) }
+const source = document.createElement('div')
+source.innerHTML = `<section class="player-paper" style="width:1120px;height:1200px">
+  <h2>Statistiche</h2><input aria-label="Nome" value="Valore precedente">
+  <input type="number" value="0"><input type="checkbox" checked>
+  <select><option value="">Seleziona…</option><option value="elf">Elfo</option></select>
+  <textarea>Testo precedente</textarea><button data-print="value" aria-pressed="true">3</button>
+  <button>Comando da escludere</button><div data-print="exclude">Messaggio da escludere</div>
+  <details><summary>Modifica</summary><p>Contenuto stampabile</p></details>
+  <section class="test-privilege"><h3>Privilegio della tradizione arcana</h3><label><span>Descrizione</span><textarea>Un privilegio del mago con descrizione.</textarea></label></section>
+  <div class="player-wizard-magic-combat"><details><summary>Privilegi e tratti limitati</summary><input aria-label="Privilegio limitato" value="Valore del pannello chiuso"></details></div>
+</section><section class="player-paper" style="width:1120px;height:1600px"><h2>Inventario</h2></section>
+<section class="player-paper" style="width:1120px;height:1200px"><h2>Incantesimi</h2></section>
+<section class="player-paper" style="width:1120px;height:1500px"><h2>Equipaggiamento indossato</h2></section>`
+document.body.append(source)
+source.querySelector('input').value = '<Nome modificato & non salvato>'
+source.querySelector('select').value = 'elf'
+source.querySelector('textarea').value = 'Testo aggiornato\nSeconda riga'
+const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><g transform="translate(0,0)"><rect width="10" height="10" fill="white"/></g></svg>'
+source.querySelector('.player-paper').style.backgroundImage = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`
+const before = source.innerHTML
+try {
+  let emptyRejected = false
+  try { await prepareCharacterPrint(document.createElement('div'), 'Vuoto') } catch { emptyRejected = true }
+  assert(emptyRejected, 'Una sorgente vuota non produce un PDF apparentemente valido')
+  const frame = await prepareCharacterPrint(source, 'Verifica')
+  const doc = frame.contentDocument
+  assert(doc.querySelectorAll('.sheet-print-page').length === 4, 'Tutte le pagine')
+  assert(!doc.querySelector('input,textarea,select,button,summary,[data-print="exclude"]'), 'Nessun controllo interattivo')
+  for (const value of ['<Nome modificato & non salvato>', 'Elfo', 'Testo aggiornato', 'Contenuto stampabile']) assert(doc.body.textContent.includes(value), `Valore aggiornato: ${value}`)
+  assert(!doc.body.textContent.includes('Comando da escludere'), 'Pulsante escluso')
+  assert(!doc.body.textContent.includes('Messaggio da escludere'), 'Messaggio escluso')
+  assert(source.innerHTML === before && source.querySelector('input').value.startsWith('<Nome'), 'Sorgente invariata')
+  assert(!doc.querySelector('.sheet-print-inventory'), 'Nessun inventario supplementare vuoto')
+  const originalPrivilege = source.querySelector('.test-privilege'), printedPrivilege = doc.querySelector('.test-privilege')
+  assert(originalPrivilege.offsetWidth === printedPrivilege.offsetWidth && originalPrivilege.offsetHeight === printedPrivilege.offsetHeight, 'Privilegi con dimensioni originali')
+  assert(frame.contentWindow.getComputedStyle(doc.querySelector('[data-print="value"]')).clipPath === 'none', 'Valori senza stili destinati agli output della scheda')
+  assert(!doc.querySelector('.player-wizard-magic-combat').textContent.trim() && doc.querySelector('.sheet-print-notes').textContent.includes('Valore del pannello chiuso'), 'Pannelli chiusi senza sovrapposizioni e dati conservati in appendice')
+  for (const page of doc.querySelectorAll('.sheet-print-page')) {
+    const paper = page.querySelector('.player-paper').getBoundingClientRect(), area = page.getBoundingClientRect()
+    assert(paper.width <= area.width + 1 && paper.height <= area.height + 1, 'Pagina contenuta nel foglio A4')
+    assert(Math.abs((paper.left - area.left) - (area.right - paper.right)) < 1, 'Foglio centrato con margini simmetrici')
+  }
+  frame.remove()
+  const inventory = document.createElement('section')
+  inventory.className = 'sheet-print-inventory'
+  inventory.innerHTML = '<h1>Inventario completo</h1><table><thead><tr><th>Oggetto</th><th>Qtà</th><th>Peso (kg)</th><th>Peso tot (kg)</th></tr></thead><tbody></tbody></table>'
+  for (let i = 0; i < 70; i++) {
+    const row = inventory.querySelector('tbody').insertRow()
+    for (const text of [`Oggetto ${i} con nome lungo`.repeat(3), '2', '0,25', '0,5']) row.insertCell().textContent = text
+  }
+  source.append(inventory)
+  const complete = await prepareCharacterPrint(source, 'Verifica inventario completo')
+  assert(complete.contentDocument.querySelectorAll('.sheet-print-inventory tbody tr').length === 70, 'Tutti gli oggetti una sola volta')
+  assert(complete.contentWindow.getComputedStyle(complete.contentDocument.querySelector('thead')).display === 'table-header-group', 'Intestazioni ripetibili')
+  complete.remove()
+  source.remove()
+  document.getElementById('result').textContent = 'PASS: valori aggiornati, tutte le pagine A4, controlli esclusi, sorgente invariata e inventario completo.'
+  document.getElementById('result').dataset.passed = 'true'
+} catch (error) {
+  document.getElementById('result').textContent = `FAIL: ${error.message}`
+  throw error
+}
+</script>
+</html>

@@ -7,9 +7,10 @@ import { InfoButton } from './InfoButton'
 import { useDialogDismiss } from '../utils/Dialog'
 import { PlayerSheet } from './PlayerSheet'
 import { pdfAbilities } from '../utils/PlayerAbilities'
-import { applyCreation, patchCalculatedSheetStats, characterCalculationIssues, spellSelection, type CreationData } from '../utils/PlayerCreation'
+import { applyCreation, patchCalculatedSheetStats, characterCalculationIssues, spellSelection, labelOf, type CreationData } from '../utils/PlayerCreation'
 import { newTutorial, parseTutorialDraft, tutorialDraftKey, tutorialIssues } from '../utils/CharacterTutorial'
 import { classId } from '../utils/Spellcasting'
+import { randomCharacter } from '../utils/RandomCharacter'
 
 const storageKey = 'dev-and-dice.character-sheets.v1'
 
@@ -49,11 +50,35 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
     const progressSaved = progressSnapshot === draft
     const dialog = useRef<HTMLDialogElement>(null)
     const initialDraft = useRef('')
+    const randomDialog=useRef<HTMLDialogElement>(null),dismissRandomDialog=useDialogDismiss()
+    const [randomOrigins,setRandomOrigins]=useState({characterClass:'',race:'',level:1})
+    const [randomError,setRandomError]=useState('')
 
     function openDraft(sheet: CharacterSheet) {
         const updated = creationData ? applyCreation(sheet, creationData) : sheet
         initialDraft.current = JSON.stringify(updated)
         setDraft({ ...updated })
+    }
+
+    function generateRandom(skipReview = false) {
+        if (!creationData || saved.blocked || tutorial.draft || tutorial.error) return
+        try {
+            const generated=randomCharacter(creationData,{...randomOrigins,skipReview})
+            if (skipReview) {
+                if (!writeSheets([...saved.sheets,generated])) {
+                    setRandomError('Impossibile salvare il personaggio. Libera spazio nel browser e riprova.')
+                    return
+                }
+                randomDialog.current?.close()
+                setRandomError('')
+                onSaved(generated)
+                return
+            }
+            if (!saveProgress(generated)) {setRandomError('Impossibile salvare la bozza. Libera spazio nel browser e riprova.');return}
+            randomDialog.current?.close()
+            setRandomError('')
+            openDraft(generated)
+        } catch (error) {setRandomError(error instanceof Error ? error.message : 'Generazione non riuscita. Nessun personaggio è stato sovrascritto.')}
     }
 
 
@@ -128,19 +153,22 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
         setConfirmTutorialExit(false)
     }
 
-    function discardTutorialDraft() {
-        if (!draft) return
+    function discardCreation() {
+        if (!draft || !guided) return
         closeTutorialExitPrompt()
         const sheets = saved.sheets.filter((sheet) => sheet.id !== draft.id)
         if (sheets.length !== saved.sheets.length && !writeSheets(sheets)) return
+        const isStoredDraft = tutorial.draft?.id === draft.id
         try {
-            if (tutorial.draft?.id === draft.id) localStorage.removeItem(tutorialDraftKey)
+            if (isStoredDraft) localStorage.removeItem(tutorialDraftKey)
         } catch {
             setError('Impossibile cancellare la bozza. La scheda resta aperta: riprova.')
             return
         }
-        if (tutorial.draft?.id === draft.id) setTutorial({ draft: null, error: '' })
+        if (isStoredDraft) setTutorial({ draft: null, error: '' })
         setProgressSnapshot(null)
+        setRandomOrigins({ characterClass: '', race: '', level: 1 })
+        setRandomError('')
         dialog.current?.close()
         setDraft(null)
         setError('')
@@ -232,6 +260,7 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
             {saved.error && <p role="alert">{saved.error}</p>}
             <button className="sort-turns" type="button" disabled={saved.blocked} onClick={() => openDraft(newCharacterSheet())}>+ Nuova scheda</button>
             <button className="sort-turns" type="button" disabled={saved.blocked || !creationData || !!tutorial.draft || !!tutorial.error} onClick={() => openDraft(newTutorial())}>+ Crea personaggio guidato</button>
+            <button className="sort-turns" type="button" disabled={saved.blocked || !creationData || !!tutorial.draft || !!tutorial.error} onClick={() => {setRandomError('');randomDialog.current?.showModal()}}>+ Crea personaggio casuale</button>
             {tutorial.error && <p role="alert">{tutorial.error}</p>}
             {tutorial.draft && !saved.sheets.some((s) => s.id === tutorial.draft!.id && s.playerDetails?.['tutorial.completed'] === 'true') && <button className="character-open tutorial-resume" type="button" disabled={!creationData} onClick={() => openDraft(tutorial.draft!)}>Riprendi creazione · {tutorial.draft.name || 'Personaggio senza nome'}</button>}
             {saved.sheets.length === 0 && <p className="library-empty">Crea una scheda e aggiungila al combattimento quando serve.</p>}
@@ -250,7 +279,7 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                 ))}
             </div>
             {combatStarted && <p className="library-help">Termina il combattimento per aggiungere partecipanti.</p>}
-            <dialog ref={dialog} className={`character-dialog${draft?.kind === 'PG' ? ' player-sheet-dialog' : ''}`} aria-labelledby="character-dialog-heading" {...dismissDialog} onClose={(event) => {
+            <dialog ref={dialog} className={`character-dialog${draft?.kind === 'PG' ? ' player-sheet-dialog' : ''}${guided ? ' tutorial-dialog' : ''}`} aria-labelledby="character-dialog-heading" {...dismissDialog} onClose={(event) => {
                 if (event.target !== event.currentTarget) return
                 deleteDialog.current?.close()
                 setDraft(null)
@@ -259,10 +288,10 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                 {draft && (
                     <form onSubmit={(event) => { event.preventDefault(); saveSheet() }}>
                         <div className="dialog-header">
-                            <h2 id="character-dialog-heading">{draft.name || 'Nuova scheda'}</h2>
+                            <h2 id="character-dialog-heading">{guided ? 'Creazione del personaggio' : draft.name || 'Nuova scheda'}</h2>
                             <button className="delete-turn" type="button" aria-label="Chiudi scheda" onClick={() => guided ? setConfirmTutorialExit(true) : closeDialog()}>×</button>
                         </div>
-                        {draft.kind === 'PG' ? <PlayerSheet sheet={draft} catalog={catalog} creationData={creationData} onChange={setDraft} /> : <div className="character-fields">
+                        {draft.kind === 'PG' ? <PlayerSheet sheet={draft} catalog={catalog} creationData={creationData} onChange={setDraft}>{guided && <><div className="tutorial-utility-buttons"><button type="button" onClick={closeDialog}>Salva e riprendi più tardi</button><button className="tutorial-discard" type="button" onClick={discardCreation} aria-label="Cancella la bozza del personaggio">Cancella</button></div><p className="tutorial-save-status" role="status">{progressSaved ? 'Progressi salvati in questo browser.' : 'Salvataggio dei progressi…'}</p>{error && <p className="tutorial-save-error" role="alert">{error}</p>}</>}</PlayerSheet> : <div className="character-fields">
                             {(Object.entries(characterFields) as [keyof typeof characterFields, string][]).map(([field, label]) => (
                                 <label key={field} className={field === 'notes' ? 'character-notes' : undefined}>
                                     <span>{field === 'initiative' && draft.kind !== 'PG' ? 'Iniziativa inserita' : label}</span>
@@ -321,17 +350,15 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                         </div>
                         <p className="library-help">Per mostri e PNG l’iniziativa nel combattimento resta vuota: il modificatore è un suggerimento, inserisci tu il risultato del tiro. Per i PG viene copiata l’iniziativa predefinita.</p>
                         </>}
-                        {error && <p role="alert">{error}</p>}
-                        <p className="library-help" role="status">{guided ? progressSaved ? 'Progressi salvati in questo browser.' : 'Salvataggio dei progressi…' : 'Le modifiche si salvano anche cliccando fuori dalla finestra.'}</p>
+                        {!guided && <>{error && <p role="alert">{error}</p>}
+                        <p className="library-help" role="status">Le modifiche si salvano anche cliccando fuori dalla finestra.</p>
                         <div className="turn-actions">
-                            {!guided && <button className="sort-turns" type="submit">Salva scheda</button>}
-                            {!guided && <button className="end-combat" type="button" onClick={closeDialog}>Annulla</button>}
-                            {guided && <button className="end-combat" type="button" onClick={closeDialog}>Salva e riprendi più tardi</button>}
-                            {guided && <button className="clear-turns" type="button" onClick={discardTutorialDraft}>Cancella scheda</button>}
+                            <button className="sort-turns" type="submit">Salva scheda</button>
+                            <button className="end-combat" type="button" onClick={closeDialog}>Annulla</button>
                             {saved.sheets.some((sheet) => sheet.id === draft.id) && (
                                 <button className="clear-turns" type="button" onClick={() => deleteDialog.current?.showModal()}>Elimina scheda</button>
                             )}
-                        </div>
+                        </div></>}
                     </form>
                 )}
             </dialog>
@@ -352,8 +379,22 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                 <h2 id="tutorial-exit-heading">Uscire dalla creazione guidata?</h2>
                 <div className="turn-actions">
                     <button autoFocus className="end-combat" type="button" onClick={() => { closeTutorialExitPrompt(); closeDialog() }}>Salva e riprendi più tardi</button>
-                    <button className="clear-turns" type="button" onClick={discardTutorialDraft}>Cancella scheda</button>
+                    <button className="clear-turns" type="button" onClick={discardCreation}>Cancella scheda</button>
                 </div>
+            </dialog>
+            <dialog ref={randomDialog} className="character-dialog" aria-labelledby="random-character-heading" {...dismissRandomDialog}>
+                <form onSubmit={(event) => {event.preventDefault();generateRandom()}}>
+                    <h2 id="random-character-heading">Personaggio casuale</h2>
+                    <p>D&D 5e 2014. Scegli il livello e fissa classe e razza, oppure lascia queste ultime casuali. «Genera e rivedi» apre il tutorial; «Genera veloce» salva direttamente il personaggio tra le schede.</p>
+                    <div className="tutorial-grid">
+                        <label className="player-field"><span>Classe</span><select value={randomOrigins.characterClass} onChange={(event) => setRandomOrigins({...randomOrigins,characterClass:event.target.value})}><option value="">Casuale</option>{creationData?.classes.filter((x) => !x.editions || x.editions.includes('2014')).map((x) => <option key={x.index} value={x.index}>{labelOf(x)}</option>)}</select></label>
+                        <label className="player-field"><span>Razza</span><select value={randomOrigins.race} onChange={(event) => setRandomOrigins({...randomOrigins,race:event.target.value})}><option value="">Casuale</option>{creationData?.races.filter((x) => !x.editions || x.editions.includes('2014')).map((x) => <option key={x.index} value={x.index}>{labelOf(x)}</option>)}</select></label>
+                        <label className="player-field"><span>Livello</span><select value={randomOrigins.level} onChange={(event) => setRandomOrigins({...randomOrigins,level:Number(event.target.value)})}>{Array.from({length:20},(_,i) => <option key={i+1} value={i+1}>{i+1}</option>)}</select></label>
+                    </div>
+                    <p className="player-hint">Caratteristiche: array standard assegnato casualmente. Competenze, lingue, dotazioni e magie usano le opzioni del catalogo. Sopra il livello 1 vanno verificati aumenti di caratteristica/talenti e avanzamenti nel tutorial. Il Ranger richiede ancora alcune scelte manuali. Per le regole 2024 usa la creazione guidata.</p>
+                    {randomError && <p role="alert">{randomError}</p>}
+                    <div className="turn-actions"><button className="sort-turns" type="submit">Genera e rivedi</button><button className="sort-turns" type="button" onClick={() => generateRandom(true)}>Genera veloce</button><button className="end-combat" type="button" onClick={() => randomDialog.current?.close()}>Annulla</button></div>
+                </form>
             </dialog>
         </aside>
     )

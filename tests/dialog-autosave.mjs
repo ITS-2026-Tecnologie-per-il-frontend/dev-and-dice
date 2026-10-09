@@ -6,6 +6,7 @@ import ts from 'typescript'
 import { newCharacterSheet } from '../src/utils/CharacterSheets.ts'
 import { newTutorial, tutorialDraftKey } from '../src/utils/CharacterTutorial.ts'
 import { withWizardCatalog } from '../src/utils/PlayerCreation.ts'
+import { randomCharacter } from '../src/utils/RandomCharacter.ts'
 
 const hooks = { values: [], cursor: 0, effects: [] }
 globalThis.dialogTestHooks = hooks
@@ -148,7 +149,7 @@ function findButton(node, label) {
     return findButton(node.props?.children,label)
 }
 assert.ok(findButton(sheetDialog,'Salva e riprendi più tardi'), 'The guided sheet must show the pause button at the bottom')
-assert.ok(findButton(sheetDialog,'Cancella scheda'), 'The guided sheet must show the discard button at the bottom')
+assert.ok(findButton(sheetDialog,'Cancella'), 'The guided sheet must show the discard button at the bottom')
 await outside()
 assert.equal(sheetDialog.props.ref.current.open, true, 'Clicking outside a guided creation must keep it open')
 assert.equal(exitPrompt().props.ref.current.open, true, 'Clicking outside a guided creation must show the required choice')
@@ -215,3 +216,28 @@ assert.ok(nodes.some((n) => n.props?.role==='alert' && String(n.props.children).
 props.creationData=loadedRules
 render()
 cleanups.forEach((cleanup) => cleanup())
+
+// The composed tutorial footer must still use the library's real save/discard handlers.
+const final=randomCharacter(loadedRules,{characterClass:'wizard',race:'human'},()=>.42)
+ref.current.open(final); render()
+edit({playerDetails:{...final.playerDetails,'tutorial.step':'8','sheet.template':'wizard-pdf'}})
+const beforeFinal=JSON.parse(stored).length
+nodes.find((node)=>node.type==='form').props.onSubmit({preventDefault(){}}); render()
+assert.equal(JSON.parse(stored).length,beforeFinal+1)
+const completed=JSON.parse(stored).find((sheet)=>sheet.id===final.id)
+assert.equal(completed.playerDetails['tutorial.active'],'false')
+assert.equal(completed.playerDetails['tutorial.completed'],'true')
+assert.equal(completed.playerDetails['sheet.template'],'wizard-pdf')
+assert.ok(completed.playerDetails['spell.1.0.name'],'Final save retains selected spells')
+assert.equal(progress,null,'Final save removes the draft')
+ref.current.open(newTutorial()); render()
+pause(); render()
+assert.ok(progress)
+nodes.find((node)=>node.type==='button' && node.props.className?.includes('tutorial-resume')).props.onClick(); render()
+const libraryBeforeDiscard=stored
+nodes.find((node)=>node.type==='button' && node.props.children==='Cancella').props.onClick(); render()
+assert.equal(progress,null)
+assert.equal(stored,libraryBeforeDiscard,'Discarding a tutorial cannot delete saved characters')
+assert.equal(sheetDialog.props.ref.current.open,false)
+cleanups.forEach((cleanup)=>cleanup())
+console.log('Tutorial footer handlers passed: final save, template/spell retention, draft removal, pause/resume and discard without deleting saved sheets.')

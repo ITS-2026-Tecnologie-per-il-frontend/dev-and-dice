@@ -1,0 +1,135 @@
+/* Only the creation flow: sheet templates retain their own paper styles. */
+.character-dialog.player-sheet-dialog.tutorial-dialog { width: min(1120px, calc(100% - 32px)); max-width: calc(100% - 32px); padding: 24px 28px 0; scroll-padding-block: 20px 180px; }
+.tutorial-dialog .dialog-header .delete-turn { min-width: 44px; min-height: 44px; }
+.character-tutorial {
+    --tutorial-accent: #147d72;
+    --tutorial-error: #a32731;
+    --tutorial-surface: color-mix(in srgb, var(--bg) 96%, var(--tutorial-accent));
+    --tutorial-control-border: #8b8492;
+    padding: 16px 0 0; color: var(--text-h); font: 15px/1.55 var(--sans); text-align: left;
+}
+.character-tutorial *, .character-tutorial *::before, .character-tutorial *::after { box-sizing: border-box; }
+.character-tutorial :is(h3,h4,p,ol,ul,dl) { margin-top: 0; }
+.character-tutorial p { margin-bottom: 14px; }
+.character-tutorial button { min-height: 44px; padding: 9px 14px; border: 1px solid var(--tutorial-control-border); border-radius: 5px; font: inherit; font-weight: 600; line-height: 1.4; color: var(--text-h); background: var(--bg); cursor: pointer; }
+.character-tutorial button:hover:enabled { border-color: var(--tutorial-accent); background: var(--tutorial-surface); }
+.character-tutorial button:disabled { opacity: .5; cursor: default; }
+.character-tutorial :is(button,input,select,textarea,summary,a,[tabindex]):focus-visible { outline: 3px solid var(--tutorial-accent); outline-offset: 3px; }
+.character-tutorial :is(input,select,textarea,button,[tabindex]) { scroll-margin-block: 24px 190px; }
+.character-tutorial .tutorial-skip { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.character-tutorial .tutorial-skip:focus { position: relative; display: inline-block; width: auto; height: auto; clip-path: none; padding: 10px; margin-bottom: 12px; }
+.tutorial-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding-bottom: 22px; border-bottom: 1px solid var(--border); }
+.tutorial-header .tutorial-character-name { margin-bottom: 2px; font-size: 19px; font-weight: 700; overflow-wrap: anywhere; }
+.tutorial-header .tutorial-character-context { margin: 0; color: var(--text); font-size: 13px; }
+.tutorial-progress { display: grid; gap: 7px; width: 180px; flex-shrink: 0; font-size: 13px; }
+.tutorial-progress progress { width: 100%; height: 6px; border: 0; border-radius: 4px; overflow: hidden; background: var(--border); accent-color: var(--tutorial-accent); }
+.tutorial-progress progress::-webkit-progress-bar { background: var(--border); }
+.tutorial-progress progress::-webkit-progress-value { background: var(--tutorial-accent); }
+.tutorial-progress progress::-moz-progress-bar { background: var(--tutorial-accent); }
+.tutorial-layout { display: grid; grid-template-columns: 212px minmax(0, 1fr); align-items: start; gap: 32px; padding-top: 24px; }
+.tutorial-navigation { position: sticky; top: 20px; min-width: 0; }
+.tutorial-navigation ol { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; }
+.tutorial-navigation button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 62px; padding: 9px; text-align: left; border-color: transparent; }
+.tutorial-navigation button[aria-current='step'] { border-color: var(--tutorial-accent); background: var(--tutorial-surface); }
+.tutorial-step-number { display: grid; place-items: center; flex-shrink: 0; width: 28px; height: 28px; border: 1px solid var(--tutorial-control-border); border-radius: 50%; font-size: 12px; }
+.tutorial-navigation [aria-current='step'] .tutorial-step-number { color: white; background: #147d72; border-color: #147d72; }
+.tutorial-step-title { display: block; font-size: 13px; }
+.tutorial-navigation small { display: block; font-size: 11px; font-weight: 400; color: var(--text); }
+.tutorial-step-check { margin-left: auto; color: var(--tutorial-accent); }
+.tutorial-step-content { min-width: 0; padding-bottom: 24px; }
+.tutorial-step-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.tutorial-step-heading h3 { margin: 0; font: 700 28px/1.2 Georgia, serif; letter-spacing: -.3px; }
+.tutorial-step-state { color: var(--tutorial-accent); font-size: 12px; font-weight: 600; }
+.tutorial-step-state.is-pending { color: var(--tutorial-error); }
+.tutorial-panel, .tutorial-summary-section { padding-block: 20px; border-top: 1px solid var(--border); }
+.tutorial-panel > h4, .tutorial-summary-heading h4 { margin: 0 0 14px; font-size: 16px; font-weight: 700; }
+.tutorial-panel > :last-child { margin-bottom: 0; }
+.tutorial-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 16px; margin: 16px 0; }
+.character-tutorial .player-field { gap: 7px; margin: 14px 0; color: var(--text-h); }
+.character-tutorial .tutorial-grid .player-field { margin: 0; }
+.character-tutorial .player-field > span { font-size: 13px; text-transform: none; letter-spacing: 0; }
+.tutorial-field-label { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; font-weight: 600; }
+.tutorial-field-badge { font-size: 11px; font-weight: 400; color: var(--text); }
+.character-tutorial :is(input:not([type='checkbox']),select,textarea) { width: 100%; min-width: 0; min-height: 44px; padding: 10px; border: 1px solid var(--tutorial-control-border); border-radius: 4px; color: var(--text-h); background: var(--bg); font: inherit; }
+.character-tutorial textarea { min-height: 100px; resize: vertical; }
+.character-tutorial [aria-invalid='true'] { border-color: var(--tutorial-error); }
+.character-tutorial .tutorial-field-error { display: block; color: var(--tutorial-error); font-size: 13px; font-weight: 400; text-transform: none; }
+.character-tutorial .player-check { gap: 10px; min-height: 44px; font-size: 14px; color: var(--text-h); cursor: pointer; }
+.character-tutorial input[type='checkbox'] { width: 18px; height: 18px; margin: 0; flex-shrink: 0; accent-color: #147d72; }
+.tutorial-check { margin: 12px 0; }
+.character-tutorial .player-hint, .character-tutorial small { color: var(--text); font-size: 13px; line-height: 1.5; }
+.character-tutorial .tutorial-field-badge { font-size: 11px; }
+.tutorial-preview { padding: 16px; border-left: 3px solid var(--tutorial-accent); margin: 16px 0; background: var(--tutorial-surface); }
+.tutorial-preview h4 { margin: 0 0 8px; font-size: 14px; }
+.tutorial-preview p:last-child { margin-bottom: 0; }
+.tutorial-prose { white-space: pre-wrap; overflow-wrap: anywhere; }
+.character-tutorial summary { padding: 10px 0; font-size: 14px; font-weight: 600; cursor: pointer; }
+.tutorial-help { margin: 12px 0; }
+.tutorial-help p { margin: 6px 0 12px; }
+.tutorial-scores { grid-template-columns: repeat(3, minmax(0,1fr)); }
+.character-tutorial .tutorial-score-total { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; padding: 10px; background: var(--tutorial-surface); font-size: 12px; font-weight: 400; }
+.tutorial-score-total strong { font-size: 22px; }
+.tutorial-score-total span { flex-basis: 100%; color: var(--text); }
+.character-tutorial .creation-choice { min-width: 0; margin: 16px 0; padding: 12px 16px 16px; border: 1px solid var(--border); border-radius: 4px; }
+.character-tutorial .creation-choice legend { padding: 0 5px; font-size: 14px; font-weight: 600; }
+.character-tutorial .creation-choice-warning { color: var(--tutorial-error); font-size: 13px; }
+.character-tutorial .player-box { color: var(--text-h); border: 1px solid var(--border); border-radius: 4px; background: var(--bg); }
+.character-tutorial .player-box h3 { color: var(--text-h); font-size: 14px; text-align: left; border-color: var(--border); }
+.tutorial-spells { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(230px,100%),1fr)); gap: 12px; padding: 12px 0; }
+.tutorial-spell { min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: 4px; content-visibility: auto; contain-intrinsic-size: auto 180px; }
+.tutorial-spell p { font-size: 13px; }
+.tutorial-issues { margin: 20px 0; padding: 16px; border: 1px solid var(--tutorial-error); border-radius: 4px; }
+.tutorial-issues strong { color: var(--tutorial-error); }
+.tutorial-issues .player-hint { margin-top: 8px; }
+.tutorial-issues ul { margin: 8px 0 0; padding-left: 20px; }
+.tutorial-issues button { padding: 8px 4px; border: 0; text-align: left; text-decoration: underline; text-underline-offset: 3px; font-size: 13px; font-weight: 400; }
+.tutorial-summary-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.tutorial-summary-heading h4 { margin: 0; }
+.tutorial-summary-heading button { font-size: 13px; }
+.tutorial-summary { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px 24px; margin: 0; }
+.tutorial-summary dt { font-size: 12px; color: var(--text); }
+.tutorial-summary dd { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
+.tutorial-summary-pending { margin: 14px 0 0; font-size: 13px; color: var(--tutorial-error); }
+.tutorial-calculated dd { font-size: 24px; font-weight: 700; }
+.tutorial-sources { margin-top: 24px; color: var(--text); font-size: 13px; }
+.tutorial-sources a, .tutorial-skip { color: var(--tutorial-accent); text-underline-offset: 3px; }
+.tutorial-footer { position: sticky; bottom: 0; z-index: 2; display: grid; grid-template-columns: auto minmax(0,1fr); gap: 8px 20px; padding: 16px 0 12px; border-top: 1px solid var(--border); background: var(--bg); }
+.tutorial-actions, .tutorial-utility-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+.character-tutorial button.tutorial-primary { border-color: #147d72; color: white; background: #147d72; }
+.character-tutorial button.tutorial-primary:hover:enabled { background: #0e625a; }
+.tutorial-draft-actions { text-align: right; }
+.tutorial-utility-buttons { justify-content: flex-end; }
+.character-tutorial button.tutorial-discard { border-color: var(--tutorial-error); color: var(--tutorial-error); }
+.tutorial-draft-actions .tutorial-save-status, .tutorial-footer .tutorial-save-hint { margin: 6px 0 0; font-size: 12px; color: var(--text); }
+.tutorial-draft-actions .tutorial-save-error { margin: 8px 0 0; color: var(--tutorial-error); font-size: 13px; }
+.tutorial-footer .tutorial-save-hint { grid-column: 1 / -1; }
+.tutorial-resume { padding: .75rem; margin-top: .5rem; }
+@media (prefers-color-scheme: dark) {
+    .character-tutorial { --tutorial-accent: #6ed4c4; --tutorial-error: #f2a8a8; --tutorial-control-border: #858996; }
+}
+@media (max-width: 850px) {
+    .tutorial-layout { grid-template-columns: minmax(0,1fr); gap: 22px; }
+    .tutorial-navigation { position: static; }
+    .tutorial-navigation ol { display: flex; gap: 8px; overflow-x: auto; padding: 4px 4px 12px; scroll-snap-type: x proximity; }
+    .tutorial-navigation li { flex: 0 0 166px; scroll-snap-align: start; }
+    .tutorial-navigation button { height: 100%; border-color: var(--border); }
+    .tutorial-navigation small { font-size: 12px; }
+}
+@media (max-width: 640px) {
+    .character-dialog.player-sheet-dialog.tutorial-dialog { width: calc(100% - 16px); max-width: calc(100% - 16px); padding: 16px 12px 0; }
+    .tutorial-header { gap: 12px; padding-bottom: 16px; }
+    .tutorial-progress { width: 100%; }
+    .tutorial-step-heading h3 { font-size: 25px; }
+    .tutorial-grid, .tutorial-summary, .character-tutorial :is(.player-two-fields,.player-three-fields) { grid-template-columns: minmax(0,1fr); }
+    .tutorial-scores { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .tutorial-footer { grid-template-columns: minmax(0,1fr); padding-top: 12px; gap: 6px; }
+    .tutorial-actions button { flex: 1; }
+    .tutorial-draft-actions { text-align: left; }
+    .tutorial-utility-buttons { justify-content: space-between; }
+    .tutorial-utility-buttons button:first-child { flex: 1; }
+    .tutorial-footer .tutorial-save-hint { display: none; }
+}
+@media (max-height: 650px) {
+    .tutorial-footer { position: static; }
+    .tutorial-navigation { position: static; }
+}

@@ -3,6 +3,7 @@ import { castingAbilityKey, classId, spellEdition, spellProfile, spellCounts, gr
 import { wizardFeatures2024, wizardBookIssues, wizardBookLimits, wizardFeatureSelected, selectedWizardFeatures, addWizardFeatureSpells, wizardSpellPool, wizardWardMaximum, featureResourceKey } from './Wizard.ts'
 import { reconcileInventory, ownedInventoryItems, inventoryEquipment, inventoryFieldValue, inventoryReferenceKey, referencedInventoryItem, updateInventoryField, projectInventory, inventoryCarriedWeight, inventoryItems, type InventoryGrant } from './Inventory.ts'
 import type { Catalog } from './Catalog.ts'
+import { appearanceFieldKey, appearanceLegacyKey } from './CharacterAppearance.ts'
 
 export const abilityKeys = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const
 export type AbilityKey = typeof abilityKeys[number]
@@ -18,7 +19,7 @@ export type Origin = Ref & {
     hit_die?: number; savingThrowAbilities?: AbilityKey[]; castingAbility?: AbilityKey; abilityScoreImprovementLevels?: number[];
     desc?: string[]; localizations?: { it?: { description?: string } };
     class?: Ref; feature?: { name: string; desc: string[] }; starting_gold?: { quantity: number; unit: string };
-    trait_specific?: { spell_options?: Omit<Choice, 'type'> };
+    trait_specific?: { spell_options?: Omit<Choice, 'type'>; subtrait_options?: Omit<Choice, 'type'> };
     minimumLevel?: number; editions?: RulesEdition[]; status?: 'published' | 'ua' | 'archived-ua'; sources?: string[]; sourceUrl?: string; automationStatus?: string;
     features?: ClassFeature[];
 }
@@ -28,6 +29,7 @@ export type ClassFeature = Ref & { class: Ref; subclass?: Ref; level: number; de
     grants?: { index: string; name: string; level: number; minimum?: number; always?: boolean; free?: boolean }[]; grantOptions?: string[];
 }
 export type CreationData = {
+    experienceThresholds?: { levels: { level: number; minimumXP: number }[] };
     classes: Origin[]; subclasses: Origin[]; races: Origin[]; subraces: Origin[]; backgrounds: Origin[]; alignments: Ref[]; languages: Ref[]; traits: Origin[];
     features: ClassFeature[];
     levels: { index: string; level: number; class: Ref; subclass?: Ref; spellcasting?: Record<string, number>; class_specific?: { unarmored_movement?: number } }[];
@@ -47,7 +49,7 @@ export function loadCreationData(): Promise<CreationData> {
         const response = await fetch(`${import.meta.env.BASE_URL}data/${file}.json`)
         if (!response.ok) throw new Error('Impossibile caricare le opzioni del personaggio.')
         return response.json()
-    })).then(([options, equipment, rules, wizard]) => withWizardCatalog({ ...options, ...equipment, skills: rules.skills }, wizard))
+    })).then(([options, equipment, rules, wizard]) => withWizardCatalog({ ...options, ...equipment, skills: rules.skills, experienceThresholds:rules.experienceThresholds }, wizard))
         .catch((error: unknown) => { cached = undefined; throw error })
     return cached
 }
@@ -64,13 +66,14 @@ export const modifier = abilityModifier
 export const creationEnabled = (sheet: CharacterSheet) => sheet.playerDetails?.['creation.enabled'] === 'true'
 
 export function characterFieldValue(sheet: CharacterSheet, key: string): string {
+    key = appearanceFieldKey(key)
     const owned = inventoryFieldValue(sheet,key)
     if (owned !== undefined) return owned
     const score = /^modifier\.(strength|dexterity|constitution|intelligence|wisdom|charisma)$/.exec(key)?.[1] as AbilityKey | undefined
     if (score) return signedBonus(modifier(sheet[score]))
     const row = /^inventory\.(\d+)\.3$/.exec(key)?.[1]
     if (row !== undefined) return inventoryTotalWeight(sheet.playerDetails?.[`inventory.${row}.2`] ?? '', sheet.playerDetails?.[`inventory.${row}.1`] ?? '')
-    return Object.hasOwn(characterFields, key) ? sheet[key as keyof typeof characterFields] : sheet.playerDetails?.[key] ?? ''
+    return Object.hasOwn(characterFields, key) ? sheet[key as keyof typeof characterFields] : sheet.playerDetails?.[key] ?? sheet.playerDetails?.[appearanceLegacyKey(key) ?? key] ?? ''
 }
 
 export function characterFieldMode(sheet: CharacterSheet, key: string): 'automatic' | 'overridable' | 'manual' {
@@ -82,11 +85,14 @@ export function characterFieldMode(sheet: CharacterSheet, key: string): 'automat
 
 // Le chiavi sono quelle dei dati salvati, senza riferimenti al template o alla pagina.
 export function updateCharacterField(sheet: CharacterSheet, key: string, value: string): CharacterSheet {
+    key = appearanceFieldKey(key)
     if (characterFieldMode(sheet, key) === 'automatic') return sheet
     if (sheet.playerDetails?.['inventory.version'] === '1' && ['equipment','consumables','attunedItems'].includes(key)) return sheet
     const inventory = updateInventoryField(sheet,key,value)
     if (inventory) return inventory
     const d = { ...sheet.playerDetails }
+    const legacy = appearanceLegacyKey(key)
+    if (legacy) delete d[legacy]
     if (Object.hasOwn(characterFields, key)) {
         if (creationEnabled(sheet) && abilityKeys.includes(key as AbilityKey)) {
             const score = integerValue(value), bonus = integerValue(d[`creation.bonus.${key}`]) ?? 0
@@ -212,6 +218,7 @@ export function creationChoices(sheet: CharacterSheet, data: CreationData): { ch
         ;(Array.isArray(choices) ? choices : choices ? [choices] : []).forEach((choice, i) => result.push({ choice, path: `choice.trait.${ref.index}.${i}`, label: labelOf(ref) }))
         if (trait?.language_options) result.push({ choice: trait.language_options, path: `choice.trait.${ref.index}.language`, label: 'Linguaggio aggiuntivo' })
         if (trait?.trait_specific?.spell_options) result.push({ choice: { ...trait.trait_specific.spell_options, type: 'racial-spells' }, path: `choice.trait.${ref.index}.spell`, label: 'Trucchetto razziale (Intelligenza)' })
+        if (trait?.trait_specific?.subtrait_options) result.push({ choice: { ...trait.trait_specific.subtrait_options, type: 'trait' }, path: `choice.trait.${ref.index}.ancestry`, label: labelOf(ref) })
     }
     for (const feature of data.features.filter((x) => x.class.index === characterClass?.index && (!x.subclass || x.subclass.index === selectedOrigins(sheet, data).subclass?.index) && x.level <= Number(sheet.level) && (x.editions ? x.editions.includes(spellEdition(sheet)) : spellEdition(sheet) === '2014'))) {
         const specific = feature.feature_specific
@@ -343,7 +350,8 @@ export function applyCreation(input: CharacterSheet, data: CreationData): Charac
     }
     put('racialSpells', racialSpells.join('\n'))
     put('spellGrants', sheetWithSpellGrants(sheet, data).playerDetails!.spellGrants)
-    put('racialTraits', [...traits, ...(background ? [background] : [])].map((x) => `${labelOf(x)}\n${x.desc?.join('\n') ?? (x.feature ? `${x.feature.name}\n${x.feature.desc.join('\n')}` : '')}`).join('\n\n'))
+    const selectedTraits = choices.filter((x) => x.choice.type === 'trait').flatMap(({choice,path}) => resolveChoice(choice,path,d,data)).flatMap((x) => data.traits.find((trait) => trait.index===x.ref.index) ?? [])
+    put('racialTraits', [...traits, ...selectedTraits, ...(background ? [background] : [])].map((x) => `${labelOf(x)}\n${x.desc?.join('\n') ?? (x.feature ? `${x.feature.name}\n${x.feature.desc.join('\n')}` : '')}`).join('\n\n'))
     put('classFeatures', characterClass?.index === 'wizard' && sheet.playerDetails?.['rules.edition'] === '2024' ? wizardFeatures2024({ ...sheet, playerDetails: { ...d, 'creation.subclass': subclass?.index ?? '' } }) : data.features.filter((x) => x.class.index === characterClass?.index && (!x.subclass || x.subclass.index === subclass?.index) && x.level <= level && (x.editions ? x.editions.includes(edition) : edition === '2014') && (!x.choice || wizardFeatureSelected(sheet, x, data)) && (!x.parent || selectedFeatures.has(x.index))).map((x) => `${labelOf(x)} (livello ${x.level})\n${x.desc.join('\n')}${x.activation && x.sourceUrl ? `\nFonte: ${x.sourceUrl}` : ''}`).join('\n\n'))
     put('wizard.featureRules', JSON.stringify(characterClass?.index === 'wizard' ? selectedWizardFeatures(sheet, data) : []))
     if (characterClass?.index === 'wizard' && spellEdition(sheet) === '2014' && level >= 3 && d['wizard.cantripFormulas'] === 'true') put('classFeatures', next.classFeatures + '\n\nCantrip Formulas (livello 3)\nRegola opzionale: dopo un riposo lungo puoi sostituire un trucchetto da mago consultando il libro.')

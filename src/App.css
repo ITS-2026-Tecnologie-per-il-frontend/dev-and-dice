@@ -187,6 +187,8 @@
     margin-top: 8px;
 }
 
+.discard-creation { margin-left: auto; }
+
 .sort-turns,
 .end-combat,
 .clear-turns,
@@ -629,7 +631,3 @@ html { scroll-behavior: smooth; }
 .hitpoint-buttons .apply-damage { width: 25px; font-size: 18px; border-radius: 4px 0 0 4px; }
 .hitpoint-buttons .apply-healing { border-radius: 0 4px 4px 0; }
 .apply-healing { border-color: #147d72; }
-
-.catalog-settings { display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; font-size: 14px; }
-.catalog-settings label { display: flex; align-items: center; gap: 8px; }
-.catalog-settings select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text-h); font: inherit; }

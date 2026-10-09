@@ -1,0 +1,355 @@
+{
+  "measurement": "React server rendering of spell page: CPU work and markup; excludes browser DOM, layout and network",
+  "cases": [
+    {
+      "characterClass": "wizard",
+      "level": 1,
+      "template": "generic",
+      "savedSpells": 9,
+      "page2Ms": 42.520500000000084,
+      "spellPageMs": [
+        283.7002,
+        291.82849999999985,
+        278.4506000000001
+      ],
+      "medianMs": 283.7002,
+      "editMs": 256.405,
+      "rows": 72,
+      "options": 1336,
+      "topSamples": [
+        [
+          "(anonymous)",
+          201
+        ],
+        [
+          "spellLabel",
+          146
+        ],
+        [
+          "process.env.NODE_ENV.exports.jsxDEV",
+          51
+        ],
+        [
+          "ReactElement",
+          12
+        ],
+        [
+          "spellRowState",
+          5
+        ],
+        [
+          "(garbage collector)",
+          5
+        ],
+        [
+          "createTask",
+          4
+        ],
+        [
+          "spellRow",
+          3
+        ]
+      ]
+    },
+    {
+      "characterClass": "wizard",
+      "level": 1,
+      "template": "wizard",
+      "savedSpells": 9,
+      "page2Ms": 29.924399999999878,
+      "spellPageMs": [
+        245.40560000000005,
+        233.70929999999998,
+        341.4151999999999
+      ],
+      "medianMs": 245.40560000000005,
+      "editMs": 303.25289999999995,
+      "rows": 72,
+      "options": 1209,
+      "topSamples": [
+        [
+          "(anonymous)",
+          136
+        ],
+        [
+          "spellLabel",
+          129
+        ],
+        [
+          "process.env.NODE_ENV.exports.jsxDEV",
+          111
+        ],
+        [
+          "(garbage collector)",
+          10
+        ],
+        [
+          "renderElement",
+          8
+        ],
+        [
+          "spellRow",
+          7
+        ],
+        [
+          "ReactElement",
+          7
+        ],
+        [
+          "retryNode",
+          2
+        ]
+      ]
+    },
+    {
+      "characterClass": "wizard",
+      "level": 1,
+      "template": "wizard-pdf",
+      "savedSpells": 9,
+      "page2Ms": 66.17169999999987,
+      "spellPageMs": [
+        345.1122999999998,
+        337.9857000000002,
+        347.21669999999995
+      ],
+      "medianMs": 345.1122999999998,
+      "editMs": 331.52120000000014,
+      "rows": 72,
+      "options": 1209,
+      "topSamples": [
+        [
+          "process.env.NODE_ENV.exports.jsxDEV",
+          227
+        ],
+        [
+          "spellLabel",
+          125
+        ],
+        [
+          "(anonymous)",
+          122
+        ],
+        [
+          "spellRow",
+          17
+        ],
+        [
+          "(garbage collector)",
+          7
+        ],
+        [
+          "spellRowState",
+          5
+        ],
+        [
+          "ReactElement",
+          5
+        ],
+        [
+          "createTask",
+          4
+        ]
+      ]
+    },
+    {
+      "characterClass": "wizard",
+      "level": 17,
+      "template": "generic",
+      "savedSpells": 44,
+      "page2Ms": 45.74240000000009,
+      "spellPageMs": [
+        3579.3791999999994,
+        3616.4369000000006,
+        3575.5350000000017
+      ],
+      "medianMs": 3579.3791999999994,
+      "editMs": 3443.995100000002,
+      "rows": 72,
+      "options": 2524,
+      "topSamples": [
+        [
+          "(anonymous)",
+          2680
+        ],
+        [
+          "spellLabel",
+          2590
+        ],
+        [
+          "process.env.NODE_ENV.exports.jsxDEV",
+          399
+        ],
+        [
+          "(garbage collector)",
+          58
+        ],
+        [
+          "createTask",
+          11
+        ],
+        [
+          "spellRow",
+          11
+        ],
+        [
+          "ReactElement",
+          10
+        ],
+        [
+          "jsxDEVImpl",
+          6
+        ]
+      ]
+    },
+    {
+      "characterClass": "wizard",
+      "level": 17,
+      "template": "wizard",
+      "savedSpells": 44,
+      "page2Ms": 60.6375999999982,
+      "spellPageMs": [
+        3713.9583999999995,
+        3603.3482000000004,
+        3609.0721000000012
+      ],
+      "medianMs": 3609.0721000000012,
+      "editMs": 3533.8166999999994,
+      "rows": 72,
+      "options": 2586,
+      "topSamples": [
+        [
+          "spellLabel",
+          2657
+        ],
+        [
+          "(anonymous)",
+          2593
+        ],
+        [
+          "process.env.NODE_ENV.exports.jsxDEV",
+          393
+        ],
+        [
+          "(garbage collector)",
+          52
+        ],
+        [
+          "spellRow",
+          21
+        ],
+        [
+          "createTask",
+          12
+        ],
+        [
+          "ReactElement",
+          11
+        ],
+        [
+          "spellRowState",
+          9
+        ]
+      ]
+    },
+    {
+      "characterClass": "wizard",
+      "level": 17,
+      "template": "wizard-pdf",
+      "savedSpells": 44,
+      "page2Ms": 72.30550000000221,
+      "spellPageMs": [
+        3631.226300000002,
+        3631.0206000000035,
+        3609.8480000000054
+      ],
+      "medianMs": 3631.0206000000035,
+      "editMs": 3504.970199999996,
+      "rows": 72,
+      "options": 2586,
+      "topSamples": [
+        [
+          "spellLabel",
+          2576
+        ],
+        [
+          "(anonymous)",
+          2511
+        ],
+        [
+          "process.env.NODE_ENV.exports.jsxDEV",
+          360
+        ],
+        [
+          "(garbage collector)",
+          65
+        ],
+        [
+          "spellRow",
+          19
+        ],
+        [
+          "createTask",
+          13
+        ],
+        [
+          "ReactElement",
+          9
+        ],
+        [
+          "spellRowState",
+          8
+        ]
+      ]
+    },
+    {
+      "characterClass": "cleric",
+      "level": 17,
+      "template": "generic",
+      "savedSpells": 21,
+      "page2Ms": 31.44499999999971,
+      "spellPageMs": [
+        861.5310000000027,
+        872.4326000000001,
+        868.7860000000001
+      ],
+      "medianMs": 868.7860000000001,
+      "editMs": 860.6870999999956,
+      "rows": 72,
+      "options": 1586,
+      "topSamples": [
+        [
+          "spellLabel",
+          564
+        ],
+        [
+          "(anonymous)",
+          472
+        ],
+        [
+          "process.env.NODE_ENV.exports.jsxDEV",
+          238
+        ],
+        [
+          "spellRow",
+          16
+        ],
+        [
+          "(garbage collector)",
+          14
+        ],
+        [
+          "spellRowState",
+          7
+        ],
+        [
+          "savedSpellGrants",
+          4
+        ],
+        [
+          "createTask",
+          4
+        ]
+      ]
+    }
+  ]
+}

@@ -4,6 +4,8 @@ import { spellEdition, spellRowState } from './Spellcasting.ts'
 
 export const tutorialSteps = ['Iniziamo', 'Classe e livello', 'Origini', 'Caratteristiche', 'Competenze e lingue', 'Equipaggiamento', 'Incantesimi', 'Personalità e gruppo', 'Riepilogo'] as const
 export const tutorialDraftKey = 'dev-and-dice.character-tutorial.v1'
+export const rangerCreationReview = 'Ranger: il catalogo non collega ancora Nemico prescelto, terreno di Esploratore naturale ed eventuale lingua. Sceglili con il DM e annotali nei Tratti aggiuntivi prima di confermare.'
+export const advancementCreationReview = 'Conferma di aver verificato con il DM avanzamenti, PF e scelte dei livelli superiori.'
 export const standardScores = [15, 14, 13, 12, 10, 8]
 export const standardLanguageIds = ['draconic','dwarvish','elvish','giant','gnomish','goblin','halfling','orc']
 const pointCosts = [0, 1, 2, 3, 4, 5, 7, 9]
@@ -59,7 +61,7 @@ export function tutorialIssues(sheet: CharacterSheet, data: CreationData, step: 
         if (level === undefined || level < 1 || level > 20) issues.push('Il livello deve essere un intero da 1 a 20.')
         const unlocked = subclassOptions(sheet, data).filter((x) => level !== undefined && level >= subclassMinimumLevel(sheet, x, data))
         if (unlocked.length && !unlocked.some((x) => x.index === d['creation.subclass'])) issues.push('Al tuo livello è richiesta una sottoclasse: scegline una disponibile.')
-        if (level && level > 1 && d['tutorial.advancement'] !== 'true') issues.push('Conferma di aver verificato con il DM avanzamenti, PF e scelte dei livelli superiori.')
+        if (level && level > 1 && d['tutorial.advancement'] !== 'true') issues.push(advancementCreationReview)
     }
     if (step === 2) {
         if (!origins.race) issues.push('Scegli una razza/specie dal catalogo.')
@@ -90,6 +92,7 @@ export function tutorialIssues(sheet: CharacterSheet, data: CreationData, step: 
     }
     for (const c of tutorialChoices(sheet, data, step)) if (incomplete(c.choice, c.path, sheet, data)) issues.push(`Completa: ${c.label} (scegli ${c.choice.choose}).`)
     if (step === 4) {
+        if (d['tutorial.randomReview'] && (d['tutorial.randomReviewConfirmed']!=='true' || !d.additionalTraits?.trim())) issues.push(d['tutorial.randomReview'])
         const profs = [origins.characterClass, origins.race, origins.subrace, origins.background].flatMap((x) => [...(x?.starting_proficiencies ?? []), ...(x?.proficiencies ?? [])]).map((x) => x.index)
         for (const ref of [...(origins.race?.traits ?? []), ...(origins.subrace?.racial_traits ?? [])]) profs.push(...(data.traits.find((x) => x.index === ref.index)?.proficiencies ?? []).map((x) => x.index))
         for (const c of creationChoices(sheet, data).filter((x) => ['proficiencies','proficiency'].includes(x.choice.type))) profs.push(...resolveChoice(c.choice,c.path,d,data).map((x) => x.ref.index))
@@ -170,5 +173,9 @@ export function changeTutorialOrigin(sheet: CharacterSheet, data: CreationData, 
     d.subrace = selectedOrigins(next,data).subrace ? labelOf(selectedOrigins(next,data).subrace!) : ''
     d['tutorial.notice'] = 'Scelta aggiornata: controlla competenze, equipaggiamento, sottoclasse e magie. Cambiando livello o edizione, le magie restano annotate e gli eventuali limiti superati vengono segnalati. Cambiando classe, le magie incompatibili sono archiviate e tornano ripristinando la classe precedente.'
     if (kind === 'edition') d['tutorial.rules2024'] = 'false'
+    if (d['tutorial.random']==='true' && ['class','edition'].includes(kind)) {
+        d['tutorial.randomReview']=spellEdition(next)==='2014' && d['creation.class']==='ranger' ? rangerCreationReview : ''
+        delete d['tutorial.randomReviewConfirmed']
+    }
     return applyCreation(next,data)
 }
