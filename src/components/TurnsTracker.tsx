@@ -23,26 +23,16 @@ type Turn = {
     damage?: string
 }
 
-export function TurnsTracker() {
+export function TurnsTracker({ language }: { language: 'it' | 'en' }) {
     const sheetEditor = useRef<CharacterSheetsHandle>(null)
     const dismissRemovalDialog = useDialogDismiss()
     const [libraryWidth, setLibraryWidth] = useState<string>()
     const [abilitiesWidth, setAbilitiesWidth] = useState<string>()
-    const [language, setLanguage] = useState<'it' | 'en'>(() => {
-        try { return localStorage.getItem('dev-and-dice.spell-language') === 'en' ? 'en' : 'it' } catch { return 'it' }
-    })
-    const [languageError, setLanguageError] = useState('')
     const [catalogs, setCatalogs] = useState<Record<'it' | 'en', Catalog>>({ it: { creatures: [], abilities: [] }, en: { creatures: [], abilities: [] } })
     const catalog = catalogs[language]
     const [rawCreationData, setCreationData] = useState<CreationData>()
     const creationData = useMemo(() => rawCreationData ? translatedCreationData(rawCreationData, catalog) : undefined, [rawCreationData, catalog])
 
-    function changeLanguage(value: string) {
-        if (value !== 'it' && value !== 'en') return
-        setLanguage(value)
-        try { localStorage.setItem('dev-and-dice.spell-language', value); setLanguageError('') }
-        catch { setLanguageError('La lingua è cambiata, ma la preferenza non è stata salvata nel browser.') }
-    }
     const [catalogStatus, setCatalogStatus] = useState('Caricamento del catalogo…')
     const [turns, setTurns] = useState<Turn[]>([])
     const [abilities, setAbilities] = useState<Ability[]>([])
@@ -232,12 +222,6 @@ export function TurnsTracker() {
 
     return (
         <>
-        <div className="catalog-settings">
-            <label>Lingua <select value={language} onChange={(event) => changeLanguage(event.target.value)}>
-                <option value="it">Italiano</option><option value="en">English</option>
-            </select></label>
-            {languageError && <span role="status">{languageError}</span>}
-        </div>
         <div className="tracker-layout" style={{ '--library-width': libraryWidth } as CSSProperties}>
             <CharacterSheets ref={sheetEditor} onAdd={addCharacter} onSaved={syncSavedSheet} combatStarted={combat !== null || catalogStatus === 'Caricamento del catalogo…'} presentSheetIds={presentSheetIds} catalog={catalog} creationData={creationData} />
             <ColumnSeparator label="Ridimensiona schede e combattimento" side="left" minimum={160} otherMinimum={600} onResize={setLibraryWidth} />

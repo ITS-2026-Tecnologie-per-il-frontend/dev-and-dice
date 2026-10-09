@@ -36,6 +36,22 @@ Per il 2024 si seguono le [regole ufficiali di creazione](https://www.dndbeyond.
 - Salvataggio automatico della bozza nel browser, separato dalle schede complete, e pulsante Riprendi creazione. Chiudere salva subito; se lo storage non funziona, la finestra resta aperta con l’errore e i dati originali vengono conservati.
 - Dati invalidi già presenti nello storage non vengono sovrascritti. La bozza conserva anche campi incompleti; non viene proposta come personaggio utilizzabile in combattimento prima del salvataggio finale.
 
+## Generazione casuale
+
+«Crea personaggio casuale» nella raccolta Schede genera una nuova bozza con le regole 2014. Il livello è selezionabile da 1 a 20 e parte da 1; classe e razza possono essere fissate singolarmente oppure lasciate casuali. Sottorazza, sottoclasse quando prevista al livello scelto, background, assegnazione dell’array standard, competenze, lingue, dotazioni, magie, nome e spunti personali vengono scelti fra le opzioni disponibili. Le opzioni UA non vengono sorteggiate. Il catalogo attuale comprende un solo background: Accolito.
+
+Il generatore riutilizza `creationChoices`, `optionsFor`, `spellRules`, `applyCreation` e `tutorialIssues`: non introduce formule per PF, CA, pesi o limiti degli incantesimi. Evita competenze/lingue duplicate e assegna Maestria solo alle competenze possedute. Le magie razziali e sempre preparate restano separate dalle scelte ordinarie. Le dotazioni entrano nell’inventario e armatura/scudo disponibili e appropriati vengono collegati tramite identificativo.
+
+Al livello 1 la bozza si apre al Riepilogo e usa il salvataggio/ripresa già esistente. Sopra il primo livello si apre a Classe e livello: i PF usano i valori fissi condivisi, la competenza e le magie seguono il livello e gli XP provengono dalla tabella già presente nel catalogo. Aumenti di caratteristica/talenti e avanzamenti non strutturati devono essere verificati nel tutorial; la conferma non viene simulata dal generatore. Si può tornare ai passaggi precedenti, cambiare le scelte o il nome e salvare il personaggio nelle schede normali. Una bozza già presente blocca una nuova generazione per non sovrascriverla. Errori nel catalogo o nel salvataggio vengono mostrati senza sostituire personaggi esistenti.
+
+Il Ranger al livello 1 si apre invece al passaggio Competenze; ai livelli superiori richiede entrambe le verifiche. Nemico prescelto, terreno di Esploratore naturale e l’eventuale lingua non sono ancora collegati nel flusso condiviso. Vanno annotati nei Tratti aggiuntivi, verificati con il DM e confermati prima del salvataggio. Il generatore non simula quella conferma. Nel Dragonide, la Discendenza draconica è ora una scelta condivisa del tutorial e il tratto selezionato compare nella scheda.
+
+Il libro del mago rispetta i limiti cumulativi di acquisizione senza usare gli slot come quote. Segreti Magici del bardo vengono scelti fra le magie disponibili al livello di acquisizione; Arcanum Mistico del warlock resta separato. Spell Mastery e Signature Spells del mago vengono collegate al libro quando previste, distinguendo preparazione normale e sempre preparati. Le dotazioni rimangono quelle iniziali: oro e oggetti aggiuntivi per partire a un livello superiore dipendono dalla campagna.
+
+Le regole 2024 richiedono ancora i dati e le verifiche manuali già indicate per il tutorial. Gli effetti descritti solo in prosa e i pesi mancanti nel catalogo mantengono la gestione esistente. `node tests/random-character.mjs` controlla tutte le 108 combinazioni classe/razza al livello 1 e tutte le dodici classi ai livelli 2–20, casualità totale/parziale, limiti, valori ai bordi, catalogo insufficiente, bozze, riapertura, template e magie nelle card del combattimento.
+
+Verificato nel browser anche il flusso con classe/razza fissate e completamente casuali, la scelta del livello, la conferma degli avanzamenti, la ripresa dopo riapertura dell’app, la protezione delle bozze esistenti, il salvataggio finale con il livello conservato e l’aggiunta al combattimento.
+
 ## Limiti condivisi degli incantesimi
 
 `spellSelection` restituisce conteggi, limiti, motivi e problemi; `spellSelectionBlock` stabilisce quali nuove selezioni superarli. Tutorial, scheda normale (anche senza calcoli automatici) e salvataggio usano questi controlli. Le chiavi sono `spell.<livello>.<riga>.*`, indipendenti dal template. Nessuna formula dei limiti nei componenti grafici; nessuna nuova dipendenza.

@@ -9,6 +9,10 @@ import './auth.css'
 function ProtectedTrackers() {
   const { status, user, error, refreshUser, logout: endUserSession } = useAuth()
   const [logoutError, setLogoutError] = useState('')
+  const [language, setLanguage] = useState<'it' | 'en'>(() => {
+    try { return localStorage.getItem('dev-and-dice.spell-language') === 'en' ? 'en' : 'it' } catch { return 'it' }
+  })
+  const [languageError, setLanguageError] = useState('')
 
   if (status === 'loading') {
     return <p className="auth-status" role="status">Verifica della sessione…</p>
@@ -39,14 +43,25 @@ function ProtectedTrackers() {
     }
   }
 
+  function changeLanguage(value: string) {
+    if (value !== 'it' && value !== 'en') return
+    setLanguage(value)
+    try { localStorage.setItem('dev-and-dice.spell-language', value); setLanguageError('') }
+    catch { setLanguageError('La lingua è cambiata, ma la preferenza non è stata salvata nel browser.') }
+  }
+
   return (
     <>
       <header className="user-bar">
         <span>Accesso effettuato come <strong>{user.username}</strong></span>
+        <label>Lingua <select value={language} onChange={(event) => changeLanguage(event.target.value)}>
+          <option value="it">Italiano</option><option value="en">English</option>
+        </select></label>
         <button type="button" onClick={() => void logout()}>Esci</button>
       </header>
       {logoutError && <p className="auth-inline-error" role="alert">{logoutError}</p>}
-      <TurnsTracker />
+      {languageError && <p className="auth-inline-error" role="status">{languageError}</p>}
+      <TurnsTracker language={language} />
     </>
   )
 }

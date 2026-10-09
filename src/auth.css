@@ -127,6 +127,7 @@
 
 .user-bar {
   display: flex;
+  flex-wrap: wrap;
   min-height: 52px;
   align-items: center;
   justify-content: flex-end;
@@ -155,6 +156,16 @@
 
 .user-bar button:hover {
   background: #ffffff12;
+}
+
+.user-bar label { display: flex; align-items: center; gap: 8px; }
+.user-bar select {
+  padding: 6px 10px;
+  border: 1px solid #65513b;
+  border-radius: 5px;
+  background: #201b16;
+  color: inherit;
+  font: inherit;
 }
 
 .auth-inline-error {

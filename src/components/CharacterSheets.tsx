@@ -7,9 +7,10 @@ import { InfoButton } from './InfoButton'
 import { useDialogDismiss } from '../utils/Dialog'
 import { PlayerSheet } from './PlayerSheet'
 import { pdfAbilities } from '../utils/PlayerAbilities'
-import { applyCreation, patchCalculatedSheetStats, characterCalculationIssues, spellSelection, type CreationData } from '../utils/PlayerCreation'
+import { applyCreation, patchCalculatedSheetStats, characterCalculationIssues, spellSelection, labelOf, type CreationData } from '../utils/PlayerCreation'
 import { newTutorial, parseTutorialDraft, tutorialDraftKey, tutorialIssues } from '../utils/CharacterTutorial'
 import { classId } from '../utils/Spellcasting'
+import { randomCharacter } from '../utils/RandomCharacter'
 
 const storageKey = 'dev-and-dice.character-sheets.v1'
 
@@ -46,11 +47,25 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
     const progressSaved = progressSnapshot === draft
     const dialog = useRef<HTMLDialogElement>(null)
     const initialDraft = useRef('')
+    const randomDialog=useRef<HTMLDialogElement>(null),dismissRandomDialog=useDialogDismiss()
+    const [randomOrigins,setRandomOrigins]=useState({characterClass:'',race:'',level:1})
+    const [randomError,setRandomError]=useState('')
 
     function openDraft(sheet: CharacterSheet) {
         const updated = creationData ? applyCreation(sheet, creationData) : sheet
         initialDraft.current = JSON.stringify(updated)
         setDraft({ ...updated })
+    }
+
+    function generateRandom() {
+        if (!creationData || saved.blocked || tutorial.draft || tutorial.error) return
+        try {
+            const generated=randomCharacter(creationData,randomOrigins)
+            if (!saveProgress(generated)) {setRandomError('Impossibile salvare la bozza. Libera spazio nel browser e riprova.');return}
+            randomDialog.current?.close()
+            setRandomError('')
+            openDraft(generated)
+        } catch (error) {setRandomError(error instanceof Error ? error.message : 'Generazione non riuscita. Nessun personaggio è stato sovrascritto.')}
     }
 
 
@@ -201,6 +216,7 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
             {saved.error && <p role="alert">{saved.error}</p>}
             <button className="sort-turns" type="button" disabled={saved.blocked} onClick={() => openDraft(newCharacterSheet())}>+ Nuova scheda</button>
             <button className="sort-turns" type="button" disabled={saved.blocked || !creationData || !!tutorial.draft || !!tutorial.error} onClick={() => openDraft(newTutorial())}>+ Crea personaggio guidato</button>
+            <button className="sort-turns" type="button" disabled={saved.blocked || !creationData || !!tutorial.draft || !!tutorial.error} onClick={() => {setRandomError('');randomDialog.current?.showModal()}}>+ Crea personaggio casuale</button>
             {tutorial.error && <p role="alert">{tutorial.error}</p>}
             {tutorial.draft && !saved.sheets.some((s) => s.id === tutorial.draft!.id && s.playerDetails?.['tutorial.completed'] === 'true') && <button className="character-open tutorial-resume" type="button" disabled={!creationData} onClick={() => openDraft(tutorial.draft!)}>Riprendi creazione · {tutorial.draft.name || 'Personaggio senza nome'}</button>}
             {saved.sheets.length === 0 && <p className="library-empty">Crea una scheda e aggiungila al combattimento quando serve.</p>}
@@ -314,6 +330,20 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                         if (success) closeDialog()
                     }}>Elimina scheda</button>
                 </div>
+            </dialog>
+            <dialog ref={randomDialog} className="character-dialog" aria-labelledby="random-character-heading" {...dismissRandomDialog}>
+                <form onSubmit={(event) => {event.preventDefault();generateRandom()}}>
+                    <h2 id="random-character-heading">Personaggio casuale</h2>
+                    <p>D&D 5e 2014. Scegli il livello e fissa classe e razza, oppure lascia queste ultime casuali. Il risultato si apre nel tutorial per controllarlo e modificarlo prima di salvarlo.</p>
+                    <div className="tutorial-grid">
+                        <label className="player-field"><span>Classe</span><select value={randomOrigins.characterClass} onChange={(event) => setRandomOrigins({...randomOrigins,characterClass:event.target.value})}><option value="">Casuale</option>{creationData?.classes.filter((x) => !x.editions || x.editions.includes('2014')).map((x) => <option key={x.index} value={x.index}>{labelOf(x)}</option>)}</select></label>
+                        <label className="player-field"><span>Razza</span><select value={randomOrigins.race} onChange={(event) => setRandomOrigins({...randomOrigins,race:event.target.value})}><option value="">Casuale</option>{creationData?.races.filter((x) => !x.editions || x.editions.includes('2014')).map((x) => <option key={x.index} value={x.index}>{labelOf(x)}</option>)}</select></label>
+                        <label className="player-field"><span>Livello</span><select value={randomOrigins.level} onChange={(event) => setRandomOrigins({...randomOrigins,level:Number(event.target.value)})}>{Array.from({length:20},(_,i) => <option key={i+1} value={i+1}>{i+1}</option>)}</select></label>
+                    </div>
+                    <p className="player-hint">Caratteristiche: array standard assegnato casualmente. Competenze, lingue, dotazioni e magie usano le opzioni del catalogo. Sopra il livello 1 vanno verificati aumenti di caratteristica/talenti e avanzamenti nel tutorial. Il Ranger richiede ancora alcune scelte manuali. Per le regole 2024 usa la creazione guidata.</p>
+                    {randomError && <p role="alert">{randomError}</p>}
+                    <div className="turn-actions"><button className="sort-turns" type="submit">Genera e rivedi</button><button className="end-combat" type="button" onClick={() => randomDialog.current?.close()}>Annulla</button></div>
+                </form>
             </dialog>
         </aside>
     )
