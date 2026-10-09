@@ -17,12 +17,15 @@ export type CharacterSheetsHandle = { open: (sheet: CharacterSheet) => void; pat
 type Props = { onAdd: (sheet: CharacterSheet) => void; onSaved: (sheet: CharacterSheet) => void; combatStarted: boolean; presentSheetIds: string[]; catalog: Catalog; creationData?: CreationData; ref?: Ref<CharacterSheetsHandle> }
 
 export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds, catalog, creationData, ref }: Props) {
+    const [confirmTutorialExit, setConfirmTutorialExit] = useState(false)
+    const tutorialExitDialog = useRef<HTMLDialogElement>(null)
     const dismissDialog = useDialogDismiss(() => {
-        if (draft?.playerDetails?.['tutorial.active'] === 'true') closeDialog()
+        if (draft?.playerDetails?.['tutorial.active'] === 'true') setConfirmTutorialExit(true)
         else if (draft && JSON.stringify(draft) !== initialDraft.current) saveSheet()
         else closeDialog()
     })
     const dismissDeleteDialog = useDialogDismiss()
+    const dismissTutorialExitDialog = useDialogDismiss(closeTutorialExitPrompt)
     const deleteDialog = useRef<HTMLDialogElement>(null)
     const [saved, setSaved] = useState(() => {
         try {
@@ -72,6 +75,11 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
         if (draft && !dialog.current?.open) dialog.current?.showModal()
     }, [draft])
 
+    useEffect(() => {
+        if (confirmTutorialExit && guided && !tutorialExitDialog.current?.open) tutorialExitDialog.current?.showModal()
+        else if ((!confirmTutorialExit || !guided) && tutorialExitDialog.current?.open) tutorialExitDialog.current.close()
+    }, [confirmTutorialExit, guided])
+
     function saveProgress(sheet: CharacterSheet) {
         try {
             localStorage.setItem(tutorialDraftKey, JSON.stringify(sheet))
@@ -110,6 +118,29 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
 
     function closeDialog() {
         if (guided && draft && !saveProgress(draft)) return
+        dialog.current?.close()
+        setDraft(null)
+        setError('')
+    }
+
+    function closeTutorialExitPrompt() {
+        tutorialExitDialog.current?.close()
+        setConfirmTutorialExit(false)
+    }
+
+    function discardTutorialDraft() {
+        if (!draft) return
+        closeTutorialExitPrompt()
+        const sheets = saved.sheets.filter((sheet) => sheet.id !== draft.id)
+        if (sheets.length !== saved.sheets.length && !writeSheets(sheets)) return
+        try {
+            if (tutorial.draft?.id === draft.id) localStorage.removeItem(tutorialDraftKey)
+        } catch {
+            setError('Impossibile cancellare la bozza. La scheda resta aperta: riprova.')
+            return
+        }
+        if (tutorial.draft?.id === draft.id) setTutorial({ draft: null, error: '' })
+        setProgressSnapshot(null)
         dialog.current?.close()
         setDraft(null)
         setError('')
@@ -229,7 +260,7 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                     <form onSubmit={(event) => { event.preventDefault(); saveSheet() }}>
                         <div className="dialog-header">
                             <h2 id="character-dialog-heading">{draft.name || 'Nuova scheda'}</h2>
-                            <button className="delete-turn" type="button" aria-label="Chiudi scheda" onClick={closeDialog}>×</button>
+                            <button className="delete-turn" type="button" aria-label="Chiudi scheda" onClick={() => guided ? setConfirmTutorialExit(true) : closeDialog()}>×</button>
                         </div>
                         {draft.kind === 'PG' ? <PlayerSheet sheet={draft} catalog={catalog} creationData={creationData} onChange={setDraft} /> : <div className="character-fields">
                             {(Object.entries(characterFields) as [keyof typeof characterFields, string][]).map(([field, label]) => (
@@ -294,7 +325,9 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                         <p className="library-help" role="status">{guided ? progressSaved ? 'Progressi salvati in questo browser.' : 'Salvataggio dei progressi…' : 'Le modifiche si salvano anche cliccando fuori dalla finestra.'}</p>
                         <div className="turn-actions">
                             {!guided && <button className="sort-turns" type="submit">Salva scheda</button>}
-                            <button className="end-combat" type="button" onClick={closeDialog}>{guided ? 'Salva e riprendi più tardi' : 'Annulla'}</button>
+                            {!guided && <button className="end-combat" type="button" onClick={closeDialog}>Annulla</button>}
+                            {guided && <button className="end-combat" type="button" onClick={closeDialog}>Salva e riprendi più tardi</button>}
+                            {guided && <button className="clear-turns" type="button" onClick={discardTutorialDraft}>Cancella scheda</button>}
                             {saved.sheets.some((sheet) => sheet.id === draft.id) && (
                                 <button className="clear-turns" type="button" onClick={() => deleteDialog.current?.showModal()}>Elimina scheda</button>
                             )}
@@ -313,6 +346,13 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                         deleteDialog.current?.close()
                         if (success) closeDialog()
                     }}>Elimina scheda</button>
+                </div>
+            </dialog>
+            <dialog ref={tutorialExitDialog} className="character-dialog" aria-labelledby="tutorial-exit-heading" {...dismissTutorialExitDialog} onCancel={(event) => event.preventDefault()}>
+                <h2 id="tutorial-exit-heading">Uscire dalla creazione guidata?</h2>
+                <div className="turn-actions">
+                    <button autoFocus className="end-combat" type="button" onClick={() => { closeTutorialExitPrompt(); closeDialog() }}>Salva e riprendi più tardi</button>
+                    <button className="clear-turns" type="button" onClick={discardTutorialDraft}>Cancella scheda</button>
                 </div>
             </dialog>
         </aside>

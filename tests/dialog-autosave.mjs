@@ -132,8 +132,35 @@ const json = (file) => JSON.parse(readFileSync(new URL(`../public/data/${file}.j
 props.creationData = withWizardCatalog({ ...json('character-options'), ...json('character-equipment'), skills:json('character-rules').skills }, json('wizard-catalog'))
 ref.current.open(newTutorial()); render()
 const libraryBeforeTutorial = stored
-const pause = () => nodes.find((node) => node.type === 'button' && node.props.children === 'Salva e riprendi più tardi').props.onClick()
-fail = true; pause(); render()
+const pause = () => findButton(sheetDialog,'Salva e riprendi più tardi').props.onClick()
+const exitPrompt = () => nodes.find((node) => node.type === 'dialog' && node.props['aria-labelledby'] === 'tutorial-exit-heading')
+const promptButton = (label) => exitPrompt().props.children[1].props.children.find((node) => node?.type === 'button' && node.props.children === label)
+async function outsidePrompt() {
+    const prompt = exitPrompt(), element = prompt.props.ref.current
+    const event = { currentTarget: element, target: element, clientX: 0, clientY: 0, isPrimary: true, button: 0, pointerId: 2 }
+    prompt.props.onPointerDown(event); prompt.props.onPointerUp(event)
+    await Promise.resolve(); render()
+}
+function findButton(node, label) {
+    if (!node || typeof node !== 'object') return null
+    if (Array.isArray(node)) return node.map((child) => findButton(child,label)).find(Boolean) ?? null
+    if (node.type === 'button' && node.props.children === label) return node
+    return findButton(node.props?.children,label)
+}
+assert.ok(findButton(sheetDialog,'Salva e riprendi più tardi'), 'The guided sheet must show the pause button at the bottom')
+assert.ok(findButton(sheetDialog,'Cancella scheda'), 'The guided sheet must show the discard button at the bottom')
+await outside()
+assert.equal(sheetDialog.props.ref.current.open, true, 'Clicking outside a guided creation must keep it open')
+assert.equal(exitPrompt().props.ref.current.open, true, 'Clicking outside a guided creation must show the required choice')
+assert.ok(promptButton('Salva e riprendi più tardi'))
+assert.ok(promptButton('Cancella scheda'))
+await outsidePrompt()
+assert.equal(exitPrompt().props.ref.current.open, false, 'Clicking outside the exit choice must close only that dialog')
+assert.equal(sheetDialog.props.ref.current.open, true, 'Closing the exit choice must keep guided creation open')
+await outside()
+exitPrompt().props.onCancel({ preventDefault() {} })
+assert.equal(exitPrompt().props.ref.current.open, true, 'Escape cannot bypass the required choice')
+fail = true; promptButton('Salva e riprendi più tardi').props.onClick(); render()
 assert.equal(sheetDialog.props.ref.current.open,true,'Failed tutorial save keeps the draft open')
 assert.equal(progress,null)
 assert.equal(stored,libraryBeforeTutorial,'Draft errors must not overwrite the normal library')
@@ -142,12 +169,21 @@ assert.equal(sheetDialog.props.ref.current.open,false)
 assert.equal(JSON.parse(progress).name,'','Incomplete tutorial can pause without a name')
 nodes.find((node) => node.type === 'button' && node.props.className?.includes('tutorial-resume')).props.onClick(); render()
 edit({ name:'Bozza ripresa',playerDetails:{'creation.enabled':'true','tutorial.active':'true','tutorial.step':'3','tutorial.method':'points','creation.base.strength':'9.5'} })
-await outside()
+nodes.find((node) => node.type === 'button' && node.props['aria-label'] === 'Chiudi scheda').props.onClick(); render()
+assert.equal(sheetDialog.props.ref.current.open,true,'The close button must keep a guided tutorial open')
+assert.equal(exitPrompt().props.ref.current.open,true,'The close button must show the same required exit choice')
+promptButton('Salva e riprendi più tardi').props.onClick(); render()
 assert.equal(JSON.parse(progress).playerDetails['tutorial.step'],'3')
 assert.equal(JSON.parse(progress).playerDetails['creation.base.strength'],'9.5','Unfinished input survives pause and resume')
 assert.equal(stored,libraryBeforeTutorial)
+nodes.find((node) => node.type === 'button' && node.props.className?.includes('tutorial-resume')).props.onClick(); render()
+await outside()
+promptButton('Cancella scheda').props.onClick(); render()
+assert.equal(sheetDialog.props.ref.current.open,false,'Discarding a guided draft closes its sheet')
+assert.equal(progress,null,'Discarding a guided draft removes its saved progress')
+assert.equal(nodes.find((node) => node.type === 'button' && node.props.children === '+ Crea personaggio guidato').props.disabled,false,'Discarding a draft allows a new guided character')
 cleanups.forEach((cleanup) => cleanup())
-console.log('Tutorial dialog checks passed: separate draft, incomplete input, pause/resume and storage failure recovery.')
+console.log('Tutorial dialog checks passed: required outside-click choice, pause/resume, discard and storage failure recovery.')
 
 const over={...newCharacterSheet(),name:'Limiti',kind:'PG',level:'3',intelligence:'16',playerDetails:{'creation.class':'wizard'}}
 for (const [i,id] of ['acid-arrow','blur','blindness-deafness'].entries()) {
