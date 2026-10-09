@@ -148,3 +148,34 @@ assert.equal(JSON.parse(progress).playerDetails['creation.base.strength'],'9.5',
 assert.equal(stored,libraryBeforeTutorial)
 cleanups.forEach((cleanup) => cleanup())
 console.log('Tutorial dialog checks passed: separate draft, incomplete input, pause/resume and storage failure recovery.')
+
+const over={...newCharacterSheet(),name:'Limiti',kind:'PG',level:'3',intelligence:'16',playerDetails:{'creation.class':'wizard'}}
+for (const [i,id] of ['acid-arrow','blur','blindness-deafness'].entries()) {
+    const spell=props.creationData.spells.find((s) => s.index===id)
+    Object.assign(over.playerDetails,{[`spell.2.${i}.name`]:spell.name,[`spell.2.${i}.index`]:id})
+}
+ref.current.open(over); render()
+edit({name:'Limiti da correggere'})
+const beforeInvalid=stored
+await outside()
+assert.equal(sheetDialog.props.ref.current.open,true,'Normal save cannot bypass a spell cap')
+assert.equal(stored,beforeInvalid,'Failed cap validation must preserve previous storage')
+assert.ok(nodes.some((n) => n.props?.role==='alert' && String(n.props.children).includes('3/2, 1 in eccesso')))
+const draft=nodes.find((n) => n.type?.name==='PlayerSheet').props.sheet
+assert.ok(draft.playerDetails['spell.2.2.name'],'All excess spells remain available to correct')
+edit({playerDetails:{...draft.playerDetails,'spell.2.2.name':''}})
+await outside()
+assert.equal(sheetDialog.props.ref.current.open,false)
+assert.equal(JSON.parse(stored).find((s) => s.id===over.id).name,'Limiti da correggere')
+console.log('Normal save spell limits passed: precise excess, no data loss, correction and retry, including manual sheets.')
+
+const loadedRules=props.creationData
+delete props.creationData
+ref.current.open({...over,id:crypto.randomUUID()}); render()
+edit({name:'Catalogo in caricamento'})
+await outside()
+assert.equal(sheetDialog.props.ref.current.open,true,'A wizard cannot bypass validation by saving before rule data arrives')
+assert.ok(nodes.some((n) => n.props?.role==='alert' && String(n.props.children).includes('caricamento delle regole')))
+props.creationData=loadedRules
+render()
+cleanups.forEach((cleanup) => cleanup())

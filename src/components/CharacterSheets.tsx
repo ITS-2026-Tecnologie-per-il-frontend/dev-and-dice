@@ -1,14 +1,15 @@
 import { durationTurns } from '../utils/Combat'
 import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from 'react'
-import { characterFields, clampCurrentHitPointsToMaximum, numericCharacterFields, newCharacterSheet, parseCharacterSheets, initiativeBonus, type SheetStats, type CharacterSheet, type SheetAbility } from '../utils/CharacterSheets'
+import { characterFields, clampCurrentHitPointsToMaximum, characterLevel, numericCharacterFields, newCharacterSheet, parseCharacterSheets, initiativeBonus, type SheetStats, type CharacterSheet, type SheetAbility } from '../utils/CharacterSheets'
 import { sheetFromCatalog, sheetWithCombatSpells, templateFromCatalog, type Catalog } from '../utils/Catalog'
 import { CatalogSearch } from './CatalogSearch'
 import { InfoButton } from './InfoButton'
 import { useDialogDismiss } from '../utils/Dialog'
 import { PlayerSheet } from './PlayerSheet'
 import { pdfAbilities } from '../utils/PlayerAbilities'
-import { applyCreation, patchCalculatedSheetStats, characterCalculationIssues, type CreationData } from '../utils/PlayerCreation'
+import { applyCreation, patchCalculatedSheetStats, characterCalculationIssues, spellSelection, type CreationData } from '../utils/PlayerCreation'
 import { newTutorial, parseTutorialDraft, tutorialDraftKey, tutorialIssues } from '../utils/CharacterTutorial'
+import { classId } from '../utils/Spellcasting'
 
 const storageKey = 'dev-and-dice.character-sheets.v1'
 
@@ -120,6 +121,9 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
 
     function saveSheet() {
         if (!draft) return
+        if (draft.kind === 'PG' && classId(draft) === 'wizard' && !creationData && Object.entries(draft.playerDetails ?? {}).some(([key,value]) => /^spell\.\d+\.\d+\.name$/.test(key) && value.trim())) {
+            setError('Attendi il caricamento delle regole prima di salvare: serve per verificare i limiti degli incantesimi. Le modifiche restano aperte.'); return
+        }
         if (guided) {
             if (!creationData) { setError('Attendi il caricamento delle opzioni prima di completare il tutorial.'); return }
             const required = tutorialIssues(draft, creationData, 8)
@@ -128,6 +132,7 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
         const calculated = clampCurrentHitPointsToMaximum(creationData ? applyCreation(draft, creationData) : draft)
         const sheet = { ...calculated, ...(guided ? { playerDetails: { ...calculated.playerDetails, 'tutorial.active': 'false', 'tutorial.completed': 'true' } } : {}), name: calculated.name.trim(), abilities: calculated.abilities.map((ability) => ({ ...ability, name: ability.name.trim() })) }
         const issues = sheet.kind === 'PG' ? characterCalculationIssues(sheet) : []
+        if (sheet.kind === 'PG' && creationData && characterLevel(sheet) !== undefined && creationData.classes.some((x) => x.index === classId(sheet))) issues.push(...spellSelection(sheet,creationData).issues)
         if (issues.length) { setError(issues.join(' ')); return }
         if (!numericCharacterFields.every((field) => sheet[field] === '' || (sheet[field].trim() !== '' && Number.isSafeInteger(Number(sheet[field]))))) {
             setError('Inserisci numeri interi validi nelle statistiche.')

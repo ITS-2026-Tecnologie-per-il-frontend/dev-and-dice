@@ -1,6 +1,6 @@
 import { abilityModifier, characterLevel, integerValue, type CharacterSheet } from './CharacterSheets.ts'
 import type { CreationData } from './PlayerCreation.ts'
-import { classId, spellEdition, spellRowState } from './Spellcasting.ts'
+import { classId, spellEdition, spellProfile, spellRowState, spellLimitIssue, type SpellSelectionLimit } from './Spellcasting.ts'
 
 // Regole 2014: SRD 5.1; regole 2024: SRD 5.2.1 (CC BY 4.0), https://www.dndbeyond.com/srd.
 export function wizardRules(sheet: CharacterSheet) {
@@ -101,7 +101,7 @@ export function wizardRest(sheet: CharacterSheet, long: boolean) {
 export function copyWizardSpell(sheet: CharacterSheet, data: CreationData, index: string) {
     const spell = data.spells.find((x) => x.index === index)
     const rules = wizardRules(sheet), d = { ...sheet.playerDetails }
-    if (!rules.wizard || !spell || spell.level < 1 || !spell.classes.some((x) => x.index === 'wizard') || !Number(d[`slots.${spell.level}.total`])) throw new Error('Scegli un incantesimo da mago di un livello disponibile.')
+    if (!rules.wizard || !spell || spell.level < 1 || !spell.classes.some((x) => x.index === 'wizard') || spell.level > spellProfile(sheet,data).maxLevel) throw new Error('Scegli un incantesimo da mago di un livello disponibile.')
     const lost = wizardBook(sheet, data).find((row) => row.spell?.index === index && d[`${row.root}.lost`] === 'true')
     if (!lost && wizardBook(sheet, data).some((row) => row.spell?.index === index)) throw new Error('Questo incantesimo è già nel libro.')
     const cost = copyCost(sheet, spell), gold = integer(d['coins.MO'], 'Monete d’oro')
@@ -214,23 +214,29 @@ export function castWizardSpell(sheet: CharacterSheet, data: CreationData, cast:
     return { ...sheet, playerDetails: d }
 }
 
-export function wizardBookIssues(sheet: CharacterSheet, data: CreationData) {
+export function wizardBookLimits(sheet: CharacterSheet, data: CreationData): SpellSelectionLimit[] {
     const rules = wizardRules(sheet)
     if (!rules.wizard) return []
-    const book = wizardBook(sheet, data).filter((x) => x.level > 0), d = sheet.playerDetails ?? {}, issues: string[] = []
-    const learned = book.filter((x) => !['copied', 'savant', 'feature'].includes(d[`${x.root}.learned`])).length
-    if (learned > rules.bookMinimum) issues.push(`Scelte iniziali e di avanzamento: ${learned}/${rules.bookMinimum}. Indica le copie aggiuntive separatamente.`)
+    const book = wizardBook(sheet,data).filter((x) => x.level > 0), d = sheet.playerDetails ?? {}
+    const learned = book.filter((x) => !['copied','savant','feature'].includes(d[`${x.root}.learned`]))
+    const limits: SpellSelectionLimit[] = [{ id:'wizard-book', kind:'level', label:'Libro · scelte iniziali e di avanzamento', maximum:rules.bookMinimum, roots:learned.map((x) => x.root), reason:'Sei magie di livello 1 iniziali, poi due per ogni livello da mago. Le copie e le magie concesse non consumano queste scelte.' }]
     for (let level = 2; level <= 9; level++) {
         const eligible = Math.max(0, 2 * (rules.level - (2 * level - 1) + 1))
-        const higher = book.filter((x) => x.level >= level && !['copied', 'savant', 'feature'].includes(d[`${x.root}.learned`])).length
-        if (higher > eligible) { issues.push(`Scelte di avanzamento di livello ${level} o superiore: massimo ${eligible}; le sei scelte iniziali sono di livello 1.`); break }
+        limits.push({ id:`wizard-level-${level}`, kind:'level', minimumLevel:level, label:`Avanzamenti · livello ${level} o superiore`, maximum:eligible, roots:learned.filter((x) => x.level >= level).map((x) => x.root), reason:`Le magie di livello ${level} si sbloccano al livello ${2 * level - 1} da mago. Da allora ottieni due nuove scelte per livello: quelle di livello superiore condividono questo limite. Le copie sono escluse.` })
     }
     const savant = book.filter((x) => d[`${x.root}.learned`] === 'savant')
-    if (savant.length > rules.savantChoices || savant.some((x) => x.spell?.school?.index !== 'evocation')) issues.push('Evocation Savant: verifica numero di scelte gratuite, scuola e livello degli incantesimi.')
+    limits.push({ id:'wizard-savant', kind:'savant', label:'Evocation Savant · scelte gratuite', maximum:rules.savantChoices, roots:savant.map((x) => x.root), reason:'Nel 2024: due magie della scuola Evocation di livello 1–2 dal livello 3, poi una per ogni nuovo livello di slot.' })
     // Una scelta gratuita per ogni nuovo livello di slot, oltre alle due iniziali di livello 1–2.
-    for (let max = 2; max <= 9; max++) if (savant.filter((x) => x.level > max).length > Math.max(0, rules.savantChoices - max)) {
-        issues.push('Le scelte di Evocation Savant devono includere le due magie iniziali di livello 1–2 e rispettare i livelli sbloccati.'); break
-    }
+    for (let max = 2; max <= 9; max++) limits.push({ id:`wizard-savant-${max+1}`, kind:'savant', minimumLevel:max+1, label:`Evocation Savant · livello ${max+1} o superiore`, maximum:Math.max(0,rules.savantChoices-max), roots:savant.filter((x) => x.level > max).map((x) => x.root), reason:'Le scelte di Evocation Savant devono includere le due magie iniziali di livello 1–2; poi una scelta per ogni nuovo livello di slot.' })
+    return limits
+}
+
+export function wizardBookIssues(sheet: CharacterSheet, data: CreationData, limits = wizardBookLimits(sheet,data)) {
+    const rules = wizardRules(sheet)
+    if (!rules.wizard) return []
+    const book = wizardBook(sheet,data).filter((x) => x.level > 0), d = sheet.playerDetails ?? {}
+    const issues = limits.filter((x) => x.roots.length > x.maximum).map(spellLimitIssue)
+    if (book.some((x) => d[`${x.root}.learned`] === 'savant' && x.spell?.school?.index !== 'evocation')) issues.push('Evocation Savant: scegli solo incantesimi della scuola Evocation oppure correggi il tipo di acquisizione.')
     if (book.some((x) => x.level > Math.ceil(rules.level / 2) || !x.spell?.classes.some((c) => c.index === 'wizard'))) issues.push('Il libro contiene magie non riconosciute o di un livello non disponibile: verifica con il DM.')
     return issues
 }

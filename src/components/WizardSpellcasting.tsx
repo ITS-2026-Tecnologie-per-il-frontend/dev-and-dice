@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { CharacterSheet } from '../utils/CharacterSheets'
-import { labelOf, type CreationData } from '../utils/PlayerCreation'
+import { labelOf, spellRules, spellSelection, type CreationData } from '../utils/PlayerCreation'
 import { castWizardSpell, copyCost, copyWizardSpell, copyWizardBook, restoreWizardBackup, improveWizard, replaceWizardCantrip, recoverWizardSlots, wizardBook, wizardRest, wizardRules, wizardFeatureGrants, type WizardCast } from '../utils/Wizard'
 import { characterFields } from '../utils/CharacterSheets'
 
@@ -21,8 +21,9 @@ export function WizardSpellcasting({ sheet, data, onChange }: { sheet: Character
     const divination = rules.edition === '2014' && rules.level >= 6 && d['creation.subclass'] === 'wizard-divination'
     const abjuration = rules.edition === '2014' && rules.level >= 2 && d['creation.subclass'] === 'wizard-abjuration'
     const copySpell = data.spells.find((x) => x.index === copy)
-    const copyable = data.spells.filter((x) => x.level > 0 && x.classes.some((c) => c.index === 'wizard') && Number(d[`slots.${x.level}.total`]) > 0 && !book.some((row) => row.spell?.index === x.index && !row.state.lost))
-    const missing = Math.max(0, rules.bookMinimum - book.filter((x) => x.level > 0 && d[`${x.root}.learned`] !== 'copied' && d[`${x.root}.learned`] !== 'savant' && d[`${x.root}.learned`] !== 'feature').length)
+    const maxSpellLevel = spellRules(sheet,data).maxLevel
+    const copyable = data.spells.filter((x) => x.level > 0 && x.classes.some((c) => c.index === 'wizard') && x.level <= maxSpellLevel && !book.some((row) => row.spell?.index === x.index && !row.state.lost))
+    const missing = Math.max(0, rules.bookMinimum - (spellSelection(sheet,data).limits.find((x) => x.id === 'wizard-book')?.roots.length ?? 0))
     function run(action: () => CharacterSheet) {
         try { onChange(action()); setError('') } catch (e) { setError(e instanceof Error ? e.message : 'Operazione non riuscita.') }
     }

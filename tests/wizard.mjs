@@ -123,7 +123,7 @@ assert.deepEqual(wizardBookIssues(savant, data), [])
 assert.deepEqual(parseCharacterSheets(JSON.stringify([second]))[0], second)
 console.log('Wizard checks passed: edition gates, spellbook copies, recovery, rituals, mastery, signature, evocation, Overchannel, persistence and combat imports.')
 const freeHigh = add(add(add(create(3), 'acid-arrow'), 'blindness-deafness', 1), 'blur', 2)
-assert.ok(wizardBookIssues(freeHigh, data).some((x) => x.includes('massimo 2')), 'Only two free advancement spells may be level 2 at wizard level 3')
+assert.ok(wizardBookIssues(freeHigh, data).some((x) => x.includes('3/2, 1 in eccesso')), 'Only two free advancement spells may be level 2 at wizard level 3')
 const legacyItalian = { ...create(3), playerDetails: { ...create(3).playerDetails, 'spell.1.0.name': 'Dardo Incantato', 'spell.1.0.prepared': 'true' } }
 const translatedData = { ...data, spells: data.spells.map((x) => x.index === 'magic-missile' ? { ...x, nameIt: 'Magic Missile', aliases: ['Dardo Incantato', 'Magic Missile'] } : x) }
 assert.doesNotThrow(() => castWizardSpell(legacyItalian, translatedData, casting('spell.1.0', 1)), 'Language switches must preserve old name-only spell references')

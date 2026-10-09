@@ -1,6 +1,7 @@
+import { InventoryEditor } from './InventoryEditor'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { characterFields, type CharacterSheet } from '../utils/CharacterSheets'
-import { abilityKeys, characterFieldValue, labelOf, selectedOrigins, spellRules, spellSelection, subclassOptions, subclassMinimumLevel, updateCharacterField, type CreationData, type Origin } from '../utils/PlayerCreation'
+import { abilityKeys, characterFieldValue, labelOf, selectedOrigins, spellRules, spellSelection, spellSelectionBlock, subclassOptions, subclassMinimumLevel, updateCharacterField, type CreationData, type Origin } from '../utils/PlayerCreation'
 import { spellEdition, spellRowState } from '../utils/Spellcasting'
 import { changeTutorialOrigin, pointCost, rollScores, rolledTotal, standardScores, standardLanguageIds, tutorialChoices, tutorialIssues, tutorialStep, tutorialSteps } from '../utils/CharacterTutorial'
 import { CreationChoices } from './PlayerCreation'
@@ -37,8 +38,8 @@ export function CharacterTutorial({ sheet, data, onChange }: { sheet: CharacterS
         const value = base ? sheet[key as keyof typeof characterFields] : d[key] ?? ''
         return <label className="player-field"><span>{label}</span>{multiline ? <textarea rows={3} value={value} onChange={(e) => detail(key,e.target.value)} /> : <input value={value} onChange={(e) => detail(key,e.target.value)} />}</label>
     }
-    function check(key: string, label: string) {
-        return <label className="player-check"><input type="checkbox" checked={d[key] === 'true'} onChange={(e) => detail(key,String(e.target.checked))} /><span>{label}</span></label>
+    function check(key: string, label: string, blocked = '') {
+        return <label className="player-check"><input type="checkbox" title={blocked || undefined} disabled={d[key] !== 'true' && !!blocked} checked={d[key] === 'true'} onChange={(e) => { if (!e.target.checked || !blocked) detail(key,String(e.target.checked)) }} /><span>{label}</span></label>
     }
     function origin(kind: 'class'|'race'|'subrace'|'subclass'|'background', label: string, options: Origin[]) {
         return <label className="player-field"><span>{label}</span><select value={d[`creation.${kind}`] ?? ''} onChange={(e) => onChange(changeTutorialOrigin(sheet,data,kind,e.target.value))}>
@@ -47,16 +48,26 @@ export function CharacterTutorial({ sheet, data, onChange }: { sheet: CharacterS
     }
     function preview(label: string, children: ReactNode) { return <section className="tutorial-preview"><h4>{label}</h4>{children}</section> }
     const rows = Object.entries(d).filter(([k,v]) => /^spell\.\d+\.\d+\.name$/.test(k) && v.trim()).map(([key,name]) => ({ root:key.slice(0,-5), name, level:Number(key.split('.')[1]), index:Number(key.split('.')[2]) }))
-    function toggleSpell(spell: CreationData['spells'][number]) {
-        const existing = rows.find((r) => d[`${r.root}.index`] === spell.index && spellRowState(sheet,r.level,r.index).source === 'class')
+    const selectedRow = (spell: CreationData['spells'][number]) => rows.find((r) => r.level === spell.level && spellRowState(sheet,r.level,r.index).source === 'class' && (d[`${r.root}.index`] === spell.index || [spell.name,spell.nameIt,...(spell.aliases ?? [])].some((name) => name?.toLowerCase() === r.name.trim().toLowerCase())))
+    const acquisition = d['tutorial.spellAcquisition'] === 'savant' && selected.limits.some((x) => x.id === 'wizard-savant' && x.maximum > 0) ? 'savant' : 'level'
+    const unavailable = rows.filter((r) => spellRowState(sheet,r.level,r.index).source === 'class' && !magic.spells.some((s) => s.index === d[`${r.root}.index`] || [s.name,s.nameIt,...(s.aliases ?? [])].some((n) => n?.toLowerCase() === r.name.toLowerCase())))
+    function removeSpell(root: string) {
         const next = { ...d }
-        if (existing) for (const key of Object.keys(next).filter((k) => k.startsWith(existing.root + '.'))) delete next[key]
-        else {
-            let index = 0
-            while (next[`spell.${spell.level}.${index}.name`]?.trim()) index++
-            const root = `spell.${spell.level}.${index}`
-            Object.assign(next,{ [`${root}.name`]:labelOf(spell), [`${root}.index`]:spell.index, [`${root}.source`]:'class', [`${root}.prepared`]:'false' })
-        }
+        for (const key of Object.keys(next).filter((k) => k.startsWith(root + '.'))) delete next[key]
+        for (const key of ['wizard.mastery.1','wizard.mastery.2','wizard.signature.0','wizard.signature.1']) if (next[key] === root) next[key] = ''
+        onChange({ ...sheet, playerDetails:next })
+    }
+    function toggleSpell(spell: CreationData['spells'][number]) {
+        const existing = selectedRow(spell)
+        if (existing) { removeSpell(existing.root); return }
+        const blocked = spellSelectionBlock(selected,{level:spell.level,learned:spell.level > 0 ? acquisition : 'level',spell})
+        if (blocked) return
+        const next = { ...d }
+        let index = 0
+        while (next[`spell.${spell.level}.${index}.name`]?.trim()) index++
+        if (index >= 500) return
+        const root = `spell.${spell.level}.${index}`
+        Object.assign(next,{ [`${root}.name`]:labelOf(spell), [`${root}.index`]:spell.index, [`${root}.source`]:'class', [`${root}.learned`]:spell.level > 0 ? acquisition : 'level', [`${root}.prepared`]:'false' })
         onChange({ ...sheet, playerDetails:next })
     }
     return <section className="character-tutorial" aria-label="Tutorial di creazione del personaggio">
@@ -109,15 +120,35 @@ export function CharacterTutorial({ sheet, data, onChange }: { sheet: CharacterS
             <CreationChoices sheet={sheet} data={data} change={detail} choices={tutorialChoices(sheet,data,5)} section="equipment" />
             {preview('Equipaggiamento iniziale',<p className="tutorial-prose">{d.equipment || 'Completa prima le scelte.'}</p>)}
             <p>CA attuale: {sheet.armorClass || '—'}. Gli attacchi con le armi iniziali vengono compilati usando caratteristica e competenza appropriate.</p>
-            <p className="player-hint">Questo percorso usa le dotazioni del catalogo. L’alternativa di acquistare oggetti con oro iniziale si concorda con il DM e si compila nella scheda. Pesi mancanti, contenuto delle dotazioni ed effetti speciali richiedono verifica.</p>
+            <p className="player-hint">Questo percorso usa le dotazioni del catalogo. L’alternativa di acquistare oggetti con oro iniziale si concorda con il DM e si compila nella scheda. Le dotazioni vengono registrate nell’inventario, compreso il contenuto dei pacchetti disponibile nel catalogo. I pesi mancanti e gli effetti speciali richiedono verifica.</p>
         </>}
+        {step === 5 && <InventoryEditor sheet={sheet} data={data} onChange={onChange} />}
         {step === 6 && <>
             <p>I trucchetti sono magie di livello 0 e non consumano slot. Gli slot limitano i lanci delle magie di livello superiore; conoscere una magia non significa averla preparata oggi.</p>
-            {!magic.maxLevel && !magic.cantrips ? <p>La tua classe non richiede incantesimi a questo livello. Eventuali magie dell’origine sono registrate separatamente.</p> : <><p>Trucchetti {selected.cantrips}/{magic.cantrips}; incantesimi {selected.spells}/{magic.known ?? 'lista di classe'}{magic.prepared && `; preparati ${selected.prepared}/${magic.preparedLimit}`}. CD {d.spellDC || '—'} · attacco {d.spellAttackBonus || '—'}.</p>
+            {!magic.maxLevel && !magic.cantrips ? <p>La tua classe non richiede incantesimi a questo livello. Eventuali magie dell’origine sono registrate separatamente.</p> : <><p>Magie di classe annotate: {selected.spells}. CD {d.spellDC || '—'} · attacco {d.spellAttackBonus || '—'}.</p>
                 {d['creation.class'] === 'wizard' && <p>Il libro parte con sei incantesimi di livello 1 e cresce di due per livello. Metti nel libro le magie scelte, poi spunta quelle preparate. Le copie aggiuntive e le scelte avanzate hanno controlli dedicati qui sotto.</p>}
-                {Array.from({length:magic.maxLevel+1},(_,level) => <details key={level} open={level < 2}><summary>{level === 0 ? 'Trucchetti' : `Incantesimi di livello ${level}`}</summary><div className="tutorial-spells">{magic.spells.filter((x) => x.level === level).map((spell) => { const row = rows.find((r) => d[`${r.root}.index`] === spell.index && spellRowState(sheet,r.level,r.index).source === 'class'); return <div key={spell.index} className="tutorial-spell"><label className="player-check"><input type="checkbox" checked={!!row} onChange={() => toggleSpell(spell)} /><span>{labelOf(spell)}</span></label>{row && level > 0 && magic.prepared && check(`${row.root}.prepared`,`Prepara ${labelOf(spell)}`)}<details><summary>Come funziona</summary><p>{spell.desc[0]}</p></details></div> })}</div></details>)}
+                <ul>{selected.limits.filter((x) => !x.minimumLevel && !x.exactLevel && (['cantrips','known','prepared','level'].includes(x.kind) || x.kind === 'savant' && (x.maximum > 0 || x.roots.length > 0))).map((limit) => <li key={limit.id}><strong>{limit.label}: {limit.roots.length}/{limit.maximum}</strong> · {limit.reason}</li>)}</ul>
+                {selected.limits.some((x) => x.id === 'wizard-savant' && x.maximum > 0) && <label className="player-field"><span>Acquisizione delle nuove magie</span><select value={acquisition} onChange={(e) => detail('tutorial.spellAcquisition',e.target.value)}><option value="level">Scelta iniziale / avanzamento</option><option value="savant">Scelta gratuita · Evocation Savant</option></select></label>}
+                {Array.from({length:magic.maxLevel+1},(_,level) => {
+                    const quota = selected.limits.find((x) => x.id === `wizard-level-${level}`)
+                    const blocked = spellSelectionBlock(selected,{level,learned:level > 0 ? acquisition : 'level'})
+                    return <details key={level} open={level < 2}><summary>{level === 0 ? 'Trucchetti' : `Incantesimi di livello ${level}`}</summary>
+                        {quota && <p className="player-hint">{quota.label}: {quota.roots.length}/{quota.maximum}. {quota.reason}</p>}
+                        {blocked && <p className="player-hint" role="status">{blocked}</p>}
+                        <div className="tutorial-spells">{magic.spells.filter((x) => x.level === level).map((spell) => {
+                            const row = selectedRow(spell)
+                            const learnBlock = row ? '' : spellSelectionBlock(selected,{level,learned:level > 0 ? acquisition : 'level',spell})
+                            const state = row && spellRowState(sheet,level,row.index)
+                            const prepareBlock = row ? spellSelectionBlock(selected,{level,root:row.root,prepare:true,alwaysPrepared:state?.alwaysPrepared}) : ''
+                            return <div key={spell.index} className="tutorial-spell"><label className="player-check"><input type="checkbox" checked={!!row} disabled={!!learnBlock} title={learnBlock || undefined} onChange={() => toggleSpell(spell)} /><span>{labelOf(spell)}</span></label>
+                                {row && level > 0 && magic.prepared && (state?.alwaysPrepared ? <small>Sempre preparato · fuori dal limite</small> : check(`${row.root}.prepared`,`Prepara ${labelOf(spell)}`,prepareBlock))}
+                                {row && level > 0 && <small>Acquisizione: {d[`${row.root}.learned`] === 'copied' ? 'copia nel libro' : d[`${row.root}.learned`] === 'savant' ? 'Evocation Savant' : d[`${row.root}.learned`] === 'feature' ? 'privilegio' : 'iniziale / avanzamento'}</small>}
+                                <details><summary>Come funziona</summary><p>{spell.desc[0]}</p></details></div>
+                        })}</div></details>
+                })}
                 <WizardSpellcasting sheet={sheet} data={data} onChange={onChange} />
             </>}
+            {unavailable.length > 0 && preview('Magie annotate da verificare',<><p>Queste selezioni sono conservate, ma non sono disponibili per la classe o il livello attuali. Puoi rimuoverle oppure tornare a correggere livello ed edizione.</p>{unavailable.map((r) => <label className="player-check" key={r.root}><input type="checkbox" checked onChange={() => removeSpell(r.root)} /><span>{r.name} · livello {r.level}</span></label>)}</>)}
             {d.racialSpells && preview('Magie dell’origine',<p>{d.racialSpells}</p>)}
             {edition === '2024' && <p className="player-hint">I limiti di classe seguono il 2024; molte descrizioni nel catalogo sono 2014. Controlla la versione della magia con il DM prima di usarla.</p>}
         </>}

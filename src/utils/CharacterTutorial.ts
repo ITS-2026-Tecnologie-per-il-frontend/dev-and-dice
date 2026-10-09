@@ -115,7 +115,8 @@ export function tutorialIssues(sheet: CharacterSheet, data: CreationData, step: 
         const rules = spellRules(sheet, data), selection = spellSelection(sheet, data)
         issues.push(...selection.issues)
         if (selection.cantrips < rules.cantrips) issues.push(`Scegli ${rules.cantrips} trucchetti di classe (ora ${selection.cantrips}).`)
-        if (rules.known !== undefined && selection.spells < rules.known) issues.push(`Scegli ${rules.known} incantesimi ${d['creation.class'] === 'wizard' ? 'per il libro' : 'di classe'} (ora ${selection.spells}).`)
+        const learned = selection.limits.find((x) => x.id === 'wizard-book')?.roots.length ?? selection.spells
+        if (rules.known !== undefined && (!rules.prepared || d['creation.class'] === 'wizard') && learned < rules.known) issues.push(`Scegli ${rules.known} incantesimi ${d['creation.class'] === 'wizard' ? 'iniziali e di avanzamento per il libro' : 'di classe'} (ora ${learned}).`)
         if (rules.prepared && selection.prepared < rules.preparedLimit) issues.push(`Prepara ${rules.preparedLimit} incantesimi (ora ${selection.prepared}).`)
     }
     if (step === 8) {
@@ -148,14 +149,14 @@ export function changeTutorialOrigin(sheet: CharacterSheet, data: CreationData, 
     }
     if (saveSpells) {
         const archive = d[`tutorial.spells.${config(next)}`]
-        if (archive) {
+        if (kind === 'class' && archive) {
             try { const saved = JSON.parse(archive); if (saved && typeof saved === 'object' && !Array.isArray(saved) && Object.entries(saved).every(([k,v]) => k.startsWith('spell.') && typeof v === 'string')) {
                 for (const k of Object.keys(d).filter((k) => k.startsWith('spell.'))) delete d[k]
                 Object.assign(d,saved)
             } } catch { /* Una vecchia annotazione non valida non deve cancellare le scelte attuali. */ }
         }
         const pool = spellRules(next,data).spells
-        for (const [key,name] of Object.entries(d).filter(([k,v]) => /^spell\.\d+\.\d+\.name$/.test(k) && v.trim())) {
+        for (const [key,name] of Object.entries(d).filter(([k,v]) => kind === 'class' && /^spell\.\d+\.\d+\.name$/.test(k) && v.trim())) {
             const root = key.slice(0,-5), parts = root.split('.')
             if (spellRowState(next, Number(parts[1]), Number(parts[2])).source !== 'class') continue
             if (!pool.some((s) => s.index === d[`${root}.index`] || [s.name,s.nameIt,...(s.aliases ?? [])].some((n) => n?.toLowerCase() === name.toLowerCase()))) {
@@ -167,7 +168,7 @@ export function changeTutorialOrigin(sheet: CharacterSheet, data: CreationData, 
     if (!subclassOptions(next,data).some((x) => x.index === d['creation.subclass'] && Number(next.level) >= subclassMinimumLevel(next,x,data))) d['creation.subclass'] = ''
     d.subclass = subclassOptions(next,data).find((x) => x.index === d['creation.subclass'])?.nameIt ?? subclassOptions(next,data).find((x) => x.index === d['creation.subclass'])?.name ?? ''
     d.subrace = selectedOrigins(next,data).subrace ? labelOf(selectedOrigins(next,data).subrace!) : ''
-    d['tutorial.notice'] = 'Scelta aggiornata: controlla competenze, equipaggiamento, sottoclasse e magie. Le scelte precedenti restano conservate per origine; le magie non compatibili sono archiviate e tornano ripristinando classe, livello ed edizione.'
+    d['tutorial.notice'] = 'Scelta aggiornata: controlla competenze, equipaggiamento, sottoclasse e magie. Cambiando livello o edizione, le magie restano annotate e gli eventuali limiti superati vengono segnalati. Cambiando classe, le magie incompatibili sono archiviate e tornano ripristinando la classe precedente.'
     if (kind === 'edition') d['tutorial.rules2024'] = 'false'
     return applyCreation(next,data)
 }

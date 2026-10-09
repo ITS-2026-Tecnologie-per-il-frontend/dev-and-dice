@@ -1,6 +1,7 @@
 import { abilityModifier, signedBonus, characterFields, characterLevel, clampCurrentHitPointsToMaximum, integerValue, inventoryTotalWeight, patchSheetStats, type SheetStats, type CharacterSheet } from './CharacterSheets.ts'
-import { castingAbilityKey, classId, spellEdition, spellProfile, spellCounts, grantedSpells, type RulesEdition } from './Spellcasting.ts'
-import { wizardFeatures2024, wizardBookIssues, wizardFeatureSelected, selectedWizardFeatures, addWizardFeatureSpells, wizardSpellPool, wizardWardMaximum, featureResourceKey } from './Wizard.ts'
+import { castingAbilityKey, classId, spellEdition, spellProfile, spellCounts, grantedSpells, spellLimitIssue, type SpellSource, type SpellSelectionLimit, type RulesEdition } from './Spellcasting.ts'
+import { wizardFeatures2024, wizardBookIssues, wizardBookLimits, wizardFeatureSelected, selectedWizardFeatures, addWizardFeatureSpells, wizardSpellPool, wizardWardMaximum, featureResourceKey } from './Wizard.ts'
+import { reconcileInventory, ownedInventoryItems, inventoryEquipment, inventoryFieldValue, inventoryReferenceKey, referencedInventoryItem, updateInventoryField, projectInventory, inventoryCarriedWeight, inventoryItems, type InventoryGrant } from './Inventory.ts'
 import type { Catalog } from './Catalog.ts'
 
 export const abilityKeys = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const
@@ -8,7 +9,7 @@ export type AbilityKey = typeof abilityKeys[number]
 export type Ref = { index: string; name: string; nameIt?: string; aliases?: string[] }
 export type Option = { option_type: string; item?: Ref; of?: Ref; count?: number; items?: Option[]; choice?: Choice; ability_score?: Ref; bonus?: number; desc?: string }
 export type Choice = { choose: number; desc?: string; type: string; from: { option_set_type: string; options?: Option[]; equipment_category?: Ref } }
-export type Equipment = Ref & { armor_class?: { base: number; dex_bonus: boolean; max_bonus?: number }; armor_category?: string; str_minimum?: number; stealth_disadvantage?: boolean; weapon_category?: string; weapon_range?: string; properties?: Ref[]; damage?: { damage_dice: string; damage_type: Ref } }
+export type Equipment = Ref & { weight?: number; contents?: { item: Ref; quantity: number }[]; desc?: string[]; armor_class?: { base: number; dex_bonus: boolean; max_bonus?: number }; armor_category?: string; str_minimum?: number; stealth_disadvantage?: boolean; weapon_category?: string; weapon_range?: string; properties?: Ref[]; damage?: { damage_dice: string; damage_type: Ref } }
 export type Origin = Ref & {
     aliases?: string[]; fixedAbilityBonuses?: Partial<Record<AbilityKey, number>>; abilityBonusChoices?: Choice; race?: Ref;
     speed?: number; size?: string; subraces?: Ref[]; traits?: Ref[]; racial_traits?: Ref[]; languages?: Ref[]; language_options?: Choice;
@@ -63,6 +64,8 @@ export const modifier = abilityModifier
 export const creationEnabled = (sheet: CharacterSheet) => sheet.playerDetails?.['creation.enabled'] === 'true'
 
 export function characterFieldValue(sheet: CharacterSheet, key: string): string {
+    const owned = inventoryFieldValue(sheet,key)
+    if (owned !== undefined) return owned
     const score = /^modifier\.(strength|dexterity|constitution|intelligence|wisdom|charisma)$/.exec(key)?.[1] as AbilityKey | undefined
     if (score) return signedBonus(modifier(sheet[score]))
     const row = /^inventory\.(\d+)\.3$/.exec(key)?.[1]
@@ -80,6 +83,9 @@ export function characterFieldMode(sheet: CharacterSheet, key: string): 'automat
 // Le chiavi sono quelle dei dati salvati, senza riferimenti al template o alla pagina.
 export function updateCharacterField(sheet: CharacterSheet, key: string, value: string): CharacterSheet {
     if (characterFieldMode(sheet, key) === 'automatic') return sheet
+    if (sheet.playerDetails?.['inventory.version'] === '1' && ['equipment','consumables','attunedItems'].includes(key)) return sheet
+    const inventory = updateInventoryField(sheet,key,value)
+    if (inventory) return inventory
     const d = { ...sheet.playerDetails }
     if (Object.hasOwn(characterFields, key)) {
         if (creationEnabled(sheet) && abilityKeys.includes(key as AbilityKey)) {
@@ -101,6 +107,8 @@ export function patchCalculatedSheetStats(sheet: CharacterSheet, stats: Partial<
 
 export function characterCalculationIssues(sheet: CharacterSheet): string[] {
     const issues: string[] = [], d = sheet.playerDetails ?? {}
+    const ids=inventoryItems(sheet).map((x) => x.id).filter(Boolean)
+    if (new Set(ids).size !== ids.length) issues.push('Gli identificativi dell’inventario devono essere distinti: verifica i collegamenti senza eliminare gli oggetti.')
     if (sheet.hitPoints.trim() && (integerValue(sheet.hitPoints) === undefined || Number(sheet.hitPoints) < 0)) issues.push('I PF attuali devono essere un intero non negativo.')
     if (sheet.level.trim() && characterLevel(sheet) === undefined) issues.push('Il livello deve essere un intero tra 1 e 20.')
     for (const key of abilityKeys) if (sheet[key].trim() && modifier(sheet[key]) === undefined) issues.push(`${characterFields[key]} deve essere un intero tra 1 e 30.`)
@@ -114,6 +122,7 @@ export function characterCalculationIssues(sheet: CharacterSheet): string[] {
             const weight = Number(value.replace(',', '.'))
             if (!Number.isFinite(weight) || weight < 0) issues.push(`Peso non valido per ${key}: usa un numero non negativo, anche decimale.`)
         }
+        if (/^inventory\.\d+\.(armorBase|armorDexMax)$/.test(key) && (number === undefined || number < 0)) issues.push(`Proprietà dell’armatura non valida: ${key}. Usa un intero non negativo.`)
         if (/^inventory\.\d+\.2$/.test(key) && (number === undefined || number < 0)) issues.push(`Quantità non valida per ${key}: usa un intero non negativo.`)
     }
     for (let level = 1; level <= 9; level++) {
@@ -227,8 +236,15 @@ export function spellRules(sheet: CharacterSheet, data: CreationData, edition?: 
 
 /** Reconcile only fields still owned by automation; edits to generated fields become overrides. */
 export function applyCreation(input: CharacterSheet, data: CreationData): CharacterSheet {
-    if (!creationEnabled(input)) return input
-    const sheet = { ...input, playerDetails: { ...input.playerDetails } }
+    const starting: InventoryGrant[] = []
+    if (creationEnabled(input)) {
+        const origins = selectedOrigins(input,data)
+        for (const [kind,origin] of [['class',origins.characterClass],['background',origins.background]] as const) origin?.starting_equipment?.forEach((x,i) => starting.push({ref:x.equipment,count:x.quantity,source:`initial:${kind}.${origin.index}.${i}.${x.equipment.index}`,origin:`Dotazione · ${labelOf(origin)}`}))
+        creationChoices(input,data).filter((x) => x.choice.type === 'equipment').forEach(({choice,path,label}) => resolveChoice(choice,path,input.playerDetails ?? {},data).forEach((x,i) => starting.push({...x,source:`initial:${path}.${i}.${x.ref.index}`,origin:label})))
+    }
+    const inventorySheet = reconcileInventory(input,data,starting)
+    if (!creationEnabled(input)) return inventorySheet
+    const sheet = { ...inventorySheet, playerDetails: { ...inventorySheet.playerDetails } }
     const d = sheet.playerDetails
     const { race, subrace, characterClass, background, subclass } = selectedOrigins(sheet, data)
     const level = characterLevel(sheet) ?? 0
@@ -340,17 +356,14 @@ export function applyCreation(input: CharacterSheet, data: CreationData): Charac
         put('maxHitPoints', edition === '2014' && exhaustion >= 4 ? Math.floor(maximum / 2) : maximum)
     } else put('maxHitPoints', '')
     if (background?.starting_gold?.unit === 'gp') put('coins.MO', background.starting_gold.quantity)
-    const items = [...(characterClass?.starting_equipment ?? []), ...(background?.starting_equipment ?? [])].map((x) => ({ ref: x.equipment, count: x.quantity }))
-    choices.filter((x) => x.choice.type === 'equipment').forEach(({ choice, path }) => items.push(...resolveChoice(choice, path, d, data)))
-    const totals = new Map<string, { ref: Ref; count: number }>()
-    for (const item of items) totals.set(item.ref.index, { ref: item.ref, count: (totals.get(item.ref.index)?.count ?? 0) + item.count })
-    put('equipment', [...totals.values()].map((x) => `${x.count} × ${labelOf(x.ref)}`).join('\n'))
-    const weapons = data.equipment.filter((x) => totals.has(x.index) && x.weapon_category).slice(0, 6)
+    const owned = ownedInventoryItems(sheet)
+    const weapons = owned.filter((x) => inventoryEquipment(x,sheet,data)?.weapon_category).slice(0,6)
     for (let i = 0; i < 6; i++) {
-        const startingWeapon = weapons[i]
-        updateGeneratedField(d, `attacks.${i}.0`, startingWeapon ? labelOf(startingWeapon) : '')
-        const name = d[`attacks.${i}.0`]?.trim().toLowerCase()
-        const weapon = data.equipment.find((item) => item.weapon_category && [item.index, item.name, labelOf(item), ...(item.aliases ?? [])].some((label) => label.toLowerCase() === name))
+        const field = `attacks.${i}.0`, ref = inventoryReferenceKey(field)
+        if (!d[`inventory.pending.${field}`]) updateGeneratedField(d,ref,weapons[i]?.id ?? '')
+        // Il nome è una vista dell'oggetto; bonus e danni conservano gli override esistenti.
+        d[field] = inventoryFieldValue(sheet,field) ?? ''
+        const weapon = inventoryEquipment(referencedInventoryItem(sheet,field),sheet,data)
         if (!weapon) { put(`attacks.${i}.1`, ''); put(`attacks.${i}.2`, ''); continue }
         const finesse = weapon.properties?.some((x) => x.index === 'finesse')
         const score = weapon.weapon_range === 'Ranged' ? 'dexterity' : 'strength'
@@ -362,10 +375,21 @@ export function applyCreation(input: CharacterSheet, data: CreationData): Charac
         put(`attacks.${i}.1`, bonus === undefined || proficient && pb === undefined ? '' : bonus + (proficient ? pb! : 0) + archery - testPenalty)
         put(`attacks.${i}.2`, weapon.damage ? `${weapon.damage.damage_dice}${bonus === undefined || bonus === 0 ? '' : `${bonus > 0 ? '+' : ''}${bonus}`} ${labelOf(weapon.damage.damage_type)}` : '')
     }
-    const armor = data.equipment.find((x) => x.index === d['creation.armor'] && totals.has(x.index) && x.armor_category !== 'Shield')
-    const shield = d['creation.shield'] === 'true' && totals.has('shield')
-    put('armor', armor ? labelOf(armor) : '')
-    put('shield', shield ? 'Shield (+2 CA)' : '')
+    // Compatibilità dei vecchi selettori: il catalogo identifica il tipo, l'ID identifica la voce posseduta.
+    for (const field of ['armor','shield']) {
+        const key = field === 'armor' ? 'creation.armor' : 'creation.shield'
+        const previous = d[`inventory.legacySelection.${key}`]
+        if (d[key] !== undefined && d[key] !== previous) {
+            const candidate = field === 'armor' ? owned.find((x) => x.catalog === d[key]) : d[key] === 'true' ? owned.find((x) => inventoryEquipment(x,sheet,data)?.armor_category === 'Shield') : undefined
+            d[inventoryReferenceKey(field)] = candidate?.id ?? ''
+            d[`inventory.legacySelection.${key}`] = d[key]
+        }
+    }
+    const armor = inventoryEquipment(referencedInventoryItem(sheet,'armor'),sheet,data)
+    const shieldItem = inventoryEquipment(referencedInventoryItem(sheet,'shield'),sheet,data)
+    const shield = shieldItem?.armor_category === 'Shield'
+    d.armor = inventoryFieldValue(sheet,'armor') ?? ''
+    d.shield = inventoryFieldValue(sheet,'shield') ?? ''
     put('armorDexMax', armor?.armor_class?.max_bonus ?? '')
     put('armorStrength', armor?.str_minimum || '')
     put('armorStealthDisadvantage', armor?.stealth_disadvantage ?? false)
@@ -435,26 +459,8 @@ export function applyCreation(input: CharacterSheet, data: CreationData): Charac
     updateDetail('spellAttackBonus', magic.maxLevel && castingBonus !== undefined ? castingBonus - testPenalty : undefined)
     for (let i = 1; i <= 9; i++) updateDetail(`slots.${i}.total`, String(magic.progression[`spell_slots_level_${i}`] ?? 0))
     const rows = [...new Set(Object.keys(d).flatMap((key) => /^inventory\.(\d+)\.[012]$/.exec(key)?.[1] ?? []))]
-    let totalWeight = 0, hasWeight = false, validWeight = true
-    for (const row of rows) {
-        const unit = d[`inventory.${row}.1`] ?? '', quantity = d[`inventory.${row}.2`] ?? ''
-        const total = characterFieldValue(sheet, `inventory.${row}.3`)
-        d[`inventory.${row}.3`] = total
-        if (unit.trim()) {
-            hasWeight = true
-            if (total === '') validWeight = false
-            else totalWeight += Number(total)
-        } else if (d[`inventory.${row}.0`]?.trim() && integerValue(quantity) !== 0) validWeight = false
-    }
-    for (const coin of ['MR', 'MA', 'ME', 'MO', 'MP']) {
-        const value = d[`coins.${coin}`]
-        if (!value?.trim()) continue
-        hasWeight = true
-        const count = integerValue(value)
-        if (count === undefined || count < 0) validWeight = false
-        else totalWeight += count / 100 // SRD italiano: una moneta pesa circa 10 g.
-    }
-    updateDetail('carriedWeight', hasWeight && validWeight && Number.isFinite(totalWeight) ? Number(totalWeight.toPrecision(15)) : undefined)
+    for (const row of rows) d[`inventory.${row}.3`] = characterFieldValue(sheet, `inventory.${row}.3`)
+    updateDetail('carriedWeight', inventoryCarriedWeight(sheet))
     const strength = integerValue(sheet.strength)
     const sizeMultiplier = ({ Tiny: 0.5, Small: 1, Medium: 1, Large: 2, Huge: 4, Gargantuan: 8 } as Record<string, number>)[race?.size ?? 'Medium']
     // SRD italiano: For × 7,5 kg per Piccola/Media. Privilegi speciali e capacità dei contenitori usano l'override.
@@ -472,7 +478,8 @@ export function applyCreation(input: CharacterSheet, data: CreationData): Charac
     if (sheet.hitPoints === '' && previousMax === undefined || !manualMaximum && !restoringMaximum && previousMax !== undefined && sheet.hitPoints === previousMax && d.maxHitPoints !== '') sheet.hitPoints = d.maxHitPoints ?? ''
     const updated = addWizardFeatureSpells(sheet, data)
     // Durante la digitazione di un massimo manuale il limite si applica al blur/salvataggio.
-    return manualMaximum ? updated : clampCurrentHitPointsToMaximum(updated)
+    const projected = projectInventory(updated)
+    return manualMaximum ? projected : clampCurrentHitPointsToMaximum(projected)
 }
 
 export function enableCreation(sheet: CharacterSheet, data: CreationData): CharacterSheet {
@@ -499,20 +506,41 @@ export function resetCreationOverrides(sheet: CharacterSheet, data: CreationData
 export function spellSelection(sheet: CharacterSheet, data: CreationData) {
     const rules = spellRules(sheet, data)
     const d = sheet.playerDetails ?? {}
-    const { entries, cantrips, spells, prepared, extra, secrets, loreSpells } = spellCounts(sheet)
-    const lore = d['creation.class'] === 'bard' && d['creation.subclass'] === 'lore' && Number(sheet.level) >= 6
+    const { entries, cantrips, spells, prepared, extra, secrets } = spellCounts(sheet)
+    const lore = rules.edition === '2014' && classId(sheet) === 'bard' && d['creation.subclass'] === 'lore' && Number(sheet.level) >= 6
     const knownLimit = rules.known
-    const issues: string[] = wizardBookIssues(sheet, data)
-    if (cantrips > rules.cantrips) issues.push(`Troppi trucchetti di classe: ${cantrips}/${rules.cantrips}.`)
-    if (knownLimit !== undefined && spells > knownLimit && d['creation.class'] !== 'wizard') issues.push(`Troppi incantesimi di classe: ${spells}/${knownLimit}.`)
-    if (rules.prepared && prepared > rules.preparedLimit) issues.push(`Troppi incantesimi preparati: ${prepared}/${rules.preparedLimit}.`)
-    if (entries.some((entry) => entry.source === 'class' && !rules.spells.some((x) => labelOf(x) === entry.name))) issues.push('Alcuni incantesimi non appartengono alla lista o al livello di classe: verifica con il DM.')
+    const bookLimits = wizardBookLimits(sheet,data)
+    const limits: SpellSelectionLimit[] = [
+        { id:'cantrips', kind:'cantrips', label:'Trucchetti di classe', maximum:rules.cantrips, roots:entries.filter((x) => x.countsCantrip).map((x) => x.root), reason:`Il limite è quello della tabella di classe ${rules.edition}; trucchetti di specie e privilegi hanno fonti separate.` },
+        ...bookLimits,
+    ]
+    if (knownLimit !== undefined && !rules.prepared) limits.push({ id:'known', kind:'known', label:rules.edition === '2024' ? 'Incantesimi nella lista di classe' : 'Incantesimi conosciuti', maximum:knownLimit, roots:entries.filter((x) => x.countsKnown).map((x) => x.root), reason:`Il numero segue la tabella di classe ${rules.edition}, indipendentemente dagli slot.` })
+    if (rules.prepared) limits.push({ id:'prepared', kind:'prepared', label:'Incantesimi preparati di classe', maximum:rules.preparedLimit, roots:entries.filter((x) => x.countsPrepared).map((x) => x.root), reason:rules.edition === '2024' ? 'Il limite segue la tabella di classe 2024; le magie sempre preparate sono escluse.' : 'Il limite dipende dal livello di classe e dal modificatore della caratteristica da incantatore; le magie sempre preparate sono escluse.' })
+    const issues: string[] = wizardBookIssues(sheet, data, bookLimits)
+    issues.push(...limits.filter((x) => !bookLimits.includes(x) && x.roots.length > x.maximum).map(spellLimitIssue))
+    if (entries.some((entry) => entry.source === 'class' && !rules.spells.some((x) => x.level === entry.level && (x.index === d[`${entry.root}.index`] || [x.name,x.nameIt,...(x.aliases ?? [])].some((name) => name?.toLowerCase() === entry.name.toLowerCase()))))) issues.push('Alcuni incantesimi non appartengono alla lista o al livello di classe: verifica con il DM.')
     const secretLimit = (Number(sheet.level) >= 10 ? 2 : 0) + (Number(sheet.level) >= 14 ? 2 : 0) + (Number(sheet.level) >= 18 ? 2 : 0)
-    if (secrets && (d['creation.class'] !== 'bard' || (rules.edition === '2014' && secrets > secretLimit))) issues.push('Le scelte di Segreti Magici superano quelle concesse dal livello o dalla classe.')
-    if (loreSpells && (!lore || loreSpells > 2)) issues.push('Segreti Magici aggiuntivi: massimo due, dal livello 6 del Collegio della Sapienza.')
-    for (let level = 6; level <= 9; level++) {
-        const arcanums = entries.filter((entry) => entry.source === 'arcanum' && entry.level === level)
-        if (arcanums.length > 1 || (arcanums.length && !rules.arcanumLevels.includes(level))) issues.push(`Arcanum di livello ${level}: massimo uno, sbloccato al livello ${level * 2 - 1} da warlock.`)
+    limits.push({ id:'secrets', kind:'secrets', label:'Segreti Magici', maximum:classId(sheet) === 'bard' && Number(sheet.level) >= 10 ? rules.edition === '2014' ? secretLimit : knownLimit ?? 0 : 0, roots:entries.filter((x) => x.source === 'secrets').map((x) => x.root), reason:'Le scelte sono concesse dai privilegi del bardo e condividono la lista di classe.' },
+        { id:'lore', kind:'lore', label:'Segreti Magici aggiuntivi', maximum:lore ? 2 : 0, roots:entries.filter((x) => x.source === 'lore').map((x) => x.root), reason:'Due scelte dal livello 6 del Collegio della Sapienza.' })
+    for (let level = 6; level <= 9; level++) limits.push({ id:`arcanum-${level}`, kind:'arcanum', exactLevel:level, label:`Arcanum di livello ${level}`, maximum:rules.arcanumLevels.includes(level) ? 1 : 0, roots:entries.filter((x) => x.source === 'arcanum' && x.level === level).map((x) => x.root), reason:`massimo uno, dal livello ${level*2-1} da warlock, separata dagli slot del patto.` })
+    if (entries.some((x) => x.source === 'arcanum' && !rules.arcanumLevels.includes(x.level))) issues.push('Arcanum Mistico: scegli un livello concesso dalla tabella del warlock oppure correggi la fonte.')
+    issues.push(...limits.filter((x) => ['secrets','lore','arcanum'].includes(x.kind) && x.roots.length > x.maximum).map(spellLimitIssue))
+    return { cantrips, spells, prepared: rules.edition === '2024' && !rules.prepared ? spells : prepared, extra, secrets, knownLimit, limits, issues }
+}
+
+// Valuta soltanto la categoria che cresce: le vecchie selezioni restano correggibili.
+export function spellSelectionBlock(selection: { limits: SpellSelectionLimit[] }, choice: { level: number; root?: string; source?: SpellSource; learned?: string; prepare?: boolean; alwaysPrepared?: boolean; spell?: CreationData['spells'][number] }) {
+    const { level, root, source = 'class', learned = 'level', prepare = false, alwaysPrepared = false, spell } = choice
+    if (!prepare && level > 0 && source === 'class' && learned === 'savant' && spell && spell.school?.index !== 'evocation') return 'Evocation Savant richiede una magia della scuola Evocation.'
+    for (const limit of selection.limits) {
+        const matches = prepare ? limit.kind === 'prepared' && source === 'class' && level > 0 && !alwaysPrepared
+            : limit.kind === 'cantrips' ? source === 'class' && level === 0 && learned !== 'feature'
+            : limit.kind === 'known' ? source === 'secrets' || source === 'class' && level > 0
+            : limit.kind === 'level' ? source === 'class' && level > 0 && !['copied','savant','feature'].includes(learned) && level >= (limit.minimumLevel ?? 1)
+            : limit.kind === 'savant' ? source === 'class' && level > 0 && learned === 'savant' && level >= (limit.minimumLevel ?? 1)
+            : limit.kind === 'secrets' || limit.kind === 'lore' ? source === limit.kind
+            : limit.kind === 'arcanum' ? source === 'arcanum' && level === limit.exactLevel : false
+        if (matches && !limit.roots.includes(root ?? '') && limit.roots.length >= limit.maximum) return `${limit.label}: ${limit.roots.length}/${limit.maximum}, limite raggiunto. ${limit.reason} Deseleziona una magia di questa categoria per liberare un posto.`
     }
-    return { cantrips, spells, prepared: rules.edition === '2024' && !rules.prepared ? spells : prepared, extra, secrets, knownLimit, issues }
+    return ''
 }

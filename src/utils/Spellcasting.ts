@@ -37,6 +37,12 @@ export function spellProfile(sheet: CharacterSheet, data: CreationData, edition 
 
 export const spellSources = { class: 'Classe', always: 'Sempre preparato', racial: 'Razza / specie', item: 'Oggetto', feature: 'Privilegio / talento', lore: 'Segreti aggiuntivi (Sapienza)', secrets: 'Segreti Magici', arcanum: 'Arcanum Mistico' } as const
 export type SpellSource = keyof typeof spellSources
+export type SpellSelectionLimit = { id: string; label: string; maximum: number; roots: string[]; reason: string; kind: 'cantrips' | 'known' | 'prepared' | 'level' | 'savant' | 'secrets' | 'lore' | 'arcanum'; minimumLevel?: number; exactLevel?: number }
+export function spellLimitIssue(limit: SpellSelectionLimit) {
+    const excess = limit.roots.length - limit.maximum
+    const correction = limit.kind === 'prepared' ? `Rimuovi la spunta Preparato da ${excess} magie: resteranno annotate.` : limit.kind === 'level' || limit.kind === 'savant' ? `Rimuovi ${excess} selezioni da questa categoria oppure correggine l’acquisizione se sono copie o privilegi.` : `Rimuovi ${excess} selezioni da questa categoria oppure verifica le fonti dei privilegi con il DM.`
+    return `${limit.label}: ${limit.roots.length}/${limit.maximum}, ${excess} in eccesso. ${limit.reason} ${correction}`
+}
 
 export function spellRowState(sheet: CharacterSheet, level: number, index: number) {
     const d = sheet.playerDetails ?? {}, root = `spell.${level}.${index}`
@@ -74,7 +80,7 @@ export function spellRowState(sheet: CharacterSheet, level: number, index: numbe
 export function spellCounts(sheet: CharacterSheet) {
     const entries = Object.entries(sheet.playerDetails ?? {}).filter(([key, value]) => /^spell\.\d+\.\d+\.name$/.test(key) && value.trim()).map(([key, name]) => {
         const [, level, index] = key.split('.')
-        return { name, level: Number(level), ...spellRowState(sheet, Number(level), Number(index)) }
+        return { root: key.slice(0,-5), name, level: Number(level), ...spellRowState(sheet, Number(level), Number(index)) }
     })
     return { entries, cantrips: entries.filter((entry) => entry.countsCantrip).length,
         spells: entries.filter((entry) => entry.countsKnown).length, prepared: entries.filter((entry) => entry.countsPrepared).length,

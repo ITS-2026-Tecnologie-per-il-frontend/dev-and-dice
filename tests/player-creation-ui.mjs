@@ -149,3 +149,23 @@ const headerSvg = readFileSync(new URL('../public/templates/mago-testata.svg', i
 for (const [, frame] of pdfCss.matchAll(/mago-testata\.svg#([a-z0-9-]+)/g)) assert.ok(headerSvg.includes(`<view id="${frame}"`), `Missing wizard header frame: ${frame}`)
 assert.ok(!/<text\b/i.test(readFileSync(new URL('../public/templates/mago-scudo-vuoto.svg', import.meta.url), 'utf8')), 'Small shield backgrounds must not repeat their HTML labels')
 console.log('PDF appearance checks passed: selectable copy, unchanged layout and original appearance preserved.')
+
+const { CharacterTutorial } = await import('../src/components/CharacterTutorial.tsx')
+const { spellRules } = await import('../src/utils/PlayerCreation.ts')
+const baseLimits = enableCreation({...newCharacterSheet(),kind:'PG',name:'Limiti UI',level:'3',intelligence:'16',playerDetails:{'creation.class':'wizard','tutorial.active':'true','tutorial.step':'6'}},expanded)
+const spells2=spellRules(baseLimits,expanded).spells.filter((s) => s.level===2).slice(0,3)
+const capDetails={...baseLimits.playerDetails,...Object.fromEntries(spells2.slice(0,2).flatMap((s,i) => [[`spell.2.${i}.name`,s.name],[`spell.2.${i}.index`,s.index]]))}
+const markupLimits = (details) => renderToStaticMarkup(createElement(CharacterTutorial,{sheet:{...baseLimits,playerDetails:details},data:expanded,onChange(){}}))
+function learnInput(markup,name) {
+    const escaped=name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')
+    return markup.match(new RegExp(`<input([^>]+)><span>${escaped}</span>`))?.[1]
+}
+let cappedMarkup=markupLimits(capDetails)
+assert.ok(learnInput(cappedMarkup,spells2[2].name).includes('disabled=""'),'New selections disable at the cumulative cap')
+assert.ok(!learnInput(cappedMarkup,spells2[0].name).includes('disabled=""'),'Selected spells stay deselectable')
+assert.ok(!learnInput(markupLimits({...capDetails,'spell.2.0.name':''}),spells2[2].name).includes('disabled=""'),'Freeing a place enables another spell')
+const excessiveMarkup=markupLimits({...capDetails,'spell.2.2.name':spells2[2].name,'spell.2.2.index':spells2[2].index})
+assert.ok(excessiveMarkup.includes('3/2, 1 in eccesso'))
+assert.ok(!learnInput(excessiveMarkup,spells2[2].name).includes('disabled=""'))
+assert.ok(!learnInput(markupLimits({...capDetails,'spell.2.0.index':''}),spells2[0].name).includes('disabled=""'),'Old drafts without catalog IDs remain removable')
+console.log('Spell-selection UI passed: capped new choices, deselection, immediate re-enabling, clear excess and legacy name-only drafts.')

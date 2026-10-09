@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react'
 import { characterFields, type CharacterSheet } from '../utils/CharacterSheets'
 import { abilityKeys, creationChoices, creationEnabled, labelOf, optionsFor, optionLabel, selectedOrigins, resolveChoice, type Choice, type Option, type CreationData } from '../utils/PlayerCreation'
+import { inventoryEquipment, inventoryReferenceKey, ownedInventoryItems, referencedInventoryItem } from '../utils/Inventory'
 import { spellEdition } from '../utils/Spellcasting'
 
 export function CreationChoices({ sheet, data, change, choices: suppliedChoices, section }: { sheet: CharacterSheet; data: CreationData; change: (key: string, value: string) => void; choices?: ReturnType<typeof creationChoices>; section?: 'scores' | 'choices' | 'equipment' }) {
@@ -40,12 +41,12 @@ export function CreationChoices({ sheet, data, change, choices: suppliedChoices,
     }
     const { characterClass, race, subrace } = selectedOrigins(sheet, data)
     const choices = suppliedChoices ?? creationChoices(sheet, data)
-    const equipment = [characterClass, selectedOrigins(sheet, data).background].flatMap((x) => x?.starting_equipment?.map((item) => item.equipment.index) ?? [])
-    choices.filter((x) => x.choice.type === 'equipment').forEach(({ choice, path }) => equipment.push(...resolveChoice(choice, path, d, data).map((x) => x.ref.index)))
-    const armors = data.equipment.filter((x) => equipment.includes(x.index) && x.armor_class && x.armor_category !== 'Shield')
+    const equipment = ownedInventoryItems(sheet)
+    const armors = equipment.filter((x) => {const item=inventoryEquipment(x,sheet,data);return item?.armor_class && item.armor_category!=='Shield'})
+    const shields=equipment.filter((x) => inventoryEquipment(x,sheet,data)?.armor_category==='Shield')
     const choiceContent = <div className="creation-options">{choices.map(({ choice, path, label }) => choiceFields(choice, path, label))}</div>
-    const equipmentContent = <div className="player-two-fields"><label className="player-field"><span>Armatura indossata (tra gli oggetti iniziali)</span><select value={armors.some((x) => x.index === d['creation.armor']) ? d['creation.armor'] : ''} onChange={(event) => change('creation.armor', event.target.value)}><option value="">Senza armatura</option>{armors.map((x) => <option key={x.index} value={x.index}>{labelOf(x)}</option>)}</select></label>
-        <label className="player-check"><input type="checkbox" checked={d['creation.shield'] === 'true' && equipment.includes('shield')} disabled={!equipment.includes('shield')} onChange={(event) => change('creation.shield', String(event.target.checked))} /><span>Scudo equipaggiato (+2 CA)</span></label></div>
+    const equipmentContent = <div className="player-two-fields"><label className="player-field"><span>Armatura indossata (dal tuo inventario)</span><select value={referencedInventoryItem(sheet,'armor')?.id ?? ''} onChange={(event) => change(inventoryReferenceKey('armor'),event.target.value)}><option value="">Senza armatura</option>{armors.map((x) => <option key={x.id} value={x.id}>{x.name} · voce {x.row+1}</option>)}</select></label>
+        <label className="player-check"><input type="checkbox" checked={!!referencedInventoryItem(sheet,'shield')} disabled={!shields.length} onChange={(event) => change(inventoryReferenceKey('shield'),event.target.checked ? shields[0].id : '')} /><span>Scudo equipaggiato (+2 CA)</span></label></div>
     if (section) return <>{choiceContent}{section === 'equipment' && equipmentContent}</>
     return <details className="creation-panel" open={!characterClass || !race}>
         <summary>Creazione guidata · caratteristiche e scelte iniziali</summary>

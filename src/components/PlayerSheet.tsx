@@ -1,10 +1,12 @@
 import { useEffect, useId, useMemo, useState, type ReactNode } from 'react'
-import { characterFields, clampCurrentHitPointsToMaximum, normalizeHitPoints, numericCharacterFields, initiativeBonus, type CharacterSheet } from '../utils/CharacterSheets'
-import { applyCreation, translatedCreationData, characterFieldValue, updateCharacterField, creationEnabled, enableCreation, labelOf, loadCreationData, resetCreationOverrides, selectedOrigins, spellRules, spellSelection, subclassOptions, subclassMinimumLevel, type CreationData, type Origin } from '../utils/PlayerCreation'
+import { characterFields, clampCurrentHitPointsToMaximum, normalizeHitPoints, numericCharacterFields, characterLevel, initiativeBonus, type CharacterSheet } from '../utils/CharacterSheets'
+import { applyCreation, translatedCreationData, characterFieldValue, updateCharacterField, creationEnabled, enableCreation, labelOf, loadCreationData, resetCreationOverrides, selectedOrigins, spellRules, spellSelection, spellSelectionBlock, subclassOptions, subclassMinimumLevel, type CreationData, type Origin } from '../utils/PlayerCreation'
 import { CreationChoices, CreationStatus } from './PlayerCreation'
 import { CharacterTutorial } from './CharacterTutorial'
-import { spellCounts, spellRowState, spellSources, savedSpellGrants, landNames2014, landNames2024 } from '../utils/Spellcasting'
+import { classId, spellCounts, spellRowState, spellSources, savedSpellGrants, landNames2014, landNames2024, type SpellSource } from '../utils/Spellcasting'
 import { CatalogSearch } from './CatalogSearch'
+import { InventoryEditor, type InventoryTarget } from './InventoryEditor'
+import { inventoryItems, inventoryReferenceField, inventoryIssues, ownedInventoryItems, referencedInventoryItem } from '../utils/Inventory'
 import { WizardSubclassFeatures } from './WizardSubclassFeatures'
 import { WizardSpellcasting, WizardAdvancement } from './WizardSpellcasting'
 import { copyCost, wizardRules } from '../utils/Wizard'
@@ -25,6 +27,8 @@ const skills = [
 
 export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChange: emitChange }: { sheet: CharacterSheet; catalog?: Catalog; creationData?: CreationData; onChange: (sheet: CharacterSheet) => void }) {
     const [page, setPage] = useState(0)
+    const [inventoryPage,setInventoryPage] = useState(0)
+    const [inventoryTarget,setInventoryTarget] = useState<InventoryTarget>()
     const [portraitError, setPortraitError] = useState('')
     const [rawData, setData] = useState<CreationData>()
     const data = useMemo(() => suppliedData ?? (rawData ? translatedCreationData(rawData, catalog) : undefined), [suppliedData, rawData, catalog])
@@ -38,17 +42,23 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
     }, [retry, suppliedData])
     const prefix = useId()
     const details = sheet.playerDetails ?? {}
+    const inventory = inventoryItems(sheet), inventoryWarnings=inventoryIssues(sheet)
+    const occupiedRows=inventory.map((x) => x.row), freeRows:number[]=[]
+    for (let row=0;freeRows.length<12;row++) if (!occupiedRows.includes(row)) freeRows.push(row)
+    const inventoryPages=Math.max(1,Math.ceil((occupiedRows.length+1)/12)), shownInventoryPage=Math.min(inventoryPage,inventoryPages-1)
+    const inventoryRows=[...occupiedRows,...freeRows].slice(shownInventoryPage*12,shownInventoryPage*12+12)
     const template = playerTemplate(sheet), wizardTemplate = template === 'wizard' || template === 'wizard-pdf'
     const pages = sheetTemplates[template].pages
     const visiblePage = page < pages.length ? page : 0
     const automatic = creationEnabled(sheet) && !!data
     const subclass = data && subclassOptions(sheet, data).find((x) => x.index === details['creation.subclass'])
-    const magic = data && automatic ? spellRules(sheet, data) : undefined
+    const hasSpellRules = data && characterLevel(sheet) !== undefined && data.classes.some((x) => x.index === classId(sheet))
+    const magic = data && hasSpellRules ? spellRules(sheet, data) : undefined
     function spellLabel(name: string) {
         return catalog?.abilities.find((entry) => typeof entry.data.level === 'number' && Array.isArray(entry.data.aliases)
             && entry.data.aliases.some((alias) => typeof alias === 'string' && alias.toLowerCase() === name.toLowerCase()))?.name ?? name
     }
-    const selectedMagic = data && automatic ? spellSelection({ ...sheet, playerDetails: Object.fromEntries(Object.entries(details).map(([key, value]) => [key, /^spell\.\d+\.\d+\.name$/.test(key) ? spellLabel(value) : value])) }, data) : undefined
+    const selectedMagic = data && hasSpellRules ? spellSelection({ ...sheet, playerDetails: Object.fromEntries(Object.entries(details).map(([key, value]) => [key, /^spell\.\d+\.\d+\.name$/.test(key) ? spellLabel(value) : value])) }, data) : undefined
     function onChange(next: CharacterSheet, clampHitPoints = false) {
         const updated = !suppliedData && data ? applyCreation(next, data) : next
         emitChange(clampHitPoints ? clampCurrentHitPointsToMaximum(updated) : updated)
@@ -84,7 +94,11 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
         return characterFieldValue(sheet, `modifier.${score}`)
     }
     function field(key: string, label: ReactNode, options: { base?: boolean; multiline?: boolean; numeric?: boolean; placeholder?: string; onBlur?: () => void } = {}) {
-        const value = options.base ? sheet[key as keyof typeof characterFields] : details[key] ?? ''
+        const value = options.base ? sheet[key as keyof typeof characterFields] : characterFieldValue(sheet,key)
+        const notes=/^magicItem\.(\d+)\.notes$/.exec(key),referenceKey=notes && !referencedInventoryItem(sheet,`magicItem.${notes[1]}.name`) ? `magicItem.${notes[1]}.name` : key
+        const reference=inventoryReferenceField(referenceKey),summary=['equipment','consumables','attunedItems'].includes(key) && details['inventory.version']==='1'
+        const pick=() => reference ? setInventoryTarget({field:referenceKey,label:typeof label==='string' ? label : 'Oggetto dell’inventario'}) : setPage(1)
+        const inventoryProps=reference || summary ? {readOnly:true,'aria-haspopup':reference ? 'dialog' as const : undefined,title:reference ? 'Seleziona dall’inventario' : 'Visualizza nella pagina Inventario',onClick:pick,onKeyDown:(event: React.KeyboardEvent) => {if (event.key==='Enter' || event.key===' ') {event.preventDefault();pick()}}} : {}
         const update = (value: string) => {
             const normalized = ['maxHitPoints', 'hitPoints', 'temporaryHitPoints'].includes(key) ? normalizeHitPoints(value) : value
             return options.base ? updateBase(key, normalized) : detail(key, normalized)
@@ -93,8 +107,8 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
         return <label className={`player-field${options.multiline ? ' player-field-prose' : ''}`} key={key}>
             <span>{label}</span>
             {options.multiline
-                ? <textarea rows={4} value={value} onChange={(event) => update(event.target.value)} placeholder={options.placeholder} />
-                : <input type={numeric ? 'number' : 'text'} step={numeric ? '1' : undefined} required={options.base && key === 'name'} pattern={options.base && key === 'name' ? '.*\\S.*' : undefined} value={value} onChange={(event) => update(event.target.value)} onBlur={options.onBlur} placeholder={options.placeholder} />}
+                ? <textarea {...inventoryProps} rows={4} value={value} onChange={(event) => update(event.target.value)} placeholder={options.placeholder} />
+                : <input {...inventoryProps} type={numeric ? 'number' : 'text'} step={numeric ? '1' : undefined} required={options.base && key === 'name'} pattern={options.base && key === 'name' ? '.*\\S.*' : undefined} value={value} onChange={(event) => update(event.target.value)} onBlur={options.onBlur} placeholder={options.placeholder} />}
         </label>
     }
     function box(title: string, children: ReactNode, className = '') {
@@ -116,54 +130,54 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
     function selectedSpellCount(kind: 'prepared' | 'cantrips') {
         return (selectedMagic ?? spellCounts(sheet))[kind]
     }
-    const attunedCount = Object.entries(details).filter(([key,value]) => /^magicItem\.\d+\.attuned$/.test(key) && value === 'true').length
+    const attunedCount = ownedInventoryItems(sheet).filter((x) => details[`inventory.${x.row}.attuned`]==='true').length
     function check(key: string, label: string) {
-        return <label className="player-check" key={key}><input type="checkbox" aria-label={label} checked={details[key] === 'true'} onChange={(event) => detail(key, String(event.target.checked))} /><span>{label}</span></label>
+        return <label className="player-check" key={key}><input type="checkbox" aria-label={label} checked={characterFieldValue(sheet,key) === 'true'} disabled={key.startsWith('magicItem.') && !referencedInventoryItem(sheet,key.replace(/\.[^.]+$/,'.name'))} onChange={(event) => detail(key, String(event.target.checked))} /><span>{label}</span></label>
     }
     function spellRow(level: number, index: number) {
         const root = `spell.${level}.${index}`
         const state = spellRowState(sheet, level, index)
         const name = spellLabel(details[`${root}.name`] ?? '')
-        const limit = state.needsPreparation && magic?.prepared && selectedMagic && selectedMagic.prepared >= magic.preparedLimit && !state.checked
+        const limit = selectedMagic && state.needsPreparation && !state.checked ? spellSelectionBlock(selectedMagic, { level, root, source:state.source, prepare:true, alwaysPrepared:state.alwaysPrepared }) : ''
+        const blocked = (learned = details[`${root}.learned`] || 'level', source = state.source, spell?: CreationData['spells'][number]) => selectedMagic ? spellSelectionBlock(selectedMagic,{level,root,source,learned,spell}) : ''
         const choices = state.source === 'arcanum' ? (magic?.arcanumLevels.includes(level) ? data?.spells.filter((x) => x.level === level && x.classes.some((c) => c.index === 'warlock')) ?? [] : [])
             : ['secrets', 'lore'].includes(state.source) ? data?.spells.filter((x) => x.level === level && level <= (magic?.maxLevel ?? 0) && (magic?.edition !== '2024' || state.source === 'lore' || x.classes.some((c) => ['bard', 'cleric', 'druid', 'wizard'].includes(c.index)))) ?? []
             : magic?.spells.filter((x) => x.level === level) ?? []
-        const fullKnown = state.countsKnown && selectedMagic && selectedMagic.knownLimit !== undefined && details['creation.class'] !== 'wizard'
-            && selectedMagic.spells >= selectedMagic.knownLimit
-        const fullCantrips = state.countsCantrip && selectedMagic && magic && selectedMagic.cantrips >= magic.cantrips
-        const fullLore = state.source === 'lore' && Object.entries(details).filter(([key, value]) => /^spell\.\d+\.\d+\.name$/.test(key) && value.trim() && spellRowState(sheet, Number(key.split('.')[1]), Number(key.split('.')[2])).source === 'lore').length >= 2
-        const fullArcanum = state.source === 'arcanum' && Object.entries(details).some(([key, value]) => key.startsWith(`spell.${level}.`) && key.endsWith('.name') && key !== `${root}.name` && value.trim() && spellRowState(sheet, level, Number(key.split('.')[2])).source === 'arcanum')
         const label = state.alwaysPrepared ? 'Sempre preparato' : state.needsPreparation ? 'Preparato' : state.canToggle ? 'Disponibile' : level === 0 ? 'Trucchetto conosciuto' : magic?.edition === '2024' ? 'Preparato nella lista di classe' : 'Conosciuto / sempre disponibile'
         const wizard = wizardRules(sheet)
         const spell = data?.spells.find((x) => x.index === details[`${root}.index`] || labelOf(x) === name || x.name === name)
         return <div className="player-spell-entry" key={index}>
             <div className="player-spell-row">
-                <label className="player-check"><input type="checkbox" aria-label={`${label}: livello ${level}, incantesimo ${index + 1}`} title={label}
-                    checked={!!name && state.checked} disabled={!name || !state.canToggle || !!limit || state.lost}
-                    onChange={(event) => detail(state.checkboxKey, String(event.target.checked))} /><span>{label}</span></label>
+                <label className="player-check"><input type="checkbox" aria-label={`${label}: livello ${level}, incantesimo ${index + 1}`} title={limit || label}
+                    checked={!!name && state.checked} disabled={!name || !state.canToggle || !!limit || state.lost && !state.checked}
+                    onChange={(event) => { if (!event.target.checked || !limit) detail(state.checkboxKey, String(event.target.checked)) }} /><span>{label}</span></label>
                 {magic && ['class', 'arcanum', 'secrets', 'lore'].includes(state.source) ? <select aria-label={`Incantesimo livello ${level}, ${index + 1}`} disabled={!!details[`${root}.grant`]} value={name}
                     onChange={(event) => {
-                        const next = { ...details, [`${root}.name`]: event.target.value, [`${root}.index`]: choices.find((x) => labelOf(x) === event.target.value)?.index ?? '', [`${root}.prepared`]: 'false', [`${root}.learned`]: 'level', [`${root}.grant`]: '', [`${root}.always`]: 'false', [`${root}.freeFeature`]: '' }
+                        const choice = choices.find((x) => labelOf(x) === event.target.value)
+                        if (choice && blocked(undefined,undefined,choice)) return
+                        const next = { ...details, [`${root}.name`]: event.target.value, [`${root}.index`]: choice?.index ?? '', [`${root}.prepared`]: 'false', [`${root}.learned`]: details[`${root}.learned`] || 'level', [`${root}.grant`]: '', [`${root}.always`]: 'false', [`${root}.freeFeature`]: '' }
                         for (const key of ['wizard.mastery.1', 'wizard.mastery.2', 'wizard.signature.0', 'wizard.signature.1']) if (next[key] === root) next[key] = ''
                         onChange({ ...sheet, playerDetails: next })
                     }}>
                     <option value="">Seleziona…</option>
                     {name && !choices.some((x) => labelOf(x) === name) && <option value={name}>{name} (verifica con il DM)</option>}
-                    {choices.map((x) => <option key={x.index} value={labelOf(x)} disabled={Object.entries(details).some(([key, value]) => key.startsWith('spell.') && key.endsWith('.name') && key !== `${root}.name` && spellLabel(value) === labelOf(x) && spellRowState(sheet, Number(key.split('.')[1]), Number(key.split('.')[2])).source === state.source)
-                        || (!name && !!(fullKnown || fullCantrips || fullArcanum || fullLore))}>{labelOf(x)}</option>)}
+                    {choices.map((x) => <option key={x.index} value={labelOf(x)} title={blocked(undefined,undefined,x) || undefined} disabled={name !== labelOf(x) && (Object.entries(details).some(([key, value]) => key.startsWith('spell.') && key.endsWith('.name') && key !== `${root}.name` && spellLabel(value) === labelOf(x) && spellRowState(sheet, Number(key.split('.')[1]), Number(key.split('.')[2])).source === state.source)
+                        || !!blocked(undefined,undefined,x))}>{labelOf(x)}</option>)}
                 </select> : <CatalogSearch aria-label={`Incantesimo livello ${level}, ${index + 1}`} value={name}
                     entries={catalog?.abilities.filter((entry) => entry.data.level === level) ?? []}
                     onChange={(value) => detail(`${root}.name`, value)} onSelect={(entry) => detail(`${root}.name`, entry.name)} />}
             </div>
             <details className={wizardTemplate ? 'player-spell-metadata' : 'player-spell-metadata player-spell-metadata-open'} open={!wizardTemplate}><summary>Fonte e acquisizione</summary>
-            {wizard.wizard && state.source === 'class' && level > 0 && name && <>
+            {wizard.wizard && state.source === 'class' && level > 0 && <>
                 {state.lost && <small>Libro perduto: ritrova e copia questo incantesimo prima di prepararlo o lanciarlo.</small>}
-                <label className="player-field"><span>Acquisizione nel libro</span><select disabled={!!details[`${root}.grant`]} value={details[`${root}.learned`] || 'level'} onChange={(e) => detail(`${root}.learned`, e.target.value)}><option value="feature">Concesso dal privilegio</option><option value="level">Scelta iniziale / avanzamento</option><option value="copied">Copiato durante l’avventura</option>{wizard.savantChoices > 0 && <option value="savant">Scelta gratuita · Evocation Savant</option>}</select></label>
+                <label className="player-field"><span>Acquisizione nel libro</span><select disabled={!!details[`${root}.grant`]} value={details[`${root}.learned`] || 'level'} onChange={(e) => { if (!name || !blocked(e.target.value,undefined,spell)) detail(`${root}.learned`, e.target.value) }}>
+                    {Object.entries({ level:'Scelta iniziale / avanzamento', copied:'Copiato durante l’avventura', feature:'Concesso dal privilegio', ...(wizard.savantChoices > 0 || details[`${root}.learned`] === 'savant' ? { savant:'Scelta gratuita · Evocation Savant' } : {}) }).map(([value,label]) => <option key={value} value={value} title={name ? blocked(value,undefined,spell) || undefined : undefined} disabled={!!name && !!blocked(value,undefined,spell)}>{label}</option>)}
+                </select></label>
                 {spell && <small>{spell.ritual && 'Rituale utilizzabile dal libro anche senza preparazione. '}{spell.school?.index === wizard.savantSchool && wizard.savantDiscount && `Copia: ${copyCost(sheet, spell).gold} MO, ${copyCost(sheet, spell).hours} ore (School Savant).`}</small>}
             </>}
             <div className="player-spell-source">
-                <select aria-label={`Fonte dell’incantesimo livello ${level}, ${index + 1}`} value={state.source} disabled={!!details[`${root}.grant`]} onChange={(event) => detail(`${root}.source`, event.target.value)}>
-                    {Object.entries(spellSources).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+                <select aria-label={`Fonte dell’incantesimo livello ${level}, ${index + 1}`} value={state.source} disabled={!!details[`${root}.grant`]} onChange={(event) => { if (!name || !blocked(undefined,event.target.value as SpellSource,spell)) detail(`${root}.source`, event.target.value) }}>
+                    {Object.entries(spellSources).map(([key, label]) => <option key={key} value={key} disabled={!!name && key !== state.source && !!blocked(undefined,key as SpellSource,spell)} title={name ? blocked(undefined,key as SpellSource,spell) || undefined : undefined}>{label}</option>)}
                 </select>
                 {!['class', 'arcanum', 'secrets', 'lore'].includes(state.source) && <input aria-label={`Fonte e usi dell’incantesimo ${index + 1} di livello ${level}`} placeholder="Fonte e usi / cariche" value={details[`${root}.note`] ?? ''} onChange={(event) => detail(`${root}.note`, event.target.value)} />}
             </div>
@@ -195,9 +209,10 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
     function table(title: string, key: string, columns: string[], count: number) {
         return box(title, <div className="player-table-scroll"><table className="player-table">
             <thead><tr>{columns.map((label) => <th key={label} scope="col">{label}</th>)}</tr></thead>
-            <tbody>{Array.from({ length: count }, (_, row) => <tr key={row}>{columns.map((label, column) => <td key={column}>
-                <input aria-label={`${title}: ${label}, riga ${row + 1}`} value={details[`${key}.${row}.${column}`] ?? ''} onChange={(event) => detail(`${key}.${row}.${column}`, event.target.value)} />
-            </td>)}</tr>)}</tbody>
+            <tbody>{Array.from({ length: count }, (_, i) => {const row=key==='inventory' ? inventoryRows[i] : i;return <tr key={row}>{columns.map((label,column) => {
+                const fieldKey=`${key}.${row}.${column}`,reference=inventoryReferenceField(fieldKey)
+                return <td key={column}><input aria-label={`${title}: ${label}, riga ${row + 1}`} value={characterFieldValue(sheet,fieldKey)} readOnly={reference} aria-haspopup={reference ? 'dialog' : undefined} title={reference ? 'Seleziona dall’inventario' : undefined} onClick={reference ? () => setInventoryTarget({field:fieldKey,label:`${title}: ${label}, riga ${row+1}`}) : undefined} onKeyDown={reference ? (e) => {if (e.key==='Enter' || e.key===' ') {e.preventDefault();setInventoryTarget({field:fieldKey,label:`${title}: ${label}, riga ${row+1}`})}} : undefined} onChange={(event) => detail(fieldKey,event.target.value)} /></td>
+            })}</tr>})}</tbody>
         </table></div>, key === 'attacks' ? 'player-wizard-attacks' : '')
     }
     const slotFields = <div className="player-wizard-slots">{Array.from({length:9},(_,i) => <div key={i}>{field(`slots.${i+1}.total`,`${i+1} · totali`,{numeric:true})}{field(`slots.${i+1}.used`,'Lanciati',{numeric:true})}</div>)}</div>
@@ -205,6 +220,8 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
 
     if (details['tutorial.active'] === 'true') return <div className="player-sheet">{data ? <CharacterTutorial sheet={sheet} data={data} onChange={onChange} /> : <p role="status">{dataError || 'Caricamento delle opzioni per il tutorial…'}{dataError && <button type="button" onClick={() => setRetry(retry + 1)}>Riprova</button>}</p>}</div>
     return <div className="player-sheet">
+        {inventoryWarnings.length > 0 && <p className="creation-warning" role="status">{inventoryWarnings.join(' ')}</p>}
+        {selectedMagic && selectedMagic.issues.length > 0 && <p className="creation-warning" role="alert">{selectedMagic.issues.join(' ')}</p>}
         <div className="player-template-picker"><label className="player-field"><span>Modello della scheda</span><select value={Object.hasOwn(sheetTemplates, details['sheet.template'] ?? '') ? details['sheet.template'] : 'auto'} onChange={(event) => { detail('sheet.template',event.target.value); setPage(0) }}><option value="auto">Automatico in base alla classe</option>{Object.entries(sheetTemplates).map(([id,model]) => <option key={id} value={id}>{model.name}</option>)}</select></label>{wizardTemplate && <a href={`${import.meta.env?.BASE_URL ?? '/'}templates/Mago.pdf`} target="_blank" rel="noreferrer">Apri PDF originale · Mago</a>}</div>
         {data ? <CreationStatus sheet={sheet} enable={() => emitChange(enableCreation(sheet, data))} disable={() => emitChange({ ...sheet, playerDetails: { ...details, 'creation.enabled': 'false' } })} /> : <p className="player-hint" role="status">{dataError || 'Caricamento opzioni del personaggio…'}{dataError && <button type="button" onClick={() => setRetry(retry + 1)}>Riprova</button>}</p>}
         {automatic && data && <button type="button" onClick={() => emitChange(resetCreationOverrides(sheet, data))}>Ripristina i campi generati (annulla le loro modifiche manuali)</button>}
@@ -409,14 +426,14 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
                         {!wizardTemplate && box('Fazione', <>{field('factionName', 'Nome')}{field('factionSymbol', 'Simbolo e descrizione', { multiline: true })}{field('faction', 'Fazione e alleati', { multiline: true })}</>)}
                         {wizardTemplate && (template === 'wizard-pdf' ? <div className="player-wizard-personality">{personalityFields}</div> : personalityFields)}
                         {wizardTemplate ? box('Zaino e borse', <>
-                            {Array.from({length:12},(_,i) => <div className="player-wizard-inventory-row" key={i}>
-                                {field(`inventory.${i}.0`,i === 0 ? 'Oggetto' : `Oggetto ${i+1}`)}
-                                {field(`inventory.${i}.2`,i === 0 ? 'Qtà' : `Qtà ${i+1}`,{numeric:true})}
+                            {inventoryRows.map((row,i) => <div className="player-wizard-inventory-row" key={row}>
+                                {field(`inventory.${row}.0`,i === 0 ? 'Oggetto' : `Oggetto ${i+1}`)}
+                                {field(`inventory.${row}.2`,i === 0 ? 'Qtà' : `Qtà ${i+1}`,{numeric:true})}
                                 {template === 'wizard-pdf' && <>
-                                    {field(`inventory.${i}.1`,i === 0 ? 'Peso' : `Peso ${i+1}`)}
+                                    {field(`inventory.${row}.1`,i === 0 ? 'Peso' : `Peso ${i+1}`)}
                                     <label className="player-field">
                                         <span>{i === 0 ? 'Peso tot' : `Peso totale ${i+1}`}</span>
-                                        <input readOnly value={characterFieldValue(sheet, `inventory.${i}.3`)} />
+                                        <input readOnly value={characterFieldValue(sheet, `inventory.${row}.3`)} />
                                     </label>
                                 </>}
                             </div>)}
@@ -438,8 +455,7 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
             {visiblePage === 2 && <>
                 {!wizardTemplate && <div className="player-casting">{field('castingClass', 'Classe da incantatore')}{field('castingAbility', 'Caratteristica da incantatore')}{field('spellDC', 'CD tiro salvezza incantesimi', { numeric: true })}{field('spellAttackBonus', 'Bonus attacco incantesimi', { numeric: true })}</div>}
                 {magic && <p className="player-hint">Trucchetti conosciuti: {magic.cantrips}. {magic.known !== undefined && `Incantesimi ${details['creation.class'] === 'wizard' ? 'nel libro (minimo senza copie aggiuntive)' : magic.edition === '2024' ? 'nella lista preparata' : 'conosciuti'}: ${magic.known}. `}{magic.prepared && `Preparabili: ${magic.preparedLimit}. `}{details['creation.class'] === 'warlock' && 'Gli slot della magia del patto si recuperano con un riposo breve. '}Gli incantesimi di classe seguono i limiti indicati. Razza, oggetti e privilegi hanno una fonte separata; gli usi e le cariche si annotano nel campo dedicato.</p>}
-                {selectedMagic && <p className="player-hint">Selezionati: {selectedMagic.cantrips} trucchetti, {selectedMagic.spells} incantesimi, {selectedMagic.prepared} preparati, {selectedMagic.extra} da altre fonti.</p>}
-                {selectedMagic && selectedMagic.issues.length > 0 && <p className="creation-warning" role="alert">{selectedMagic.issues.join(' ')}</p>}
+                {selectedMagic && <div className="player-hint">{selectedMagic.limits.filter((x) => !x.minimumLevel && !x.exactLevel && (x.maximum > 0 || x.roots.length > 0)).map((x) => <p key={x.id}>{x.label}: <strong>{x.roots.length}/{x.maximum}</strong>. {x.reason}</p>)}</div>}
                 {details['creation.class'] === 'druid' && details['creation.subclass'] === 'land' && <label className="player-field"><span>Terra del Circolo</span><select value={details['creation.land'] ?? ''} onChange={(event) => detail('creation.land', event.target.value)}><option value="">Seleziona…</option>{Object.entries(magic?.edition === '2024' ? landNames2024 : landNames2014).map(([key, name]) => <option key={key} value={key}>{name}</option>)}</select></label>}
                 {savedSpellGrants(sheet).length > 0 && box('Incantesimi concessi da razza e sottoclasse', <ul>{savedSpellGrants(sheet).map((grant) => <li key={`${grant.source}:${grant.index}`}><strong>{spellLabel(grant.name)}</strong> · {grant.note}</li>)}</ul>)}
                 {automatic && details.racialSpells && box('Magie razziali (indipendenti dagli slot di classe)', field('racialSpells', 'Incantesimi e usi', { multiline: true }))}
@@ -447,6 +463,7 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
                 <div className="player-spell-page">{[[0, 1, 2], [3, 4, 5], [6, 7, 8, 9]].map((levels, column) => <div className="player-column" key={column}>
                     {levels.map((level) => <section className="player-box player-spell-level" key={level}>
                         <h3><span>{level}</span>{level === 0 ? 'Trucchetti' : `Incantesimi di livello ${level}`}</h3>
+                        {selectedMagic?.limits.filter((x) => x.id === `wizard-level-${level}`).map((x) => <p className="player-hint" key={x.id}>{x.label}: {x.roots.length}/{x.maximum}. {x.reason}</p>)}
                         {level > 0 && <div className="player-two-fields">{field(`slots.${level}.total`, 'Slot totali', { numeric: true })}{field(`slots.${level}.used`, 'Slot spesi', { numeric: true })}</div>}
                         {Array.from({ length: spellRowCount(level) }, (_, index) => spellRow(level, index))}
                         <button type="button" disabled={spellRowCount(level) >= 500} onClick={() => detail(`spell.rows.${level}`, String(spellRowCount(level) + 1))}>+ Incantesimo</button>
@@ -484,5 +501,7 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
             </details>}
         </div>
         </div>
+        {visiblePage===1 && <nav aria-label="Pagine inventario"><button type="button" disabled={shownInventoryPage===0} onClick={() => setInventoryPage(shownInventoryPage-1)}>Oggetti precedenti</button><span> Inventario {shownInventoryPage+1}/{inventoryPages} · {inventory.length} voci </span><button type="button" disabled={shownInventoryPage+1>=inventoryPages} onClick={() => setInventoryPage(shownInventoryPage+1)}>Altri oggetti</button></nav>}
+        {data && <InventoryEditor sheet={sheet} data={data} onChange={onChange} target={inventoryTarget} onClose={() => setInventoryTarget(undefined)} />}
     </div>
 }
