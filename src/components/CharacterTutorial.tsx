@@ -1,4 +1,5 @@
 import { InventoryEditor } from './InventoryEditor'
+import { appearanceFields } from '../utils/CharacterAppearance'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { characterFields, type CharacterSheet } from '../utils/CharacterSheets'
 import { abilityKeys, characterFieldValue, labelOf, selectedOrigins, spellRules, spellSelection, spellSelectionBlock, subclassOptions, subclassMinimumLevel, updateCharacterField, type CreationData, type Origin } from '../utils/PlayerCreation'
@@ -35,7 +36,7 @@ export function CharacterTutorial({ sheet, data, onChange }: { sheet: CharacterS
     function detail(key: string, value: string) { onChange(updateCharacterField(sheet,key,value)) }
     function many(values: Record<string,string>) { onChange({ ...sheet, playerDetails: { ...d, ...values } }) }
     function field(key: string, label: string, multiline = false, base = false) {
-        const value = base ? sheet[key as keyof typeof characterFields] : d[key] ?? ''
+        const value = base ? sheet[key as keyof typeof characterFields] : characterFieldValue(sheet,key)
         return <label className="player-field"><span>{label}</span>{multiline ? <textarea rows={3} value={value} onChange={(e) => detail(key,e.target.value)} /> : <input value={value} onChange={(e) => detail(key,e.target.value)} />}</label>
     }
     function check(key: string, label: string, blocked = '') {
@@ -156,8 +157,8 @@ export function CharacterTutorial({ sheet, data, onChange }: { sheet: CharacterS
         {step === 7 && <>
             <p>Queste scelte sono facoltative e danno vita al personaggio. Un ideale è ciò in cui crede, un legame è qualcuno o qualcosa a cui tiene, un difetto crea occasioni di gioco. L’allineamento descrive una tendenza, senza imporre ogni decisione.</p>
             <label className="player-field"><span>Allineamento · facoltativo</span><select value={d.alignment ?? ''} onChange={(e) => detail('alignment',e.target.value)}><option value="">Da decidere</option>{data.alignments.map((x) => <option key={x.index}>{labelOf(x)}</option>)}</select></label>
-            <div className="tutorial-grid">{['age','height','weight','eyes','hair'].map((key,i) => field(key,['Età','Altezza','Peso corporeo','Occhi','Capelli'][i]+' · facoltativo'))}</div>
-            {field('appearance','Aspetto · facoltativo',true)}{['Tratti caratteriali','Ideali','Legami','Difetti'].map((label) => <div key={label}>{field(`personality.${label}`,label+' · facoltativo',true)}</div>)}{field('backgroundStory','Storia e motivo per partire all’avventura · facoltativo',true)}{field('faction','Come conosci il gruppo e perché collaborate · facoltativo',true)}
+            <div className="tutorial-grid">{appearanceFields.map(({key,label}) => <div key={key}>{field(key,label+' · facoltativo')}</div>)}</div>
+            {field('appearanceDescription','Aspetto · facoltativo',true)}{field('scars','Cicatrici · facoltativo')}{field('distinctiveMarks','Segni di riconoscimento · facoltativo')}{['Tratti caratteriali','Ideali','Legami','Difetti'].map((label) => <div key={label}>{field(`personality.${label}`,label+' · facoltativo',true)}</div>)}{field('backgroundStory','Storia e motivo per partire all’avventura · facoltativo',true)}{field('faction','Come conosci il gruppo e perché collaborate · facoltativo',true)}
             <p>Parla con gli altri giocatori: chi conosci già? Che obiettivo condividete? Per esempio, potreste cercare una persona scomparsa per motivi diversi.</p>
         </>}
         {step === 8 && <>

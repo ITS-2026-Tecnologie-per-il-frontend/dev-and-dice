@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { randomCharacter } from '../src/utils/RandomCharacter.ts'
 import { advancementCreationReview, changeTutorialOrigin, parseTutorialDraft, standardScores, tutorialIssues } from '../src/utils/CharacterTutorial.ts'
-import { abilityKeys, applyCreation, creationChoices, resolveChoice, spellRules, spellSelection, withWizardCatalog } from '../src/utils/PlayerCreation.ts'
+import { abilityKeys, applyCreation, characterCalculationIssues, creationChoices, resolveChoice, spellRules, spellSelection, withWizardCatalog } from '../src/utils/PlayerCreation.ts'
 import { parseCharacterSheets } from '../src/utils/CharacterSheets.ts'
 import { parseCatalog, sheetWithCombatSpells } from '../src/utils/Catalog.ts'
 import { inventoryItems, inventoryIssues } from '../src/utils/Inventory.ts'
@@ -15,6 +15,13 @@ const original=JSON.stringify(data)
 for (const characterClass of data.classes) for (const race of data.races) {
     const sheet=randomCharacter(data,{characterClass:characterClass.index,race:race.index},seeded(1+data.classes.indexOf(characterClass)*31+data.races.indexOf(race)))
     const d=sheet.playerDetails
+    for (const key of ['appearance.Età','appearance.Altezza','appearance.Peso','appearance.Carnagione','appearance.Occhi','appearance.Capelli','appearanceDescription','scars','distinctiveMarks']) assert.ok(d[key]?.trim(),`${race.index}: generated appearance must include ${key}`)
+    assert.ok(Number(d['appearance.Età'])>=18)
+    assert.ok(!/cicatric/i.test(d.scars),'The scars field must contain only a location or absence, without repeating the field label')
+    assert.ok(parseFloat(d['appearance.Altezza'])>0 && d['appearance.Altezza'].endsWith(' cm'))
+    assert.ok(parseFloat(d['appearance.Peso'])>0 && d['appearance.Peso'].endsWith(' kg'))
+    if (['halfling','gnome'].includes(race.index)) assert.ok(parseFloat(d['appearance.Altezza'])<=120,'Small origins must receive a matching stature')
+    if (race.index==='dragonborn') assert.equal(d['appearance.Capelli'],'Senza capelli')
     assert.equal(d['creation.class'],characterClass.index)
     assert.equal(d['creation.race'],race.index)
     assert.equal(d['rules.edition'],'2014');assert.equal(sheet.level,'1')
@@ -53,6 +60,7 @@ for (const random of [()=>0,()=>.999999]) {
 const a=randomCharacter(data,{characterClass:'wizard'},seeded(42)),b=randomCharacter(data,{characterClass:'wizard'},seeded(42))
 assert.deepEqual(abilityKeys.map(k=>a[k]),abilityKeys.map(k=>b[k]))
 assert.equal(a.name,b.name);assert.equal(a.playerDetails['creation.race'],b.playerDetails['creation.race'])
+for (const key of ['appearance.Età','appearance.Altezza','appearance.Peso','appearance.Carnagione','appearance.Occhi','appearance.Capelli','appearanceDescription']) assert.equal(a.playerDetails[key],b.playerDetails[key],'Appearance must use the injected random source')
 assert.throws(()=>randomCharacter(data,{characterClass:'missing'}),/Classe/)
 assert.throws(()=>randomCharacter(data,{race:'missing'}),/Razza/)
 assert.throws(()=>randomCharacter({...data,backgrounds:[]}),/Background/)
@@ -60,6 +68,28 @@ assert.throws(()=>randomCharacter({...data,spells:[]},{characterClass:'wizard',r
 assert.throws(()=>randomCharacter(data,{},()=>1),/generatore casuale/)
 assert.throws(()=>randomCharacter(data,{},()=>NaN),/generatore casuale/)
 for (const level of [0,21,1.5,NaN,Infinity,'3']) assert.throws(()=>randomCharacter(data,{level}),/livello intero/)
+for (const fixed of [
+    {characterClass:'wizard',race:'tiefling',level:17},
+    {characterClass:'ranger',race:'human',level:1},
+    {characterClass:'cleric',race:'dwarf',level:20},
+    {},
+]) {
+    const reviewed=randomCharacter(data,fixed,seeded(128))
+    const quick=randomCharacter(data,{...fixed,skipReview:true},seeded(128))
+    assert.equal(quick.playerDetails['tutorial.active'],'false','Quick generation must open as a normal sheet')
+    assert.equal(quick.playerDetails['tutorial.completed'],'true')
+    assert.equal(reviewed.playerDetails['tutorial.active'],'true','Review generation must still create a resumable draft')
+    const normalizedQuick=JSON.parse(JSON.stringify(quick).replaceAll(quick.id,reviewed.id))
+    normalizedQuick.playerDetails['tutorial.active']='true'
+    delete normalizedQuick.playerDetails['tutorial.completed']
+    assert.deepEqual(normalizedQuick,reviewed,'Skipping review must retain identical character choices, including level, appearance and inventory references')
+    assert.deepEqual(parseCharacterSheets(JSON.stringify([quick]))[0],quick,'Quick characters must save and reopen as normal sheets')
+    assert.deepEqual(applyCreation(quick,data),quick)
+    assert.deepEqual(characterCalculationIssues(quick),[])
+    assert.deepEqual(spellSelection(quick,data).issues,[])
+    assert.equal(quick.playerDetails['tutorial.advancement'],undefined,'Skipping review must not invent manual confirmations')
+    assert.equal(quick.playerDetails['tutorial.randomReviewConfirmed'],undefined)
+}
 for (const characterClass of data.classes) for (let level=2;level<=20;level++) {
     const race=data.races[(level+data.classes.indexOf(characterClass))%data.races.length]
     const sheet=randomCharacter(data,{characterClass:characterClass.index,race:race.index,level},seeded(level*379+data.classes.indexOf(characterClass)))

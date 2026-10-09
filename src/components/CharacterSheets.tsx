@@ -57,10 +57,20 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
         setDraft({ ...updated })
     }
 
-    function generateRandom() {
+    function generateRandom(skipReview = false) {
         if (!creationData || saved.blocked || tutorial.draft || tutorial.error) return
         try {
-            const generated=randomCharacter(creationData,randomOrigins)
+            const generated=randomCharacter(creationData,{...randomOrigins,skipReview})
+            if (skipReview) {
+                if (!writeSheets([...saved.sheets,generated])) {
+                    setRandomError('Impossibile salvare il personaggio. Libera spazio nel browser e riprova.')
+                    return
+                }
+                randomDialog.current?.close()
+                setRandomError('')
+                onSaved(generated)
+                return
+            }
             if (!saveProgress(generated)) {setRandomError('Impossibile salvare la bozza. Libera spazio nel browser e riprova.');return}
             randomDialog.current?.close()
             setRandomError('')
@@ -125,6 +135,23 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
 
     function closeDialog() {
         if (guided && draft && !saveProgress(draft)) return
+        dialog.current?.close()
+        setDraft(null)
+        setError('')
+    }
+
+    function discardCreation() {
+        if (!guided) return
+        try {
+            localStorage.removeItem(tutorialDraftKey)
+        } catch {
+            setError('Impossibile cancellare la bozza. Riprova: i progressi sono ancora conservati.')
+            return
+        }
+        setTutorial({ draft: null, error: '' })
+        setProgressSnapshot(null)
+        setRandomOrigins({ characterClass: '', race: '', level: 1 })
+        setRandomError('')
         dialog.current?.close()
         setDraft(null)
         setError('')
@@ -311,6 +338,7 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                         <div className="turn-actions">
                             {!guided && <button className="sort-turns" type="submit">Salva scheda</button>}
                             <button className="end-combat" type="button" onClick={closeDialog}>{guided ? 'Salva e riprendi più tardi' : 'Annulla'}</button>
+                            {guided && <button className="clear-turns discard-creation" type="button" onClick={discardCreation}>Cancella</button>}
                             {saved.sheets.some((sheet) => sheet.id === draft.id) && (
                                 <button className="clear-turns" type="button" onClick={() => deleteDialog.current?.showModal()}>Elimina scheda</button>
                             )}
@@ -334,7 +362,7 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
             <dialog ref={randomDialog} className="character-dialog" aria-labelledby="random-character-heading" {...dismissRandomDialog}>
                 <form onSubmit={(event) => {event.preventDefault();generateRandom()}}>
                     <h2 id="random-character-heading">Personaggio casuale</h2>
-                    <p>D&D 5e 2014. Scegli il livello e fissa classe e razza, oppure lascia queste ultime casuali. Il risultato si apre nel tutorial per controllarlo e modificarlo prima di salvarlo.</p>
+                    <p>D&D 5e 2014. Scegli il livello e fissa classe e razza, oppure lascia queste ultime casuali. «Genera e rivedi» apre il tutorial; «Genera veloce» salva direttamente il personaggio tra le schede.</p>
                     <div className="tutorial-grid">
                         <label className="player-field"><span>Classe</span><select value={randomOrigins.characterClass} onChange={(event) => setRandomOrigins({...randomOrigins,characterClass:event.target.value})}><option value="">Casuale</option>{creationData?.classes.filter((x) => !x.editions || x.editions.includes('2014')).map((x) => <option key={x.index} value={x.index}>{labelOf(x)}</option>)}</select></label>
                         <label className="player-field"><span>Razza</span><select value={randomOrigins.race} onChange={(event) => setRandomOrigins({...randomOrigins,race:event.target.value})}><option value="">Casuale</option>{creationData?.races.filter((x) => !x.editions || x.editions.includes('2014')).map((x) => <option key={x.index} value={x.index}>{labelOf(x)}</option>)}</select></label>
@@ -342,7 +370,7 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                     </div>
                     <p className="player-hint">Caratteristiche: array standard assegnato casualmente. Competenze, lingue, dotazioni e magie usano le opzioni del catalogo. Sopra il livello 1 vanno verificati aumenti di caratteristica/talenti e avanzamenti nel tutorial. Il Ranger richiede ancora alcune scelte manuali. Per le regole 2024 usa la creazione guidata.</p>
                     {randomError && <p role="alert">{randomError}</p>}
-                    <div className="turn-actions"><button className="sort-turns" type="submit">Genera e rivedi</button><button className="end-combat" type="button" onClick={() => randomDialog.current?.close()}>Annulla</button></div>
+                    <div className="turn-actions"><button className="sort-turns" type="submit">Genera e rivedi</button><button className="sort-turns" type="button" onClick={() => generateRandom(true)}>Genera veloce</button><button className="end-combat" type="button" onClick={() => randomDialog.current?.close()}>Annulla</button></div>
                 </form>
             </dialog>
         </aside>

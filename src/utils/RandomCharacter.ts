@@ -5,8 +5,17 @@ import { savedSpellGrants, spellRowState, type SpellSource } from './Spellcastin
 import { wizardRules } from './Wizard.ts'
 import { inventoryEquipment, ownedInventoryItems, setInventoryReference } from './Inventory.ts'
 
-/** Creates a fresh draft; calculation and validation stay in the tutorial. */
-export function randomCharacter(data: CreationData, fixed: { characterClass?: string; race?: string; level?: number } = {}, random = Math.random) {
+// Suggested adult appearances for the SRD origins; these are editable narrative choices.
+const appearanceRanges: Record<string, readonly [number, number, number, number, number, number]> = {
+    dragonborn: [18, 70, 175, 215, 90, 145], dwarf: [50, 250, 120, 150, 55, 95],
+    elf: [100, 500, 150, 195, 45, 80], gnome: [40, 250, 90, 120, 16, 28],
+    'half-elf': [20, 140, 150, 195, 45, 95], 'half-orc': [18, 60, 170, 215, 70, 125],
+    halfling: [20, 100, 80, 110, 16, 27], human: [18, 70, 150, 195, 50, 105],
+    tiefling: [18, 85, 150, 195, 50, 100],
+}
+
+/** Generates the same validated choices for a review draft or a directly saved sheet. */
+export function randomCharacter(data: CreationData, fixed: { characterClass?: string; race?: string; level?: number; skipReview?: boolean } = {}, random = Math.random) {
     const level=fixed.level ?? 1
     if (!Number.isInteger(level) || level<1 || level>20) throw new Error('Scegli un livello intero da 1 a 20.')
     function draw(length: number) {
@@ -136,6 +145,16 @@ export function randomCharacter(data: CreationData, fixed: { characterClass?: st
         Difetti:['Fatico ad ammettere quando mi sbaglio.','La curiosità mi porta a sottovalutare i pericoli.','Mi fido troppo delle promesse.'],
     })) d[`personality.${field}`]=pick(values,field)
     d.backgroundStory=`Dopo un periodo come ${labelOf(background)}, ${name} ha scelto di partire all’avventura. ${d['personality.Legami']}`
+    const [minAge,maxAge,minHeight,maxHeight,minWeight,maxWeight]=appearanceRanges[race.index] ?? (race.size==='Small' ? appearanceRanges.gnome : appearanceRanges.human)
+    d['appearance.Età']=String(minAge+draw(maxAge-minAge+1))
+    d['appearance.Altezza']=`${minHeight+draw(maxHeight-minHeight+1)} cm`
+    d['appearance.Peso']=`${minWeight+draw(maxWeight-minWeight+1)} kg`
+    d['appearance.Occhi']=pick(['Castani','Verdi','Azzurri','Grigi','Neri','Ambrati'],'Occhi')
+    d['appearance.Capelli']=race.index==='dragonborn' ? 'Senza capelli' : pick(['Neri, corti','Castani, ondulati','Biondi, lunghi','Rossi, ricci','Grigi, raccolti','Bianchi, intrecciati'],'Capelli')
+    d['appearance.Carnagione']=pick(race.index==='dragonborn' ? ['Scaglie bronzee','Scaglie ramate','Scaglie dorate','Scaglie argentate'] : race.index==='tiefling' ? ['Chiara','Bruna','Ramata','Rosso scuro','Violacea'] : ['Chiara','Olivastra','Bruna','Scura','Ramata'],'Carnagione')
+    d.scars=pick(['Nessuna','Sopracciglio','Dorso della mano'],'Cicatrici')
+    d.distinctiveMarks=pick(race.index==='dragonborn' ? ['Corna ricurve','Una cresta pronunciata','Scaglie chiare intorno agli occhi'] : race.index==='tiefling' ? ['Corna ricurve','Corna asimmetriche','Una coda con la punta chiara'] : ['Lentiggini sul viso','Un piccolo tatuaggio sul polso','Un neo sulla guancia'],'Segni di riconoscimento')
+    d.appearanceDescription=`Altezza ${d['appearance.Altezza']}, peso ${d['appearance.Peso']}. Carnagione: ${d['appearance.Carnagione']}. Occhi: ${d['appearance.Occhi']}. Capelli: ${d['appearance.Capelli']}. Cicatrici: ${d.scars}. ${d.distinctiveMarks}.`
     if (characterClass.index==='ranger') {
         d['tutorial.randomReview']=rangerCreationReview
         if (level===1) d['tutorial.step']='4'
@@ -154,5 +173,5 @@ export function randomCharacter(data: CreationData, fixed: { characterClass?: st
     sheet={...sheet,hitPoints:sheet.playerDetails?.maxHitPoints ?? ''}
     const issues=tutorialIssues(sheet,data,8).filter((issue) => issue!==sheet.playerDetails?.['tutorial.randomReview'] && issue!==advancementCreationReview)
     if (issues.length) throw new Error(`Generazione incompleta: ${issues.join(' ')}`)
-    return sheet
+    return fixed.skipReview ? { ...sheet, playerDetails: { ...sheet.playerDetails, 'tutorial.active': 'false', 'tutorial.completed': 'true' } } : sheet
 }

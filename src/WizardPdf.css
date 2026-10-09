@@ -848,8 +848,8 @@
     margin: 0;
     gap: 0;
 }
-.player-paper-wizard-pdf .player-wizard-identity-1 .player-six-fields { top: 23%; height: 23%; }
-.player-paper-wizard-pdf .player-wizard-identity-1 .player-three-fields { top: 55%; height: 20%; }
+.player-paper-wizard-pdf .player-wizard-identity-1 .player-six-fields { top: 26%; height: 23%; }
+.player-paper-wizard-pdf .player-wizard-identity-1 .player-three-fields { top: 58%; height: 20%; }
 .player-paper-wizard-pdf .player-wizard-identity-1 .player-wizard-appearance .player-field { display: block; height: 100%; }
 .player-paper-wizard-pdf .player-wizard-identity-1 .player-wizard-appearance input { height: 100%; padding: 0 4px; border: 0; font-size: clamp(12px, 1.5cqw, 22px); text-align: center; pointer-events: auto; }
 

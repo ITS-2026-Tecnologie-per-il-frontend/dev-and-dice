@@ -1,0 +1,355 @@
+{
+  "measurement": "React server rendering of spell page: CPU work and markup; excludes browser DOM, layout and network",
+  "cases": [
+    {
+      "characterClass": "wizard",
+      "level": 1,
+      "template": "generic",
+      "savedSpells": 9,
+      "page2Ms": 49.3103000000001,
+      "spellPageMs": [
+        73.42139999999995,
+        72.7681,
+        66.39369999999985
+      ],
+      "medianMs": 72.7681,
+      "editMs": 68.82899999999995,
+      "rows": 72,
+      "options": 1336,
+      "topSamples": [
+        [
+          "process.env.NODE_ENV.exports.jsxDEV",
+          48
+        ],
+        [
+          "(anonymous)",
+          20
+        ],
+        [
+          "ReactElement",
+          11
+        ],
+        [
+          "spellRow",
+          5
+        ],
+        [
+          "validateProperty",
+          4
+        ],
+        [
+          "spellSelectionBlock",
+          3
+        ],
+        [
+          "pushStartInstance",
+          3
+        ],
+        [
+          "warnUnknownProperties",
+          3
+        ]
+      ]
+    },
+    {
+      "characterClass": "wizard",
+      "level": 1,
+      "template": "wizard",
+      "savedSpells": 9,
+      "page2Ms": 16.036200000000008,
+      "spellPageMs": [
+        30.662399999999934,
+        30.728000000000065,
+        33.281200000000126
+      ],
+      "medianMs": 30.728000000000065,
+      "editMs": 25.918100000000095,
+      "rows": 72,
+      "options": 1209,
+      "topSamples": [
+        [
+          "(anonymous)",
+          14
+        ],
+        [
+          "spellRow",
+          9
+        ],
+        [
+          "renderElement",
+          8
+        ],
+        [
+          "retryNode",
+          2
+        ],
+        [
+          "spellRowState",
+          2
+        ],
+        [
+          "ReactElement",
+          2
+        ],
+        [
+          "pushStartInstance",
+          2
+        ],
+        [
+          "validateProperties$2",
+          2
+        ]
+      ]
+    },
+    {
+      "characterClass": "wizard",
+      "level": 1,
+      "template": "wizard-pdf",
+      "savedSpells": 9,
+      "page2Ms": 20.345100000000002,
+      "spellPageMs": [
+        29.744300000000067,
+        31.849299999999857,
+        26.40560000000005
+      ],
+      "medianMs": 29.744300000000067,
+      "editMs": 25.666600000000017,
+      "rows": 72,
+      "options": 1209,
+      "topSamples": [
+        [
+          "(anonymous)",
+          16
+        ],
+        [
+          "spellRow",
+          8
+        ],
+        [
+          "spellNameLookup",
+          2
+        ],
+        [
+          "ReactElement",
+          2
+        ],
+        [
+          "validateProperty",
+          2
+        ],
+        [
+          "validateProperties$2",
+          2
+        ],
+        [
+          "post",
+          1
+        ],
+        [
+          "dispatch",
+          1
+        ]
+      ]
+    },
+    {
+      "characterClass": "wizard",
+      "level": 17,
+      "template": "generic",
+      "savedSpells": 44,
+      "page2Ms": 46.21150000000034,
+      "spellPageMs": [
+        209.48360000000002,
+        205.0083999999997,
+        203.67779999999993
+      ],
+      "medianMs": 205.0083999999997,
+      "editMs": 102.04619999999977,
+      "rows": 72,
+      "options": 2524,
+      "topSamples": [
+        [
+          "process.env.NODE_ENV.exports.jsxDEV",
+          243
+        ],
+        [
+          "(anonymous)",
+          23
+        ],
+        [
+          "spellRow",
+          14
+        ],
+        [
+          "ReactElement",
+          13
+        ],
+        [
+          "defineKeyPropWarningGetter",
+          6
+        ],
+        [
+          "pushStartInstance",
+          4
+        ],
+        [
+          "PlayerSheet",
+          3
+        ],
+        [
+          "spellSelectionBlock",
+          3
+        ]
+      ]
+    },
+    {
+      "characterClass": "wizard",
+      "level": 17,
+      "template": "wizard",
+      "savedSpells": 44,
+      "page2Ms": 24.75490000000036,
+      "spellPageMs": [
+        55.72530000000006,
+        220.8184000000001,
+        224.1590000000001
+      ],
+      "medianMs": 220.8184000000001,
+      "editMs": 211.66179999999986,
+      "rows": 72,
+      "options": 2586,
+      "topSamples": [
+        [
+          "process.env.NODE_ENV.exports.jsxDEV",
+          160
+        ],
+        [
+          "(anonymous)",
+          42
+        ],
+        [
+          "spellRow",
+          13
+        ],
+        [
+          "ReactElement",
+          9
+        ],
+        [
+          "createTask",
+          4
+        ],
+        [
+          "validateProperty",
+          4
+        ],
+        [
+          "(garbage collector)",
+          4
+        ],
+        [
+          "spellRowState",
+          3
+        ]
+      ]
+    },
+    {
+      "characterClass": "wizard",
+      "level": 17,
+      "template": "wizard-pdf",
+      "savedSpells": 44,
+      "page2Ms": 71.42889999999989,
+      "spellPageMs": [
+        101.4385000000002,
+        53.66700000000037,
+        215.4427000000005
+      ],
+      "medianMs": 101.4385000000002,
+      "editMs": 208.72069999999985,
+      "rows": 72,
+      "options": 2586,
+      "topSamples": [
+        [
+          "process.env.NODE_ENV.exports.jsxDEV",
+          114
+        ],
+        [
+          "(anonymous)",
+          42
+        ],
+        [
+          "spellRow",
+          9
+        ],
+        [
+          "ReactElement",
+          5
+        ],
+        [
+          "pushStartInstance",
+          5
+        ],
+        [
+          "spellRowState",
+          4
+        ],
+        [
+          "retryNode",
+          3
+        ],
+        [
+          "(garbage collector)",
+          3
+        ]
+      ]
+    },
+    {
+      "characterClass": "cleric",
+      "level": 17,
+      "template": "generic",
+      "savedSpells": 21,
+      "page2Ms": 30.793099999999868,
+      "spellPageMs": [
+        140.5582000000004,
+        131.60909999999967,
+        25.582900000000336
+      ],
+      "medianMs": 131.60909999999967,
+      "editMs": 27.183100000000195,
+      "rows": 72,
+      "options": 1586,
+      "topSamples": [
+        [
+          "process.env.NODE_ENV.exports.jsxDEV",
+          73
+        ],
+        [
+          "spellRow",
+          55
+        ],
+        [
+          "(anonymous)",
+          9
+        ],
+        [
+          "PlayerSheet",
+          4
+        ],
+        [
+          "retryNode",
+          2
+        ],
+        [
+          "savedSpellGrants",
+          2
+        ],
+        [
+          "createTask",
+          2
+        ],
+        [
+          "ReactElement",
+          2
+        ]
+      ]
+    }
+  ]
+}

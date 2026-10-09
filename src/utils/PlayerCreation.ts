@@ -3,6 +3,7 @@ import { castingAbilityKey, classId, spellEdition, spellProfile, spellCounts, gr
 import { wizardFeatures2024, wizardBookIssues, wizardBookLimits, wizardFeatureSelected, selectedWizardFeatures, addWizardFeatureSpells, wizardSpellPool, wizardWardMaximum, featureResourceKey } from './Wizard.ts'
 import { reconcileInventory, ownedInventoryItems, inventoryEquipment, inventoryFieldValue, inventoryReferenceKey, referencedInventoryItem, updateInventoryField, projectInventory, inventoryCarriedWeight, inventoryItems, type InventoryGrant } from './Inventory.ts'
 import type { Catalog } from './Catalog.ts'
+import { appearanceFieldKey, appearanceLegacyKey } from './CharacterAppearance.ts'
 
 export const abilityKeys = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const
 export type AbilityKey = typeof abilityKeys[number]
@@ -65,13 +66,14 @@ export const modifier = abilityModifier
 export const creationEnabled = (sheet: CharacterSheet) => sheet.playerDetails?.['creation.enabled'] === 'true'
 
 export function characterFieldValue(sheet: CharacterSheet, key: string): string {
+    key = appearanceFieldKey(key)
     const owned = inventoryFieldValue(sheet,key)
     if (owned !== undefined) return owned
     const score = /^modifier\.(strength|dexterity|constitution|intelligence|wisdom|charisma)$/.exec(key)?.[1] as AbilityKey | undefined
     if (score) return signedBonus(modifier(sheet[score]))
     const row = /^inventory\.(\d+)\.3$/.exec(key)?.[1]
     if (row !== undefined) return inventoryTotalWeight(sheet.playerDetails?.[`inventory.${row}.2`] ?? '', sheet.playerDetails?.[`inventory.${row}.1`] ?? '')
-    return Object.hasOwn(characterFields, key) ? sheet[key as keyof typeof characterFields] : sheet.playerDetails?.[key] ?? ''
+    return Object.hasOwn(characterFields, key) ? sheet[key as keyof typeof characterFields] : sheet.playerDetails?.[key] ?? sheet.playerDetails?.[appearanceLegacyKey(key) ?? key] ?? ''
 }
 
 export function characterFieldMode(sheet: CharacterSheet, key: string): 'automatic' | 'overridable' | 'manual' {
@@ -83,11 +85,14 @@ export function characterFieldMode(sheet: CharacterSheet, key: string): 'automat
 
 // Le chiavi sono quelle dei dati salvati, senza riferimenti al template o alla pagina.
 export function updateCharacterField(sheet: CharacterSheet, key: string, value: string): CharacterSheet {
+    key = appearanceFieldKey(key)
     if (characterFieldMode(sheet, key) === 'automatic') return sheet
     if (sheet.playerDetails?.['inventory.version'] === '1' && ['equipment','consumables','attunedItems'].includes(key)) return sheet
     const inventory = updateInventoryField(sheet,key,value)
     if (inventory) return inventory
     const d = { ...sheet.playerDetails }
+    const legacy = appearanceLegacyKey(key)
+    if (legacy) delete d[legacy]
     if (Object.hasOwn(characterFields, key)) {
         if (creationEnabled(sheet) && abilityKeys.includes(key as AbilityKey)) {
             const score = integerValue(value), bonus = integerValue(d[`creation.bonus.${key}`]) ?? 0

@@ -13,6 +13,7 @@ import { copyCost, wizardRules } from '../utils/Wizard'
 import { type Catalog } from '../utils/Catalog'
 import { sheetTemplates, playerTemplate, wizardPrivilegeLevels, featuresAtLevel, updateFeaturesAtLevel } from '../utils/PlayerTemplates'
 import { printCharacterSheet } from '../utils/PrintCharacterSheet'
+import { hasOtherSpell, spellNameLookup, spellNameRoots } from '../utils/SpellPage'
 import '../PlayerSheet.css'
 import '../WizardPdf.css'
 
@@ -69,12 +70,12 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
     const automatic = creationEnabled(sheet) && !!data
     const subclass = data && subclassOptions(sheet, data).find((x) => x.index === details['creation.subclass'])
     const hasSpellRules = data && characterLevel(sheet) !== undefined && data.classes.some((x) => x.index === classId(sheet))
-    const magic = data && hasSpellRules ? spellRules(sheet, data) : undefined
-    function spellLabel(name: string) {
-        return catalog?.abilities.find((entry) => typeof entry.data.level === 'number' && Array.isArray(entry.data.aliases)
-            && entry.data.aliases.some((alias) => typeof alias === 'string' && alias.toLowerCase() === name.toLowerCase()))?.name ?? name
-    }
-    const selectedMagic = data && hasSpellRules ? spellSelection({ ...sheet, playerDetails: Object.fromEntries(Object.entries(details).map(([key, value]) => [key, /^spell\.\d+\.\d+\.name$/.test(key) ? spellLabel(value) : value])) }, data) : undefined
+    const magic = useMemo(() => data && hasSpellRules ? spellRules(sheet, data) : undefined,[sheet,data,hasSpellRules])
+    const spellLabel = useMemo(() => spellNameLookup(catalog),[catalog])
+    const selectedSpellRoots = useMemo(() => spellNameRoots(sheet,spellLabel),[sheet,spellLabel])
+    const selectedMagic = useMemo(() => data && hasSpellRules ? spellSelection({ ...sheet, playerDetails: Object.fromEntries(Object.entries(sheet.playerDetails ?? {}).map(([key, value]) => [key, /^spell\.\d+\.\d+\.name$/.test(key) ? spellLabel(value) : value])) }, data) : undefined,[sheet,data,hasSpellRules,spellLabel])
+    // Many rows share identical options. Reuse their elements within this render.
+    const spellOptions = new Map<string,ReactNode>()
     function onChange(next: CharacterSheet, clampHitPoints = false) {
         const updated = !suppliedData && data ? applyCreation(next, data) : next
         emitChange(clampHitPoints ? clampCurrentHitPointsToMaximum(updated) : updated)
@@ -177,8 +178,18 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
                     }}>
                     <option value="">Seleziona…</option>
                     {name && !choices.some((x) => labelOf(x) === name) && <option value={name}>{name} (verifica con il DM)</option>}
-                    {choices.map((x) => <option key={x.index} value={labelOf(x)} title={blocked(undefined,undefined,x) || undefined} disabled={name !== labelOf(x) && (Object.entries(details).some(([key, value]) => key.startsWith('spell.') && key.endsWith('.name') && key !== `${root}.name` && spellLabel(value) === labelOf(x) && spellRowState(sheet, Number(key.split('.')[1]), Number(key.split('.')[2])).source === state.source)
-                        || !!blocked(undefined,undefined,x))}>{labelOf(x)}</option>)}
+                    {choices.map((x) => {
+                        const optionName=labelOf(x),reason=blocked(undefined,undefined,x)
+                        const duplicate=hasOtherSpell(selectedSpellRoots.get(state.source)?.get(optionName),root)
+                        const disabled=name !== optionName && (duplicate || !!reason)
+                        const cacheKey=JSON.stringify([x.index,optionName,reason,disabled])
+                        let option=spellOptions.get(cacheKey)
+                        if (!option) {
+                            option=<option key={x.index} value={optionName} title={reason || undefined} disabled={disabled}>{optionName}</option>
+                            spellOptions.set(cacheKey,option)
+                        }
+                        return option
+                    })}
                 </select> : <CatalogSearch aria-label={`Incantesimo livello ${level}, ${index + 1}`} value={name}
                     entries={catalog?.abilities.filter((entry) => entry.data.level === level) ?? []}
                     onChange={(value) => detail(`${root}.name`, value)} onSelect={(entry) => detail(`${root}.name`, entry.name)} />}
