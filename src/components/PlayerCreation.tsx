@@ -1,11 +1,13 @@
-import { type ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 import { characterFields, type CharacterSheet } from '../utils/CharacterSheets'
 import { abilityKeys, creationChoices, creationEnabled, labelOf, optionsFor, optionLabel, selectedOrigins, resolveChoice, type Choice, type Option, type CreationData } from '../utils/PlayerCreation'
 import { inventoryEquipment, inventoryReferenceKey, ownedInventoryItems, referencedInventoryItem } from '../utils/Inventory'
 import { spellEdition } from '../utils/Spellcasting'
+import { TutorialFieldLabel } from './TutorialLayout'
 
-export function CreationChoices({ sheet, data, change, choices: suppliedChoices, section }: { sheet: CharacterSheet; data: CreationData; change: (key: string, value: string) => void; choices?: ReturnType<typeof creationChoices>; section?: 'scores' | 'choices' | 'equipment' }) {
+export function CreationChoices({ sheet, data, change, choices: suppliedChoices, section, feedback }: { sheet: CharacterSheet; data: CreationData; change: (key: string, value: string) => void; choices?: ReturnType<typeof creationChoices>; section?: 'scores' | 'choices' | 'equipment'; feedback?: Record<string,string[]> }) {
     const d = sheet.playerDetails ?? {}
+    const prefix=useId()
     function nested(option: Option, path: string, expertise: boolean): ReactNode {
         if (option.choice) return choiceFields(option.choice, `${path}.nested`, 'Dettaglio della scelta', expertise)
         return option.items?.map((item, i) => <div key={i}>{nested(item, `${path}.item.${i}`, expertise)}</div>)
@@ -22,12 +24,13 @@ export function CreationChoices({ sheet, data, change, choices: suppliedChoices,
             ...(selectedOrigins(sheet,data).race?.languages ?? []).map((x) => x.index),
             ...creationChoices(sheet,data).filter((x) => x.choice.type === 'languages' && x.path !== path).flatMap((x) => resolveChoice(x.choice,x.path,d,data).map((r) => r.ref.index)),
         ]) : new Set<string>()
-        return <fieldset className="creation-choice" key={path}><legend>{title} — scegli {choice.choose}</legend>
+        const errors=feedback?.[path],errorId=`${prefix}-${path}-error`
+        return <fieldset className="creation-choice" key={path} data-tutorial-field={feedback ? path : undefined} tabIndex={feedback ? -1 : undefined} aria-describedby={errors?.length ? errorId : undefined}><legend>{title} — scegli {choice.choose}</legend>
             {Array.from({ length: choice.choose }, (_, i) => {
                 const key = `${path}.${i}`
                 const selected = d[key] !== undefined && d[key] !== '' ? options[Number(d[key])] : undefined
                 const others = Array.from({ length: choice.choose }, (_, j) => j !== i ? d[`${path}.${j}`] : undefined)
-                return <div key={key}><label className="player-field"><span>Scelta {i + 1}</span><select value={d[key] ?? ''} onChange={(event) => change(key, event.target.value)}>
+                return <div key={key}><label className="player-field">{feedback ? <TutorialFieldLabel label={`Scelta ${i+1} · obbligatoria`} /> : <span>Scelta {i+1}</span>}<select name={feedback ? key : undefined} autoComplete={feedback ? 'off' : undefined} aria-required={feedback ? true : undefined} aria-invalid={errors?.length ? true : undefined} aria-describedby={errors?.length ? errorId : undefined} value={d[key] ?? ''} onChange={(event) => change(key, event.target.value)}>
                     <option value="">Seleziona…</option>
                     {options.map((option, j) => {
                         const skill = data.skills.find((x) => option.item?.index === `skill-${x.index}`)
@@ -37,6 +40,7 @@ export function CreationChoices({ sheet, data, change, choices: suppliedChoices,
                     })}
                 </select></label>{!expertise && selected?.item?.index.startsWith('skill-') && knownSkills.has(selected.item.index) && <p className="creation-choice-warning" role="status">Questa abilità è già concessa da un’altra origine. Scegli un’altra abilità dal menu qui sopra.</p>}{d[key] !== undefined && d[key] !== '' && selected && nested(selected, `${key}.option.${d[key]}`, expertise)}</div>
             })}
+            {errors?.length ? <p className="tutorial-field-error" id={errorId}>{errors.join(' ')}</p> : null}
         </fieldset>
     }
     const { characterClass, race, subrace } = selectedOrigins(sheet, data)

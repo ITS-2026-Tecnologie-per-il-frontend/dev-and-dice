@@ -304,36 +304,3 @@
 .player-portrait-controls[open] > .player-field { margin-top: 8px; }
 .player-paper:not(.player-paper-wizard) .player-portrait-controls { display: contents; }
 .player-paper:not(.player-paper-wizard) .player-portrait-controls > summary { display: none; }
-
-/* Tutorial esterno ai template: le cornici delle schede restano invariate. */
-.character-tutorial { padding: 1rem; color: var(--text); }
-.character-tutorial p { line-height: 1.55; }
-.character-tutorial h3 { font-size: 1.4rem; }
-.character-tutorial button { padding: .5rem .75rem; border: 1px solid var(--border); border-radius: .35rem; font: inherit; color: var(--text-h); background: var(--bg); cursor: pointer; }
-.character-tutorial button:disabled { opacity: .5; cursor: default; }
-.character-tutorial :is(button,input,select,textarea):focus-visible { outline: 2px solid #147d72; outline-offset: 3px; }
-.character-tutorial nav ol { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; padding: 0; }
-.character-tutorial nav button[aria-current="step"] { background: #147d72; color: white; }
-.tutorial-progress { font-weight: 700; }
-.tutorial-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: .8rem; margin: 1rem 0; }
-.character-tutorial .player-field { margin: .8rem 0; color: inherit; }
-.character-tutorial .player-check { color: inherit; }
-.character-tutorial .player-field :is(input,select,textarea) { border: 1px solid var(--border); border-radius: .3rem; padding: .5rem; color: var(--text-h); background: var(--bg); }
-.tutorial-preview, .tutorial-issues { border: 1px solid var(--border); border-radius: .4rem; padding: .8rem; margin: 1rem 0; }
-.tutorial-preview h4 { margin: 0; }
-.tutorial-prose { white-space: pre-wrap; }
-.tutorial-spells { display: grid; grid-template-columns: repeat(auto-fit,minmax(230px,1fr)); gap: .7rem; padding: .8rem 0; }
-.tutorial-spell { border: 1px solid var(--border); border-radius: .35rem; padding: .7rem; }
-.tutorial-spell p { font-size: .9rem; }
-.tutorial-actions { display: flex; gap: .75rem; margin: 1.5rem 0; }
-.tutorial-summary { display: grid; grid-template-columns: repeat(auto-fit,minmax(210px,1fr)); gap: .8rem; }
-.tutorial-summary dt { font-weight: 700; }
-.tutorial-summary dd { margin: .3rem 0 0; white-space: pre-wrap; }
-.tutorial-sources { margin-top: 1rem; }
-.tutorial-resume { padding: .75rem; margin-top: .5rem; }
-.character-tutorial .player-box { border: 1px solid var(--border); border-radius: .4rem; color: var(--text); background: var(--bg); }
-.character-tutorial .player-box h3 { color: var(--text-h); font-size: 1rem; text-align: left; border-color: var(--border); }
-.character-tutorial .player-hint { color: var(--text); font-size: .875rem; }
-.character-tutorial .player-field > span { font-size: .8rem; }
-.character-tutorial .creation-choice-warning { color: var(--text-h); font-size: .875rem; }
-@media (max-width: 640px) { .character-tutorial :is(.player-two-fields,.player-three-fields) { grid-template-columns: 1fr; } }

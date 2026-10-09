@@ -262,7 +262,7 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                 ))}
             </div>
             {combatStarted && <p className="library-help">Termina il combattimento per aggiungere partecipanti.</p>}
-            <dialog ref={dialog} className={`character-dialog${draft?.kind === 'PG' ? ' player-sheet-dialog' : ''}`} aria-labelledby="character-dialog-heading" {...dismissDialog} onClose={(event) => {
+            <dialog ref={dialog} className={`character-dialog${draft?.kind === 'PG' ? ' player-sheet-dialog' : ''}${guided ? ' tutorial-dialog' : ''}`} aria-labelledby="character-dialog-heading" {...dismissDialog} onClose={(event) => {
                 if (event.target !== event.currentTarget) return
                 deleteDialog.current?.close()
                 setDraft(null)
@@ -271,10 +271,10 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                 {draft && (
                     <form onSubmit={(event) => { event.preventDefault(); saveSheet() }}>
                         <div className="dialog-header">
-                            <h2 id="character-dialog-heading">{draft.name || 'Nuova scheda'}</h2>
+                            <h2 id="character-dialog-heading">{guided ? 'Creazione del personaggio' : draft.name || 'Nuova scheda'}</h2>
                             <button className="delete-turn" type="button" aria-label="Chiudi scheda" onClick={closeDialog}>×</button>
                         </div>
-                        {draft.kind === 'PG' ? <PlayerSheet sheet={draft} catalog={catalog} creationData={creationData} onChange={setDraft} /> : <div className="character-fields">
+                        {draft.kind === 'PG' ? <PlayerSheet sheet={draft} catalog={catalog} creationData={creationData} onChange={setDraft}>{guided && <><div className="tutorial-utility-buttons"><button type="button" onClick={closeDialog}>Salva e riprendi più tardi</button><button className="tutorial-discard" type="button" onClick={discardCreation} aria-label="Cancella la bozza del personaggio">Cancella</button></div><p className="tutorial-save-status" role="status">{progressSaved ? 'Progressi salvati in questo browser.' : 'Salvataggio dei progressi…'}</p>{error && <p className="tutorial-save-error" role="alert">{error}</p>}</>}</PlayerSheet> : <div className="character-fields">
                             {(Object.entries(characterFields) as [keyof typeof characterFields, string][]).map(([field, label]) => (
                                 <label key={field} className={field === 'notes' ? 'character-notes' : undefined}>
                                     <span>{field === 'initiative' && draft.kind !== 'PG' ? 'Iniziativa inserita' : label}</span>
@@ -333,16 +333,15 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                         </div>
                         <p className="library-help">Per mostri e PNG l’iniziativa nel combattimento resta vuota: il modificatore è un suggerimento, inserisci tu il risultato del tiro. Per i PG viene copiata l’iniziativa predefinita.</p>
                         </>}
-                        {error && <p role="alert">{error}</p>}
-                        <p className="library-help" role="status">{guided ? progressSaved ? 'Progressi salvati in questo browser.' : 'Salvataggio dei progressi…' : 'Le modifiche si salvano anche cliccando fuori dalla finestra.'}</p>
+                        {!guided && <>{error && <p role="alert">{error}</p>}
+                        <p className="library-help" role="status">Le modifiche si salvano anche cliccando fuori dalla finestra.</p>
                         <div className="turn-actions">
-                            {!guided && <button className="sort-turns" type="submit">Salva scheda</button>}
-                            <button className="end-combat" type="button" onClick={closeDialog}>{guided ? 'Salva e riprendi più tardi' : 'Annulla'}</button>
-                            {guided && <button className="clear-turns discard-creation" type="button" onClick={discardCreation}>Cancella</button>}
+                            <button className="sort-turns" type="submit">Salva scheda</button>
+                            <button className="end-combat" type="button" onClick={closeDialog}>Annulla</button>
                             {saved.sheets.some((sheet) => sheet.id === draft.id) && (
                                 <button className="clear-turns" type="button" onClick={() => deleteDialog.current?.showModal()}>Elimina scheda</button>
                             )}
-                        </div>
+                        </div></>}
                     </form>
                 )}
             </dialog>
