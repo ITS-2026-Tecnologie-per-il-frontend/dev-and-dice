@@ -2,6 +2,41 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
+## Accesso, registrazione e avvio
+
+L'app usa React Router per le pagine `/login`, `/register` e `/trackers`. Login e
+registrazione comunicano con il server Node tramite `/api`; il server memorizza
+gli account in `server/data/users.json`, fuori dalla cartella pubblica `public/`.
+Nel JSON la password è salvata solo come hash scrypt. I cookie di sessione sono
+HttpOnly e le sessioni sono conservate in `server/data/sessions/`.
+
+Per lo sviluppo avvia entrambi i processi con:
+
+```sh
+npm run dev
+```
+
+Il file utenti e la directory delle sessioni vengono creati al primo avvio e
+sono esclusi da Git. Gli account si registrano dalla pagina `/register` usando
+un nome utente di 3-24 caratteri e una password di almeno 8 caratteri.
+
+Per una build da distribuire:
+
+```sh
+npm run build
+```
+
+Imposta `NODE_ENV=production` e `SESSION_SECRET` (almeno 32 byte casuali), poi
+avvia il server con `npm start`. In produzione il server serve anche i file
+compilati in `dist/`; usa HTTPS per proteggere credenziali e cookie in transito.
+Il backend basato su JSON è adatto a un'installazione singola: non avviare più
+istanze che scrivono lo stesso file. Per un servizio pubblico o scalabile usa un
+database e configura il proxy HTTPS secondo l'hosting.
+
+La registrazione salva l'account sul server, ma le schede dei personaggi restano
+nel `localStorage` del browser: non sono ancora sincronizzate con l'account o
+con altri dispositivi.
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)

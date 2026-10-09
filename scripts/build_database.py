@@ -9,6 +9,7 @@ import re
 import sys
 
 sys.dont_write_bytecode = True
+from json_utils import write_json
 from scrape_bestiary import StatBlocks, download, normalized
 from scrape_wikidot import duration_metadata
 from sync_spells import sync_spells
@@ -98,10 +99,7 @@ def main():
         wikidot = json.loads((DATA / 'wikidot-spells.json').read_text(encoding='utf-8'))
         raw = json.loads(args.spell_input.read_text(encoding='utf-8')) if args.spell_input else download('incantesimi')
         database = build_database(bestiary, raw, wikidot)
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        temporary = args.output.with_suffix(args.output.suffix + '.tmp')
-        temporary.write_text(json.dumps(database, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-        temporary.replace(args.output)
+        write_json(args.output, database)
         print(f'Database creato: {len(database["creatures"])} creature, {len(database["abilities"])} abilità, {len(database["spells"])} incantesimi descritti, {len(database["spellIndex"])} voci Wikidot')
     except (OSError, ValueError, KeyError, TypeError, StopIteration) as error:
         cli.exit(1, f'Creazione fallita; database precedente conservato: {error}\n')

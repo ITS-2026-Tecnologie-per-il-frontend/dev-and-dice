@@ -16,6 +16,8 @@ from urllib.request import Request, urlopen
 from urllib.robotparser import RobotFileParser
 
 sys.dont_write_bytecode = True
+from json_utils import write_json
+
 ROOT = Path(__file__).resolve().parents[1]
 BASE = 'https://dungeonedraghi.it'
 API = BASE + '/wp-json/wc/store/v1/'
@@ -47,13 +49,6 @@ def fetch(url, timeout=45, retries=3):
                 raise
             print(f'Richiesta da riprovare ({attempt + 1}/{retries}): {url}', flush=True)
             time.sleep(2 * (attempt + 1))
-
-
-def write_json(path, value):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + '.tmp')
-    temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    temporary.replace(path)
 
 
 def download(cache):

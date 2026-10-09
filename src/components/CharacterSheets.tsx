@@ -108,10 +108,6 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
         }
     }, [creationData, saved.sheets, writeSheets, onSaved])
 
-    async function persist(sheets: CharacterSheet[]): Promise<boolean> {
-        return writeSheets(sheets)
-    }
-
     function closeDialog() {
         if (guided && draft && !saveProgress(draft)) return
         dialog.current?.close()
@@ -145,16 +141,14 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
         const sheets = saved.sheets.some((item) => item.id === sheet.id)
             ? saved.sheets.map((item) => item.id === sheet.id ? sheet : item)
             : [...saved.sheets, sheet]
-        void persist(sheets).then((success) => {
-            if (success) {
-                if (guided) {
-                    try { localStorage.removeItem(tutorialDraftKey) } catch { /* La scheda completa è già salvata; la bozza residua viene ignorata alla riapertura. */ }
-                    setTutorial({ draft: null, error: '' })
-                    dialog.current?.close(); setDraft(null); setError('')
-                } else closeDialog()
-                onSaved(sheet)
-            }
-        })
+        if (writeSheets(sheets)) {
+            if (guided) {
+                try { localStorage.removeItem(tutorialDraftKey) } catch { /* La scheda completa è già salvata; la bozza residua viene ignorata alla riapertura. */ }
+                setTutorial({ draft: null, error: '' })
+                dialog.current?.close(); setDraft(null); setError('')
+            } else closeDialog()
+            onSaved(sheet)
+        }
     }
 
     function abilityRow(ability: SheetAbility, index: number) {
@@ -315,10 +309,9 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                     <button autoFocus className="end-combat" type="button" onClick={() => deleteDialog.current?.close()}>Annulla</button>
                     <button className="clear-turns" type="button" onClick={() => {
                         if (!draft) return
-                        void persist(saved.sheets.filter((sheet) => sheet.id !== draft.id)).then((success) => {
-                            deleteDialog.current?.close()
-                            if (success) closeDialog()
-                        })
+                        const success = writeSheets(saved.sheets.filter((sheet) => sheet.id !== draft.id))
+                        deleteDialog.current?.close()
+                        if (success) closeDialog()
                     }}>Elimina scheda</button>
                 </div>
             </dialog>

@@ -7,7 +7,9 @@ from tempfile import TemporaryDirectory
 
 sys.dont_write_bytecode = True
 
-script = Path(__file__).resolve().parents[1] / 'scripts/scrape_wikidot.py'
+scripts = Path(__file__).resolve().parents[1] / 'scripts'
+sys.path.insert(0, str(scripts))
+script = scripts / 'scrape_wikidot.py'
 spec = importlib.util.spec_from_file_location('scrape_wikidot', script)
 scraper = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(scraper)

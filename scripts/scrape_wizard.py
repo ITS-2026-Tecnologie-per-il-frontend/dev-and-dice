@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 from urllib.robotparser import RobotFileParser
+from json_utils import write_json
 from scrape_wikidot import fetch_text, USER_AGENT
 
 SOURCE = 'https://dnd5e.wikidot.com/wizard'
@@ -93,10 +94,7 @@ def main():
             html = fetch_text(SOURCE)
         previous = json.loads(args.output.read_text(encoding='utf-8')) if args.output.exists() else None
         result = parse_wizard(html, previous)
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        temporary = args.output.with_suffix('.tmp')
-        temporary.write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-        temporary.replace(args.output)
+        write_json(args.output, result)
         print(f"Esportate {len(result['subclasses'])} sottoclassi e {len(result['levels'])} livelli in {args.output}")
     except (OSError, ValueError) as error: cli.exit(1, f'Esportazione fallita: {error}\n')
 

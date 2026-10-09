@@ -13,6 +13,8 @@ from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 from urllib.robotparser import RobotFileParser
 
+from json_utils import write_json
+
 SOURCE = 'https://dungeonedraghi.it/compendio/bestiario/'
 API = 'https://dungeonedraghi.it/wp-json/wc/store/v1/'
 USER_AGENT = 'DevAndDiceCatalog/1.0'
@@ -229,10 +231,7 @@ def main():
     try:
         raw = json.loads(args.input.read_text(encoding='utf-8')) if args.input else download()
         catalog = export_catalog(raw)
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        temporary = args.output.with_suffix(args.output.suffix + '.tmp')
-        temporary.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-        temporary.replace(args.output)
+        write_json(args.output, catalog)
         print(f'Esportate {len(catalog["creatures"])} creature e {len(catalog["abilities"])} abilità in {args.output}')
     except (OSError, ValueError, KeyError, TypeError, StopIteration) as error:
         cli.exit(1, f'Esportazione fallita; catalogo precedente conservato: {error}\n')

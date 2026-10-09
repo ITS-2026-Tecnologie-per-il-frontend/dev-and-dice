@@ -3,13 +3,14 @@
 import argparse
 from datetime import datetime, timezone
 from html.parser import HTMLParser
-import json
 import math
 from pathlib import Path
 import re
 from urllib.parse import unquote, urljoin, urlparse
 from urllib.request import Request, urlopen
 from urllib.robotparser import RobotFileParser
+
+from json_utils import write_json
 
 SOURCE = 'https://dnd5e.wikidot.com/spells'
 USER_AGENT = 'DevAndDiceCatalog/1.0'
@@ -141,10 +142,7 @@ def main():
             'scope': 'spell-index-metadata', 'roundSeconds': 6,
             'spells': spells,
         }
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        temporary = args.output.with_suffix(args.output.suffix + '.tmp')
-        temporary.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-        temporary.replace(args.output)
+        write_json(args.output, catalog)
         print(f'Esportati {len(spells)} incantesimi in {args.output}')
     except (OSError, ValueError) as error:
         cli.exit(1, f'Esportazione fallita: {error}\n')
