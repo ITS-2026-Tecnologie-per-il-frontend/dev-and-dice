@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { characterFields, clampCurrentHitPointsToMaximum, normalizeHitPoints, numericCharacterFields, characterLevel, initiativeBonus, type CharacterSheet } from '../utils/CharacterSheets'
 import { applyCreation, translatedCreationData, characterFieldValue, updateCharacterField, creationEnabled, enableCreation, labelOf, loadCreationData, resetCreationOverrides, selectedOrigins, spellRules, spellSelection, spellSelectionBlock, subclassOptions, subclassMinimumLevel, type CreationData, type Origin } from '../utils/PlayerCreation'
 import { CreationChoices, CreationStatus } from './PlayerCreation'
@@ -18,6 +18,7 @@ import '../PlayerSheet.css'
 import '../WizardPdf.css'
 
 const scores = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const
+const PlayerBarbarianSheet = lazy(() => import('../barbarian/BarbarianSheet').then(module => ({ default: module.PlayerBarbarianSheet })))
 const skills = [
     ['Acrobazia', 'dexterity'], ['Addestrare animali', 'wisdom'], ['Arcano', 'intelligence'],
     ['Atletica', 'strength'], ['Furtività', 'dexterity'], ['Indagare', 'intelligence'],
@@ -50,7 +51,7 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
     const prefix = useId()
     const details = sheet.playerDetails ?? {}
     const template = playerTemplate(sheet), wizardTemplate = template === 'wizard' || template === 'wizard-pdf'
-    const inventoryRowsPerPage = template === 'wizard-pdf' ? 19 : 12
+    const inventoryRowsPerPage = template === 'barbarian-pdf' ? 32 : template === 'wizard-pdf' ? 19 : 12
     const inventory = inventoryItems(sheet), inventoryWarnings=inventoryIssues(sheet)
     const occupiedRows=inventory.map((x) => x.row), freeRows:number[]=[]
     for (let row=0;freeRows.length<inventoryRowsPerPage;row++) if (!occupiedRows.includes(row)) freeRows.push(row)
@@ -249,7 +250,7 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
     return <div className="player-sheet">
         <div className="player-sheet-controls" data-print="exclude">
         <div className="player-sheet-toolbar">
-        <div className="player-template-picker"><label className="player-field"><span>Modello della scheda</span><select value={Object.hasOwn(sheetTemplates, details['sheet.template'] ?? '') ? details['sheet.template'] : 'auto'} onChange={(event) => { detail('sheet.template',event.target.value); setPage(0) }}><option value="auto">Automatico in base alla classe</option>{Object.entries(sheetTemplates).map(([id,model]) => <option key={id} value={id}>{model.name}</option>)}</select></label>{wizardTemplate && <a href={`${import.meta.env?.BASE_URL ?? '/'}templates/Mago.pdf`} target="_blank" rel="noreferrer">Apri PDF originale · Mago</a>}</div>
+        <div className="player-template-picker"><label className="player-field"><span>Modello della scheda</span><select value={Object.hasOwn(sheetTemplates, details['sheet.template'] ?? '') && (details['sheet.template'] !== 'barbarian-pdf' || template === 'barbarian-pdf') ? details['sheet.template'] : 'auto'} onChange={(event) => { detail('sheet.template',event.target.value); setPage(0) }}><option value="auto">Automatico in base alla classe</option>{Object.entries(sheetTemplates).filter(([id])=>id !== 'barbarian-pdf' || sheet.kind === 'PG' && classId(sheet) === 'barbarian').map(([id,model]) => <option key={id} value={id}>{model.name}</option>)}</select></label>{wizardTemplate && <a href={`${import.meta.env?.BASE_URL ?? '/'}templates/Mago.pdf`} target="_blank" rel="noreferrer">Apri PDF originale · Mago</a>}{template === 'barbarian-pdf' && <a href={`${import.meta.env?.BASE_URL ?? '/'}schede_personaggio/Barbaro.pdf`} target="_blank" rel="noreferrer">Apri PDF originale · Barbaro</a>}</div>
         {exportPage === undefined && <div className="player-sheet-export-controls"><button type="button" aria-describedby={`${prefix}-pdf-hint`} disabled={exporting || !data} onClick={(event) => { setExportWidth(event.currentTarget.closest('.player-sheet')?.querySelector('.player-paper')?.getBoundingClientRect().width ?? 1120); exportName.current = sheet.name; setExportError(''); setExporting(true) }}>{exporting ? 'Preparazione PDF…' : 'Esporta scheda in PDF'}</button><small id={`${prefix}-pdf-hint`}>Scegli «Salva come PDF» nella finestra di stampa.</small>{exportError && <p role="alert">{exportError}</p>}</div>}
         </div>
         {data ? <details className="player-sheet-settings">
@@ -277,6 +278,7 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
         </div>
         </div>
         <div className="player-paper-viewport" tabIndex={0}>
+        {template === 'barbarian-pdf' ? <div role="tabpanel" id={`${prefix}-page`} aria-labelledby={`${prefix}-tab-${visiblePage}`} data-barbarian-template><Suspense fallback={<p role="status">Preparazione della scheda Barbaro…</p>}><PlayerBarbarianSheet sheet={sheet} onChange={next=>onChange(next,true)} page={visiblePage} /></Suspense></div> : <>
         <div className={`player-paper${visiblePage === 0 ? ' player-paper-statistics' : ''}${wizardTemplate ? ' player-paper-wizard' : ''}${template === 'wizard-pdf' ? ' player-paper-wizard-pdf' : ''}`} role="tabpanel" id={`${prefix}-page`} aria-labelledby={`${prefix}-tab-${visiblePage}`}>
             {!wizardTemplate && <header className="player-identity">
                 <div className="player-name"><span className="player-brand">DUNGEONS & DRAGONS</span>{field('name', 'Nome personaggio', { base: true })}</div>
@@ -535,8 +537,14 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
                 {visiblePage === 3 && field('attunedItems','Oggetti armonizzati annotati',{multiline:true})}
             </details>}
         </div>
+        </>}
         </div>
-        {exportPage === undefined && visiblePage===1 && <nav className="player-inventory-navigation" data-print="exclude" aria-label="Pagine inventario"><button type="button" disabled={shownInventoryPage===0} onClick={() => setInventoryPage(shownInventoryPage-1)}>Oggetti precedenti</button><span> Inventario {shownInventoryPage+1}/{inventoryPages} · {inventory.length} voci </span><button type="button" disabled={shownInventoryPage+1>=inventoryPages} onClick={() => setInventoryPage(shownInventoryPage+1)}>Altri oggetti</button></nav>}
+        {template === 'barbarian-pdf' && exportPage === undefined && <details className="player-sheet-settings" data-print="exclude"><summary>Classe e campi aggiuntivi</summary>
+            {data ? <>{originSelect('class','Classe',data.classes,'characterClass')}{originSelect('subclass','Cammino primordiale',subclassOptions(sheet,data))}{originSelect('background','Background',data.backgrounds)}</> : field('characterClass','Classe',{base:true})}
+            {automatic && data && <CreationChoices sheet={sheet} data={data} change={detail} />}
+            {field('classFeatures','Tutti i privilegi di classe',{multiline:true})}{field('feats','Talenti',{multiline:true})}{field('tools','Strumenti e altre competenze',{multiline:true})}
+        </details>}
+        {exportPage === undefined && template !== 'barbarian-pdf' && visiblePage===1 && <nav className="player-inventory-navigation" data-print="exclude" aria-label="Pagine inventario"><button type="button" disabled={shownInventoryPage===0} onClick={() => setInventoryPage(shownInventoryPage-1)}>Oggetti precedenti</button><span> Inventario {shownInventoryPage+1}/{inventoryPages} · {inventory.length} voci </span><button type="button" disabled={shownInventoryPage+1>=inventoryPages} onClick={() => setInventoryPage(shownInventoryPage+1)}>Altri oggetti</button></nav>}
         {exportPage === undefined && data && <InventoryEditor sheet={sheet} data={data} onChange={onChange} target={inventoryTarget} onClose={() => setInventoryTarget(undefined)} />}
         {exportPage === undefined && exporting && <div ref={exportHost} className="player-sheet-export-source" style={{ width: exportWidth }} aria-hidden="true" inert>
             {pages.map((_, index) => <PlayerSheet key={index} sheet={sheet} catalog={catalog} creationData={data} onChange={() => {}} exportPage={index} />)}

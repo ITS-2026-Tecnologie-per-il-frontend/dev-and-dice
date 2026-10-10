@@ -1,0 +1,70 @@
+{
+  "source": "/usr/xlini/dev-and-dice/public/schede_personaggio/Barbaro.pdf",
+  "dpi": 144,
+  "page_count": 3,
+  "pages": [
+    {
+      "index": 1,
+      "width_pt": 595.2,
+      "height_pt": 841.92,
+      "preview": "pages/page-001.png",
+      "reference_svg": "pages/page-001-reference.svg",
+      "text_spans": [],
+      "images": [
+        {
+          "file": "images/page-001-image-001.jpeg",
+          "bbox": [
+            0.0,
+            0.0,
+            595.2,
+            841.92
+          ]
+        }
+      ],
+      "vector_path_count": 0,
+      "vector_bboxes": []
+    },
+    {
+      "index": 2,
+      "width_pt": 595.2,
+      "height_pt": 841.92,
+      "preview": "pages/page-002.png",
+      "reference_svg": "pages/page-002-reference.svg",
+      "text_spans": [],
+      "images": [
+        {
+          "file": "images/page-002-image-001.jpeg",
+          "bbox": [
+            0.0,
+            0.0,
+            595.2,
+            841.92
+          ]
+        }
+      ],
+      "vector_path_count": 0,
+      "vector_bboxes": []
+    },
+    {
+      "index": 3,
+      "width_pt": 595.2,
+      "height_pt": 793.68,
+      "preview": "pages/page-003.png",
+      "reference_svg": "pages/page-003-reference.svg",
+      "text_spans": [],
+      "images": [
+        {
+          "file": "images/page-003-image-001.jpeg",
+          "bbox": [
+            0.0,
+            0.0,
+            595.2,
+            793.68
+          ]
+        }
+      ],
+      "vector_path_count": 0,
+      "vector_bboxes": []
+    }
+  ]
+}

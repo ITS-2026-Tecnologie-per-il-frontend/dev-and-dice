@@ -1,10 +1,12 @@
-import { useState } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { lazy, Suspense, useState } from 'react'
+import { Link, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthPage } from './auth/AuthPage'
 import { useAuth } from './auth/useAuth'
 import { TurnsTracker } from './components/TurnsTracker'
 import './App.css'
 import './auth.css'
+
+const BarbarianSheet = lazy(() => import('./barbarian/BarbarianSheet'))
 
 function ProtectedTrackers() {
   const { status, user, error, refreshUser, logout: endUserSession } = useAuth()
@@ -54,6 +56,7 @@ function ProtectedTrackers() {
     <>
       <header className="user-bar">
         <span>Accesso effettuato come <strong>{user.username}</strong></span>
+        <Link to="/schede/barbaro">Scheda Barbaro</Link>
         <label>Lingua <select value={language} onChange={(event) => changeLanguage(event.target.value)}>
           <option value="it">Italiano</option><option value="en">English</option>
         </select></label>
@@ -73,6 +76,7 @@ function App() {
       <Route path="/login" element={<AuthPage mode="login" />} />
       <Route path="/register" element={<AuthPage mode="register" />} />
       <Route path="/trackers" element={<ProtectedTrackers />} />
+      <Route path="/schede/barbaro" element={<Suspense fallback={<p role="status">Caricamento della scheda…</p>}><BarbarianSheet /></Suspense>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

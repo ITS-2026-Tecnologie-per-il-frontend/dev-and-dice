@@ -1,0 +1,1410 @@
+{
+  "width": 595.2,
+  "height": 793.68,
+  "ornaments": [
+    {
+      "name": "header",
+      "box": [
+        184.08,
+        8.88,
+        241.92000000000004,
+        79.20000000000002
+      ],
+      "viewBox": [
+        1008,
+        330
+      ],
+      "src": "/templates/barbarian/p3-header.svg"
+    },
+    {
+      "name": "attunement",
+      "box": [
+        449.0400000000001,
+        49.92000000000001,
+        99.84000000000002,
+        32.160000000000004
+      ],
+      "viewBox": [
+        416,
+        134
+      ],
+      "src": "/templates/barbarian/p3-attunement.svg"
+    },
+    {
+      "name": "silhouette",
+      "box": [
+        91.92000000000002,
+        115.92000000000002,
+        438.96000000000004,
+        562.08
+      ],
+      "viewBox": [
+        1829,
+        2342
+      ],
+      "src": "/templates/barbarian/p3-silhouette.svg"
+    },
+    {
+      "name": "viso",
+      "box": [
+        66.00000000000001,
+        90.00000000000001,
+        151.92000000000002,
+        50.88000000000001
+      ],
+      "viewBox": [
+        633,
+        212
+      ],
+      "src": "/templates/barbarian/p3-viso.svg"
+    },
+    {
+      "name": "collo",
+      "box": [
+        78.00000000000001,
+        161.04000000000002,
+        151.92000000000002,
+        50.88000000000001
+      ],
+      "viewBox": [
+        633,
+        212
+      ],
+      "src": "/templates/barbarian/p3-collo.svg"
+    },
+    {
+      "name": "corpo",
+      "box": [
+        78.00000000000001,
+        271.92,
+        151.92000000000002,
+        51.120000000000005
+      ],
+      "viewBox": [
+        633,
+        213
+      ],
+      "src": "/templates/barbarian/p3-corpo.svg"
+    },
+    {
+      "name": "mani",
+      "box": [
+        70.08000000000001,
+        379.9200000000001,
+        152.88000000000002,
+        51.120000000000005
+      ],
+      "viewBox": [
+        637,
+        213
+      ],
+      "src": "/templates/barbarian/p3-mani.svg"
+    },
+    {
+      "name": "vita",
+      "box": [
+        62.88000000000001,
+        480.9600000000001,
+        152.16000000000003,
+        51.120000000000005
+      ],
+      "viewBox": [
+        634,
+        213
+      ],
+      "src": "/templates/barbarian/p3-vita.svg"
+    },
+    {
+      "name": "piedi",
+      "box": [
+        66.00000000000001,
+        570.96,
+        151.92000000000002,
+        52.080000000000005
+      ],
+      "viewBox": [
+        633,
+        217
+      ],
+      "src": "/templates/barbarian/p3-piedi.svg"
+    },
+    {
+      "name": "testa",
+      "box": [
+        384.96000000000004,
+        90.00000000000001,
+        153.12000000000003,
+        50.88000000000001
+      ],
+      "viewBox": [
+        638,
+        212
+      ],
+      "src": "/templates/barbarian/p3-testa.svg"
+    },
+    {
+      "name": "schiena",
+      "box": [
+        366.00000000000006,
+        200.88000000000002,
+        151.92000000000002,
+        51.120000000000005
+      ],
+      "viewBox": [
+        633,
+        213
+      ],
+      "src": "/templates/barbarian/p3-schiena.svg"
+    },
+    {
+      "name": "torso",
+      "box": [
+        378.00000000000006,
+        290.88000000000005,
+        152.88000000000002,
+        51.120000000000005
+      ],
+      "viewBox": [
+        637,
+        213
+      ],
+      "src": "/templates/barbarian/p3-torso.svg"
+    },
+    {
+      "name": "braccia",
+      "box": [
+        366.00000000000006,
+        398.88000000000005,
+        151.92000000000002,
+        51.120000000000005
+      ],
+      "viewBox": [
+        633,
+        213
+      ],
+      "src": "/templates/barbarian/p3-braccia.svg"
+    },
+    {
+      "name": "anello-1",
+      "box": [
+        271.92,
+        509.0400000000001,
+        150.96,
+        50.88000000000001
+      ],
+      "viewBox": [
+        629,
+        212
+      ],
+      "src": "/templates/barbarian/p3-anello-1.svg"
+    },
+    {
+      "name": "anello-2",
+      "box": [
+        422.88000000000005,
+        509.0400000000001,
+        152.16000000000003,
+        50.88000000000001
+      ],
+      "viewBox": [
+        634,
+        212
+      ],
+      "src": "/templates/barbarian/p3-anello-2.svg"
+    },
+    {
+      "name": "arma-1",
+      "box": [
+        372.00000000000006,
+        594.0000000000001,
+        152.88000000000002,
+        50.88000000000001
+      ],
+      "viewBox": [
+        637,
+        212
+      ],
+      "src": "/templates/barbarian/p3-arma-1.svg"
+    },
+    {
+      "name": "arma-2",
+      "box": [
+        372.00000000000006,
+        642.96,
+        152.88000000000002,
+        52.080000000000005
+      ],
+      "viewBox": [
+        637,
+        217
+      ],
+      "src": "/templates/barbarian/p3-arma-2.svg"
+    },
+    {
+      "name": "arma-3",
+      "box": [
+        372.00000000000006,
+        692.8800000000001,
+        152.88000000000002,
+        51.120000000000005
+      ],
+      "viewBox": [
+        637,
+        213
+      ],
+      "src": "/templates/barbarian/p3-arma-3.svg"
+    },
+    {
+      "name": "altro-1",
+      "box": [
+        28.080000000000005,
+        659.0400000000001,
+        152.88000000000002,
+        50.88000000000001
+      ],
+      "viewBox": [
+        637,
+        212
+      ],
+      "src": "/templates/barbarian/p3-altro-1.svg"
+    },
+    {
+      "name": "altro-2",
+      "box": [
+        180.96000000000004,
+        659.0400000000001,
+        151.92000000000002,
+        50.88000000000001
+      ],
+      "viewBox": [
+        633,
+        212
+      ],
+      "src": "/templates/barbarian/p3-altro-2.svg"
+    },
+    {
+      "name": "altro-3",
+      "box": [
+        28.080000000000005,
+        708.0000000000001,
+        152.88000000000002,
+        52.080000000000005
+      ],
+      "viewBox": [
+        637,
+        217
+      ],
+      "src": "/templates/barbarian/p3-altro-3.svg"
+    },
+    {
+      "name": "altro-4",
+      "box": [
+        180.96000000000004,
+        708.0000000000001,
+        151.92000000000002,
+        52.080000000000005
+      ],
+      "viewBox": [
+        633,
+        217
+      ],
+      "src": "/templates/barbarian/p3-altro-4.svg"
+    }
+  ],
+  "texts": [
+    {
+      "text": "DUNGEONS",
+      "box": [
+        269.5,
+        28,
+        64.4,
+        8.5
+      ],
+      "kind": "brand"
+    },
+    {
+      "text": "DRAGONS",
+      "box": [
+        354.2,
+        28,
+        54.6,
+        8.5
+      ],
+      "kind": "brand"
+    },
+    {
+      "text": "®",
+      "box": [
+        409.6,
+        27.9,
+        4.4,
+        4.4
+      ],
+      "kind": "brand"
+    },
+    {
+      "text": "Nome del Personaggio",
+      "box": [
+        228.5,
+        79.2,
+        74.1,
+        4.8
+      ],
+      "kind": "heading"
+    },
+    {
+      "text": "Sintonie Attive",
+      "box": [
+        451.4,
+        52.8,
+        91.2,
+        9.1
+      ],
+      "kind": "heading"
+    },
+    {
+      "text": "Viso",
+      "box": [
+        35.3,
+        126.3,
+        29.5,
+        11
+      ],
+      "kind": "heading"
+    },
+    {
+      "text": "Testa",
+      "box": [
+        534.5,
+        126.3,
+        36.5,
+        11
+      ],
+      "kind": "heading"
+    },
+    {
+      "text": "Collo",
+      "box": [
+        35,
+        196.9,
+        41,
+        11
+      ],
+      "kind": "heading"
+    },
+    {
+      "text": "Schiena",
+      "box": [
+        516,
+        237.3,
+        54.4,
+        11
+      ],
+      "kind": "heading"
+    },
+    {
+      "text": "Corpo",
+      "box": [
+        35,
+        311.7,
+        46.3,
+        11
+      ],
+      "kind": "heading"
+    },
+    {
+      "text": "Torso",
+      "box": [
+        529,
+        329.5,
+        42,
+        11
+      ],
+      "kind": "heading"
+    },
+    {
+      "text": "Mani",
+      "box": [
+        35,
+        419.1,
+        32.6,
+        11
+      ],
+      "kind": "heading"
+    },
+    {
+      "text": "Braccia",
+      "box": [
+        520,
+        434.3,
+        51.7,
+        11
+      ],
+      "kind": "heading"
+    },
+    {
+      "text": "Vita",
+      "box": [
+        35.5,
+        517.7,
+        31,
+        11
+      ],
+      "kind": "heading"
+    },
+    {
+      "text": "Anelli",
+      "box": [
+        529,
+        561.1,
+        42,
+        9.9
+      ],
+      "kind": "heading"
+    },
+    {
+      "text": "Piedi",
+      "box": [
+        35,
+        611.9,
+        35,
+        11
+      ],
+      "kind": "heading"
+    },
+    {
+      "text": "Armi",
+      "box": [
+        528,
+        730.1,
+        31.5,
+        10.8
+      ],
+      "kind": "heading"
+    },
+    {
+      "text": "Altro",
+      "box": [
+        34,
+        762.2,
+        39.2,
+        11.1
+      ],
+      "kind": "heading"
+    },
+    {
+      "text": "Lenti, Maschere, Occhi, Occhiali",
+      "box": [
+        33.6,
+        142.8,
+        133,
+        8.9
+      ],
+      "kind": "plain"
+    },
+    {
+      "text": "Cappelli, Corone, Diademi,Elmi",
+      "box": [
+        440.9,
+        141.1,
+        128.6,
+        9.9
+      ],
+      "kind": "plain"
+    },
+    {
+      "text": "Fasce, Filatteri",
+      "box": [
+        511.7,
+        153.1,
+        57.8,
+        8.9
+      ],
+      "kind": "plain"
+    },
+    {
+      "text": "Amuleti, Collane, Medaglioni,",
+      "box": [
+        34.1,
+        212.2,
+        121.7,
+        10.5
+      ],
+      "kind": "plain"
+    },
+    {
+      "text": "Ninnoli, Pendenti, Sciarpe,",
+      "box": [
+        35,
+        224.9,
+        109.2,
+        9.8
+      ],
+      "kind": "plain"
+    },
+    {
+      "text": "Cappe, Coprispalle, Mantelli",
+      "box": [
+        454.8,
+        253.4,
+        115.4,
+        9.9
+      ],
+      "kind": "plain"
+    },
+    {
+      "text": "Abiti, Armature",
+      "box": [
+        33.8,
+        327.4,
+        63.2,
+        8.8
+      ],
+      "kind": "plain"
+    },
+    {
+      "text": "Maglie, Tuniche, Sottovesti",
+      "box": [
+        458.9,
+        345.1,
+        109.7,
+        9.9
+      ],
+      "kind": "plain"
+    },
+    {
+      "text": "Vesti",
+      "box": [
+        549.6,
+        357.8,
+        19,
+        6.8
+      ],
+      "kind": "plain"
+    },
+    {
+      "text": "Guanti, Guanti d’arme, Tirapugni",
+      "box": [
+        34.6,
+        432.5,
+        136.8,
+        9.8
+      ],
+      "kind": "plain"
+    },
+    {
+      "text": "Copribraccia, Bracciali,",
+      "box": [
+        476.2,
+        450.2,
+        93.1,
+        9.9
+      ],
+      "kind": "plain"
+    },
+    {
+      "text": "Braccialetti",
+      "box": [
+        525.4,
+        462.2,
+        44.1,
+        7.5
+      ],
+      "kind": "plain"
+    },
+    {
+      "text": "Cinture, Fasce",
+      "box": [
+        35,
+        534.7,
+        57.6,
+        8.2
+      ],
+      "kind": "plain"
+    },
+    {
+      "text": "Anelli, Ditali",
+      "box": [
+        519.6,
+        579.8,
+        49.9,
+        8.9
+      ],
+      "kind": "plain"
+    },
+    {
+      "text": "Sandali, Scarpe, Stivali",
+      "box": [
+        34.6,
+        625.9,
+        92.1,
+        9.9
+      ],
+      "kind": "plain"
+    },
+    {
+      "text": "Armi da mischia/distanza, Bastoni,",
+      "box": [
+        412.3,
+        748.1,
+        145.2,
+        9.8
+      ],
+      "kind": "plain"
+    },
+    {
+      "text": "Bacchette, Scudi",
+      "box": [
+        490.6,
+        760.1,
+        66.9,
+        8.9
+      ],
+      "kind": "plain"
+    },
+    {
+      "text": "Pozioni, Pergamene, Tratti, Ecc.",
+      "box": [
+        82.9,
+        765.1,
+        130,
+        7.9
+      ],
+      "kind": "plain"
+    }
+  ],
+  "fields": [
+    {
+      "group": "equipment",
+      "key": "slot.Viso.name",
+      "label": "Nome slot Viso",
+      "box": [
+        76,
+        94,
+        134,
+        7
+      ],
+      "kind": "text"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Viso.description",
+      "label": "Descrizione slot Viso",
+      "box": [
+        76,
+        107,
+        134,
+        30
+      ],
+      "kind": "textarea"
+    },
+    {
+      "group": "checks",
+      "key": "slot.Viso.active",
+      "label": "Attivo slot Viso",
+      "box": [
+        69.5,
+        92,
+        7.5,
+        7.5
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Collo.name",
+      "label": "Nome slot Collo",
+      "box": [
+        88,
+        165,
+        134,
+        7
+      ],
+      "kind": "text"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Collo.description",
+      "label": "Descrizione slot Collo",
+      "box": [
+        88,
+        178,
+        134,
+        30
+      ],
+      "kind": "textarea"
+    },
+    {
+      "group": "checks",
+      "key": "slot.Collo.active",
+      "label": "Attivo slot Collo",
+      "box": [
+        81.5,
+        163,
+        7.5,
+        7.5
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Corpo.name",
+      "label": "Nome slot Corpo",
+      "box": [
+        88,
+        276,
+        134,
+        7
+      ],
+      "kind": "text"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Corpo.description",
+      "label": "Descrizione slot Corpo",
+      "box": [
+        88,
+        289,
+        134,
+        30
+      ],
+      "kind": "textarea"
+    },
+    {
+      "group": "checks",
+      "key": "slot.Corpo.active",
+      "label": "Attivo slot Corpo",
+      "box": [
+        81.5,
+        274,
+        7.5,
+        7.5
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Mani.name",
+      "label": "Nome slot Mani",
+      "box": [
+        80,
+        384,
+        135,
+        7
+      ],
+      "kind": "text"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Mani.description",
+      "label": "Descrizione slot Mani",
+      "box": [
+        80,
+        397,
+        135,
+        30
+      ],
+      "kind": "textarea"
+    },
+    {
+      "group": "checks",
+      "key": "slot.Mani.active",
+      "label": "Attivo slot Mani",
+      "box": [
+        73.5,
+        382,
+        7.5,
+        7.5
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Vita.name",
+      "label": "Nome slot Vita",
+      "box": [
+        73,
+        485,
+        134,
+        7
+      ],
+      "kind": "text"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Vita.description",
+      "label": "Descrizione slot Vita",
+      "box": [
+        73,
+        498,
+        134,
+        30
+      ],
+      "kind": "textarea"
+    },
+    {
+      "group": "checks",
+      "key": "slot.Vita.active",
+      "label": "Attivo slot Vita",
+      "box": [
+        66.5,
+        483,
+        7.5,
+        7.5
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Piedi.name",
+      "label": "Nome slot Piedi",
+      "box": [
+        76,
+        575,
+        134,
+        7
+      ],
+      "kind": "text"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Piedi.description",
+      "label": "Descrizione slot Piedi",
+      "box": [
+        76,
+        588,
+        134,
+        31
+      ],
+      "kind": "textarea"
+    },
+    {
+      "group": "checks",
+      "key": "slot.Piedi.active",
+      "label": "Attivo slot Piedi",
+      "box": [
+        69.5,
+        573,
+        7.5,
+        7.5
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Testa.name",
+      "label": "Nome slot Testa",
+      "box": [
+        395,
+        94,
+        135,
+        7
+      ],
+      "kind": "text"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Testa.description",
+      "label": "Descrizione slot Testa",
+      "box": [
+        395,
+        107,
+        135,
+        30
+      ],
+      "kind": "textarea"
+    },
+    {
+      "group": "checks",
+      "key": "slot.Testa.active",
+      "label": "Attivo slot Testa",
+      "box": [
+        529,
+        92,
+        7.5,
+        7.5
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Schiena.name",
+      "label": "Nome slot Schiena",
+      "box": [
+        376,
+        205,
+        134,
+        7
+      ],
+      "kind": "text"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Schiena.description",
+      "label": "Descrizione slot Schiena",
+      "box": [
+        376,
+        218,
+        134,
+        30
+      ],
+      "kind": "textarea"
+    },
+    {
+      "group": "checks",
+      "key": "slot.Schiena.active",
+      "label": "Attivo slot Schiena",
+      "box": [
+        509,
+        203,
+        7.5,
+        7.5
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Torso.name",
+      "label": "Nome slot Torso",
+      "box": [
+        388,
+        295,
+        135,
+        7
+      ],
+      "kind": "text"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Torso.description",
+      "label": "Descrizione slot Torso",
+      "box": [
+        388,
+        308,
+        135,
+        30
+      ],
+      "kind": "textarea"
+    },
+    {
+      "group": "checks",
+      "key": "slot.Torso.active",
+      "label": "Attivo slot Torso",
+      "box": [
+        522,
+        293,
+        7.5,
+        7.5
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Braccia.name",
+      "label": "Nome slot Braccia",
+      "box": [
+        376,
+        403,
+        134,
+        7
+      ],
+      "kind": "text"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Braccia.description",
+      "label": "Descrizione slot Braccia",
+      "box": [
+        376,
+        416,
+        134,
+        30
+      ],
+      "kind": "textarea"
+    },
+    {
+      "group": "checks",
+      "key": "slot.Braccia.active",
+      "label": "Attivo slot Braccia",
+      "box": [
+        509,
+        401,
+        7.5,
+        7.5
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Anello 1.name",
+      "label": "Nome slot Anello 1",
+      "box": [
+        282,
+        513,
+        133,
+        7
+      ],
+      "kind": "text"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Anello 1.description",
+      "label": "Descrizione slot Anello 1",
+      "box": [
+        282,
+        526,
+        133,
+        30
+      ],
+      "kind": "textarea"
+    },
+    {
+      "group": "checks",
+      "key": "slot.Anello 1.active",
+      "label": "Attivo slot Anello 1",
+      "box": [
+        414,
+        511,
+        7.5,
+        7.5
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Anello 2.name",
+      "label": "Nome slot Anello 2",
+      "box": [
+        433,
+        513,
+        134,
+        7
+      ],
+      "kind": "text"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Anello 2.description",
+      "label": "Descrizione slot Anello 2",
+      "box": [
+        433,
+        526,
+        134,
+        30
+      ],
+      "kind": "textarea"
+    },
+    {
+      "group": "checks",
+      "key": "slot.Anello 2.active",
+      "label": "Attivo slot Anello 2",
+      "box": [
+        566,
+        511,
+        7.5,
+        7.5
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Arma 1.name",
+      "label": "Nome slot Arma 1",
+      "box": [
+        382,
+        598,
+        135,
+        7
+      ],
+      "kind": "text"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Arma 1.description",
+      "label": "Descrizione slot Arma 1",
+      "box": [
+        382,
+        611,
+        135,
+        30
+      ],
+      "kind": "textarea"
+    },
+    {
+      "group": "checks",
+      "key": "slot.Arma 1.active",
+      "label": "Attivo slot Arma 1",
+      "box": [
+        516,
+        596,
+        7.5,
+        7.5
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Arma 2.name",
+      "label": "Nome slot Arma 2",
+      "box": [
+        382,
+        647,
+        135,
+        7
+      ],
+      "kind": "text"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Arma 2.description",
+      "label": "Descrizione slot Arma 2",
+      "box": [
+        382,
+        660,
+        135,
+        31
+      ],
+      "kind": "textarea"
+    },
+    {
+      "group": "checks",
+      "key": "slot.Arma 2.active",
+      "label": "Attivo slot Arma 2",
+      "box": [
+        516,
+        645,
+        7.5,
+        7.5
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Arma 3.name",
+      "label": "Nome slot Arma 3",
+      "box": [
+        382,
+        697,
+        135,
+        7
+      ],
+      "kind": "text"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Arma 3.description",
+      "label": "Descrizione slot Arma 3",
+      "box": [
+        382,
+        710,
+        135,
+        30
+      ],
+      "kind": "textarea"
+    },
+    {
+      "group": "checks",
+      "key": "slot.Arma 3.active",
+      "label": "Attivo slot Arma 3",
+      "box": [
+        516,
+        695,
+        7.5,
+        7.5
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Altro 1.name",
+      "label": "Nome slot Altro 1",
+      "box": [
+        38,
+        663,
+        135,
+        7
+      ],
+      "kind": "text"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Altro 1.description",
+      "label": "Descrizione slot Altro 1",
+      "box": [
+        38,
+        676,
+        135,
+        30
+      ],
+      "kind": "textarea"
+    },
+    {
+      "group": "checks",
+      "key": "slot.Altro 1.active",
+      "label": "Attivo slot Altro 1",
+      "box": [
+        31.5,
+        661,
+        7.5,
+        7.5
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Altro 2.name",
+      "label": "Nome slot Altro 2",
+      "box": [
+        191,
+        663,
+        134,
+        7
+      ],
+      "kind": "text"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Altro 2.description",
+      "label": "Descrizione slot Altro 2",
+      "box": [
+        191,
+        676,
+        134,
+        30
+      ],
+      "kind": "textarea"
+    },
+    {
+      "group": "checks",
+      "key": "slot.Altro 2.active",
+      "label": "Attivo slot Altro 2",
+      "box": [
+        184.5,
+        661,
+        7.5,
+        7.5
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Altro 3.name",
+      "label": "Nome slot Altro 3",
+      "box": [
+        38,
+        712,
+        135,
+        7
+      ],
+      "kind": "text"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Altro 3.description",
+      "label": "Descrizione slot Altro 3",
+      "box": [
+        38,
+        725,
+        135,
+        31
+      ],
+      "kind": "textarea"
+    },
+    {
+      "group": "checks",
+      "key": "slot.Altro 3.active",
+      "label": "Attivo slot Altro 3",
+      "box": [
+        31.5,
+        710,
+        7.5,
+        7.5
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Altro 4.name",
+      "label": "Nome slot Altro 4",
+      "box": [
+        191,
+        712,
+        134,
+        7
+      ],
+      "kind": "text"
+    },
+    {
+      "group": "equipment",
+      "key": "slot.Altro 4.description",
+      "label": "Descrizione slot Altro 4",
+      "box": [
+        191,
+        725,
+        134,
+        31
+      ],
+      "kind": "textarea"
+    },
+    {
+      "group": "checks",
+      "key": "slot.Altro 4.active",
+      "label": "Attivo slot Altro 4",
+      "box": [
+        184.5,
+        710,
+        7.5,
+        7.5
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "checks",
+      "key": "attunement.0",
+      "label": "Sintonia attiva 1",
+      "box": [
+        477,
+        68,
+        7,
+        7
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "checks",
+      "key": "attunement.1",
+      "label": "Sintonia attiva 2",
+      "box": [
+        496.5,
+        68,
+        7,
+        7
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "checks",
+      "key": "attunement.2",
+      "label": "Sintonia attiva 3",
+      "box": [
+        516,
+        68,
+        7,
+        7
+      ],
+      "kind": "checkbox"
+    },
+    {
+      "group": "identity",
+      "key": "name",
+      "label": "Nome del personaggio",
+      "box": [
+        203,
+        56,
+        193,
+        19
+      ],
+      "kind": "text"
+    }
+  ]
+}

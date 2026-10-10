@@ -1,0 +1,62 @@
+{
+  "pages": [
+    {
+      "page": 1,
+      "source_points": [
+        595.2000122070312,
+        841.9199829101562
+      ],
+      "print_points": [
+        594.9599609375,
+        841.9199829101562
+      ],
+      "screenshot_pixels": [
+        1191,
+        1684
+      ],
+      "channel_mean_diff": 10.66,
+      "ornaments": 28,
+      "text_lines": 208,
+      "fields": 188
+    },
+    {
+      "page": 2,
+      "source_points": [
+        595.2000122070312,
+        841.9199829101562
+      ],
+      "print_points": [
+        594.9599609375,
+        841.9199829101562
+      ],
+      "screenshot_pixels": [
+        1191,
+        1684
+      ],
+      "channel_mean_diff": 3.65,
+      "ornaments": 23,
+      "text_lines": 76,
+      "fields": 148
+    },
+    {
+      "page": 3,
+      "source_points": [
+        595.2000122070312,
+        793.6799926757812
+      ],
+      "print_points": [
+        594.9599609375,
+        793.9199829101562
+      ],
+      "screenshot_pixels": [
+        1191,
+        1588
+      ],
+      "channel_mean_diff": 5.82,
+      "ornaments": 22,
+      "text_lines": 36,
+      "fields": 61
+    }
+  ],
+  "checks": "397 controls passed; desktop/mobile print ink at expected coordinates passed; build and lint passed"
+}

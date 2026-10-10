@@ -18,6 +18,7 @@ html, body { margin: 0; padding: 0; background: white; color: #202226; }
 .sheet-print-notes { break-before: page; }
 .sheet-print-notes h2 { font-size: 12pt; margin: 5mm 0 2mm; }
 .sheet-print-notes p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.barbarian-field[data-print-checked="true"] { background-color: #292929 !important; border-radius: 50%; }
 `
 
 // These are layout and drawing properties, not native input chrome or event handlers.
@@ -26,7 +27,7 @@ const layoutStyles = 'width height min-width min-height max-width max-height box
 
 /** A separate document owns the print layout; the live sheet and its page state stay untouched. */
 export async function prepareCharacterPrint(source: HTMLElement, name: string): Promise<HTMLIFrameElement> {
-    if (!source.querySelector('.player-paper')) throw new Error('Nessuna pagina della scheda da esportare')
+    if (!source.querySelector('.player-paper, .barbarian-page')) throw new Error('Nessuna pagina della scheda da esportare')
     const frame = document.createElement('iframe')
     frame.className = 'character-print-frame'
     frame.title = 'Scheda pronta per la stampa'
@@ -49,12 +50,13 @@ export async function prepareCharacterPrint(source: HTMLElement, name: string): 
             return ready
         })
         const style = doc.createElement('style')
-        style.textContent = printCss
+        style.textContent = source.querySelector('.barbarian-page') ? printCss.replace('@page { size: A4 portrait; margin: 8mm; }', '') : printCss
         doc.head.append(style)
         const controlStyles = new Map<HTMLElement, { styles: string[][]; nativeCheckbox: boolean }>()
-        for (const original of source.querySelectorAll('.player-paper')) {
+        for (const original of source.querySelectorAll('.player-paper, .barbarian-page')) {
             const page = doc.createElement('section')
-            page.className = 'sheet-print-page'
+            const barbarian = original.matches('.barbarian-page')
+            page.className = barbarian ? 'barbarian-page-slot' : 'sheet-print-page'
             const paper = doc.importNode(original, true) as HTMLElement
             // Freeze the rendered geometry before removing controls or changing element tags.
             const sourceNodes = [original, ...original.querySelectorAll<HTMLElement>('*')]
@@ -95,7 +97,9 @@ export async function prepareCharacterPrint(source: HTMLElement, name: string): 
                 node.replaceWith(container)
             })
             paper.querySelectorAll('summary').forEach((node) => node.remove())
-            page.append(paper)
+            if (barbarian) {
+                const scale = doc.createElement('div'); scale.className = 'barbarian-scale'; scale.append(paper); page.append(scale)
+            } else page.append(paper)
             doc.body.append(page)
         }
         const inventory = source.querySelector('.sheet-print-inventory')
@@ -105,7 +109,7 @@ export async function prepareCharacterPrint(source: HTMLElement, name: string): 
         await Promise.all([...doc.images].filter((image) => image.src).map((image) => image.decode()))
 
         const notes: { label: string; value: string }[] = []
-        for (const paper of doc.querySelectorAll<HTMLElement>('.player-paper')) {
+        for (const paper of doc.querySelectorAll<HTMLElement>('.player-paper, .barbarian-page')) {
             const controls = [...paper.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement>('input, select, textarea, button')]
             const values = controls.map((control) => ({ control, ...controlStyles.get(control)! }))
             for (const { control, styles: properties, nativeCheckbox } of values) {
@@ -126,6 +130,7 @@ export async function prepareCharacterPrint(source: HTMLElement, name: string): 
                 }
                 if (control instanceof win.HTMLSelectElement) text.textContent = control.value ? [...control.selectedOptions].map((option) => option.textContent).join(', ') : ''
                 else if (control instanceof win.HTMLInputElement && control.type === 'checkbox') {
+                    text.dataset.printChecked = String(control.checked)
                     if (nativeCheckbox) { text.textContent = control.checked ? '✓' : ''; text.style.border = '1px solid #303236'; text.style.lineHeight = text.style.height; text.style.textAlign = 'center' }
                 } else if (control instanceof win.HTMLButtonElement) text.textContent = control.textContent
                 else text.textContent = control.value || (/^[+-]?\d+(?:[.,]\d+)?$/.test(control.getAttribute('placeholder') || '') ? control.getAttribute('placeholder') : '')
@@ -151,6 +156,7 @@ export async function prepareCharacterPrint(source: HTMLElement, name: string): 
                 }
             }
             paper.querySelectorAll('[data-print-collapsed]').forEach((node) => node.remove())
+            if (paper.matches('.barbarian-page')) continue
             const page = paper.parentElement!
             const width = page.getBoundingClientRect().width, height = page.getBoundingClientRect().height
             const bounds = paper.getBoundingClientRect()
