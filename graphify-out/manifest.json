@@ -1,0 +1,794 @@
+{
+  ".agents/skills/dnd-5e-rules/scripts/search_rules.py": {
+    "mtime": 1791624427.556941,
+    "seen": 1791645621.6323764,
+    "ast_hash": "a860ac75bedf17cd76f5976407eb8093",
+    "semantic_hash": "a860ac75bedf17cd76f5976407eb8093"
+  },
+  ".oxlintrc.json": {
+    "mtime": 1791558939.9991832,
+    "seen": 1791645621.6323764,
+    "ast_hash": "029f4905006c1fffd96bc863e2d98d3e",
+    "semantic_hash": "029f4905006c1fffd96bc863e2d98d3e"
+  },
+  ".pdf-fidelity/barbaro/character-roundtrip.json": {
+    "mtime": 1791645237.0765522,
+    "seen": 1791645621.6323764,
+    "ast_hash": "6bb7d73d9b5074d4809b42f1710a5237",
+    "semantic_hash": "6bb7d73d9b5074d4809b42f1710a5237"
+  },
+  ".pdf-fidelity/barbaro/manifest.json": {
+    "mtime": 1791645237.1244242,
+    "seen": 1791645621.6323764,
+    "ast_hash": "9a329cef3b965b33097ca90bfb05fb54",
+    "semantic_hash": "9a329cef3b965b33097ca90bfb05fb54"
+  },
+  ".pdf-fidelity/barbaro/page-001-layout.json": {
+    "mtime": 1791645237.1284132,
+    "seen": 1791645621.6323764,
+    "ast_hash": "f602db95570e88d71b4001a964cf4ef8",
+    "semantic_hash": "f602db95570e88d71b4001a964cf4ef8"
+  },
+  ".pdf-fidelity/barbaro/verification.json": {
+    "mtime": 1791645237.1523774,
+    "seen": 1791645621.6323764,
+    "ast_hash": "27f30349d0ae263684e265f21bb94092",
+    "semantic_hash": "27f30349d0ae263684e265f21bb94092"
+  },
+  "package.json": {
+    "mtime": 1791645237.154347,
+    "seen": 1791645621.6323764,
+    "ast_hash": "e51dafbaeb178cc2015a69bdef9a9937",
+    "semantic_hash": "e51dafbaeb178cc2015a69bdef9a9937"
+  },
+  "public/data/character-catalog.json": {
+    "mtime": 1791558943.0504062,
+    "seen": 1791645621.6323764,
+    "ast_hash": "e9d4321432f269aa8716e4b480526055",
+    "semantic_hash": "e9d4321432f269aa8716e4b480526055"
+  },
+  "public/data/character-rules.json": {
+    "mtime": 1791558943.5544143,
+    "seen": 1791645621.6323764,
+    "ast_hash": "790cb733617f4deea51b67460f12488c",
+    "semantic_hash": "790cb733617f4deea51b67460f12488c"
+  },
+  "public/data/wiki-character-index.json": {
+    "mtime": 1791558944.6224315,
+    "seen": 1791645621.6323764,
+    "ast_hash": "3573907621d1abec4166e9ce838d7893",
+    "semantic_hash": "3573907621d1abec4166e9ce838d7893"
+  },
+  "public/data/wikidot-spells.json": {
+    "mtime": 1791558945.075888,
+    "seen": 1791645621.6323764,
+    "ast_hash": "291f1563dcc8c957e85c284ebd0651c2",
+    "semantic_hash": "291f1563dcc8c957e85c284ebd0651c2"
+  },
+  "public/data/wizard-catalog.json": {
+    "mtime": 1791558945.2750921,
+    "seen": 1791645621.6323764,
+    "ast_hash": "3ce9afe13383c90c261205f17dbb3005",
+    "semantic_hash": "3ce9afe13383c90c261205f17dbb3005"
+  },
+  "reports/incantesimi-wikidot.json": {
+    "mtime": 1791558949.960034,
+    "seen": 1791645621.6323764,
+    "ast_hash": "e15d825d9a8b2e9162833ea298387d5b",
+    "semantic_hash": "e15d825d9a8b2e9162833ea298387d5b"
+  },
+  "reports/spell-page-after.json": {
+    "mtime": 1791561817.0726655,
+    "seen": 1791645621.6323764,
+    "ast_hash": "56e37212bce2d4c1c95488add3276622",
+    "semantic_hash": "56e37212bce2d4c1c95488add3276622"
+  },
+  "reports/spell-page-before.json": {
+    "mtime": 1791561547.301319,
+    "seen": 1791645621.6323764,
+    "ast_hash": "b348a2a142ac54ae0e1ae121b0c0d381",
+    "semantic_hash": "b348a2a142ac54ae0e1ae121b0c0d381"
+  },
+  "reports/spell-page-comparison.json": {
+    "mtime": 1791561886.3322425,
+    "seen": 1791645621.6323764,
+    "ast_hash": "38a6a44a9c0e5686927545b039577baf",
+    "semantic_hash": "38a6a44a9c0e5686927545b039577baf"
+  },
+  "reports/tutorial-after.json": {
+    "mtime": 1791564352.9319396,
+    "seen": 1791645621.6323764,
+    "ast_hash": "3ea7bf1a04af8cd9b7a87f4c285b76fa",
+    "semantic_hash": "3ea7bf1a04af8cd9b7a87f4c285b76fa"
+  },
+  "reports/tutorial-before.json": {
+    "mtime": 1791563191.3625174,
+    "seen": 1791645621.6323764,
+    "ast_hash": "1f7605652f62084f90dea27d5c1d2f48",
+    "semantic_hash": "1f7605652f62084f90dea27d5c1d2f48"
+  },
+  "scripts/audit_spell_timing.py": {
+    "mtime": 1791558950.0379076,
+    "seen": 1791645621.6323764,
+    "ast_hash": "15c5d0a75ef91740e153292e4bd0cae6",
+    "semantic_hash": "15c5d0a75ef91740e153292e4bd0cae6"
+  },
+  "scripts/barbarian-assets.py": {
+    "mtime": 1791645237.2082305,
+    "seen": 1791645621.6323764,
+    "ast_hash": "959d411b4c07ad2406ba666e6a9126d1",
+    "semantic_hash": "959d411b4c07ad2406ba666e6a9126d1"
+  },
+  "scripts/barbarian-layout.py": {
+    "mtime": 1791645237.2092278,
+    "seen": 1791645621.6323764,
+    "ast_hash": "69586118cd024598bbd2bbdb246c613c",
+    "semantic_hash": "69586118cd024598bbd2bbdb246c613c"
+  },
+  "scripts/barbarian-secondary.py": {
+    "mtime": 1791645237.2092278,
+    "seen": 1791645621.6323764,
+    "ast_hash": "4ded8cd72e2e16aa49f3876b3349d5b0",
+    "semantic_hash": "4ded8cd72e2e16aa49f3876b3349d5b0"
+  },
+  "scripts/benchmark-character-tutorial.mjs": {
+    "mtime": 1791563187.6659744,
+    "seen": 1791645621.6323764,
+    "ast_hash": "87bf210f299379f93d05486dc5524981",
+    "semantic_hash": "87bf210f299379f93d05486dc5524981"
+  },
+  "scripts/benchmark-spell-page.mjs": {
+    "mtime": 1791561493.4548655,
+    "seen": 1791645621.6323764,
+    "ast_hash": "f826d0e9d2e5afb7a24c71473a343450",
+    "semantic_hash": "f826d0e9d2e5afb7a24c71473a343450"
+  },
+  "scripts/build_database.py": {
+    "mtime": 1791558950.1090147,
+    "seen": 1791645621.6323764,
+    "ast_hash": "e0808f820b1d7b22589bd33606658b9c",
+    "semantic_hash": "e0808f820b1d7b22589bd33606658b9c"
+  },
+  "scripts/dev.mjs": {
+    "mtime": 1791558950.1488793,
+    "seen": 1791645621.6323764,
+    "ast_hash": "5599578ad8da44482341e7fcc8960847",
+    "semantic_hash": "5599578ad8da44482341e7fcc8960847"
+  },
+  "scripts/export_character_data.py": {
+    "mtime": 1791558950.289403,
+    "seen": 1791645621.6323764,
+    "ast_hash": "62f40e28d62098d86dd9e866bccee4a2",
+    "semantic_hash": "62f40e28d62098d86dd9e866bccee4a2"
+  },
+  "scripts/json_utils.py": {
+    "mtime": 1791558950.3501625,
+    "seen": 1791645621.6323764,
+    "ast_hash": "1c983c1f4600a1e8351f2f2b9361c0b4",
+    "semantic_hash": "1c983c1f4600a1e8351f2f2b9361c0b4"
+  },
+  "scripts/rules2014/build.py": {
+    "mtime": 1791629331.9600966,
+    "seen": 1791645621.6323764,
+    "ast_hash": "d01297062bac7012a4b1d2a906de1f92",
+    "semantic_hash": "d01297062bac7012a4b1d2a906de1f92"
+  },
+  "scripts/rules2014/class_details.py": {
+    "mtime": 1791629060.504676,
+    "seen": 1791645621.6323764,
+    "ast_hash": "e1742de6b7d00721acf632b4b4e11e75",
+    "semantic_hash": "e1742de6b7d00721acf632b4b4e11e75"
+  },
+  "scripts/rules2014/combat.py": {
+    "mtime": 1791629333.0333314,
+    "seen": 1791645621.6323764,
+    "ast_hash": "1d89da133a568ed7265e56e01327fbc3",
+    "semantic_hash": "1d89da133a568ed7265e56e01327fbc3"
+  },
+  "scripts/rules2014/compare.py": {
+    "mtime": 1791629219.6809418,
+    "seen": 1791645621.6323764,
+    "ast_hash": "376a103d48eace14b273e8e95dd9afaf",
+    "semantic_hash": "376a103d48eace14b273e8e95dd9afaf"
+  },
+  "scripts/rules2014/core_rules.py": {
+    "mtime": 1791626625.3483696,
+    "seen": 1791645621.6323764,
+    "ast_hash": "2c726add0f3927a9af3184c41c71d054",
+    "semantic_hash": "2c726add0f3927a9af3184c41c71d054"
+  },
+  "scripts/rules2014/curated.py": {
+    "mtime": 1791625767.8190906,
+    "seen": 1791645621.6323764,
+    "ast_hash": "815bdd2c033296bbbf958cb9137ef2bb",
+    "semantic_hash": "815bdd2c033296bbbf958cb9137ef2bb"
+  },
+  "scripts/rules2014/feature_reviews.py": {
+    "mtime": 1791628099.7661357,
+    "seen": 1791645621.6323764,
+    "ast_hash": "ddb7dcfb79f2ab688fe1eb17d34df748",
+    "semantic_hash": "ddb7dcfb79f2ab688fe1eb17d34df748"
+  },
+  "scripts/rules2014/gear.py": {
+    "mtime": 1791627795.533704,
+    "seen": 1791645621.6323764,
+    "ast_hash": "914c35fd6ab3e778d00699c0da9159f6",
+    "semantic_hash": "914c35fd6ab3e778d00699c0da9159f6"
+  },
+  "scripts/rules2014/pdf_sources.py": {
+    "mtime": 1791628917.4741142,
+    "seen": 1791645621.6323764,
+    "ast_hash": "923f414b5a2e4968c81b6452e86baf57",
+    "semantic_hash": "923f414b5a2e4968c81b6452e86baf57"
+  },
+  "scripts/rules2014/reference_math.py": {
+    "mtime": 1791627699.3370092,
+    "seen": 1791645621.6323764,
+    "ast_hash": "378e16ff71cf4db7bcb232b8fe935b1d",
+    "semantic_hash": "378e16ff71cf4db7bcb232b8fe935b1d"
+  },
+  "scripts/rules2014/relations.py": {
+    "mtime": 1791628827.6846442,
+    "seen": 1791645621.6323764,
+    "ast_hash": "1c98f071b1e44e19c91f363d0c434a61",
+    "semantic_hash": "1c98f071b1e44e19c91f363d0c434a61"
+  },
+  "scripts/rules2014/schema.ts": {
+    "mtime": 1791628829.7388065,
+    "seen": 1791645621.6323764,
+    "ast_hash": "d584bbc0465b6d876a214cbc8c8d8f52",
+    "semantic_hash": "d584bbc0465b6d876a214cbc8c8d8f52"
+  },
+  "scripts/rules2014/source_reviews.json": {
+    "mtime": 1791627303.3812778,
+    "seen": 1791645621.6323764,
+    "ast_hash": "150051daeaf95a00bfe080e8c3cc3ad5",
+    "semantic_hash": "150051daeaf95a00bfe080e8c3cc3ad5"
+  },
+  "scripts/rules2014/spell_extract.py": {
+    "mtime": 1791627869.2142756,
+    "seen": 1791645621.6323764,
+    "ast_hash": "b6571cf0caa15e7e7b98fc29080ca96a",
+    "semantic_hash": "b6571cf0caa15e7e7b98fc29080ca96a"
+  },
+  "scripts/rules2014/spell_lists.py": {
+    "mtime": 1791628432.0315967,
+    "seen": 1791645621.6323764,
+    "ast_hash": "b8535e453a2123ed0e8566a8f1bccff7",
+    "semantic_hash": "b8535e453a2123ed0e8566a8f1bccff7"
+  },
+  "scripts/rules2014/spell_names.json": {
+    "mtime": 1791629823.9983451,
+    "seen": 1791645621.6323764,
+    "ast_hash": "0d18a963bf5ede17fa1fbfc2e808585a",
+    "semantic_hash": "0d18a963bf5ede17fa1fbfc2e808585a"
+  },
+  "scripts/rules2014/spell_reviews.py": {
+    "mtime": 1791628008.5526655,
+    "seen": 1791645621.6323764,
+    "ast_hash": "4bbb4c639b1a10da0b57bb186ab4869a",
+    "semantic_hash": "4bbb4c639b1a10da0b57bb186ab4869a"
+  },
+  "scripts/rules2014/test_reference.py": {
+    "mtime": 1791629220.7010293,
+    "seen": 1791645621.6323764,
+    "ast_hash": "474109d462854971eb9ad99e946565f6",
+    "semantic_hash": "474109d462854971eb9ad99e946565f6"
+  },
+  "scripts/rules2014/validate.py": {
+    "mtime": 1791628918.50053,
+    "seen": 1791645621.6323764,
+    "ast_hash": "9ef7bd7afa8fc2faa17e49835e41ce43",
+    "semantic_hash": "9ef7bd7afa8fc2faa17e49835e41ce43"
+  },
+  "scripts/scrape_bestiary.py": {
+    "mtime": 1791558950.4419184,
+    "seen": 1791645621.6323764,
+    "ast_hash": "25c0126c486147e48f073b941da1dcfa",
+    "semantic_hash": "25c0126c486147e48f073b941da1dcfa"
+  },
+  "scripts/scrape_character_data.py": {
+    "mtime": 1791558950.538544,
+    "seen": 1791645621.6323764,
+    "ast_hash": "3f1bb9de4b8be212e1940e8c6d7eef86",
+    "semantic_hash": "3f1bb9de4b8be212e1940e8c6d7eef86"
+  },
+  "scripts/scrape_wikidot.py": {
+    "mtime": 1791558950.7807183,
+    "seen": 1791645621.6323764,
+    "ast_hash": "d43b1a0ec2add2bb4ae85c4765dfa2e4",
+    "semantic_hash": "d43b1a0ec2add2bb4ae85c4765dfa2e4"
+  },
+  "scripts/scrape_wizard.py": {
+    "mtime": 1791558950.8544936,
+    "seen": 1791645621.6323764,
+    "ast_hash": "7d909ca4a67a5c123b9a20fd1e18a226",
+    "semantic_hash": "7d909ca4a67a5c123b9a20fd1e18a226"
+  },
+  "scripts/sync_spells.py": {
+    "mtime": 1791558950.9410925,
+    "seen": 1791645621.6323764,
+    "ast_hash": "1baed5d8c37612dd399758110e454154",
+    "semantic_hash": "1baed5d8c37612dd399758110e454154"
+  },
+  "server/index.mjs": {
+    "mtime": 1791558950.9894078,
+    "seen": 1791645621.6323764,
+    "ast_hash": "5a98b270a724558989031dd489c223c7",
+    "semantic_hash": "5a98b270a724558989031dd489c223c7"
+  },
+  "src/App.tsx": {
+    "mtime": 1791645237.210225,
+    "seen": 1791645621.6323764,
+    "ast_hash": "1ddd2c6ce81a965fc38145547c99c552",
+    "semantic_hash": "1ddd2c6ce81a965fc38145547c99c552"
+  },
+  "src/auth/AuthPage.tsx": {
+    "mtime": 1791558951.3991022,
+    "seen": 1791645621.6323764,
+    "ast_hash": "21d11aa511bd268e8bc788659cd60c68",
+    "semantic_hash": "21d11aa511bd268e8bc788659cd60c68"
+  },
+  "src/auth/api.ts": {
+    "mtime": 1791558951.439966,
+    "seen": 1791645621.6323764,
+    "ast_hash": "907b552f010e2499faa0f2cc54f6b1d3",
+    "semantic_hash": "907b552f010e2499faa0f2cc54f6b1d3"
+  },
+  "src/auth/authContext.ts": {
+    "mtime": 1791558951.4843087,
+    "seen": 1791645621.6323764,
+    "ast_hash": "fc73a555151015d4c3e8e5f038116690",
+    "semantic_hash": "fc73a555151015d4c3e8e5f038116690"
+  },
+  "src/auth/provider.tsx": {
+    "mtime": 1791558951.528193,
+    "seen": 1791645621.6323764,
+    "ast_hash": "79c319c3f406f7b3a0667a899b64a988",
+    "semantic_hash": "79c319c3f406f7b3a0667a899b64a988"
+  },
+  "src/auth/useAuth.ts": {
+    "mtime": 1791558951.5700836,
+    "seen": 1791645621.6323764,
+    "ast_hash": "f8c2ca02c39c1b11f667e6e82ded451f",
+    "semantic_hash": "f8c2ca02c39c1b11f667e6e82ded451f"
+  },
+  "src/barbarian/BarbarianSheet.tsx": {
+    "mtime": 1791645237.2122202,
+    "seen": 1791645621.6323764,
+    "ast_hash": "fc90aaa72c13d95249bded3272267bb6",
+    "semantic_hash": "fc90aaa72c13d95249bded3272267bb6"
+  },
+  "src/barbarian/model.ts": {
+    "mtime": 1791645237.2122202,
+    "seen": 1791645621.6323764,
+    "ast_hash": "1a6bc29d819e83ab30352be2ed461562",
+    "semantic_hash": "1a6bc29d819e83ab30352be2ed461562"
+  },
+  "src/barbarian/page1.json": {
+    "mtime": 1791645237.2132182,
+    "seen": 1791645621.6323764,
+    "ast_hash": "de7dcc49a5378a5c822762c682fbcc68",
+    "semantic_hash": "de7dcc49a5378a5c822762c682fbcc68"
+  },
+  "src/barbarian/page2.json": {
+    "mtime": 1791645237.2142148,
+    "seen": 1791645621.6323764,
+    "ast_hash": "d6adc3b83264df9c7e0a7acb800814c5",
+    "semantic_hash": "d6adc3b83264df9c7e0a7acb800814c5"
+  },
+  "src/barbarian/page3.json": {
+    "mtime": 1791645237.2142148,
+    "seen": 1791645621.6323764,
+    "ast_hash": "08db69754232ab6070759a5c2adc0982",
+    "semantic_hash": "08db69754232ab6070759a5c2adc0982"
+  },
+  "src/barbarian/player.ts": {
+    "mtime": 1791645237.215212,
+    "seen": 1791645621.6323764,
+    "ast_hash": "13703681807a5fe9e850a77545a632be",
+    "semantic_hash": "13703681807a5fe9e850a77545a632be"
+  },
+  "src/components/AbilitiesTracker.tsx": {
+    "mtime": 1791558951.6278973,
+    "seen": 1791645621.6323764,
+    "ast_hash": "ef23e2f260f01147e921236c155a667a",
+    "semantic_hash": "ef23e2f260f01147e921236c155a667a"
+  },
+  "src/components/CatalogSearch.tsx": {
+    "mtime": 1791558951.6677902,
+    "seen": 1791645621.6323764,
+    "ast_hash": "9c0a599b887eaee18f607e65f06c2f2b",
+    "semantic_hash": "9c0a599b887eaee18f607e65f06c2f2b"
+  },
+  "src/components/CharacterSheets.tsx": {
+    "mtime": 1791645237.215212,
+    "seen": 1791645621.6323764,
+    "ast_hash": "4641251f03c14ffe607708e3631c9f1b",
+    "semantic_hash": "4641251f03c14ffe607708e3631c9f1b"
+  },
+  "src/components/CharacterTutorial.tsx": {
+    "mtime": 1791564475.0954907,
+    "seen": 1791645621.6323764,
+    "ast_hash": "058c452ccade18bc03be5a8b6919ec4b",
+    "semantic_hash": "058c452ccade18bc03be5a8b6919ec4b"
+  },
+  "src/components/ColumnSeparator.tsx": {
+    "mtime": 1791558952.2137115,
+    "seen": 1791645621.6323764,
+    "ast_hash": "41022922cc82c8e17947ccac32639010",
+    "semantic_hash": "41022922cc82c8e17947ccac32639010"
+  },
+  "src/components/InfoButton.tsx": {
+    "mtime": 1791558952.2825277,
+    "seen": 1791645621.6323764,
+    "ast_hash": "0f9f09d619978cfef2b44cf9e7599cda",
+    "semantic_hash": "0f9f09d619978cfef2b44cf9e7599cda"
+  },
+  "src/components/InventoryEditor.tsx": {
+    "mtime": 1791645237.2162094,
+    "seen": 1791645621.6323764,
+    "ast_hash": "022c25efd24e98f2b6ff4e06e066eef4",
+    "semantic_hash": "022c25efd24e98f2b6ff4e06e066eef4"
+  },
+  "src/components/PlayerCreation.tsx": {
+    "mtime": 1791563995.170705,
+    "seen": 1791645621.6323764,
+    "ast_hash": "fa594a722ef24a0603339c0faded56f2",
+    "semantic_hash": "fa594a722ef24a0603339c0faded56f2"
+  },
+  "src/components/PlayerSheet.tsx": {
+    "mtime": 1791645237.2172065,
+    "seen": 1791645621.6323764,
+    "ast_hash": "e4c01ec8c3d115dc29a7d72602a94b7d",
+    "semantic_hash": "e4c01ec8c3d115dc29a7d72602a94b7d"
+  },
+  "src/components/TurnsTracker.tsx": {
+    "mtime": 1791558952.5632508,
+    "seen": 1791645621.6323764,
+    "ast_hash": "dcdeb92b9e6329e0ba610a88498ee4fd",
+    "semantic_hash": "dcdeb92b9e6329e0ba610a88498ee4fd"
+  },
+  "src/components/TutorialLayout.tsx": {
+    "mtime": 1791563264.388175,
+    "seen": 1791645621.6323764,
+    "ast_hash": "4e496f558c2a24b43c1bc00172ae4a6b",
+    "semantic_hash": "4e496f558c2a24b43c1bc00172ae4a6b"
+  },
+  "src/components/WizardSpellcasting.tsx": {
+    "mtime": 1791558952.8303328,
+    "seen": 1791645621.6323764,
+    "ast_hash": "4017ab1e2bea6f91df5eab8ade0b1705",
+    "semantic_hash": "4017ab1e2bea6f91df5eab8ade0b1705"
+  },
+  "src/components/WizardSubclassFeatures.tsx": {
+    "mtime": 1791558952.8941624,
+    "seen": 1791645621.6323764,
+    "ast_hash": "23b92c62794b5e3956e2dab685fb4982",
+    "semantic_hash": "23b92c62794b5e3956e2dab685fb4982"
+  },
+  "src/data/Spellcasting2024.ts": {
+    "mtime": 1791558952.9619853,
+    "seen": 1791645621.6323764,
+    "ast_hash": "1d3c5c55a4829192425e9af28ed86807",
+    "semantic_hash": "1d3c5c55a4829192425e9af28ed86807"
+  },
+  "src/main.tsx": {
+    "mtime": 1791558951.3385556,
+    "seen": 1791645621.6323764,
+    "ast_hash": "ab3ed66b52996a751797153c62993ce9",
+    "semantic_hash": "ab3ed66b52996a751797153c62993ce9"
+  },
+  "src/utils/Catalog.ts": {
+    "mtime": 1791558953.023809,
+    "seen": 1791645621.6323764,
+    "ast_hash": "efba570dba9fe7a959e9d72aa45f3fb8",
+    "semantic_hash": "efba570dba9fe7a959e9d72aa45f3fb8"
+  },
+  "src/utils/CharacterAppearance.ts": {
+    "mtime": 1791559952.1769512,
+    "seen": 1791645621.6323764,
+    "ast_hash": "2dd81f10ff02676bda534c24f7435fe3",
+    "semantic_hash": "2dd81f10ff02676bda534c24f7435fe3"
+  },
+  "src/utils/CharacterSheets.ts": {
+    "mtime": 1791558953.430903,
+    "seen": 1791645621.6323764,
+    "ast_hash": "72ad89786dd0134899acd2cfc784ef99",
+    "semantic_hash": "72ad89786dd0134899acd2cfc784ef99"
+  },
+  "src/utils/CharacterTutorial.ts": {
+    "mtime": 1791558953.5994234,
+    "seen": 1791645621.6323764,
+    "ast_hash": "c982c411c4b7b7e686786d9978f0b638",
+    "semantic_hash": "c982c411c4b7b7e686786d9978f0b638"
+  },
+  "src/utils/Combat.ts": {
+    "mtime": 1791558953.987422,
+    "seen": 1791645621.6323764,
+    "ast_hash": "92511210a19b94ece1f965bab45d7366",
+    "semantic_hash": "92511210a19b94ece1f965bab45d7366"
+  },
+  "src/utils/Dialog.ts": {
+    "mtime": 1791558954.2749057,
+    "seen": 1791645621.6323764,
+    "ast_hash": "ea83641fa097d6442acecfb3d778ca00",
+    "semantic_hash": "ea83641fa097d6442acecfb3d778ca00"
+  },
+  "src/utils/Inventory.ts": {
+    "mtime": 1791558954.316311,
+    "seen": 1791645621.6323764,
+    "ast_hash": "cc09445a2c6de31f39a53ba692334ccd",
+    "semantic_hash": "cc09445a2c6de31f39a53ba692334ccd"
+  },
+  "src/utils/PlayerAbilities.ts": {
+    "mtime": 1791558954.3563738,
+    "seen": 1791645621.6323764,
+    "ast_hash": "2badd7750c2e52a3b1212052bd804645",
+    "semantic_hash": "2badd7750c2e52a3b1212052bd804645"
+  },
+  "src/utils/PlayerCreation.ts": {
+    "mtime": 1791559953.2014678,
+    "seen": 1791645621.6323764,
+    "ast_hash": "76b64c8e5bc1f4600b7c7694dfac93f1",
+    "semantic_hash": "76b64c8e5bc1f4600b7c7694dfac93f1"
+  },
+  "src/utils/PlayerTemplates.ts": {
+    "mtime": 1791645237.218205,
+    "seen": 1791645621.6323764,
+    "ast_hash": "16e77afd121275de9a2c8e3a5fc5f721",
+    "semantic_hash": "16e77afd121275de9a2c8e3a5fc5f721"
+  },
+  "src/utils/PrintCharacterSheet.ts": {
+    "mtime": 1791645237.218205,
+    "seen": 1791645621.6323764,
+    "ast_hash": "636a49ca730414875c5514149cbf217c",
+    "semantic_hash": "636a49ca730414875c5514149cbf217c"
+  },
+  "src/utils/RandomCharacter.ts": {
+    "mtime": 1791560898.4663045,
+    "seen": 1791645621.6323764,
+    "ast_hash": "6510a3cc9da2f4e73ce81b7f72661000",
+    "semantic_hash": "6510a3cc9da2f4e73ce81b7f72661000"
+  },
+  "src/utils/Reorder.tsx": {
+    "mtime": 1791558954.6299026,
+    "seen": 1791645621.6323764,
+    "ast_hash": "88b37efe00d5e60e5bc83d9fc9eb84ba",
+    "semantic_hash": "88b37efe00d5e60e5bc83d9fc9eb84ba"
+  },
+  "src/utils/SpellPage.ts": {
+    "mtime": 1791561875.0680623,
+    "seen": 1791645621.6323764,
+    "ast_hash": "5df471a2f570f439288f175da253100b",
+    "semantic_hash": "5df471a2f570f439288f175da253100b"
+  },
+  "src/utils/Spellcasting.ts": {
+    "mtime": 1791558954.6788604,
+    "seen": 1791645621.6323764,
+    "ast_hash": "141bca3eaad65864fe64a295b592b2f7",
+    "semantic_hash": "141bca3eaad65864fe64a295b592b2f7"
+  },
+  "src/utils/TutorialReview.ts": {
+    "mtime": 1791564519.4009745,
+    "seen": 1791645621.6323764,
+    "ast_hash": "e2c409d68c4453a3514c5429b3cdf542",
+    "semantic_hash": "e2c409d68c4453a3514c5429b3cdf542"
+  },
+  "src/utils/Wizard.ts": {
+    "mtime": 1791558954.7237139,
+    "seen": 1791645621.6323764,
+    "ast_hash": "a2efd9a91948c684e7e1f33e3e99d38b",
+    "semantic_hash": "a2efd9a91948c684e7e1f33e3e99d38b"
+  },
+  "tests/auth.mjs": {
+    "mtime": 1791558954.7765696,
+    "seen": 1791645621.6323764,
+    "ast_hash": "fab8109e678572cc1f54b8ef3201bf89",
+    "semantic_hash": "fab8109e678572cc1f54b8ef3201bf89"
+  },
+  "tests/barbarian-sheet.mjs": {
+    "mtime": 1791645237.2192023,
+    "seen": 1791645621.6323764,
+    "ast_hash": "a8fe1149ce3656d642f6f24dd10a8405",
+    "semantic_hash": "a8fe1149ce3656d642f6f24dd10a8405"
+  },
+  "tests/barbarian-template.mjs": {
+    "mtime": 1791645237.2192023,
+    "seen": 1791645621.6323764,
+    "ast_hash": "ea07c2d53d7c87f70111e289e424bd47",
+    "semantic_hash": "ea07c2d53d7c87f70111e289e424bd47"
+  },
+  "tests/catalog.mjs": {
+    "mtime": 1791558954.8473804,
+    "seen": 1791645621.6323764,
+    "ast_hash": "ae423d5f5f0b0bed47bad774a1c2e160",
+    "semantic_hash": "ae423d5f5f0b0bed47bad774a1c2e160"
+  },
+  "tests/character-appearance.mjs": {
+    "mtime": 1791560089.9122462,
+    "seen": 1791645621.6323764,
+    "ast_hash": "fae46c62354d1d00f96a512f9fa88b1e",
+    "semantic_hash": "fae46c62354d1d00f96a512f9fa88b1e"
+  },
+  "tests/character-calculations.mjs": {
+    "mtime": 1791558954.897247,
+    "seen": 1791645621.6323764,
+    "ast_hash": "ad07117d6de05f4a053e6cd8ce8727fe",
+    "semantic_hash": "ad07117d6de05f4a053e6cd8ce8727fe"
+  },
+  "tests/character-tutorial.mjs": {
+    "mtime": 1791558954.9341493,
+    "seen": 1791645621.6323764,
+    "ast_hash": "a18095b7c5c8802074ad052f377ff8f6",
+    "semantic_hash": "a18095b7c5c8802074ad052f377ff8f6"
+  },
+  "tests/character_catalog.py": {
+    "mtime": 1791558954.9830184,
+    "seen": 1791645621.6323764,
+    "ast_hash": "fdee4d7be3e80caeecddd186f0f1892b",
+    "semantic_hash": "fdee4d7be3e80caeecddd186f0f1892b"
+  },
+  "tests/combat.mjs": {
+    "mtime": 1791558955.0249062,
+    "seen": 1791645621.6323764,
+    "ast_hash": "935999eac563d786ca9c151412859d53",
+    "semantic_hash": "935999eac563d786ca9c151412859d53"
+  },
+  "tests/dialog-autosave.mjs": {
+    "mtime": 1791624641.7993834,
+    "seen": 1791645621.6323764,
+    "ast_hash": "905d2774d0becf888d58b4714f154d39",
+    "semantic_hash": "905d2774d0becf888d58b4714f154d39"
+  },
+  "tests/info-dialog.mjs": {
+    "mtime": 1791558955.1076837,
+    "seen": 1791645621.6323764,
+    "ast_hash": "a72ef91006468e0bff5b74e215468b35",
+    "semantic_hash": "a72ef91006468e0bff5b74e215468b35"
+  },
+  "tests/inventory.mjs": {
+    "mtime": 1791558955.1475773,
+    "seen": 1791645621.6323764,
+    "ast_hash": "f67b4b1d1e20d9a584475cb7705d54fe",
+    "semantic_hash": "f67b4b1d1e20d9a584475cb7705d54fe"
+  },
+  "tests/player-abilities.mjs": {
+    "mtime": 1791558955.1904626,
+    "seen": 1791645621.6323764,
+    "ast_hash": "cb61aab3deb92c564d845a6d8a475249",
+    "semantic_hash": "cb61aab3deb92c564d845a6d8a475249"
+  },
+  "tests/player-creation-ui.mjs": {
+    "mtime": 1791645237.2201996,
+    "seen": 1791645621.6323764,
+    "ast_hash": "f7e3bbbf0ba778ccd6f10bced44fd1c1",
+    "semantic_hash": "f7e3bbbf0ba778ccd6f10bced44fd1c1"
+  },
+  "tests/player-creation.mjs": {
+    "mtime": 1791558955.2872038,
+    "seen": 1791645621.6323764,
+    "ast_hash": "fd4a72cc473f1cc1de3f42d8ea696ebe",
+    "semantic_hash": "fd4a72cc473f1cc1de3f42d8ea696ebe"
+  },
+  "tests/player-sheet.mjs": {
+    "mtime": 1791558955.3340786,
+    "seen": 1791645621.6323764,
+    "ast_hash": "01807b21416b34d3453bcaf2af46c96a",
+    "semantic_hash": "01807b21416b34d3453bcaf2af46c96a"
+  },
+  "tests/player-templates.mjs": {
+    "mtime": 1791558955.3870728,
+    "seen": 1791645621.6323764,
+    "ast_hash": "d011c226bae066760c50b6452b761463",
+    "semantic_hash": "d011c226bae066760c50b6452b761463"
+  },
+  "tests/random-character.mjs": {
+    "mtime": 1791560924.8050566,
+    "seen": 1791645621.6323764,
+    "ast_hash": "8c86ba07919eb0ae6775dd9dd8f1143b",
+    "semantic_hash": "8c86ba07919eb0ae6775dd9dd8f1143b"
+  },
+  "tests/scrape_bestiary.py": {
+    "mtime": 1791558955.5845442,
+    "seen": 1791645621.6323764,
+    "ast_hash": "9a75df1a02ea738a13d8bdf7c4135ab8",
+    "semantic_hash": "9a75df1a02ea738a13d8bdf7c4135ab8"
+  },
+  "tests/scrape_wikidot.py": {
+    "mtime": 1791558955.6274579,
+    "seen": 1791645621.6323764,
+    "ast_hash": "a5c6ca7ada32c131a7250c7d800fcc36",
+    "semantic_hash": "a5c6ca7ada32c131a7250c7d800fcc36"
+  },
+  "tests/spell-page.mjs": {
+    "mtime": 1791561876.1850882,
+    "seen": 1791645621.6323764,
+    "ast_hash": "9c99908e5c80d517262714aa14c37588",
+    "semantic_hash": "9c99908e5c80d517262714aa14c37588"
+  },
+  "tests/spell-selection-limits.mjs": {
+    "mtime": 1791558955.6633613,
+    "seen": 1791645621.6323764,
+    "ast_hash": "af17a4d2354d86fd39894ee5c9c9fe5c",
+    "semantic_hash": "af17a4d2354d86fd39894ee5c9c9fe5c"
+  },
+  "tests/spell-timing-audit.py": {
+    "mtime": 1791558955.7002358,
+    "seen": 1791645621.6323764,
+    "ast_hash": "a60ec347b96343cf6369d4d08eca3f29",
+    "semantic_hash": "a60ec347b96343cf6369d4d08eca3f29"
+  },
+  "tests/spellcasting.mjs": {
+    "mtime": 1791558955.7331479,
+    "seen": 1791645621.6323764,
+    "ast_hash": "d3b5bcd22915680db77a41a42cf953aa",
+    "semantic_hash": "d3b5bcd22915680db77a41a42cf953aa"
+  },
+  "tests/stat-sync.mjs": {
+    "mtime": 1791558955.7790234,
+    "seen": 1791645621.6323764,
+    "ast_hash": "295545b6aa1ce3522668da0d3484b48f",
+    "semantic_hash": "295545b6aa1ce3522668da0d3484b48f"
+  },
+  "tests/sync_spells.py": {
+    "mtime": 1791558955.830885,
+    "seen": 1791645621.6323764,
+    "ast_hash": "d00aae444690e005fd0613ae5e24888b",
+    "semantic_hash": "d00aae444690e005fd0613ae5e24888b"
+  },
+  "tests/test_json_utils.py": {
+    "mtime": 1791558955.8797536,
+    "seen": 1791645621.6323764,
+    "ast_hash": "572e4ab1b03b78290029c1ec9eaf94e2",
+    "semantic_hash": "572e4ab1b03b78290029c1ec9eaf94e2"
+  },
+  "tests/tutorial-interactions.mjs": {
+    "mtime": 1791564170.4773548,
+    "seen": 1791645621.6323764,
+    "ast_hash": "a76c04f5ea749911c0e7b5379e9524c2",
+    "semantic_hash": "a76c04f5ea749911c0e7b5379e9524c2"
+  },
+  "tests/tutorial-interface.mjs": {
+    "mtime": 1791564518.3578632,
+    "seen": 1791645621.6323764,
+    "ast_hash": "94b25f849e91415c0d40b1b7065bcdcc",
+    "semantic_hash": "94b25f849e91415c0d40b1b7065bcdcc"
+  },
+  "tests/wizard.mjs": {
+    "mtime": 1791558955.9146392,
+    "seen": 1791645621.6323764,
+    "ast_hash": "58b5abb3a155d6f479c75e3cc463766e",
+    "semantic_hash": "58b5abb3a155d6f479c75e3cc463766e"
+  },
+  "tests/wizard_catalog.py": {
+    "mtime": 1791558955.9505944,
+    "seen": 1791645621.6323764,
+    "ast_hash": "8403f81d42193ebfaf3cdb1f8a784857",
+    "semantic_hash": "8403f81d42193ebfaf3cdb1f8a784857"
+  },
+  "tsconfig.app.json": {
+    "mtime": 1791558941.1759994,
+    "seen": 1791645621.6323764,
+    "ast_hash": "5f2dafd737dea8a4ddcbb10f5113ac5a",
+    "semantic_hash": "5f2dafd737dea8a4ddcbb10f5113ac5a"
+  },
+  "tsconfig.json": {
+    "mtime": 1791558941.343323,
+    "seen": 1791645621.6323764,
+    "ast_hash": "a3d39fa780ebff65444de257f291ce6c",
+    "semantic_hash": "a3d39fa780ebff65444de257f291ce6c"
+  },
+  "tsconfig.node.json": {
+    "mtime": 1791558941.46674,
+    "seen": 1791645621.6323764,
+    "ast_hash": "f9cb81ddcea69ffdab672fc8c48dca66",
+    "semantic_hash": "f9cb81ddcea69ffdab672fc8c48dca66"
+  },
+  "vite.config.ts": {
+    "mtime": 1791558941.8313642,
+    "seen": 1791645621.6323764,
+    "ast_hash": "4d14ce5ba72e6d45868560a5401211e1",
+    "semantic_hash": "4d14ce5ba72e6d45868560a5401211e1"
+  }
+}

@@ -31,6 +31,14 @@ def validate(database):
             for target in value if isinstance(value,list) else [value]:
                 if target not in ids:
                     errors.append('Dangling relation: '+e['id']+':'+key+':'+str(target))
+        def check_nested(value, path):
+            if isinstance(value,dict):
+                for key,item in value.items(): check_nested(item,path+'.'+key)
+            elif isinstance(value,list):
+                for n,item in enumerate(value): check_nested(item,path+'.'+str(n))
+            elif isinstance(value,str) and value.startswith(('phb2014:','dmg2014:','mm2014:')) and value not in ids:
+                errors.append('Dangling mechanical reference: '+e['id']+':'+path+':'+value)
+        check_nested(e['mechanics'],'mechanics')
         if e['kind']=='equipment-pack':
             for c in e['mechanics']['contents']:
                 if c['entityId'] not in ids:

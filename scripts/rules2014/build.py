@@ -20,6 +20,8 @@ from spell_lists import extract_lists
 from compare import compare
 from validate import validate
 from relations import link_entities
+from warlock_reviews import apply_warlock_reviews
+from spell_list_reviews import apply_spell_list_reviews
 
 
 def load_reviews(manifest):
@@ -59,12 +61,18 @@ def build_entities(pages):
         # but the mechanical headers remain candidates until individually reviewed.
         spell['verification']['identity']='heading-inventory-matched'
     apply_reviews(spells)
+    apply_spell_list_reviews(spells)
     entities.extend(spells)
+    apply_warlock_reviews(entities)
     return link_entities(entities)
 
 
 def coverage(database):
     entities=database['entities']
+    reviewed_spells=sum(e['kind']=='spell' and e['verification']['mechanics']=='verified-fields' for e in entities)
+    pending_spells=sum(e['kind']=='spell' and e['verification']['mechanics']!='verified-fields' for e in entities)
+    list_review=json.loads(Path(__file__).with_name('spell_list_reviews.json').read_text(encoding='utf-8'))
+    corrected='editorialChangeLog' in database
     expected={'class':12,'subclass':40,'race':9,'subrace':9,'race-variant':1,'background':13,'background-variant':5,
               'weapon':37,'armor':13,'tool':37,'feat':42,'class-level':240,'skill':18,'condition':15,'spell':361,
               'gear':len(gear.ROWS.splitlines()),'equipment-pack':7,'weapon-property':11,'action':10,'advancement':20}
@@ -81,11 +89,15 @@ def coverage(database):
           'expectedIds':[e['id'] for e in entries]})
     return {'edition':'2014','overallComplete':False,'categories':categories,
       'additionalExtracted':{'DMG-subclasses':2,'DMG-rules':1,'MM-rules':4},
-      'individuallyReviewedSpells':14,
-      'spellDescriptionsPending':sum(e['kind']=='spell' and e['verification']['mechanics']!='verified-fields' for e in entities),
+      'individuallyReviewedSpells':reviewed_spells,
+      'reviewedWarlockOptions':{'invocations':32,'pactBoons':3,'patronFeatures':12,'patronExpandedSpellChoices':30},
+      'spellDescriptionsPending':pending_spells,
+      'reviewedSpellLists':{'verification':'read-local-render','originalPrintingLinks':len(list_review['entries']),
+                           'effectiveLinks':len(list_review['entries'])+1 if corrected else None,
+                           'printingAnomalies':list_review['printingCandidates'],'spellEffectsVerifiedByListReview':False},
       'pendingScopes':[
-        {'book':'phb','category':'subclass-features-and-choices','pdfPages':[50,120],'status':'partial-inventory','remaining':'Nomi dei singoli privilegi, liste concesse, invocazioni, manovre, metamagia, discipline, terreni e relativi effetti.'},
-        {'book':'phb','category':'spell-effects-materials-and-upcast','pdfPages':[212,290],'status':'pending-semantic-review','remaining':'347 passaggi ancora da leggere integralmente; 14 incantesimi revisionati, di cui Magic Missile conserva un’interpretazione aperta. Liste di classe degli altri incantesimi: candidati OCR.'},
+        {'book':'phb','category':'subclass-features-and-choices','pdfPages':[50,120],'status':'partial-inventory','remaining':'Privilegi e scelte delle altre undici classi: manovre, metamagia, discipline, terreni e relativi effetti. Warlock: 32 invocazioni, tre patti e dodici privilegi dei patroni strutturati.'},
+        {'book':'phb','category':'spell-effects-materials-and-upcast','pdfPages':[212,290],'status':'pending-semantic-review','remaining':f'{pending_spells} passaggi ancora da leggere integralmente; {reviewed_spells} incantesimi revisionati. Magic Missile conserva una interpretazione aperta. Le liste sono verificate separatamente dalle descrizioni.'},
         {'book':'phb','category':'vehicles-mounts-services-tradegoods','pdfPages':[156,162],'status':'inventory-pending'},
         {'book':'phb','category':'languages-alignments-personality-tables','pdfPages':[123,142],'status':'inventory-pending'},
         {'book':'phb','category':'remaining-adventuring-rules','pdfPages':[182,200],'status':'partial-inventory'},
@@ -94,7 +106,8 @@ def coverage(database):
         {'book':'mm','category':'monster-stat-blocks-npc-beasts','pdfPages':[13,353],'status':'inventory-pending','remaining':'Statistiche, tratti, azioni, reazioni, azioni leggendarie, tana e varianti; non importati dal database attuale.'}],
       'sourceLimitations':{book:{'status':entry['status'],'textEmptyPdfPages':entry.get('emptyPdfPages',[]),
         'noteIt':'Pagina priva di testo estraibile non equivale a pagina assente: può contenere un’illustrazione o richiedere ispezione visiva.'} for book,entry in database['sources'].items()},
-      'missingSources':['Errata complete e ufficiali successive alle stampe locali','Supplementi citati dal catalogo maghi e fonti UA non presenti in MANUALI'],
+      'missingSources':([] if all(book in database['sources'] for book in ['phb-errata','dmg-errata','mm-errata']) else ['Questa vista conserva la stampa originale; le errata acquisite sono applicate separatamente da merge.py'])+['Supplementi citati dal catalogo maghi e fonti UA non presenti in MANUALI'],
+      'errataApplicationComplete':False,
       'cautionIt':'CompleteRecords riguarda i campi del modello attuale. Nessuna categoria è dichiarata completa finché inventario e rimandi non ricevono un audit finale.'}
 
 
@@ -123,14 +136,17 @@ def report(work,database,cov,comparison):
       '## Copertura','', '| Categoria | Inventario atteso | Identità/eventi estratti | Record con alcuni campi verificati | Record completi nel modello |','|---|---:|---:|---:|---:|']
     for c in cov['categories']:
         lines.append(f"| {c['kind']} | {c['expectedIdentities'] if c['expectedIdentities'] is not None else 'da censire'} | {c['extractedIdentities']} | {c['verifiedMechanicalRecords']} | {c['completeRecords']} |")
-    lines+=['','Sono stati letti integralmente 14 incantesimi; altri 347 conservano metadati OCR da verificare. L’inventario non rende verificati tempi, componenti, durate, effetti o relazioni di classe.',
-      'I 249 eventi di progressione comprendono etichette generiche derivate per i privilegi di sottoclasse. Per 99 eventi gli effetti sono strutturati; negli altri è verificato il livello, non il comportamento completo.',
+    features=[e for e in database['entities'] if e['kind']=='class-feature']
+    complete_features=sum(e['verification']['complete'] for e in features)
+    lines+=['',f"Sono stati letti integralmente {cov['individuallyReviewedSpells']} incantesimi; altri {cov['spellDescriptionsPending']} conservano metadati OCR da verificare. Le liste di classe sono state controllate sui render PHB 208–212 e conservate in un inventario curato indipendente dall’OCR. Questo non verifica gli effetti degli incantesimi.",
+      f'I {len(features)} eventi di progressione comprendono etichette generiche derivate per i privilegi di sottoclasse. Per {complete_features} eventi gli effetti sono strutturati; negli altri è verificato il livello, non il comportamento completo.',
+      'Warlock: 32 invocazioni, tre doni del patto, dodici privilegi dei patroni e trenta scelte delle liste ampliate. Le liste ampliate non concedono automaticamente gli incantesimi.',
       '','## Fonti e stampa','']
     for s in database['sources'].values():
         review=s['review']; evidence=', '.join('PDF '+str(e['pdfPage'])+' '+e['section'] for e in review['evidence'])
         lines.append(f"- `{s['filename']}`: edizione {review['edition']}, {review['role']}; {evidence}. {review['notesIt']}")
     lines+=['','## Differenze dell’SRD italiano','',
-      '- SRD italiano PDF 84, Lottatore: due benefici; PHB PDF 168 ne include un terzo assente nel supporto SRD. La causa editoriale richiede una fonte di errata ulteriore; non ripristinarlo automaticamente.',
+      '- SRD italiano PDF 84, Lottatore: due benefici; PHB PDF 168 ne include un terzo. PH-Errata.pdf, PDF 3, rimuove quel terzo beneficio: originale ed erratum restano distinti nella release candidata.',
       '- SRD italiano PDF 99, Riposo lungo: almeno un dado vita recuperato; PHB PDF 187 non esplicita quel minimo. È una differenza di stampa.',
       '- SRD italiano PDF 7, Eredità infernale: recupero dopo riposo lungo; PHB PDF 44 usa una volta al giorno.',
       '- Il supporto italiano è SRD 5.1: non contiene il catalogo completo del PHB. Il compatto SRD 5.2.1 è escluso.',
@@ -140,7 +156,7 @@ def report(work,database,cov,comparison):
       f"Record del catalogo generale/armi non riconosciuti dall’inventario PHB attuale: {len(comparison['unmatchedCatalogRecords'])}; provenienza da verificare. Oggetti magici e mostri hanno un confronto ancora rinviato.",
       '', 'Ogni discrepanza riporta identificatore, campo, valore attuale, valore di riferimento o candidato, pagine, conseguenza e proposta. Le differenze di traduzione restano da verificare.',
       '', '## Lavoro ancora necessario','']
-    lines+=['- Liste incantesimi: `Trap the Soul` (PHB PDF 212) non ha una descrizione corrispondente nel corpus; la voce resta irrisolta. `Destructive Smite` (lista paladino, PDF 210) è associato a `Destructive Wave` soltanto come candidato, con nome OCR originale conservato.']
+    lines+=['- Liste incantesimi: PH-Errata.pdf, PDF 4, elimina `Trap the Soul` (PHB PDF 212) e rinomina `Destructive Smite` in `Destructive Wave` (PHB PDF 210). Queste risoluzioni sono applicate nella vista corretta, senza riscrivere la prima stampa. Il confronto visivo ha inoltre recuperato `Jump` nella lista ranger, omesso dall’OCR.']
     lines += [f"- {x['book']} / {x['category']}: {x['status']}. {x.get('remaining','Inventario delle voci e verifica delle meccaniche da completare.')}" for x in cov['pendingScopes']]
     lines+=['','Pagine senza testo e fonti mancanti sono elencate in `coverage.json`; non sono state interpretate come assenza di regole.',
       '', '## Artefatti','',

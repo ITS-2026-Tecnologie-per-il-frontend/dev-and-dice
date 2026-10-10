@@ -88,7 +88,7 @@ class ArtifactTests(unittest.TestCase):
 
     def test_incomplete_rule_cannot_be_declared_complete(self):
         db=copy.deepcopy(self.database)
-        spell=next(x for x in db['entities'] if x['kind']=='spell')
+        spell=next(x for x in db['entities'] if x['kind']=='spell' and x['verification']['mechanics']=='ocr-candidate')
         spell['verification']['complete']=True
         self.assertTrue(any('False completion' in e for e in validate(db)))
 

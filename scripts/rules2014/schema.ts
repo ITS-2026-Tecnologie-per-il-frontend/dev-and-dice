@@ -6,7 +6,7 @@ export type EntityId = `${'phb2014' | 'dmg2014' | 'mm2014'}:${string}:${string}`
 export type TranslationStatus = 'assistant-translation' | 'verified-local-italian-source' | 'missing'
 export interface Source {
     edition: Edition2014
-    book: 'phb' | 'dmg' | 'mm' | 'srd51-it'
+    book: 'phb' | 'dmg' | 'mm' | 'srd51-it' | 'phb-errata' | 'dmg-errata' | 'mm-errata'
     filename: string
     /** 1-based PDF page numbers, distinct from printed numbers. */
     pdfPages: number[]
@@ -121,6 +121,8 @@ export interface MechanicsByKind {
     'equipment-pack': Record<string, Json>
     'weapon-property': Record<string, Json>
     'class-feature': Record<string, Json>
+    'class-option': Record<string, Json>
+    'subclass-feature': Record<string, Json>
     advancement: Record<string, Json>
     rule: Record<string, Json>
     action: Record<string, Json>

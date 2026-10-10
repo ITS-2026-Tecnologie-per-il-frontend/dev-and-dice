@@ -4,6 +4,7 @@ Only these reviews may promote OCR fields. No mechanical data are copied from
 the application catalog. Class lists were read on PDF 208–212.
 """
 from curated import source
+from spell_reviews_batch import ROWS as BATCH_ROWS
 
 ROWS = [
  ('Counterspell','Controincantesimo',229,3,'abjuration','reaction','60 feet',['S'],'Instantaneous',False,False,['sorcerer','warlock','wizard'],None,None,
@@ -57,11 +58,12 @@ CLASS_PAGES={'bard':[208,209],'cleric':[208,209],'druid':[209],'paladin':[209,21
 
 def apply_reviews(spells):
     by_name={s['name']:s for s in spells}
-    for name,it,pages,level,school,activation,rng,components,duration,ritual,conc,classes,material,cost,effect,upcast,summary in ROWS:
+    for name,it,pages,level,school,activation,rng,components,duration,ritual,conc,classes,material,cost,effect,upcast,summary in [*ROWS,*BATCH_ROWS]:
         s=by_name[name]
         s['nameIt']=it;s['translation']={'status':'assistant-translation','language':'it'}
         s['summaryIt']=summary
-        s['mechanics'].update(level=level,school=school,castingTime='1 '+activation.replace('-',' '),casting={'quantity':1,'unit':activation},
+        quantity,unit=activation if isinstance(activation,tuple) else (1,activation)
+        s['mechanics'].update(level=level,school=school,castingTime=str(quantity)+' '+unit.replace('-',' '),casting={'quantity':quantity,'unit':unit},
           range=rng,components=components,duration=duration,ritual=ritual,concentration=conc,
           materialIt=material,materialCostGP=cost,materialCostStatus='minimum-stated' if cost is not None else 'no-cost-specified' if material else 'not-applicable',
           materialConsumed=effect.get('materialConsumed',False) if material else None,
