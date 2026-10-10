@@ -247,12 +247,18 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
 
     if (exportPage === undefined && details['tutorial.active'] === 'true') return <div className="player-sheet">{data ? <CharacterTutorial sheet={sheet} data={data} onChange={onChange}>{children}</CharacterTutorial> : <section className="character-tutorial" aria-label="Caricamento della creazione guidata"><p role="status">{dataError || 'Caricamento delle opzioni per il tutorial…'}{dataError && <button type="button" onClick={() => setRetry(retry + 1)}>Riprova</button>}</p><footer className="tutorial-footer"><div className="tutorial-draft-actions">{children}</div></footer></section>}</div>
     return <div className="player-sheet">
-        {exportPage === undefined && <div className="player-sheet-export-controls" data-print="exclude"><button type="button" disabled={exporting || !data} onClick={(event) => { setExportWidth(event.currentTarget.closest('.player-sheet')?.querySelector('.player-paper')?.getBoundingClientRect().width ?? 1120); exportName.current = sheet.name; setExportError(''); setExporting(true) }}>{exporting ? 'Preparazione PDF…' : 'Esporta scheda in PDF'}</button><small>Per scaricarlo, scegli «Salva come PDF» nella finestra di stampa.</small>{exportError && <p role="alert">{exportError}</p>}</div>}
+        <div className="player-sheet-controls" data-print="exclude">
+        <div className="player-sheet-toolbar">
+        <div className="player-template-picker"><label className="player-field"><span>Modello della scheda</span><select value={Object.hasOwn(sheetTemplates, details['sheet.template'] ?? '') ? details['sheet.template'] : 'auto'} onChange={(event) => { detail('sheet.template',event.target.value); setPage(0) }}><option value="auto">Automatico in base alla classe</option>{Object.entries(sheetTemplates).map(([id,model]) => <option key={id} value={id}>{model.name}</option>)}</select></label>{wizardTemplate && <a href={`${import.meta.env?.BASE_URL ?? '/'}templates/Mago.pdf`} target="_blank" rel="noreferrer">Apri PDF originale · Mago</a>}</div>
+        {exportPage === undefined && <div className="player-sheet-export-controls"><button type="button" aria-describedby={`${prefix}-pdf-hint`} disabled={exporting || !data} onClick={(event) => { setExportWidth(event.currentTarget.closest('.player-sheet')?.querySelector('.player-paper')?.getBoundingClientRect().width ?? 1120); exportName.current = sheet.name; setExportError(''); setExporting(true) }}>{exporting ? 'Preparazione PDF…' : 'Esporta scheda in PDF'}</button><small id={`${prefix}-pdf-hint`}>Scegli «Salva come PDF» nella finestra di stampa.</small>{exportError && <p role="alert">{exportError}</p>}</div>}
+        </div>
+        {data ? <details className="player-sheet-settings">
+            <summary>Opzioni di compilazione <span>{creationEnabled(sheet) ? 'Calcoli automatici' : 'Scheda manuale'}</span></summary>
+            <CreationStatus sheet={sheet} enable={() => emitChange(enableCreation(sheet, data))} disable={() => emitChange({ ...sheet, playerDetails: { ...details, 'creation.enabled': 'false' } })} />
+            {automatic && <button className="player-sheet-reset" type="button" onClick={() => emitChange(resetCreationOverrides(sheet, data))}>Ripristina i campi generati (annulla le loro modifiche manuali)</button>}
+        </details> : <p className="player-sheet-loading" role="status">{dataError || 'Caricamento opzioni del personaggio…'}{dataError && <button type="button" onClick={() => setRetry(retry + 1)}>Riprova</button>}</p>}
         {inventoryWarnings.length > 0 && <p className="creation-warning" role="status">{inventoryWarnings.join(' ')}</p>}
         {selectedMagic && selectedMagic.issues.length > 0 && <p className="creation-warning" role="alert">{selectedMagic.issues.join(' ')}</p>}
-        <div className="player-template-picker"><label className="player-field"><span>Modello della scheda</span><select value={Object.hasOwn(sheetTemplates, details['sheet.template'] ?? '') ? details['sheet.template'] : 'auto'} onChange={(event) => { detail('sheet.template',event.target.value); setPage(0) }}><option value="auto">Automatico in base alla classe</option>{Object.entries(sheetTemplates).map(([id,model]) => <option key={id} value={id}>{model.name}</option>)}</select></label>{wizardTemplate && <a href={`${import.meta.env?.BASE_URL ?? '/'}templates/Mago.pdf`} target="_blank" rel="noreferrer">Apri PDF originale · Mago</a>}</div>
-        {data ? <CreationStatus sheet={sheet} enable={() => emitChange(enableCreation(sheet, data))} disable={() => emitChange({ ...sheet, playerDetails: { ...details, 'creation.enabled': 'false' } })} /> : <p className="player-hint" role="status">{dataError || 'Caricamento opzioni del personaggio…'}{dataError && <button type="button" onClick={() => setRetry(retry + 1)}>Riprova</button>}</p>}
-        {automatic && data && <button type="button" onClick={() => emitChange(resetCreationOverrides(sheet, data))}>Ripristina i campi generati (annulla le loro modifiche manuali)</button>}
         <div className="player-sheet-tabs" role="tablist" aria-label="Pagine della scheda">
             {pages.map((label, index) => <button
                 key={label} type="button" role="tab" id={`${prefix}-tab-${index}`} aria-selected={visiblePage === index} aria-controls={`${prefix}-page`}
@@ -268,6 +274,7 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
                     document.getElementById(`${prefix}-tab-${next}`)?.focus()
                 }}
             >{index + 1}. {label}</button>)}
+        </div>
         </div>
         <div className="player-paper-viewport" tabIndex={0}>
         <div className={`player-paper${visiblePage === 0 ? ' player-paper-statistics' : ''}${wizardTemplate ? ' player-paper-wizard' : ''}${template === 'wizard-pdf' ? ' player-paper-wizard-pdf' : ''}`} role="tabpanel" id={`${prefix}-page`} aria-labelledby={`${prefix}-tab-${visiblePage}`}>

@@ -43,7 +43,21 @@ const legacy = { ...newCharacterSheet(), name: 'PG precedente', race: 'Razza per
 const legacyMarkup = renderToStaticMarkup(createElement(PlayerSheet, { sheet: legacy, onChange() {} }))
 assert.ok(legacyMarkup.includes('Razza personale') && legacyMarkup.includes('Classe personale'), 'Legacy inputs must remain visible while catalogs load')
 assert.ok(legacyMarkup.includes('player-paper-viewport'), 'Keep the existing reference sheet layout')
+assert.ok(legacyMarkup.includes('player-sheet-controls" data-print="exclude"'), 'On-screen settings and navigation must stay out of print')
+const automaticSheetMarkup = renderToStaticMarkup(createElement(PlayerSheet, { sheet, creationData: data, onChange() {} }))
+assert.ok(automaticSheetMarkup.includes('<details class="player-sheet-settings">') && automaticSheetMarkup.includes('Passa a compilazione manuale') && automaticSheetMarkup.includes('Ripristina i campi generati'), 'Collapsed settings must retain the mode switch and generated-field reset')
+
 console.log('Creation UI checks passed: recursive equipment choices, mundane-only weapons and legacy manual fields.')
+
+const { InventoryEditor } = await import('../src/components/InventoryEditor.tsx')
+const { addInventoryItem, setWornInventoryReferences, inventoryItems } = await import('../src/utils/Inventory.ts')
+const { updateCharacterField } = await import('../src/utils/PlayerCreation.ts')
+const inventorySheet = updateCharacterField(addInventoryItem(legacy, data, 'Borsa delle stelle'), 'inventory.0.1', '1.23456')
+const linkedInventory = setWornInventoryReferences(inventorySheet, 'worn.Vita', [inventoryItems(inventorySheet)[0].id])
+const inventoryMarkup = renderToStaticMarkup(createElement(InventoryEditor, { sheet: linkedInventory, data, onChange() {}, target: { field: 'worn.Vita', label: 'Vita' } }))
+assert.ok(inventoryMarkup.includes('1,235 kg') && inventoryMarkup.includes('multiple=""') && inventoryMarkup.includes('selected=""'), 'Readable weights and multiple-item picker must retain the selected reference')
+assert.equal(linkedInventory.playerDetails['inventory.0.1'], '1.23456', 'Displayed rounding must preserve stored precision')
+console.log('Inventory UI checks passed: readable weights, stored precision and multiple-item linking.')
 
 const { WizardSpellcasting } = await import('../src/components/WizardSpellcasting.tsx')
 const wizard = enableCreation({ ...newCharacterSheet(), name: 'Mago', level: '20', intelligence: '16', playerDetails: { 'creation.class': 'wizard', 'creation.subclass': 'evocation' } }, data)

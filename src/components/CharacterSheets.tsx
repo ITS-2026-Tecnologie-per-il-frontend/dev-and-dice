@@ -210,16 +210,16 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
         }
     }
 
-    function abilityRow(ability: SheetAbility, index: number) {
+    function abilityRow(ability: SheetAbility, index: number, spell = false) {
         if (!draft) return null
         return (<div className="sheet-ability-row" key={index}>
                                     <label>
-                                        <span>Nome abilità</span>
+                                        <span>{spell ? 'Nome magia' : 'Nome abilità'}</span>
                                         <CatalogSearch
                                             required
                                             pattern={'.*\\S.*'}
                                             value={catalog.abilities.find((entry) => entry.id === ability.catalogId)?.name ?? ability.name}
-                                            aria-label={`Nome abilità ${index + 1} della scheda`}
+                                            aria-label={`Nome ${spell ? 'magia' : 'abilità'} ${index + 1} della scheda`}
                                             entries={catalog.abilities}
                                             onChange={(name) => setDraft({ ...draft, abilities: draft.abilities.map((item, i) => i === index ? { ...item, name, catalogId: undefined } : item) })}
                                             onSelect={(entry) => setDraft({ ...draft, abilities: draft.abilities.map((item, i) => i === index ? templateFromCatalog(entry) : item) })}
@@ -287,8 +287,11 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
             }}>
                 {draft && (
                     <form onSubmit={(event) => { event.preventDefault(); saveSheet() }}>
-                        <div className="dialog-header">
+                        <div className={`dialog-header${draft.kind === 'PG' && !guided ? ' player-dialog-header' : ''}`}>
+                            <div className="player-dialog-title">
                             <h2 id="character-dialog-heading">{guided ? 'Creazione del personaggio' : draft.name || 'Nuova scheda'}</h2>
+                            {draft.kind === 'PG' && !guided && <p>{draft.characterClass || 'Personaggio'}{draft.level && ` di livello ${draft.level}`}</p>}
+                            </div>
                             <button className="delete-turn" type="button" aria-label="Chiudi scheda" onClick={() => guided ? setConfirmTutorialExit(true) : closeDialog()}>×</button>
                         </div>
                         {draft.kind === 'PG' ? <PlayerSheet sheet={draft} catalog={catalog} creationData={creationData} onChange={setDraft}>{guided && <><div className="tutorial-utility-buttons"><button type="button" onClick={closeDialog}>Salva e riprendi più tardi</button><button className="tutorial-discard" type="button" onClick={discardCreation} aria-label="Cancella la bozza del personaggio">Cancella</button></div><p className="tutorial-save-status" role="status">{progressSaved ? 'Progressi salvati in questo browser.' : 'Salvataggio dei progressi…'}</p>{error && <p className="tutorial-save-error" role="alert">{error}</p>}</>}</PlayerSheet> : <div className="character-fields">
@@ -317,35 +320,43 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                                 </label>
                             ))}
                         </div>}
-                        {!guided && <><div className={draft.kind === 'PG' ? 'sheet-ability-columns' : undefined}>
+                        {!guided && <>
+                        <details className="sheet-combat-help"><summary>Come usare abilità e magie in combattimento</summary>
+                            <p>Nel combattimento, clicca un nome nella card del personaggio per importarlo; clicca di nuovo per raggiungerlo.</p>
+                            {draft.kind === 'PG' && <p>I privilegi con un’attivazione riconoscibile compaiono qui. Per modificarli nella scheda sopra, scrivi nome e descrizione su righe separate e lascia una riga vuota tra privilegi.</p>}
+                        </details>
+                        <div className={draft.kind === 'PG' ? 'sheet-ability-columns' : undefined}>
                         <section className="sheet-abilities" aria-labelledby="sheet-abilities-heading">
-                            <h3 id="sheet-abilities-heading">Abilità del personaggio</h3>
-                            <p className="library-help">Abilità e magie sono elencate nella card del combattimento: clicca un nome per importarlo, poi clicca di nuovo per raggiungerlo.</p>
-                            {draft.kind === 'PG' && <p className="library-help">Dalla scheda PDF vengono elencati solo i privilegi con attivazione riconoscibile. Modifica i testi sopra usando Nome e descrizione su righe separate, con una riga vuota tra privilegi.</p>}
+                            <header className="sheet-section-heading"><h3 id="sheet-abilities-heading">Abilità del personaggio</h3><span className="sheet-section-count" aria-label="Numero di abilità">{activePdf.length + rows.filter((row) => draft.kind !== 'PG' || !row.spell).length}</span></header>
+                            <p className="library-help sheet-section-intro">Privilegi e abilità da attivare, con la loro durata.</p>
+                            {!activePdf.length && !rows.some((row) => draft.kind !== 'PG' || !row.spell) && <p className="library-empty">Nessuna abilità da attivare. Aggiungine una o compila i privilegi nella scheda sopra.</p>}
                             {activePdf.map((item) => <article className="pdf-ability-card" key={item.key}>
                                 <strong>{item.name}</strong><p className="library-help">{item.reason}</p>
+                                <div className="pdf-ability-controls">
                                 <label>Durata<select aria-label={`Durata di ${item.name}`} value={item.template.duration} onChange={(event) => pdfSetting(`${item.key}.duration`, event.target.value)}>{Object.keys(durationTurns).map((duration) => <option key={duration}>{duration}</option>)}</select></label>
                                 {item.template.duration === 'Personalizzata' && <label>Turni<input type="number" min="0" step="1" value={item.template.remainingTurns} onChange={(event) => { if (Number.isSafeInteger(event.target.valueAsNumber) && event.target.valueAsNumber >= 0) pdfSetting(`${item.key}.turns`, event.target.value) }} /></label>}
                                 <div className="turn-actions"><InfoButton name={item.name} description={item.description} fields={{ Attivazione: item.reason, duration: item.template.duration }} /><button className="more-info" type="button" onClick={() => pdfSetting(item.key, 'exclude')}>Escludi</button></div>
+                                </div>
                             </article>)}
+
+                            {rows.filter((row) => draft.kind !== 'PG' || !row.spell).map(({ ability, index }) => abilityRow(ability, index))}
+                            <button className="end-combat sheet-add-ability" type="button" onClick={() => setDraft({ ...draft, abilities: [...draft.abilities, { name: '', duration: '1 minuto' }] })}>+ Aggiungi abilità</button>
                             {reviewPdf.length > 0 && <details className="pdf-ability-review"><summary>Privilegi da verificare o esclusi ({reviewPdf.length})</summary>
                                 {reviewPdf.map((item) => <article className="pdf-ability-card" key={item.key}><strong>{item.name}</strong><p className="library-help">{item.reason}</p><div className="turn-actions"><InfoButton name={item.name} description={item.description} /><button className="more-info" type="button" onClick={() => pdfSetting(item.key, 'include')}>Includi tra le abilità da attivare</button></div></article>)}
                             </details>}
-                            {rows.filter((row) => draft.kind !== 'PG' || !row.spell).map(({ ability, index }) => abilityRow(ability, index))}
-                            <button className="end-combat" type="button" onClick={() => setDraft({ ...draft, abilities: [...draft.abilities, { name: '', duration: '1 minuto' }] })}>+ Aggiungi abilità</button>
                         </section>
                         {draft.kind === 'PG' && <section className="sheet-abilities sheet-spells" aria-labelledby="sheet-spells-heading">
-                            <h3 id="sheet-spells-heading">Magie del personaggio</h3>
-                            <p className="library-help">Le magie impostate nella scheda sopra compaiono qui. Per modificarle, usa la pagina Incantesimi della scheda.</p>
-                            {rows.filter((row) => row.spell).map(({ ability, index }) => abilityRow(ability, index))}
+                            <header className="sheet-section-heading"><h3 id="sheet-spells-heading">Magie del personaggio</h3><span className="sheet-section-count" aria-label="Numero di magie">{selectedSpells.length + rows.filter((row) => row.spell).length}</span></header>
+                            <p className="library-help sheet-section-intro">Le magie della scheda, con livello e durata. Modificale nella pagina Incantesimi sopra.</p>
+                            {rows.filter((row) => row.spell).map(({ ability, index }) => abilityRow(ability, index, true))}
                             {selectedSpells.map((spell, index) => {
                                 const entry = catalog.abilities.find((item) => item.id === spell.catalogId)
                                 return <article className="sheet-spell-card" key={`${spell.catalogId ?? spell.name}-${index}`}>
-                                    <div><strong>{spell.name}</strong><p className="library-help">{entry?.data.level === 0 ? 'Trucchetto' : entry ? `Livello ${entry.data.level}` : 'Magia personalizzata'} · {typeof entry?.data.duration === 'string' ? entry.data.duration : 'Durata da impostare'}</p></div>
+                                    <div><strong>{spell.name}</strong><div className="sheet-spell-meta"><span className="sheet-spell-level">{entry?.data.level === 0 ? 'Trucchetto' : typeof entry?.data.level === 'number' ? `Livello ${entry.data.level}` : 'Magia personalizzata'}</span><span>{typeof entry?.data.duration === 'string' ? entry.data.duration : 'Durata da impostare'}</span></div></div>
                                     <InfoButton name={spell.name} entry={entry} fields={{ duration: spell.duration, remainingTurns: spell.remainingTurns }} />
                                 </article>
                             })}
-                            {!selectedSpells.length && !rows.some((row) => row.spell) && <p className="library-empty">Nessuna magia impostata nella scheda.</p>}
+                            {!selectedSpells.length && !rows.some((row) => row.spell) && <p className="library-empty">Nessuna magia impostata. Scegli i tuoi incantesimi nella pagina Incantesimi della scheda sopra.</p>}
                         </section>}
                         </div>
                         <p className="library-help">Per mostri e PNG l’iniziativa nel combattimento resta vuota: il modificatore è un suggerimento, inserisci tu il risultato del tiro. Per i PG viene copiata l’iniziativa predefinita.</p>
