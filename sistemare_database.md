@@ -1,0 +1,15 @@
+Dobbiamo procedere su due fronti: completare il riferimento verificato e applicare al programma soltanto le correzioni confermate. Il database attuale è ancora invariato; il [rapporto di copertura](C:/Users/utente/Desktop/ALESSANDRO/Script/dev-and-dice/rules-reference.local/2014/REPORT.md) indica le lacune.
+L’ordine che seguirei è questo:
+1. Correggere i due errori già verificati del warlock.
+   Le invocazioni conosciute devono essere 2 al livello 4 e 3 al livello 6. Occorre correggere anche l’eventuale sorgente che genera il catalogo, affinché una rigenerazione conservi la modifica, e verificare la progressione nel programma.
+2. Chiarire le differenze tra prima stampa e regole corrette.
+   Il PHB locale è della prima stampa. Prima di modificare Lottatore, riposi o altri punti divergenti dall’SRD, dobbiamo acquisire e verificare le errata ufficiali 2014. Conserviamo il dato originale e registriamo separatamente la correzione editoriale, con la sua fonte.
+3. Completare creazione e progressione del personaggio.
+   Priorità a privilegi delle 12 classi e delle 40 sottoclassi PHB, tratti razziali, background e scelte: invocazioni, manovre, metamagia, discipline e incantesimi concessi. Ogni capacità deve specificare prerequisiti, effetti, quantità, livello, utilizzi e recupero delle risorse. I 249 eventi di progressione censiti non rappresentano ancora tutti questi comportamenti.
+4. Verificare integralmente gli incantesimi.
+   Restano 347 descrizioni da leggere e strutturare, oltre alle liste di classe da confermare. Procediamo per gruppi, controllando componenti materiali, concentrazione, bersagli, tiri salvezza, danni, durata e potenziamento. Le anomalie OCR e le interpretazioni aperte devono restare esplicite.
+5. Completare le categorie rimanenti e il confronto.
+   Equipaggiamento, confezioni, veicoli, servizi e regole d’avventura; poi oggetti magici DMG e statistiche MM. Anticiperei le creature necessarie a capacità come Forma Selvatica e famigli. Le 132 voci mancanti nel catalogo di creazione vanno valutate come aggiunte; differenze di nome, supplementi e record non riconosciuti richiedono classificazione.
+6. Integrare i dati verificati e collaudare i comportamenti.
+   Serve un adattatore esplicito tra il riferimento e i tipi dell’app, ampliando quelli che non rappresentano tutte le regole. Ogni gruppo deve produrre un confronto prima/dopo e test su casi concreti: avanzamento, multiclassamento, scelte, recupero delle risorse, equipaggiamento e lancio degli incantesimi.
+Partirei dalle correzioni del warlock e dal completamento di classi e sottoclassi, perché incidono direttamente sulla creazione del personaggio. Una categoria sarà conclusa quando inventario, meccaniche, fonti, traduzioni e relazioni saranno verificati; i test già passati controllano gli strumenti, ma non certificano le regole ancora da estrarre.

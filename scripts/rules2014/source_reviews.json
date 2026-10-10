@@ -1,0 +1,32 @@
+{
+  "phb": {
+    "sha256": "3c707344a803f264dd08e1ba0b2c3f8f6b577b167f6758c33d2799f02ec81fcf",
+    "edition": "2014", "title": "Player's Handbook", "role": "primary-character-rules",
+    "evidence": [{"pdfPage": 2, "section": "Title page"}, {"pdfPage": 3, "section": "Credits: First Printing August 2014, copyright 2014"}],
+    "printedPageOffset": -1, "notesIt": "Scansione della prima stampa; non presume di contenere errata successive."
+  },
+  "dmg": {
+    "sha256": "02733a391d21fecfcfb0ecb5e11370bb63983c9f95e114bc3a2fce48785db322",
+    "edition": "2014", "title": "Dungeon Master's Guide", "role": "additional-dm-rules",
+    "evidence": [{"pdfPage": 2, "section": "Title page"}, {"pdfPage": 3, "section": "Credits: First Printing December 2014; this printing includes corrections"}],
+    "printedPageOffset": null, "notesIt": "Pagina stampata da verificare separatamente; il testo dichiara correzioni nella stampa."
+  },
+  "mm": {
+    "sha256": "e8e6899fad45ea12c6596d6fdfd2e182b01933a506ecf9802ce16e566f98796a",
+    "edition": "2014", "title": "Monster Manual", "role": "monster-rules",
+    "evidence": [{"pdfPage": 2, "section": "Title page"}, {"pdfPage": 3, "section": "Credits: First Printing September 2014"}],
+    "printedPageOffset": null, "notesIt": "Contiene bestiario e regole per leggere le statistiche; non equiparare classe e grado di sfida."
+  },
+  "srd51-it": {
+    "sha256": "2ef143b8abeae9558d30b405ea48e2ee9b5d700dd11cd955e6117e61cbddd3f7",
+    "edition": "2014", "title": "System Reference Document 5.1, traduzione italiana", "role": "italian-support",
+    "evidence": [{"pdfPage": 1, "section": "Informazioni legali: SRD 5.1, CC-BY 4.0"}],
+    "printedPageOffset": null, "notesIt": "È l'SRD, non un PHB completo: una sottoclasse per classe, quattro sottorazze, un background e un talento."
+  },
+  "srd521-it": {
+    "sha256": "a7b88b0cd4f6424624cf5046c96755652985a27a2d405e30948e44b1f5e1f718",
+    "edition": "2024", "title": "System Reference Document 5.2.1, traduzione italiana", "role": "excluded-revised-rules",
+    "evidence": [{"pdfPage": 1, "section": "Informazioni legali: SRD 5.2.1, CC-BY 4.0"}],
+    "printedPageOffset": null, "notesIt": "Verificato per identificare l'edizione; escluso dalle entità e dalle meccaniche 2014."
+  }
+}
