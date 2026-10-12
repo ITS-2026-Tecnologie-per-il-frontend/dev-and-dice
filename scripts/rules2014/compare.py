@@ -71,7 +71,7 @@ def compare(database,data_dir=ROOT/'public'/'data'):
            'class-level':[x for x in o.get('levels',[]) if not x.get('subclass')],
            'skill':r.get('skills',[]),'condition':r.get('conditions',[]),
            'weapon':q.get('equipment',[]),'armor':q.get('equipment',[]),'tool':q.get('equipment',[]),
-           'gear':q.get('equipment',[])+q.get('magicItems',[]),'equipment-pack':q.get('equipment',[]),
+           'gear':q.get('equipment',[])+q.get('magicItems',[]),'equipment-pack':q.get('equipment',[]),'magic-item':q.get('magicItems',[]),
            'weapon-property':q.get('weaponProperties',[]),'spell':o.get('spells',[])}
     issues=[];matches=[]; checks=0
     for filename,catalog in catalogs.items():
@@ -255,8 +255,8 @@ def compare(database,data_dir=ROOT/'public'/'data'):
     return {'schemaVersion':1,'edition':'2014','inputSHA256':before,'readOnlyVerified':True,'comparedMechanicalFields':checks,
             'matches':matches,'discrepancies':issues,'additionalCatalogContent':extras,'explicitRevisedRecords':revised,
             'unmatchedCatalogRecords':unmatched,
-            'deferredComparisons':[{'catalog':'database.json:creatures','count':len(d.get('creatures',[])),'reason':'MM stat block inventory not yet extracted'},
-                                   {'catalog':'character-equipment.json:magicItems','count':len(q.get('magicItems',[])),'reason':'DMG magic item inventory not yet extracted'}],
+            'deferredComparisons':[{'catalog':'database.json:creatures','count':len(d.get('creatures',[])),'reason':'individual reviewed MM blocks available separately; remaining legacy monsters not certified'},
+                                   {'catalog':'character-equipment.json:magicItems','count':len(q.get('magicItems',[])),'reason':'individual reviewed DMG items matched; remaining item inventory and mechanical comparison pending'}],
             'limitationsIt':['Incantesimi OCR: discrepanze da verificare, non valori corretti.',
               'Testi lunghi, condizioni espresse solo in prosa e formule hardcoded non sono confrontati semanticamente.',
               'Il catalogo generale contiene ulteriori incantesimi e mostri: la provenienza di ogni extra resta da classificare.',

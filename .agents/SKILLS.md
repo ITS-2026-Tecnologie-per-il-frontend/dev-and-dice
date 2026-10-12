@@ -160,3 +160,14 @@ Sono state aggiunte **10 skill del catalogo** assenti dal vecchio documento:
 È stata inoltre aggiunta la sezione delle 26 voci in cache non esposte nella sessione. Le nuove installazioni effettuate nel corso del confronto sono `playwright-interactive` dal repository ufficiale OpenAI e `pdf-to-react-fidelity` dallo ZIP dell’utente. `graphify` era già presente quando è iniziato il confronto.
 
 I percorsi assoluti descrivono questa macchina Windows e le versioni dei plugin rilevate. In un altro ambiente occorre verificarli nuovamente; le directory skill personali e la cache dei plugin non vengono copiate nel repository da questo inventario.
+
+## Installazione Graphify nell’ambiente Linux — 10 ottobre 2026
+
+Nella sessione Linux è stata installata **Graphify 0.9.84**, dalla distribuzione ufficiale [Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify), tramite `uv tool install graphifyy==0.9.84` e l’installer ufficiale `graphify install --platform codex`.
+
+- Skill Codex: [SKILL.md](/home/xlini/.codex/skills/graphify/SKILL.md).
+- Programma: `/home/xlini/.local/bin/graphify`, in un ambiente utente isolato gestito da `uv`.
+- Verifica riuscita: versione del programma, file della skill, timbro di versione e tutti gli otto documenti della cartella `references/`.
+- La skill sarà disponibile dalla prossima interazione. Il comando shell può essere eseguito tramite il percorso assoluto indicato.
+
+Questa verifica riguarda l’ambiente Linux corrente; l’inventario Windows precedente resta conservato come riferimento per quella macchina.

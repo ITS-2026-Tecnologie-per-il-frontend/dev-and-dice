@@ -328,8 +328,16 @@ def tools():
     result=[]
     for pos,(index,name,it,cost,unit,weight) in enumerate(TOOL_ROWS):
         cat='artisan-tools' if pos<17 else 'gaming-set' if 19<=pos<=22 else 'musical-instrument' if 24<=pos<=33 else 'kit-or-tools'
+        effect={'proficientChecks':'add-proficiency-bonus','ability':'chosen-for-specific-check-not-fixed','eachToolTypeRequiresSeparateProficiency':True}
+        if cat=='musical-instrument':effect['spellcastingFocusForClass']='bard'
+        if index=='herbalism-kit':effect.update(checkUses=['identify-herbs','apply-herbs'],proficiencyRequiredToCreate=['antitoxin','potion-of-healing'])
+        elif index=='navigators-tools':effect.update(checkUses=['chart-course','follow-navigation-charts','avoid-getting-lost-at-sea'])
+        elif index=='poisoners-kit':effect['checkUses']=['craft-poisons','use-poisons']
+        elif index=='thieves-tools':effect['checkUses']=['disarm-traps','open-locks']
+        elif index=='disguise-kit':effect['checkUses']=['create-visual-disguise']
+        elif index=='forgery-kit':effect['checkUses']=['create-physical-document-forgery']
         result.append(record('tool',index,name,it,155,{'category':cat,'cost':{'quantity':cost,'unit':unit},
-                      'weight':{'value':weight,'unit':'lb','unspecifiedInTable':weight is None}},
+                      'weight':{'value':weight,'unit':'lb','unspecifiedInTable':weight is None},'effect':effect},
                       'La competenza consente di aggiungere il bonus di competenza alla prova pertinente; non è associata a una sola caratteristica.'))
     return result
 
@@ -338,7 +346,7 @@ def feats():
     # Effects are declarative data, not executable strings; no eval() is required.
     rows = [
       ('alert','Alert','Allerta',[166],{}, {'initiativeBonus':5,'cannotBeSurprisedWhenConscious':True,'hiddenAttackersGainAdvantage':False},'Ottieni +5 all’iniziativa, eviti la sorpresa da cosciente e neghi il vantaggio dovuto al nascondersi degli attaccanti.'),
-      ('athlete','Athlete','Atleta',[166],{}, {'abilityBonusChoice':{'from':['strength','dexterity'],'bonus':1,'maximum':20},'standFromProneCostFt':5,'climbingExtraMovementCost':0,'runningJumpApproachFt':5},'Un incremento fisico e minori costi di movimento per rialzarti, arrampicarti e preparare salti.'),
+      ('athlete','Athlete','Atleta',[166],{}, {'abilityBonusChoice':{'from':['strength','dexterity'],'bonus':1,'maximum':20},'standFromProneCostFt':5,'climbingHalvesSpeed':False,'runningJumpApproachFt':5},'Un incremento fisico; rialzarsi costa cinque piedi, l’arrampicata non dimezza la velocità nella stampa locale e bastano cinque piedi di rincorsa per i salti.'),
       ('actor','Actor','Attore',[166],{}, {'abilityBonus':{'charisma':1},'maximum':20,'advantageChecks':['deception-impersonation','performance-impersonation'],'mimicryListeningMinutes':1,'mimicryContest':['wisdom-insight','charisma-deception']},'Imiti identità e suoni ascoltati per almeno un minuto; un confronto tra Intuizione e Inganno può smascherarti.'),
       ('charger','Charger','Caricatore',[166],{}, {'requiresAction':'dash','activation':'bonus-action','choice':['one-melee-weapon-attack','shove'],'straightApproachFt':10,'attackDamageBonus':5,'shoveDistanceFt':10},'Dopo Scatto puoi attaccare o spingere con un’azione bonus; dieci piedi in linea retta attivano il beneficio aggiuntivo.'),
       ('crossbow-expert','Crossbow Expert','Esperto di Balestre',[166],{}, {'ignoreLoading':'proficient-crossbows','ignoreCloseHostileRangedDisadvantageFt':5,'bonusAttack':{'requires':'attack-action-with-one-handed-weapon','weapon':'loaded-hand-crossbow-held'}},'Ignori Caricamento con balestre competenti e lo svantaggio a distanza dovuto a nemici vicini; è prevista un’opzione di attacco bonus.'),

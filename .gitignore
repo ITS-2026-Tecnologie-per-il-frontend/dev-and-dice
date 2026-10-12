@@ -17,6 +17,7 @@ server/data/
 .vscode/*
 !.vscode/extensions.json
 /MANUALI/
+/ripresa_interruzione/
 .idea
 .DS_Store
 *.suo

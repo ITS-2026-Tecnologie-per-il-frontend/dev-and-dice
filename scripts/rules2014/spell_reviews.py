@@ -54,11 +54,14 @@ ROWS = [
 
 CLASS_PAGES={'bard':[208,209],'cleric':[208,209],'druid':[209],'paladin':[209,210],'ranger':[210],
              'sorcerer':[210,211],'warlock':[211],'wizard':[211,212]}
+PENDING_INTERPRETATIONS={'Magic Missile':['effect.damageRollInterpretation'],'Antipathy/Sympathy':['effect.endTurnRepeatSaveConditionInterpretation'],"Leomund's Tiny Hut":['effect.maximumOccupantsInterpretation'],"Nystul's Magic Aura":['effect.maskAlignmentChoiceInterpretation']}
 
 
 def apply_reviews(spells):
     by_name={s['name']:s for s in spells}
-    for name,it,pages,level,school,activation,rng,components,duration,ritual,conc,classes,material,cost,effect,upcast,summary in [*ROWS,*BATCH_ROWS]:
+    reviews=[*ROWS,*BATCH_ROWS]
+    if len({row[0] for row in reviews})!=len(reviews):raise ValueError('Duplicate spell review would silently replace another review')
+    for name,it,pages,level,school,activation,rng,components,duration,ritual,conc,classes,material,cost,effect,upcast,summary in reviews:
         s=by_name[name]
         s['nameIt']=it;s['translation']={'status':'assistant-translation','language':'it'}
         s['summaryIt']=summary
@@ -67,8 +70,11 @@ def apply_reviews(spells):
           range=rng,components=components,duration=duration,ritual=ritual,concentration=conc,
           materialIt=material,materialCostGP=cost,materialCostStatus='minimum-stated' if cost is not None else 'no-cost-specified' if material else 'not-applicable',
           materialConsumed=effect.get('materialConsumed',False) if material else None,
-          materialConsumptionStatus='explicitly-consumed' if effect.get('materialConsumed') else 'not-stated' if material else 'not-applicable',
+          materialConsumptionStatus='conditionally-consumed' if effect.get('conditionalMaterialConsumption') else 'partially-consumed' if effect.get('materialRequirements') and len({item['consumed'] for item in effect['materialRequirements']})>1 else 'explicitly-consumed' if effect.get('materialConsumed') else 'not-stated' if material else 'not-applicable',
           effect=effect,upcast=upcast,classes=classes)
+        if effect.get('castingAlternatives'):
+            s['mechanics']['castingAlternatives']=effect['castingAlternatives']
+            s['mechanics']['castingTime']=' or '.join(str(row['quantity'])+' '+row['unit'] for row in effect['castingAlternatives'])
         s['sources']=[source(pages,name)]
         s['sources'].append({**source(sorted({page for cls in classes for page in CLASS_PAGES[cls]}),'Spell Lists'),'verification':'read-local-render'})
         s['fieldSources']={k:[0] for k in s['mechanics']};s['fieldSources']['classes']=[1]
@@ -77,8 +83,9 @@ def apply_reviews(spells):
             s['fieldSources']['materialConsumed']=[0,2]
             s['interpretations'].append({'field':'materialConsumed','kind':'derived','method':'No consumption specified in this spell; apply general component rule, PHB PDF 204.'})
         s['relations']={'classIds':['phb2014:class:'+cls for cls in classes]}
-        s['verification'].update(identity='verified',mechanics='verified-fields',complete=name!='Magic Missile',missingFields=['effect.damageRollInterpretation'] if name=='Magic Missile' else [])
-        s['extraction']['requiresReview']=name=='Magic Missile'
+        missing=PENDING_INTERPRETATIONS.get(name,[])
+        s['verification'].update(identity='verified',mechanics='verified-fields',complete=not missing,missingFields=missing)
+        s['extraction']['requiresReview']=bool(missing)
         s['extraction']['fieldStatus']={k:'verified' for k in s['mechanics']}
-        s['extraction']['fieldStatus']['effect.damageRollInterpretation']='interpretation-pending' if name=='Magic Missile' else 'not-applicable'
+        s['extraction']['fieldStatus'].update({field:'interpretation-pending' for field in missing})
     return spells

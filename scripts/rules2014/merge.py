@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+from collections import Counter
 from contextlib import closing, nullcontext
 import hashlib
 import json
@@ -21,6 +22,9 @@ from pdf_sources import ROOT, WORK, write_json
 from validate import validate
 
 OUTPUT = ROOT / 'rules-database.local' / '2014'
+# Explicitly reviewed integration scopes. Expanding this requires adapter/tests.
+SUPPORTED_CLASSES = {'phb2014:class:warlock','phb2014:class:fighter','phb2014:class:rogue','phb2014:class:barbarian','phb2014:class:druid','phb2014:class:bard','phb2014:class:paladin','phb2014:class:ranger','phb2014:class:monk','phb2014:class:wizard','phb2014:class:cleric','phb2014:class:sorcerer'}
+SUPPORTED_OPTIONS = {'eldritch-invocation','pact-boon','fighting-style','fighter-maneuver','totem-choice','hunter-choice','monk-discipline','wizard-choice', 'metamagic', 'sorcerer-choice'}
 
 
 def encoded(value):
@@ -41,7 +45,7 @@ def legacy_edition(record):
 def merge_catalogs(catalogs, reference):
     result = copy.deepcopy(catalogs)
     options = result['character-options.json']
-    log, mapping, additions, unresolved = [], [], [], []
+    log, mapping, additions, creatures, magic_items, unresolved = [], [], [], [], [], []
     entities = reference['entities']
     by_id = {e['id']:e for e in entities}
     # An explicit, reviewed mapping: this is not a generic snake_case conversion.
@@ -69,13 +73,42 @@ def merge_catalogs(catalogs, reference):
         mapping.append({'referenceId':e['id'],'catalog':'character-options.json','array':'levels',
                         'currentId':current['index'],'operation':'correct' if old!=correct else 'keep'})
     for e in entities:
-        array = {'class':'classes','race':'races','subrace':'subraces','subclass':'subclasses','background':'backgrounds','spell':'spells'}.get(e['kind'])
+        if e['kind']=='magic-item':
+            if not e['verification']['complete'] or e['verification']['mechanics']!='verified-fields':
+                unresolved.append({'referenceId':e['id'],'reason':'magic-item-incomplete; no automatic integration','missingFields':e['verification']['missingFields'],'completeReferenceRecord':False})
+            else:
+                magic_items.append(e)
+                log.append({'operation':'add','catalog':'verified-magic-items-2014.json','array':'magicItems','currentId':e['index'],'referenceId':e['id'],'before':None,'after':e,'sources':e['sources']})
+                mapping.append({'referenceId':e['id'],'catalog':'verified-magic-items-2014.json','array':'magicItems','currentId':e['index'],'operation':'add'})
+                current=match(e,result['character-equipment.json'].get('magicItems',[]))
+                if current is not None:
+                    before=copy.deepcopy(current.get('verifiedRules2014'))
+                    current['verifiedRules2014']={'referenceId':e['id'],'mechanics':e['mechanics'],'sources':e['sources']}
+                    log.append({'operation':'enrich','catalog':'character-equipment.json','array':'magicItems','currentId':current['index'],'referenceId':e['id'],'field':'verifiedRules2014','before':before,'after':current['verifiedRules2014'],'sources':e['sources']})
+                    mapping.append({'referenceId':e['id'],'catalog':'character-equipment.json','array':'magicItems','currentId':current['index'],'operation':'enrich'})
+        if e['kind']=='creature':
+            if not e['verification']['complete'] or e['verification']['mechanics']!='verified-fields':
+                unresolved.append({'referenceId':e['id'],'reason':'creature-stat-block-incomplete; no automatic integration',
+                                   'missingFields':e['verification']['missingFields'],'completeReferenceRecord':False})
+            else:
+                creatures.append(e)
+                log.append({'operation':'add','catalog':'verified-creatures-2014.json','array':'creatures',
+                            'currentId':e['index'],'referenceId':e['id'],'before':None,'after':e,'sources':e['sources']})
+                mapping.append({'referenceId':e['id'],'catalog':'verified-creatures-2014.json','array':'creatures',
+                                'currentId':e['index'],'operation':'add'})
+        array = {'class':'classes','race':'races','subrace':'subraces','subclass':'subclasses','background':'backgrounds','spell':'spells','feat':'feats'}.get(e['kind'])
         if array:
             current = match(e, options.get(array,[]))
             if current:
                 mapping.append({'referenceId':e['id'],'catalog':'character-options.json','array':array,
                                 'currentId':current['index'],'operation':'keep'})
-            elif e['kind']=='subclass' and e['verification']['complete'] and e['relations']['classId']=='phb2014:class:warlock':
+                if e['kind'] in ['race','subrace','background','spell','feat'] and e['verification']['complete'] and e['verification']['mechanics']=='verified-fields':
+                    previous=copy.deepcopy(current.get('verifiedRules2014'))
+                    current['verifiedRules2014']={'referenceId':e['id'],'mechanics':e['mechanics'],'sources':e['sources']}
+                    log.append({'operation':'enrich','catalog':'character-options.json','array':array,'currentId':current['index'],
+                                'referenceId':e['id'],'field':'verifiedRules2014','before':previous,'after':current['verifiedRules2014'],'sources':e['sources']})
+                    mapping[-1]['operation']='enrich'
+            elif e['kind']=='subclass' and e['verification']['complete'] and e['relations']['classId'] in SUPPORTED_CLASSES:
                 # Do not add incomplete subclass identities as usable options.
                 added = {**record_ref(e),'class':record_ref(by_id[e['relations']['classId']]),
                          'minimumLevel':e['mechanics']['minimumLevel'],'editions':['2014'],
@@ -85,22 +118,54 @@ def merge_catalogs(catalogs, reference):
                 mapping.append({'referenceId':e['id'],'catalog':'character-options.json','array':array,'currentId':e['index'],'operation':'add'})
                 log.append({'operation':'add','catalog':'character-options.json','array':array,'currentId':e['index'],
                             'referenceId':e['id'],'before':None,'after':added,'sources':e['sources']})
+            elif e['kind'] in ['spell','background','subrace','feat'] and e['verification']['complete'] and e['verification']['mechanics']=='verified-fields':
+                m=e['mechanics']
+                added={**record_ref(e),'desc':[e['summaryIt']],'editions':['2014'],
+                       'verifiedRules2014':{'referenceId':e['id'],'mechanics':m,'sources':e['sources']}}
+                if e['kind']=='spell':
+                    added.update(level=m['level'],classes=[record_ref(by_id[i]) for i in e['relations']['classIds']],
+                                 school={'index':m['school'],'name':m['school'].title()},ritual=m['ritual'],
+                                 concentration=m['concentration'],components=m['components'],casting_time=m['castingTime'],
+                                 range=m['range'],duration=m['duration'])
+                elif e['kind']=='subrace':
+                    added.update(race=record_ref(by_id[e['relations']['raceId']]),fixedAbilityBonuses=m['fixedAbilityBonuses'])
+                    if 'speedOverrideFt' in m:added['speed']=m['speedOverrideFt']
+                elif e['kind']=='background':
+                    added.update(starting_gold=m['startingGold'],feature={'name':m['feature']['name'],'desc':[m['feature']['summaryIt']]},
+                                 starting_proficiencies=[{**record_ref(by_id['phb2014:skill:'+i]),'index':'skill-'+i} for i in m['skillProficiencies']])
+                    if m['languageChoice']['choose']:
+                        added['language_options']={'choose':m['languageChoice']['choose'],'type':'languages','from':{'option_set_type':'options_array'}}
+                    # Structured choices and narrative gear remain in verifiedRules2014;
+                    # converting them into fixed grants would silently choose for the user.
+                options.setdefault(array,[]).append(added)
+                mapping.append({'referenceId':e['id'],'catalog':'character-options.json','array':array,'currentId':e['index'],'operation':'add'})
+                log.append({'operation':'add','catalog':'character-options.json','array':array,'currentId':e['index'],'referenceId':e['id'],'before':None,'after':added,'sources':e['sources']})
             elif not current:
                 unresolved.append({'referenceId':e['id'],'reason':'missing-in-legacy-catalog; adapter/remaining fields require review',
                                    'missingFields':e['verification']['missingFields'],'completeReferenceRecord':e['verification']['complete']})
-        if e['kind']=='subclass-feature' and e['verification']['complete']:
+        if e['kind']=='subclass-feature' and e['relations']['classId'] in SUPPORTED_CLASSES:
+            if not e['verification']['complete'] or e['verification']['mechanics']!='verified-fields':
+                unresolved.append({'referenceId':e['id'],'reason':'subclass feature incomplete; no automatic integration',
+                                   'missingFields':e['verification']['missingFields'],'completeReferenceRecord':False})
+                continue
             subclass = by_id[e['relations']['subclassId']]
-            existing = next((x for x in options['features'] if x.get('class',{}).get('index')=='warlock'
+            cls = by_id[e['relations']['classId']]
+            if not subclass['verification']['complete']:
+                unresolved.append({'referenceId':e['id'],'reason':'parent subclass dependencies incomplete',
+                                   'missingFields':subclass['verification']['missingFields'],'completeReferenceRecord':True})
+                continue
+            existing = next((x for x in options['features'] if x.get('class',{}).get('index')==cls['index']
                              and x.get('subclass',{}).get('index')==subclass['index']
                              and x.get('level')==e['mechanics']['level'] and match(e,[x])),None)
             if existing:
                 # Preserve readable existing text and fields, attach verified facts.
+                previous=copy.deepcopy(existing.get('verifiedRules2014'))
                 existing['verifiedRules2014']={'referenceId':e['id'],'mechanics':e['mechanics'],'sources':e['sources']}
                 log.append({'operation':'enrich','catalog':'character-options.json','array':'features','currentId':existing['index'],
-                            'referenceId':e['id'],'field':'verifiedRules2014','before':None,'after':existing['verifiedRules2014'],'sources':e['sources']})
+                            'referenceId':e['id'],'field':'verifiedRules2014','before':previous,'after':existing['verifiedRules2014'],'sources':e['sources']})
                 current_id=existing['index']
             else:
-                added={**record_ref(e),'index':'phb2014-'+e['index'],'class':record_ref(by_id[e['relations']['classId']]),
+                added={**record_ref(e),'index':e['id'].split(':')[0]+'-'+e['index'],'class':record_ref(by_id[e['relations']['classId']]),
                        'subclass':record_ref(subclass),'level':e['mechanics']['level'],'desc':[e['summaryIt']],
                        'editions':['2014'],'verifiedRules2014':{'referenceId':e['id'],'mechanics':e['mechanics'],'sources':e['sources']}}
                 options['features'].append(added)
@@ -110,6 +175,10 @@ def merge_catalogs(catalogs, reference):
             mapping.append({'referenceId':e['id'],'catalog':'character-options.json','array':'features','currentId':current_id,
                             'operation':'enrich' if existing else 'add'})
         if e['kind']=='class-option':
+            if not e['verification']['complete'] or e['verification']['mechanics']!='verified-fields' or e['mechanics'].get('optionType') not in SUPPORTED_OPTIONS:
+                unresolved.append({'referenceId':e['id'],'reason':'incomplete or unsupported option; no automatic integration',
+                                   'missingFields':e['verification']['missingFields'],'completeReferenceRecord':e['verification']['complete']})
+                continue
             additions.append(e)
             log.append({'operation':'add','catalog':'verified-options-2014.json','array':'options',
                         'currentId':e['index'],'referenceId':e['id'],'before':None,'after':e,'sources':e['sources']})
@@ -136,6 +205,46 @@ def merge_catalogs(catalogs, reference):
     # ordinary feature array would grant every invocation to every warlock.
     result['verified-options-2014.json']={'schemaVersion':1,'edition':'2014','options':additions,
                                          'policy':'selected-options-only; apply prerequisites and verified choice limits'}
+    result['verified-creatures-2014.json']={'schemaVersion':1,'edition':'2014','creatures':creatures,
+                                          'policy':'reviewed-stat-blocks-only; legacy-bestiary-preserved-unverified'}
+    result['verified-magic-items-2014.json']={'schemaVersion':1,'edition':'2014','magicItems':magic_items,
+        'policy':'individually-reviewed-items; explicit-variants-and-attunement; legacy-catalog-preserved-unverified'}
+    creation_options=[e for e in entities if e['kind'] in ['feat','race-variant','background-variant','weapon-property']
+                      and e['verification']['complete'] and e['verification']['mechanics']=='verified-fields']
+    result['verified-creation-options-2014.json']={'schemaVersion':1,'edition':'2014','creationOptions':creation_options,
+        'policy':'optional-feats-and-variants-are-explicit-selections; replacement-fields-do-not-stack-with-base-fields'}
+    for e in creation_options:
+        log.append({'operation':'add','catalog':'verified-creation-options-2014.json','array':'creationOptions','currentId':e['index'],'referenceId':e['id'],'before':None,'after':e,'sources':e['sources']})
+        mapping.append({'referenceId':e['id'],'catalog':'verified-creation-options-2014.json','array':'creationOptions','currentId':e['index'],'operation':'add'})
+    equipment=[e for e in entities if e['kind'] in ['weapon','armor','tool','gear','equipment-pack']
+               and e['verification']['complete'] and e['verification']['mechanics']=='verified-fields']
+    result['verified-equipment-2014.json']={'schemaVersion':1,'edition':'2014','equipment':equipment,
+        'policy':'reviewed-PHB-equipment; purchase-quantities-and-piece-quantities-distinct; unknown-weight-is-not-zero'}
+    for e in equipment:
+        current=match(e,result['character-equipment.json'].get('equipment',[]))
+        if current is not None:
+            m=e['mechanics'];weight=m.get('weightLb',m.get('weight',{}).get('value'))
+            corrected_weight=weight is not None and current.get('weight')!=weight
+            if corrected_weight:
+                field='weightLb' if 'weightLb' in m else 'weight'
+                if not e['fieldSources'].get(field):raise ValueError('Unverified equipment weight')
+                before=copy.deepcopy(current.get('weight'));current['weight']=weight
+                log.append({'operation':'correct','catalog':'character-equipment.json','array':'equipment','currentId':current['index'],
+                    'referenceId':e['id'],'field':'weight','before':before,'after':weight,'sources':e['sources'],
+                    'consequenceIt':'Il peso del candidato segue il valore verificato; il catalogo operativo resta immutato.'})
+            mapping.append({'referenceId':e['id'],'catalog':'character-equipment.json','array':'equipment','currentId':current['index'],'operation':'correct' if corrected_weight else 'keep'})
+        else:
+            m=e['mechanics'];weight=m.get('weightLb',m.get('weight',{}).get('value'))
+            # New entries retain the complete typed record; dashes stay absent weights.
+            added={**record_ref(e),'cost':m['cost'],'desc':[e['summaryIt']],
+                   'verifiedRules2014':{'referenceId':e['id'],'mechanics':m,'sources':e['sources']}}
+            if weight is not None:added['weight']=weight
+            result['character-equipment.json']['equipment'].append(added)
+            log.append({'operation':'add','catalog':'character-equipment.json','array':'equipment','currentId':e['index'],'referenceId':e['id'],'before':None,'after':added,'sources':e['sources']})
+            mapping.append({'referenceId':e['id'],'catalog':'character-equipment.json','array':'equipment','currentId':e['index'],'operation':'add'})
+        log.append({'operation':'add','catalog':'verified-equipment-2014.json','array':'equipment','currentId':e['index'],
+                    'referenceId':e['id'],'before':None,'after':e,'sources':e['sources']})
+        mapping.append({'referenceId':e['id'],'catalog':'verified-equipment-2014.json','array':'equipment','currentId':e['index'],'operation':'add'})
     return result, log, mapping, unresolved
 
 
@@ -184,6 +293,21 @@ def verify_release(directory):
     return manifest
 
 
+def creation_gap_audit(baseline,reference,mapping):
+    by_id={e['id']:e for e in reference['entities']}
+    rows=[]
+    for gap in baseline['discrepancies']:
+        if gap['type']!='missing-in-creation-catalog':continue
+        e=by_id[gap['entityId']]
+        destinations=[m for m in mapping if m['referenceId']==e['id']]
+        rows.append({'referenceId':e['id'],'kind':e['kind'],'name':e['name'],'sources':e['sources'],
+                     'verification':e['verification'],'destinations':destinations,
+                     'decision':'integrated-isolated-candidate' if destinations else 'confirmed-identity-incomplete-no-automatic-addition' if not e['verification']['complete'] else 'confirmed-addition-requires-variant-or-choice-adapter',
+                     'isErrorInExistingDatabase':False,
+                     'reasonIt':'L’assenza dal catalogo di creazione è una lacuna di disponibilità, non un errore delle regole. Varianti e opzioni non sono concessioni automatiche.'})
+    return {'schemaVersion':1,'initialGapCount':len(rows),'decisions':dict(Counter(r['decision'] for r in rows)),'entries':rows}
+
+
 def build_candidate(backup, original=None, output=OUTPUT):
     backup=Path(backup).resolve()
     snapshot=verify_backup(backup)
@@ -205,11 +329,24 @@ def build_candidate(backup, original=None, output=OUTPUT):
     catalogs={Path(rel).name:json.loads(raw.decode('utf-8-sig')) for rel,raw in files.items() if rel.endswith('.json')}
     merged,changes,mapping,pending=merge_catalogs(catalogs,reference)
     audit=audit_records(merged,changes,mapping,source_files)
+    baseline_dir=OUTPUT/'candidate-5234848b05f3a8cca0e2'
+    if baseline_dir.exists():
+        verify_release(baseline_dir)
+        baseline=json.loads((baseline_dir/'comparison-before.json').read_text(encoding='utf-8'))
+        gap_audit=creation_gap_audit(baseline,reference,mapping)
+        gap_audit['baselineReleaseId']=baseline_dir.name
+        gap_audit['baselineComparisonSHA256']=digest((baseline_dir/'comparison-before.json').read_bytes())
+    else:
+        gap_audit=creation_gap_audit(compare(original,backup/'files/public/data'),reference,mapping)
+        gap_audit['baselineReleaseId']=None
     # Release identity comes from input bytes and deterministic reviewed records.
     generator_hashes={p.name:digest(p.read_bytes()) for p in sorted(Path(__file__).parent.glob('*.py'))}
+    for name in ['inventory_audit.json','spell_names.json','spell_list_reviews.json','source_reviews.json','schema.ts']:
+        generator_hashes[name]=digest(Path(__file__).with_name(name).read_bytes())
+    generator_hashes['src/domain/dnd/VerifiedDatabase.ts']=digest((ROOT/'src/domain/dnd/VerifiedDatabase.ts').read_bytes())
     backup_hash=digest((backup/'BACKUP.json').read_bytes())
     key=digest(encoded({'inputs':{p:digest(b) for p,b in files.items()},'reference':reference,'catalogs':merged,
-                        'generators':generator_hashes,'backupManifestSHA256':backup_hash}))[:20]
+                        'generators':generator_hashes,'backupManifestSHA256':backup_hash,'creationGapAudit':gap_audit}))[:20]
     output.mkdir(parents=True,exist_ok=True)
     release=output/('candidate-'+key)
     if release.exists():
@@ -237,9 +374,12 @@ def build_candidate(backup, original=None, output=OUTPUT):
         write_json(stage/'id-map.json',mapping)
         write_json(stage/'record-audit.json',audit)
         write_json(stage/'pending-integration.json',pending)
+        write_json(stage/'creation-gap-audit.json',gap_audit)
         write_json(stage/'comparison-before.json',before)
         write_json(stage/'comparison-after.json',after)
         write_json(stage/'coverage.json',coverage(reference))
+        write_json(stage/'inventory-audit.json',json.loads(Path(__file__).with_name('inventory_audit.json').read_text(encoding='utf-8')))
+        write_json(stage/'supporting-printing-log.json',reference.get('supportingPrintingLog',[]))
         write_json(stage/'errata-review-queue.json',application_queue(queue,reference))
         write_json(stage/'spell-list-editorial-resolutions.json',reference['spellListEditorialResolutions'])
         write_json(stage/'validation.json',{'passed':True,'referenceErrors':errors,'liveCatalogsUnchanged':True,
@@ -261,19 +401,42 @@ def build_candidate(backup, original=None, output=OUTPUT):
             'come operazione distinta. Non cambiare gli identificatori senza usare id-map.json.\n'
             '5. In caso di regressione, fermare i processi e ripristinare public/data dal backup verificato; '
             'non modificare server/data per cambiare le regole. Le release restano immutabili.\n',encoding='utf-8')
-        (stage/'REPORT.md').write_text(
-            '# Nuovo database D&D 2014 integrato\n\n**Stato: parziale; non attivato.**\n\n'
-            f'Backup: `{backup}`.\n\n'
-            f'Cataloghi conservati: {len(catalogs)}; record di catalogo tracciati: {len(audit)}; '
-            f'operazioni: {len(changes)}; correzioni editoriali nella vista verificata: {len(reference["editorialChangeLog"])}.\n\n'
-            'Invocazioni del warlock corrette a 2 al livello 4 e 3 al livello 6. '
-            'La sorgente indipendente core_rules.py conserva i valori ad ogni rigenerazione.\n\n'
-            'Sono aggiunti i patroni PHB mancanti e i relativi privilegi verificati. '
-            'Le liste ampliate permettono la scelta senza concedere automaticamente gli incantesimi.\n\n'
-            'Originali ed errata restano distinti in original-reference.json e verified-reference.json. '
-            'I candidati OCR non correggono i cataloghi e le aggiunte ancora incomplete sono in pending-integration.json.\n\n'
-            'Restano da completare le altre classi/sottoclassi, i passaggi degli incantesimi ancora non revisionati, '
-            'categorie PHB residue e cataloghi DMG/MM. Nessuna categoria globale e dichiarata completa.\n',encoding='utf-8')
+        cov=coverage(reference)
+        complete_categories=[c['kind'] for c in cov['categories'] if c['categoryComplete']]
+        unresolved=[e for e in reference['entities'] if not e['verification']['complete']]
+        summary=[
+            '# Nuovo database D&D 2014 integrato','',
+            '**Candidato isolato, non attivato.** Inventari PHB sottoposti ad audit; contenuti pertinenti DMG/MM revisionati negli scope dichiarati. Il riferimento complessivo resta parziale per le questioni esplicite sotto: non sono promosse interpretazioni a fatti.','',
+            f'Backup originale immutabile: `{backup}`. Release `{release.name}`.',
+            f'Entità: {len(reference["entities"])}; complete nel modello: {cov["recordCounts"]["complete"]}; aperte o dipendenti: {len(unresolved)}.',
+            f'Cataloghi legacy conservati: {len(catalogs)}; record tracciati: {len(audit)}; operazioni: {len(changes)}.',
+            f'Correzioni editoriali: {len(reference["editorialChangeLog"])}; conferme di testo già conforme: {len(reference.get("editorialConfirmationLog",[]))}.','',
+            '## Inventari e contenuti','',
+            'Dodici classi, quaranta sottoclassi PHB e due DMG; 249 eventi base, 220 privilegi di sottoclasse e 124 opzioni. Manovre separate dalle origini della selezione: Adepto Marziale non impone Maestro di Battaglia.',
+            'Warlock: 2 invocazioni al livello 4, 3 al livello 6. Cavaliere Mistico e Mistificatore Arcano: slot di quarto livello ai livelli 19 e 20 verificati sui render. Originali ed errata della sostituzione libera e di Attacco Finto distinti.',
+            'Nove razze PHB, nove sottorazze, variante umana, tredici background e cinque varianti. Esempi DMG aasimar ed eladrin richiedono DM e restano distinti da supplementi/2024. 338 suggerimenti di personalità, 88 specialità, sedici lingue e cento cianfrusaglie.',
+            'Tutte le 361 descrizioni degli incantesimi lette: 357 complete, quattro questioni aperte. Liste separate: 844 collegamenti originali, 845 nella vista corretta.',
+            'Equipaggiamento: 277 armi, armature, attrezzi e merci; sette dotazioni. Quantità delle confezioni, veicoli, animali, servizi, spese e tabelle verificate. Trentasette armi da equipaggiamento: il colpo senz’armi è una regola distinta.',
+            f'Creature: {sum(e["kind"]=="creature" for e in reference["entities"])} blocchi, {cov["reviewedCreatureScope"]["completeStatBlocks"]} completi. Inventario delle 89 bestie individuali del MM, sei sciami separati, forme dei famigli e della Luna, evocazioni e dipendenze degli oggetti. Lo scope non è l’intero bestiario del MM.',
+            f'Oggetti DMG: 276 record/famiglie, {cov["reviewedMagicItemScope"]["completeRecords"]} completi; proprietà, sintonia, consumabili, cariche, quattro oggetti senzienti e otto record artefatti. Mazzo delle Illusioni revisionato con 34 carte e figure; non concede statistiche di combattimento reali.',
+            'Tesori: 28 tabelle, assegnazione, varianti e sottotabelle. Ricompense: sette benedizioni, sette doni consumabili, ventisei benefici epici. Nessuna concessione automatica del DM.',
+            'Regole: avventura e combattimento PHB, geometria delle aree, TS, collaborazione, nascondersi, concentrazione, recuperi e multiclassamento; DMG veleni, malattie, follia, opzioni di combattimento, trappole, ambiente, piani, incontri, oggetti, assedi, inseguimenti, attività tra avventure e punti magia. Appendici PHB: nove pantheon con 195 voci, sedici Piani Esterni e 31 rimandi di creature.',
+            'Chiarimenti SAC su Trance e Fortunato distinti dalle errata. Deviare Proiettili: gittata 20/60 piedi esplicita in SRD ufficiale inglese 5.1 PDF 27, conservata nel supporting-printing-log.json separato dalla prima stampa e dalle errata. SRD italiano 5.1 concorda; 2024 escluso.',
+            f'Categorie PHB certificate nello scope dell’audit: {", ".join(complete_categories)}. Identità firmate e pagine in inventory-audit.json; altri scope e dipendenze in coverage.json.','',
+            '## Confronto e integrazione','',
+            f'Differenze prima: {dict(Counter(x["type"] for x in before["discrepancies"]))}.',
+            f'Differenze dopo: {dict(Counter(x["type"] for x in after["discrepancies"]))}.',
+            f'Lacune iniziali: {gap_audit["initialGapCount"]}; decisioni: {gap_audit["decisions"]}.',
+            'changes.json e id-map.json conservano le operazioni e gli ID; record-audit.json distingue ogni record, origine e stato. Dati legacy non riconosciuti conservati senza attribuzione inventata di edizione o provenienza.',
+            'public/data invariato, verificato byte per byte prima e dopo il merge; backup e release precedenti non modificati. Adattatore isolato dal loader operativo.','',
+            '## Questioni aperte','',
+        ]
+        summary.extend(f'- `{e["id"]}`: {", ".join(e["verification"]["missingFields"])}.' for e in unresolved)
+        summary.extend(['','Le voci dipendenti non sono ulteriori passaggi da leggere: richiedono la risoluzione della questione originaria. Fonti mancanti di supplementi/UA e tabelle narrative o mostri estranei allo scope non sono certificati. Nessuna di queste voci entra automaticamente nei cataloghi verificati.','',
+            '## Verifica e migrazione','',
+            'Integrità JSON/SQLite, riferimenti, fonti e provenienza dei campi sono controllati durante la generazione. Test Python, test Node dell’adattatore, schema TypeScript e build sono riproducibili seguendo scripts/rules2014/README.md; l’attestazione dell’esecuzione sulla release è nel rapporto della ripresa.',
+            'Seguire MIGRATION.md della release e RESTORE.md del backup. Attivazione distinta, nuovo backup prima di cambiare il loader; ripristino reversibile. Nessun commit o push nella ripresa.'])
+        (stage/'REPORT.md').write_text('\n'.join(summary)+'\n',encoding='utf-8')
         # Check again after all processing; a live change invalidates the build.
         if any((ROOT/rel).read_bytes()!=raw for rel,raw in files.items()):
             raise ValueError('Live catalogs changed during merge')

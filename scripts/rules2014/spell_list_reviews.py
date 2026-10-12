@@ -28,9 +28,16 @@ def apply_spell_list_reviews(spells):
                 'method':'The original paladin list says Destructive Smite; the reviewed errata resolve it separately.'})
             continue
         spell['mechanics']['classes']=sorted(r['class'] for r in found)
+        levels={r['level'] for r in found}
+        if len(levels)!=1:raise ValueError('Conflicting reviewed spell levels: '+spell['id'])
+        level=next(iter(levels))
+        spell['extraction']['ocrLevelCandidate']=spell['mechanics']['level']
+        spell['mechanics']['level']=level
         pages=sorted({r['pdfPage'] for r in found})
         spell['sources'].append({**source(pages,'Spell Lists'),'verification':'read-local-render'})
         spell['fieldSources']['classes']=[len(spell['sources'])-1]
+        spell['fieldSources']['level']=[len(spell['sources'])-1]
         spell.setdefault('relations',{})['classIds']=['phb2014:class:'+c for c in spell['mechanics']['classes']]
         spell['extraction']['fieldStatus']['classes']='verified'
+        spell['extraction']['fieldStatus']['level']='verified'
     return spells
