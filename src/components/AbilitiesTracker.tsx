@@ -1,5 +1,5 @@
 import { type Dispatch, type SetStateAction, type DragEvent } from 'react'
-import { durationTurns, activateAbility, type Ability } from '../utils/Combat'
+import { durationTurns, activateAbility, type Ability, type Combat } from '../utils/Combat'
 import { getDropIndex, getDropTargetId, reorderByDrop, reorderById } from '../utils/Reorder'
 import { templateFromCatalog, type Catalog } from '../utils/Catalog'
 import { CatalogSearch } from './CatalogSearch'
@@ -11,9 +11,13 @@ type Props = {
     setAbilities: Dispatch<SetStateAction<Ability[]>>
     participants: { id: number; description: string }[]
     catalog: Catalog
+    catalogForOwner?:(ownerId:number|null)=>Catalog
+    combat?:Combat|null
+    onActivate?:(ability:Ability)=>void
+    onEnd?:(ability:Ability)=>boolean
 }
 
-export function AbilitiesTracker({ abilities, setAbilities, participants, onAdd, catalog }: Props) {
+export function AbilitiesTracker({ abilities, setAbilities, participants, onAdd, catalog:baseCatalog,catalogForOwner,combat,onActivate,onEnd }: Props) {
     function updateAbilityName(id: number, name: string) {
         setAbilities((currentAbilities) =>
             currentAbilities.map((ability) =>
@@ -51,21 +55,24 @@ export function AbilitiesTracker({ abilities, setAbilities, participants, onAdd,
     }
 
     function removeAbility(id: number) {
+        const ability=abilities.find((ability)=>ability.id===id)
+        if (ability?.active && (ability.timed===false||ability.remainingTurns>0) && onEnd?.(ability)===false) return
         setAbilities((currentAbilities) =>
             currentAbilities.filter((ability) => ability.id !== id),
         )
     }
 
     function clearAbilities() {
+        for (const ability of abilities) if (ability.active&&(ability.timed===false||ability.remainingTurns>0)&&onEnd?.(ability)===false) return
         setAbilities([])
     }
 
     return (
         <section className="abilities-tracker" aria-labelledby="abilities-heading">
             <h2 id="abilities-heading">Abilità</h2>
-            <p className="ability-help">1 turno = 1 round di 6 secondi. Solo le abilità attivate diminuiscono a fine round. L’attivazione è definitiva.</p>
+            <p className="ability-help">1 round = 6 secondi. I timer ordinari diminuiscono a fine round; le scadenze verificate seguono l’inizio o la fine del turno indicato. I TS e le condizioni richiedono risoluzione del DM.</p>
             <div className="abilities-list" onDragOver={(event) => event.preventDefault()} onDrop={handleListDrop}>
-                {abilities.map((ability, index) => (
+                {abilities.map((ability, index) => {const catalog=catalogForOwner?.(ability.ownerId) ?? baseCatalog;return (
                     <div
                         className="ability-row"
                         id={`ability-${ability.id}`}
@@ -164,10 +171,11 @@ export function AbilitiesTracker({ abilities, setAbilities, participants, onAdd,
                             className="activate-ability"
                             type="button"
                             disabled={ability.active || (ability.remainingTurns === 0 && ability.timed !== false) || !ability.name.trim() || ability.ownerId === null}
-                            onClick={() => setAbilities((current) => current.map((item) => item.id === ability.id ? activateAbility(item) : item))}
+                            onClick={() => onActivate ? onActivate(ability) : setAbilities((current) => current.map((item) => item.id === ability.id ? activateAbility(item,combat,participants) : item))}
                         >
                             {ability.active ? (ability.timed !== false && ability.remainingTurns === 0 ? 'Scaduta' : 'Attivata') : 'Attiva'}
                         </button>
+                        {onEnd && ability.active && (ability.timed===false || ability.remainingTurns>0) && <button type="button" onClick={()=>onEnd(ability)}>Termina effetto</button>}
                         <button
                             aria-label={`Elimina ${ability.name || `abilità ${index + 1}`}`}
                             className="delete-ability"
@@ -178,7 +186,7 @@ export function AbilitiesTracker({ abilities, setAbilities, participants, onAdd,
                             <span aria-hidden="true">×</span>
                         </button>
                     </div>
-                ))}
+                )})}
                 <button
                     className="add-ability"
                     type="button"

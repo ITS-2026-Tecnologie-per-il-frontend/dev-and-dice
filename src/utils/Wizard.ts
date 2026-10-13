@@ -1,13 +1,13 @@
 import { abilityModifier, characterLevel, integerValue, type CharacterSheet } from './CharacterSheets.ts'
 import type { CreationData } from './PlayerCreation.ts'
-import { classId, spellEdition, spellProfile, spellRowState, spellLimitIssue, type SpellSelectionLimit } from './Spellcasting.ts'
+import { classId, classLevel, spellEdition, spellProfile, spellRowState, spellLimitIssue, type SpellSelectionLimit } from './Spellcasting.ts'
 
 // Regole 2014: SRD 5.1; regole 2024: SRD 5.2.1 (CC BY 4.0), https://www.dndbeyond.com/srd.
 export function wizardRules(sheet: CharacterSheet) {
-    const edition = spellEdition(sheet), level = characterLevel(sheet) ?? 0
+    const edition = spellEdition(sheet), level = classLevel(sheet,'wizard')
     const wizard = classId(sheet) === 'wizard'
     const subclass = sheet.playerDetails?.['creation.subclass']
-    const evocation = wizard && subclass === 'evocation'
+    const evocation = wizard && ['evocation','wizard-evocation'].includes(subclass ?? '')
     const school = subclass === 'evocation' ? 'evocation' : subclass?.replace(/^wizard-/, '')
     const savantSchool = wizard && edition === '2014' && level >= 2 && ['abjuration','conjuration','divination','enchantment','evocation','illusion','necromancy','transmutation'].includes(school ?? '') ? school : undefined
     return { wizard, edition, level, bookMinimum: level ? 6 + 2 * (level - 1) : 0, recoveryBudget: Math.ceil(level / 2),
@@ -20,7 +20,7 @@ export function wizardRules(sheet: CharacterSheet) {
 }
 
 export function wizardWardMaximum(sheet: CharacterSheet): number | undefined {
-    const level = characterLevel(sheet), intelligence = abilityModifier(sheet.intelligence)
+    const level = characterLevel(sheet)===undefined ? undefined : classLevel(sheet,'wizard'), intelligence = abilityModifier(sheet.intelligence)
     return level === undefined || intelligence === undefined ? undefined : Math.max(0, 2 * level + intelligence)
 }
 
@@ -101,7 +101,7 @@ export function wizardRest(sheet: CharacterSheet, long: boolean) {
 export function copyWizardSpell(sheet: CharacterSheet, data: CreationData, index: string) {
     const spell = data.spells.find((x) => x.index === index)
     const rules = wizardRules(sheet), d = { ...sheet.playerDetails }
-    if (!rules.wizard || !spell || spell.level < 1 || !spell.classes.some((x) => x.index === 'wizard') || spell.level > spellProfile(sheet,data).maxLevel) throw new Error('Scegli un incantesimo da mago di un livello disponibile.')
+    if (!rules.wizard || !spell || spell.level < 1 || !spell.classes.some((x) => x.index === 'wizard') || spell.level > spellProfile({...sheet,playerDetails:{...sheet.playerDetails,'rules2014.castingClass':'wizard'}},data).maxLevel) throw new Error('Scegli un incantesimo da mago di un livello disponibile.')
     const lost = wizardBook(sheet, data).find((row) => row.spell?.index === index && d[`${row.root}.lost`] === 'true')
     if (!lost && wizardBook(sheet, data).some((row) => row.spell?.index === index)) throw new Error('Questo incantesimo è già nel libro.')
     const cost = copyCost(sheet, spell), gold = integer(d['coins.MO'], 'Monete d’oro')
@@ -115,12 +115,26 @@ export function copyWizardSpell(sheet: CharacterSheet, data: CreationData, index
     return { ...sheet, playerDetails: d }
 }
 
-export type WizardCast = { root: string; slot: number; mode: 'slot' | 'ritual' | 'mastery' | 'signature' | 'feature'; overchannel: boolean; selfDamage: string; empowered: boolean; dice: string; damage: string; outcome: 'hit' | 'save' | 'miss'; targets: string[]; confirmFeatureConditions?: boolean; fastRitual?: boolean; recoverSlot?: number; createWard?: boolean }
+export type WizardCast = { root: string; slot: number; mode: 'slot' | 'ritual' | 'mastery' | 'signature' | 'feature'; overchannel: boolean; selfDamage: string; empowered: boolean; dice: string; damage: string; outcome: 'hit' | 'save' | 'miss'; targets: string[]; confirmFeatureConditions?: boolean; confirmRuleRequirements?:boolean; fastRitual?: boolean; recoverSlot?: number; createWard?: boolean }
 export function castWizardSpell(sheet: CharacterSheet, data: CreationData, cast: WizardCast) {
     const rules = wizardRules(sheet), row = wizardBook(sheet, data).find((x) => x.root === cast.root), d = { ...sheet.playerDetails }
     if (!rules.wizard || !row?.spell) throw new Error('Scegli un incantesimo del libro riconosciuto nel database.')
     if (d[`${row.root}.lost`] === 'true') throw new Error('Questo incantesimo è nel libro perduto: ritrovalo e copialo prima del lancio.')
     const { spell, level, state } = row
+    if (data.verified&&rules.edition==='2014') {
+        const verified=data.verified.reviewedEntities.find((e)=>e.id===spell.referenceId)
+        if (!verified?.verification.complete) throw new Error('Incantesimo parziale o legacy: il lancio automatico richiede una regola verificata.')
+        if (d['rules2014.raging']==='true') throw new Error('Durante l’ira non puoi lanciare incantesimi.')
+        if (!cast.confirmRuleRequirements) throw new Error('Conferma tempo di lancio, componenti, materiali e competenza nell’armatura.')
+        if (level>spellProfile({...sheet,playerDetails:{...d,'rules2014.castingClass':'wizard'}},data).maxLevel) throw new Error('Magia superiore al livello della singola classe da mago.')
+        if (verified.mechanics.castingAlternatives) throw new Error('Questo incantesimo richiede una modalità alternativa: usa il pannello Regole 2014.')
+        const casting=verified.mechanics.casting as {unit:string},history:unknown=JSON.parse(d['rules2014.spellsThisTurn'] ?? '[]')
+        if (!Array.isArray(history)||history.some((p)=>!p||!Number.isInteger(p.level)||p.level<0||p.level>9||!['action','bonus-action','reaction','minute','hour'].includes(p.unit))) throw new Error('Cronologia del turno non valida.')
+        if (casting.unit==='bonus-action'&&history.some((p)=>p.level!==0||p.unit!=='action')||history.some((p)=>p.unit==='bonus-action')&&(level!==0||casting.unit!=='action')) throw new Error('Limitazione della magia con azione bonus nello stesso turno.')
+        d['rules2014.spellsThisTurn']=JSON.stringify([...history,{level,unit:casting.unit}])
+        if (verified.mechanics.concentration===true) d['rules2014.concentration']=verified.id
+        else if (cast.mode==='ritual'||['minute','hour'].includes(casting.unit)) d['rules2014.concentration']=''
+    }
     if (!['slot', 'ritual', 'mastery', 'signature', 'feature'].includes(cast.mode) || !['hit', 'save', 'miss'].includes(cast.outcome)) throw new Error('Modalità o esito del lancio non valido.')
     if (spell.level !== level || !spell.classes.some((x) => x.index === 'wizard') || (level > 0 && !Number(d[`slots.${level}.total`]))) throw new Error('Incantesimo non valido per il libro o il livello del mago.')
     if (!Number.isInteger(cast.slot) || cast.slot < level || cast.slot > 9 || (!level && cast.slot !== 0)) throw new Error('Livello dello slot non valido.')
@@ -357,8 +371,8 @@ export function wizardFeatureSelected(sheet: CharacterSheet, feature: import('./
 }
 
 export function selectedWizardFeatures(sheet: CharacterSheet, data: CreationData) {
-    if (classId(sheet) !== 'wizard' || spellEdition(sheet) !== '2014' || Number(sheet.level) < 2) return []
-    return data.features.filter((x) => x.class.index === 'wizard' && x.subclass?.index === sheet.playerDetails?.['creation.subclass'] && x.level <= Number(sheet.level) && x.activation && wizardFeatureSelected(sheet, x, data))
+    if (classId(sheet) !== 'wizard' || spellEdition(sheet) !== '2014' || classLevel(sheet,'wizard') < 2) return []
+    return data.features.filter((x) => x.class.index === 'wizard' && x.subclass?.index === sheet.playerDetails?.['creation.subclass'] && x.level <= classLevel(sheet,'wizard') && x.activation && wizardFeatureSelected(sheet, x, data))
 }
 
 export function savedWizardFeatures(sheet: CharacterSheet): import('./PlayerCreation.ts').ClassFeature[] {

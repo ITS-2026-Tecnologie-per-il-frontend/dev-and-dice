@@ -423,3 +423,13 @@
 .player-portrait-controls[open] > .player-field { margin-top: 8px; }
 .player-paper:not(.player-paper-wizard) .player-portrait-controls { display: contents; }
 .player-paper:not(.player-paper-wizard) .player-portrait-controls > summary { display: none; }
+.rules-panel { --controls-accent: #147d72; --controls-tint: color-mix(in srgb, var(--controls-accent) 8%, var(--bg)); margin: 1rem; padding: 1rem; text-align: left; }
+.rules-panel > details { margin-block: .8rem; }
+.rules-panel fieldset { margin-block: .7rem; }
+.rules-panel button { margin: .25rem; }
+.rules-panel .player-grid { gap: .7rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); }
+.rules-panel li { margin-block: .35rem; }
+.rules-panel input:not([type=checkbox]), .rules-panel select { box-sizing: border-box; width: 100%; min-width: 0; min-height: 44px; padding: 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text-h); font: inherit; }
+.rules-panel .player-check { min-height: 44px; font-size: 14px; }
+.rules-panel input[type=checkbox] { width: 18px; height: 18px; }
+.rules-panel label { overflow-wrap: anywhere; }

@@ -1,0 +1,4584 @@
+{
+  "creationOptions": [
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "abilityBonusChoice": [
+          0
+        ],
+        "featChoice": [
+          0
+        ],
+        "replace": [
+          0
+        ],
+        "skillChoice": [
+          0
+        ]
+      },
+      "id": "phb2014:race-variant:variant-human",
+      "index": "variant-human",
+      "interpretations": [],
+      "kind": "race-variant",
+      "mechanics": {
+        "abilityBonusChoice": {
+          "bonus": 1,
+          "choose": 2,
+          "distinct": true
+        },
+        "featChoice": {
+          "choose": 1
+        },
+        "replace": [
+          "fixedAbilityBonuses"
+        ],
+        "skillChoice": {
+          "choose": 1
+        }
+      },
+      "name": "Variant Human",
+      "nameIt": "Umano Variante",
+      "optional": true,
+      "relations": {
+        "raceId": "phb2014:race:human"
+      },
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            32
+          ],
+          "printedPages": [
+            31
+          ],
+          "section": "Variant Human",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Con il consenso del DM e i talenti abilitati, sostituisce i sei incrementi dell’umano con due incrementi scelti, una competenza e un talento.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {},
+      "id": "phb2014:background-variant:spy",
+      "index": "spy",
+      "interpretations": [],
+      "kind": "background-variant",
+      "mechanics": {},
+      "name": "Spy",
+      "nameIt": "Spia",
+      "optional": true,
+      "relations": {
+        "backgroundId": "phb2014:background:criminal"
+      },
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            131
+          ],
+          "printedPages": [
+            130
+          ],
+          "section": "Spy",
+          "verification": "read-local-render"
+        }
+      ],
+      "summaryIt": "Cambia il contesto narrativo del criminale; le capacità restano le stesse.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "equipmentReplacement": [
+          0
+        ]
+      },
+      "id": "phb2014:background-variant:gladiator",
+      "index": "gladiator",
+      "interpretations": [],
+      "kind": "background-variant",
+      "mechanics": {
+        "equipmentReplacement": {
+          "from": "musical-instrument-choice",
+          "to": "inexpensive-unusual-weapon-choice"
+        }
+      },
+      "name": "Gladiator",
+      "nameIt": "Gladiatore",
+      "optional": true,
+      "relations": {
+        "backgroundId": "phb2014:background:entertainer"
+      },
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            132
+          ],
+          "printedPages": [
+            131
+          ],
+          "section": "Gladiator",
+          "verification": "read-local-render"
+        }
+      ],
+      "summaryIt": "Il privilegio si applica agli spettacoli di combattimento; puoi sostituire lo strumento musicale con un’arma economica e insolita.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "equipmentReplacement": [
+          0
+        ],
+        "toolReplacementChoice": [
+          0
+        ]
+      },
+      "id": "phb2014:background-variant:guild-merchant",
+      "index": "guild-merchant",
+      "interpretations": [],
+      "kind": "background-variant",
+      "mechanics": {
+        "equipmentReplacement": {
+          "from": "artisan-tools-choice",
+          "to": [
+            "mule",
+            "cart"
+          ]
+        },
+        "toolReplacementChoice": [
+          "navigators-tools",
+          "extra-language"
+        ]
+      },
+      "name": "Guild Merchant",
+      "nameIt": "Mercante di Gilda",
+      "optional": true,
+      "relations": {
+        "backgroundId": "phb2014:background:guild-artisan"
+      },
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            134
+          ],
+          "printedPages": [
+            133
+          ],
+          "section": "Guild Merchant",
+          "verification": "read-local-render"
+        }
+      ],
+      "summaryIt": "Puoi sostituire strumenti e competenza artigiana con le alternative del mercante.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "commonerRetainers": [
+          0
+        ],
+        "featureReplacement": [
+          0
+        ],
+        "forbidsFollowingInto": [
+          0
+        ],
+        "nobleSquireRetainers": [
+          0
+        ],
+        "retainerCombat": [
+          0
+        ],
+        "retainerTasks": [
+          0
+        ],
+        "retainers": [
+          0
+        ],
+        "retainersLeaveIf": [
+          0
+        ],
+        "squires": [
+          0
+        ]
+      },
+      "id": "phb2014:background-variant:knight",
+      "index": "knight",
+      "interpretations": [],
+      "kind": "background-variant",
+      "mechanics": {
+        "commonerRetainers": 2,
+        "featureReplacement": "retainers",
+        "forbidsFollowingInto": "obviously-dangerous-areas",
+        "nobleSquireRetainers": 1,
+        "retainerCombat": false,
+        "retainerTasks": "mundane-noncombat",
+        "retainers": 3,
+        "retainersLeaveIf": [
+          "frequently-endangered",
+          "abused"
+        ],
+        "squires": 1
+      },
+      "name": "Knight",
+      "nameIt": "Cavaliere",
+      "optional": true,
+      "relations": {
+        "backgroundId": "phb2014:background:noble"
+      },
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            137
+          ],
+          "printedPages": [
+            136
+          ],
+          "section": "Knight",
+          "verification": "read-local-render"
+        }
+      ],
+      "summaryIt": "Tre servitori leali svolgono mansioni ordinarie senza combattere o entrare in pericoli evidenti; lasciano il servizio se esposti spesso al pericolo o maltrattati. Nel cavaliere uno dei tre è uno scudiero nobile.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "featureReplacementChoice": [
+          0
+        ]
+      },
+      "id": "phb2014:background-variant:pirate",
+      "index": "pirate",
+      "interpretations": [],
+      "kind": "background-variant",
+      "mechanics": {
+        "featureReplacementChoice": "bad-reputation"
+      },
+      "name": "Pirate",
+      "nameIt": "Pirata",
+      "optional": true,
+      "relations": {
+        "backgroundId": "phb2014:background:sailor"
+      },
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            140
+          ],
+          "printedPages": [
+            139
+          ],
+          "section": "Pirate",
+          "verification": "read-local-render"
+        }
+      ],
+      "summaryIt": "Puoi scegliere Cattiva Reputazione al posto del passaggio in nave: negli insediamenti piccoli reati possono essere ignorati per paura.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "editorialCorrections": [
+        {
+          "correctedValue": false,
+          "entityId": "phb2014:feat:alert",
+          "field": "unseenAttackersGainAdvantage",
+          "operation": "add",
+          "originalValue": null,
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Alert",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        },
+        {
+          "correctedValue": null,
+          "entityId": "phb2014:feat:alert",
+          "field": "hiddenAttackersGainAdvantage",
+          "operation": "remove",
+          "originalValue": false,
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Alert",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        }
+      ],
+      "fieldSources": {
+        "cannotBeSurprisedWhenConscious": [
+          0
+        ],
+        "initiativeBonus": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "unseenAttackersGainAdvantage": [
+          1
+        ]
+      },
+      "id": "phb2014:feat:alert",
+      "index": "alert",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "cannotBeSurprisedWhenConscious": true,
+        "initiativeBonus": 5,
+        "prerequisites": {},
+        "unseenAttackersGainAdvantage": false
+      },
+      "name": "Alert",
+      "nameIt": "Allerta",
+      "optional": true,
+      "originalPrintingSummaryIt": "Ottieni +5 all’iniziativa, eviti la sorpresa da cosciente e neghi il vantaggio dovuto al nascondersi degli attaccanti.",
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            166
+          ],
+          "printedPages": [
+            165
+          ],
+          "section": "Alert",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Alert",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Alert",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Cinque all’iniziativa, niente sorpresa da cosciente, e nessun vantaggio altrui dovuto a non essere visti da te.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "editorialCorrections": [
+        {
+          "correctedValue": null,
+          "entityId": "phb2014:feat:athlete",
+          "field": "climbingHalvesSpeed",
+          "operation": "remove",
+          "originalValue": false,
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Athlete",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        },
+        {
+          "correctedValue": 0,
+          "entityId": "phb2014:feat:athlete",
+          "field": "climbingExtraMovementCost",
+          "operation": "add",
+          "originalValue": null,
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Athlete",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        }
+      ],
+      "fieldSources": {
+        "abilityBonusChoice": [
+          0
+        ],
+        "climbingExtraMovementCost": [
+          2
+        ],
+        "prerequisites": [
+          0
+        ],
+        "runningJumpApproachFt": [
+          0
+        ],
+        "standFromProneCostFt": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:athlete",
+      "index": "athlete",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "abilityBonusChoice": {
+          "bonus": 1,
+          "from": [
+            "strength",
+            "dexterity"
+          ],
+          "maximum": 20
+        },
+        "climbingExtraMovementCost": 0,
+        "prerequisites": {},
+        "runningJumpApproachFt": 5,
+        "standFromProneCostFt": 5
+      },
+      "name": "Athlete",
+      "nameIt": "Atleta",
+      "optional": true,
+      "originalPrintingSummaryIt": "Un incremento fisico; rialzarsi costa cinque piedi, l’arrampicata non dimezza la velocità nella stampa locale e bastano cinque piedi di rincorsa per i salti.",
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            166
+          ],
+          "printedPages": [
+            165
+          ],
+          "section": "Athlete",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Athlete",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Athlete",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Incremento fisico; rialzarsi costa cinque piedi, arrampicarsi non costa movimento extra e rincorsa di cinque piedi per i salti.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "abilityBonus": [
+          0
+        ],
+        "advantageChecks": [
+          0
+        ],
+        "maximum": [
+          0
+        ],
+        "mimicryContest": [
+          0
+        ],
+        "mimicryListeningMinutes": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:actor",
+      "index": "actor",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "abilityBonus": {
+          "charisma": 1
+        },
+        "advantageChecks": [
+          "deception-impersonation",
+          "performance-impersonation"
+        ],
+        "maximum": 20,
+        "mimicryContest": [
+          "wisdom-insight",
+          "charisma-deception"
+        ],
+        "mimicryListeningMinutes": 1,
+        "prerequisites": {}
+      },
+      "name": "Actor",
+      "nameIt": "Attore",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            166
+          ],
+          "printedPages": [
+            165
+          ],
+          "section": "Actor",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Imiti identità e suoni ascoltati per almeno un minuto; un confronto tra Intuizione e Inganno può smascherarti.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "activation": [
+          0
+        ],
+        "attackDamageBonus": [
+          0
+        ],
+        "choice": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "requiresAction": [
+          0
+        ],
+        "shoveDistanceFt": [
+          0
+        ],
+        "straightApproachFt": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:charger",
+      "index": "charger",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "activation": "bonus-action",
+        "attackDamageBonus": 5,
+        "choice": [
+          "one-melee-weapon-attack",
+          "shove"
+        ],
+        "prerequisites": {},
+        "requiresAction": "dash",
+        "shoveDistanceFt": 10,
+        "straightApproachFt": 10
+      },
+      "name": "Charger",
+      "nameIt": "Caricatore",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            166
+          ],
+          "printedPages": [
+            165
+          ],
+          "section": "Charger",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Dopo Scatto puoi attaccare o spingere con un’azione bonus; dieci piedi in linea retta attivano il beneficio aggiuntivo.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "editorialCorrections": [
+        {
+          "correctedValue": "hand-crossbow-held",
+          "entityId": "phb2014:feat:crossbow-expert",
+          "field": "bonusAttack.weapon",
+          "operation": "replace",
+          "originalValue": "loaded-hand-crossbow-held",
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Crossbow Expert",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        }
+      ],
+      "fieldSources": {
+        "bonusAttack": [
+          0,
+          1
+        ],
+        "ignoreCloseHostileRangedDisadvantageFt": [
+          0
+        ],
+        "ignoreLoading": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:crossbow-expert",
+      "index": "crossbow-expert",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "bonusAttack": {
+          "requires": "attack-action-with-one-handed-weapon",
+          "weapon": "hand-crossbow-held"
+        },
+        "ignoreCloseHostileRangedDisadvantageFt": 5,
+        "ignoreLoading": "proficient-crossbows",
+        "prerequisites": {}
+      },
+      "name": "Crossbow Expert",
+      "nameIt": "Esperto di Balestre",
+      "optional": true,
+      "originalPrintingSummaryIt": "Ignori Caricamento con balestre competenti e lo svantaggio a distanza dovuto a nemici vicini; è prevista un’opzione di attacco bonus.",
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            166
+          ],
+          "printedPages": [
+            165
+          ],
+          "section": "Crossbow Expert",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Crossbow Expert",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Ignora Caricamento con balestre competenti e svantaggio a distanza da ostili vicini. Attacco bonus con balestra a mano impugnata dopo Attaccare con arma a una mano; munizioni e mano libera restano richieste.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "activation": [
+          0
+        ],
+        "armorClassBonus": [
+          0
+        ],
+        "duration": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "requires": [
+          0
+        ],
+        "trigger": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:defensive-duelist",
+      "index": "defensive-duelist",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "activation": "reaction",
+        "armorClassBonus": "proficiencyBonus",
+        "duration": "triggering-attack",
+        "prerequisites": {
+          "ability": "dexterity",
+          "minimum": 13
+        },
+        "requires": "proficient-finesse-weapon-wielded",
+        "trigger": "hit-by-melee-attack"
+      },
+      "name": "Defensive Duelist",
+      "nameIt": "Duellante Difensivo",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            166
+          ],
+          "printedPages": [
+            165
+          ],
+          "section": "Defensive Duelist",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Puoi aggiungere la competenza alla CA contro il solo attacco in mischia che ti ha colpito.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "armorClassBonus": [
+          0
+        ],
+        "drawOrStowWeapons": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "requiresAC": [
+          0
+        ],
+        "twoWeaponFightingAllowsNonLight": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:dual-wielder",
+      "index": "dual-wielder",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "armorClassBonus": 1,
+        "drawOrStowWeapons": 2,
+        "prerequisites": {},
+        "requiresAC": "separate-melee-weapon-in-each-hand",
+        "twoWeaponFightingAllowsNonLight": true
+      },
+      "name": "Dual Wielder",
+      "nameIt": "Combattente con Due Armi",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            166
+          ],
+          "printedPages": [
+            165
+          ],
+          "section": "Dual Wielder",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Usi due armi a una mano anche non leggere, puoi estrarne due e ottieni +1 alla CA mentre ne impugni una per mano.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "editorialCorrections": [
+        {
+          "correctedValue": null,
+          "entityId": "phb2014:feat:dungeon-delver",
+          "field": "trapSearchAllowedTravelPace",
+          "operation": "remove",
+          "originalValue": "normal",
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Dungeon Delver",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        },
+        {
+          "correctedValue": 0,
+          "entityId": "phb2014:feat:dungeon-delver",
+          "field": "fastTravelPassivePerceptionPenalty",
+          "operation": "add",
+          "originalValue": null,
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Dungeon Delver",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        }
+      ],
+      "fieldSources": {
+        "advantageChecks": [
+          0
+        ],
+        "damageResistance": [
+          0
+        ],
+        "fastTravelPassivePerceptionPenalty": [
+          2
+        ],
+        "prerequisites": [
+          0
+        ],
+        "saveAdvantageAgainst": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:dungeon-delver",
+      "index": "dungeon-delver",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "advantageChecks": [
+          "perception-secret-doors",
+          "investigation-secret-doors"
+        ],
+        "damageResistance": [
+          "trap-damage"
+        ],
+        "fastTravelPassivePerceptionPenalty": 0,
+        "prerequisites": {},
+        "saveAdvantageAgainst": [
+          "traps"
+        ]
+      },
+      "name": "Dungeon Delver",
+      "nameIt": "Esploratore di Dungeon",
+      "optional": true,
+      "originalPrintingSummaryIt": "Migliori individuazione di porte segrete, difesa dalle trappole e ricerca durante il viaggio.",
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            167
+          ],
+          "printedPages": [
+            166
+          ],
+          "section": "Dungeon Delver",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Dungeon Delver",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Dungeon Delver",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Vantaggio a individuare porte segrete e TS contro trappole, resistenza al loro danno. Passo veloce non impone la normale penalità meno cinque a Percezione passiva.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "abilityBonus": [
+          0
+        ],
+        "hitDieHealingMinimum": [
+          0
+        ],
+        "maximum": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:durable",
+      "index": "durable",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "abilityBonus": {
+          "constitution": 1
+        },
+        "hitDieHealingMinimum": {
+          "abilityModifier": "constitution",
+          "floor": 2,
+          "multiplier": 2
+        },
+        "maximum": 20,
+        "prerequisites": {}
+      },
+      "name": "Durable",
+      "nameIt": "Robusto",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            167
+          ],
+          "printedPages": [
+            166
+          ],
+          "section": "Durable",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Incrementi Costituzione; la guarigione ottenuta spendendo un dado vita ha un minimo legato al modificatore.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "damageTypeChoice": [
+          0
+        ],
+        "ignoreResistance": [
+          0
+        ],
+        "minimumDamageDieResult": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "repeatableWithDistinctChoice": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:elemental-adept",
+      "index": "elemental-adept",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "damageTypeChoice": [
+          "acid",
+          "cold",
+          "fire",
+          "lightning",
+          "thunder"
+        ],
+        "ignoreResistance": true,
+        "minimumDamageDieResult": 2,
+        "prerequisites": {
+          "canCastSpell": true
+        },
+        "repeatableWithDistinctChoice": true
+      },
+      "name": "Elemental Adept",
+      "nameIt": "Adepto Elementale",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            167
+          ],
+          "printedPages": [
+            166
+          ],
+          "section": "Elemental Adept",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Scegli un tipo di danno per gli incantesimi: ignori la resistenza e puoi trattare gli 1 dei dadi come 2; non ignori l’immunità.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "editorialCorrections": [
+        {
+          "correctedValue": null,
+          "entityId": "phb2014:feat:grappler",
+          "field": "printingOnlyClause",
+          "operation": "remove",
+          "originalValue": "one-size-larger-creatures-do-not-automatically-escape",
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Grappler",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        }
+      ],
+      "fieldSources": {
+        "attackAdvantageAgainst": [
+          0
+        ],
+        "pin": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:grappler",
+      "index": "grappler",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "attackAdvantageAgainst": "creature-grappled-by-self",
+        "pin": {
+          "activation": "action",
+          "check": "grapple",
+          "onSuccess": [
+            "self-restrained",
+            "target-restrained"
+          ]
+        },
+        "prerequisites": {
+          "ability": "strength",
+          "minimum": 13
+        }
+      },
+      "name": "Grappler",
+      "nameIt": "Lottatore",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            168
+          ],
+          "printedPages": [
+            167
+          ],
+          "section": "Grappler",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Grappler",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Vantaggio contro il bersaglio afferrato; un tentativo di immobilizzazione puo rendere trattenuti entrambi. Il terzo beneficio della prima stampa e rimosso dalle errata.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "bonusActionMeleeAttackTrigger": [
+          0
+        ],
+        "powerAttack": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:great-weapon-master",
+      "index": "great-weapon-master",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "bonusActionMeleeAttackTrigger": [
+          "melee-weapon-critical-on-own-turn",
+          "melee-weapon-reduces-target-to-0-on-own-turn"
+        ],
+        "powerAttack": {
+          "attackPenalty": 5,
+          "damageBonus": 10,
+          "requires": "proficient-heavy-melee-weapon"
+        },
+        "prerequisites": {}
+      },
+      "name": "Great Weapon Master",
+      "nameIt": "Maestro delle Armi Possenti",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            168
+          ],
+          "printedPages": [
+            167
+          ],
+          "section": "Great Weapon Master",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Un critico o un abbattimento in mischia nel tuo turno può dare un attacco bonus; con un’arma pesante competente scegli −5 al tiro e +10 al danno.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "heal": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "stabilizeWithKitHitPoints": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:healer",
+      "index": "healer",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "heal": {
+          "activation": "action",
+          "add": "targetMaximumHitDice",
+          "base": 4,
+          "dice": "1d6",
+          "kitUses": 1,
+          "targetRecovery": [
+            "short-rest",
+            "long-rest"
+          ]
+        },
+        "prerequisites": {},
+        "stabilizeWithKitHitPoints": 1
+      },
+      "name": "Healer",
+      "nameIt": "Guaritore",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            168
+          ],
+          "printedPages": [
+            167
+          ],
+          "section": "Healer",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "La borsa del guaritore può restituire PF quando stabilizzi o curi; la cura maggiore è limitata per bersaglio tra riposi.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "abilityBonus": [
+          0
+        ],
+        "armorProficiencies": [
+          0
+        ],
+        "maximum": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:heavily-armored",
+      "index": "heavily-armored",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "abilityBonus": {
+          "strength": 1
+        },
+        "armorProficiencies": [
+          "heavy"
+        ],
+        "maximum": 20,
+        "prerequisites": {
+          "armorProficiency": "medium"
+        }
+      },
+      "name": "Heavily Armored",
+      "nameIt": "Pesantemente Corazzato",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            168
+          ],
+          "printedPages": [
+            167
+          ],
+          "section": "Heavily Armored",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Incrementi Forza e acquisisci competenza nelle armature pesanti.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "editorialCorrections": [
+        {
+          "correctedValue": "nonmagical-attacks",
+          "entityId": "phb2014:feat:heavy-armor-master",
+          "field": "damageReduction.from",
+          "operation": "replace",
+          "originalValue": "nonmagical-weapons",
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Heavy Armor Master",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        }
+      ],
+      "fieldSources": {
+        "abilityBonus": [
+          0
+        ],
+        "damageReduction": [
+          0,
+          1
+        ],
+        "maximum": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:heavy-armor-master",
+      "index": "heavy-armor-master",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "abilityBonus": {
+          "strength": 1
+        },
+        "damageReduction": {
+          "amount": 3,
+          "from": "nonmagical-attacks",
+          "requires": "wearing-heavy-armor",
+          "types": [
+            "bludgeoning",
+            "piercing",
+            "slashing"
+          ]
+        },
+        "maximum": 20,
+        "prerequisites": {
+          "armorProficiency": "heavy"
+        }
+      },
+      "name": "Heavy Armor Master",
+      "nameIt": "Maestro delle Armature Pesanti",
+      "optional": true,
+      "originalPrintingSummaryIt": "Incrementi Forza e riduci di 3 i danni fisici delle armi non magiche mentre indossi un’armatura pesante.",
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            168
+          ],
+          "printedPages": [
+            167
+          ],
+          "section": "Heavy Armor Master",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Heavy Armor Master",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Forza aumenta di uno fino a venti; con armatura pesante riduce di tre i danni contundenti, perforanti e taglienti da attacchi non magici.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "durationMinutes": [
+          0
+        ],
+        "maxTargets": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "rangeFt": [
+          0
+        ],
+        "targetRecovery": [
+          0
+        ],
+        "targetRequirements": [
+          0
+        ],
+        "temporaryHitPoints": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:inspiring-leader",
+      "index": "inspiring-leader",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "durationMinutes": 10,
+        "maxTargets": 6,
+        "prerequisites": {
+          "ability": "charisma",
+          "minimum": 13
+        },
+        "rangeFt": 30,
+        "targetRecovery": [
+          "short-rest",
+          "long-rest"
+        ],
+        "targetRequirements": [
+          "friendly",
+          "see-or-hear",
+          "understand"
+        ],
+        "temporaryHitPoints": {
+          "add": [
+            "characterLevel",
+            "charismaModifier"
+          ]
+        }
+      },
+      "name": "Inspiring Leader",
+      "nameIt": "Condottiero Ispiratore",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            168
+          ],
+          "printedPages": [
+            167
+          ],
+          "section": "Inspiring Leader",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Un discorso di dieci minuti concede PF temporanei a un massimo di sei creature amiche, con un limite per destinatario tra riposi.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "abilityBonus": [
+          0
+        ],
+        "accurateRecallMonths": [
+          0
+        ],
+        "knows": [
+          0
+        ],
+        "maximum": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:keen-mind",
+      "index": "keen-mind",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "abilityBonus": {
+          "intelligence": 1
+        },
+        "accurateRecallMonths": 1,
+        "knows": [
+          "north",
+          "hours-until-sunrise-or-sunset"
+        ],
+        "maximum": 20,
+        "prerequisites": {}
+      },
+      "name": "Keen Mind",
+      "nameIt": "Mente Acuta",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            168
+          ],
+          "printedPages": [
+            167
+          ],
+          "section": "Keen Mind",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Incrementi Intelligenza e ricordi con precisione ciò che hai percepito nell’ultimo mese, oltre a orientamento e orari solari.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "abilityBonusChoice": [
+          0
+        ],
+        "armorProficiencies": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:lightly-armored",
+      "index": "lightly-armored",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "abilityBonusChoice": {
+          "bonus": 1,
+          "from": [
+            "strength",
+            "dexterity"
+          ],
+          "maximum": 20
+        },
+        "armorProficiencies": [
+          "light"
+        ],
+        "prerequisites": {}
+      },
+      "name": "Lightly Armored",
+      "nameIt": "Leggermente Corazzato",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            168
+          ],
+          "printedPages": [
+            167
+          ],
+          "section": "Lightly Armored",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Un incremento fisico e competenza nelle armature leggere.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "abilityBonus": [
+          0
+        ],
+        "cipherDC": [
+          0
+        ],
+        "languageChoice": [
+          0
+        ],
+        "maximum": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:linguist",
+      "index": "linguist",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "abilityBonus": {
+          "intelligence": 1
+        },
+        "cipherDC": {
+          "add": [
+            "intelligenceScore",
+            "proficiencyBonus"
+          ]
+        },
+        "languageChoice": {
+          "choose": 3
+        },
+        "maximum": 20,
+        "prerequisites": {}
+      },
+      "name": "Linguist",
+      "nameIt": "Linguista",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            168
+          ],
+          "printedPages": [
+            167
+          ],
+          "section": "Linguist",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Impari tre lingue e crei cifrari; la difficoltà usa il punteggio di Intelligenza, non il modificatore.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "advantageInteraction": [
+          1
+        ],
+        "conflictingLuckPoints": [
+          0
+        ],
+        "decision": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "recovery": [
+          0
+        ],
+        "rollExtraD20For": [
+          0
+        ],
+        "uses": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:lucky",
+      "index": "lucky",
+      "interpretations": [
+        {
+          "field": "advantageInteraction",
+          "kind": "verified-official-ruling",
+          "method": "Sage Advice Compendium 2.7 PDF 9, distinct from the original PHB PDF 168 and from its optional alternative DM ruling."
+        }
+      ],
+      "kind": "feat",
+      "mechanics": {
+        "advantageInteraction": {
+          "advantageDisadvantageStillPresent": true,
+          "alternativeDMRuling": "eliminate-one-die-then-apply-normal-advantage-disadvantage-to-remaining-two",
+          "alternativeDMRulingAutomatic": false,
+          "disadvantageStillPreventsSneakAttack": true,
+          "ownRollSelection": "choose-any-d20-in-mix-including-extra"
+        },
+        "conflictingLuckPoints": "cancel",
+        "decision": "after-roll-before-outcome",
+        "prerequisites": {},
+        "recovery": [
+          "long-rest"
+        ],
+        "rollExtraD20For": [
+          "attack",
+          "ability-check",
+          "saving-throw",
+          "attack-against-self"
+        ],
+        "uses": 3
+      },
+      "name": "Lucky",
+      "nameIt": "Fortunato",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            168
+          ],
+          "printedPages": [
+            167
+          ],
+          "section": "Lucky",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "sac-rulings",
+          "edition": "2014",
+          "filename": "SA-Compendium.pdf",
+          "pdfPages": [
+            9
+          ],
+          "printedPages": [
+            9
+          ],
+          "role": "official-ruling-not-editorial-erratum",
+          "section": "Feats: Lucky and advantage/disadvantage",
+          "url": "https://media.wizards.com/2020/dnd/downloads/SA-Compendium.pdf",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Spendendo fortuna aggiungi un d20 e scegli quello usato, prima di conoscere l’esito. L’interazione con vantaggio e svantaggio resta da esplicitare. Il SAC consente di scegliere fra tutti i d20, incluso quello aggiuntivo, conservando però vantaggio o svantaggio: svantaggio continua a impedire Attacco Furtivo. L’alternativa proposta al DM resta una decisione separata.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "damagedTargetConcentrationSaveDisadvantage": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "reactionAttack": [
+          0
+        ],
+        "saveAdvantageAgainstSpellCasterWithinFt": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:mage-slayer",
+      "index": "mage-slayer",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "damagedTargetConcentrationSaveDisadvantage": true,
+        "prerequisites": {},
+        "reactionAttack": {
+          "trigger": "creature-within-5-ft-casts-spell",
+          "type": "melee-weapon"
+        },
+        "saveAdvantageAgainstSpellCasterWithinFt": 5
+      },
+      "name": "Mage Slayer",
+      "nameIt": "Sterminatore di Maghi",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            169
+          ],
+          "printedPages": [
+            168
+          ],
+          "section": "Mage Slayer",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Reagisci ai lanci vicini, ostacoli la concentrazione di chi danneggi e migliori i TS contro incantatori adiacenti.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "editorialCorrections": [
+        {
+          "correctedValue": "using-this-feat-at-lowest-level",
+          "entityId": "phb2014:feat:magic-initiate",
+          "field": "freeCast.scope",
+          "operation": "add",
+          "originalValue": null,
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Magic Initiate",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        }
+      ],
+      "fieldSources": {
+        "cantrips": [
+          0
+        ],
+        "castingAbilityFromChosenClass": [
+          0
+        ],
+        "classChoice": [
+          0
+        ],
+        "firstLevelSpells": [
+          0
+        ],
+        "freeCast": [
+          0,
+          1
+        ],
+        "prerequisites": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:magic-initiate",
+      "index": "magic-initiate",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "cantrips": 2,
+        "castingAbilityFromChosenClass": true,
+        "classChoice": [
+          "bard",
+          "cleric",
+          "druid",
+          "sorcerer",
+          "warlock",
+          "wizard"
+        ],
+        "firstLevelSpells": 1,
+        "freeCast": {
+          "recovery": [
+            "long-rest"
+          ],
+          "scope": "using-this-feat-at-lowest-level",
+          "slotLevel": 1,
+          "uses": 1
+        },
+        "prerequisites": {}
+      },
+      "name": "Magic Initiate",
+      "nameIt": "Iniziato alla Magia",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            169
+          ],
+          "printedPages": [
+            168
+          ],
+          "section": "Magic Initiate",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Magic Initiate",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Impari due trucchetti e un incantesimo di primo livello della stessa classe; il lancio gratuito torna dopo un riposo lungo.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "editorialCorrections": [
+        {
+          "correctedValue": "1d6",
+          "entityId": "phb2014:feat:martial-adept",
+          "field": "superiorityDie",
+          "operation": "add",
+          "originalValue": null,
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Martial Adept",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        },
+        {
+          "correctedValue": true,
+          "entityId": "phb2014:feat:martial-adept",
+          "field": "addedToExistingSuperiorityDice",
+          "operation": "add",
+          "originalValue": null,
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Martial Adept",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        }
+      ],
+      "fieldSources": {
+        "addedToExistingSuperiorityDice": [
+          2
+        ],
+        "choiceIds": [
+          0
+        ],
+        "dieWithoutExistingDice": [
+          0
+        ],
+        "maneuversKnown": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "recovery": [
+          0
+        ],
+        "saveDC": [
+          0
+        ],
+        "superiorityDiceAdded": [
+          0
+        ],
+        "superiorityDie": [
+          1
+        ]
+      },
+      "id": "phb2014:feat:martial-adept",
+      "index": "martial-adept",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "addedToExistingSuperiorityDice": true,
+        "choiceIds": [
+          "phb2014:class-option:commander-s-strike",
+          "phb2014:class-option:disarming-attack",
+          "phb2014:class-option:distracting-strike",
+          "phb2014:class-option:evasive-footwork",
+          "phb2014:class-option:feinting-attack",
+          "phb2014:class-option:goading-attack",
+          "phb2014:class-option:lunging-attack",
+          "phb2014:class-option:maneuvering-attack",
+          "phb2014:class-option:menacing-attack",
+          "phb2014:class-option:parry",
+          "phb2014:class-option:precision-attack",
+          "phb2014:class-option:pushing-attack",
+          "phb2014:class-option:rally",
+          "phb2014:class-option:riposte",
+          "phb2014:class-option:sweeping-attack",
+          "phb2014:class-option:trip-attack"
+        ],
+        "dieWithoutExistingDice": "1d6",
+        "maneuversKnown": 2,
+        "prerequisites": {},
+        "recovery": [
+          "short-rest",
+          "long-rest"
+        ],
+        "saveDC": {
+          "add": [
+            "proficiencyBonus",
+            "chosenStrengthOrDexterityModifier"
+          ],
+          "base": 8
+        },
+        "superiorityDiceAdded": 1,
+        "superiorityDie": "1d6"
+      },
+      "name": "Martial Adept",
+      "nameIt": "Adepto Marziale",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            169
+          ],
+          "printedPages": [
+            168
+          ],
+          "section": "Martial Adept",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Martial Adept",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Martial Adept",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Impari due manovre del Maestro di Battaglia e ottieni un dado di superiorità aggiuntivo.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "maxDexBonus": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "removeMediumArmorStealthDisadvantage": [
+          0
+        ],
+        "requiresDexterity": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:medium-armor-master",
+      "index": "medium-armor-master",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "maxDexBonus": 3,
+        "prerequisites": {
+          "armorProficiency": "medium"
+        },
+        "removeMediumArmorStealthDisadvantage": true,
+        "requiresDexterity": 16
+      },
+      "name": "Medium Armor Master",
+      "nameIt": "Maestro delle Armature Medie",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            169
+          ],
+          "printedPages": [
+            168
+          ],
+          "section": "Medium Armor Master",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Le armature medie non penalizzano Furtività e possono usare fino a +3 di Destrezza con punteggio almeno 16.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "dashIgnoresDifficultTerrainExtraCost": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "preventOpportunityAttacksAfterMeleeAttack": [
+          0
+        ],
+        "speedBonusFt": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:mobile",
+      "index": "mobile",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "dashIgnoresDifficultTerrainExtraCost": true,
+        "prerequisites": {},
+        "preventOpportunityAttacksAfterMeleeAttack": {
+          "duration": "rest-of-own-turn",
+          "from": "attacked-creature",
+          "hitRequired": false
+        },
+        "speedBonusFt": 10
+      },
+      "name": "Mobile",
+      "nameIt": "Mobile",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            169
+          ],
+          "printedPages": [
+            168
+          ],
+          "section": "Mobile",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Aumenti velocità e mobilità; il bersaglio del tuo attacco in mischia non può farti attacchi di opportunità nel resto del turno.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "abilityBonusChoice": [
+          0
+        ],
+        "armorProficiencies": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:moderately-armored",
+      "index": "moderately-armored",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "abilityBonusChoice": {
+          "bonus": 1,
+          "from": [
+            "strength",
+            "dexterity"
+          ],
+          "maximum": 20
+        },
+        "armorProficiencies": [
+          "medium",
+          "shields"
+        ],
+        "prerequisites": {
+          "armorProficiency": "light"
+        }
+      },
+      "name": "Moderately Armored",
+      "nameIt": "Moderatamente Corazzato",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            169
+          ],
+          "printedPages": [
+            168
+          ],
+          "section": "Moderately Armored",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Un incremento fisico e competenza nelle armature medie e negli scudi.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "meleeAttackAdvantageAgainst": [
+          0
+        ],
+        "mountDexteritySaveDamage": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "redirectMountAttackToSelf": [
+          0
+        ],
+        "requires": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:mounted-combatant",
+      "index": "mounted-combatant",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "meleeAttackAdvantageAgainst": "unmounted-creature-smaller-than-mount",
+        "mountDexteritySaveDamage": {
+          "failure": "half",
+          "success": 0
+        },
+        "prerequisites": {},
+        "redirectMountAttackToSelf": true,
+        "requires": [
+          "mounted",
+          "not-incapacitated"
+        ]
+      },
+      "name": "Mounted Combatant",
+      "nameIt": "Combattente in Sella",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            169
+          ],
+          "printedPages": [
+            168
+          ],
+          "section": "Mounted Combatant",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Proteggi la cavalcatura e ottieni vantaggio in mischia contro bersagli a piedi più piccoli di essa.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "abilityBonusChoice": [
+          0
+        ],
+        "passiveBonus": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "readLips": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:observant",
+      "index": "observant",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "abilityBonusChoice": {
+          "bonus": 1,
+          "from": [
+            "intelligence",
+            "wisdom"
+          ],
+          "maximum": 20
+        },
+        "passiveBonus": {
+          "investigation": 5,
+          "perception": 5
+        },
+        "prerequisites": {},
+        "readLips": "visible-mouth-and-known-language"
+      },
+      "name": "Observant",
+      "nameIt": "Osservatore",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            169
+          ],
+          "printedPages": [
+            168
+          ],
+          "section": "Observant",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Incrementi una caratteristica mentale, leggi le labbra e aggiungi +5 a Percezione e Investigazione passive.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "editorialCorrections": [
+        {
+          "correctedValue": [
+            "glaive",
+            "halberd",
+            "quarterstaff",
+            "spear"
+          ],
+          "entityId": "phb2014:feat:polearm-master",
+          "field": "bonusActionAttackWeapons",
+          "operation": "replace",
+          "originalValue": [
+            "glaive",
+            "halberd",
+            "quarterstaff"
+          ],
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Polearm Master",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        },
+        {
+          "correctedValue": [
+            "glaive",
+            "halberd",
+            "pike",
+            "quarterstaff",
+            "spear"
+          ],
+          "entityId": "phb2014:feat:polearm-master",
+          "field": "opportunityOnEnteringReachWeapons",
+          "operation": "replace",
+          "originalValue": [
+            "glaive",
+            "halberd",
+            "pike",
+            "quarterstaff"
+          ],
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Polearm Master",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        },
+        {
+          "correctedValue": "same-as-primary-attack",
+          "entityId": "phb2014:feat:polearm-master",
+          "field": "bonusAttackAbility",
+          "operation": "add",
+          "originalValue": null,
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Polearm Master",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        }
+      ],
+      "fieldSources": {
+        "bonusActionAttackWeapons": [
+          0,
+          1
+        ],
+        "bonusAttackAbility": [
+          3
+        ],
+        "bonusAttackDamageType": [
+          0
+        ],
+        "bonusAttackDice": [
+          0
+        ],
+        "opportunityOnEnteringReachWeapons": [
+          0,
+          2
+        ],
+        "prerequisites": [
+          0
+        ],
+        "requiresAction": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:polearm-master",
+      "index": "polearm-master",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "bonusActionAttackWeapons": [
+          "glaive",
+          "halberd",
+          "quarterstaff",
+          "spear"
+        ],
+        "bonusAttackAbility": "same-as-primary-attack",
+        "bonusAttackDamageType": "bludgeoning",
+        "bonusAttackDice": "1d4",
+        "opportunityOnEnteringReachWeapons": [
+          "glaive",
+          "halberd",
+          "pike",
+          "quarterstaff",
+          "spear"
+        ],
+        "prerequisites": {},
+        "requiresAction": "attack-only-with-listed-weapons"
+      },
+      "name": "Polearm Master",
+      "nameIt": "Maestro delle Armi ad Asta",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            169
+          ],
+          "printedPages": [
+            168
+          ],
+          "section": "Polearm Master",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Polearm Master",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Polearm Master",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Polearm Master",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "La stampa locale permette un attacco con l’estremità opposta di alcune armi e attacchi di opportunità all’ingresso nella portata; non include la lancia nelle liste.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "abilityBonusChoice": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "saveProficiency": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:resilient",
+      "index": "resilient",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "abilityBonusChoice": {
+          "bonus": 1,
+          "from": [
+            "strength",
+            "dexterity",
+            "constitution",
+            "intelligence",
+            "wisdom",
+            "charisma"
+          ],
+          "maximum": 20
+        },
+        "prerequisites": {},
+        "saveProficiency": "chosen-ability"
+      },
+      "name": "Resilient",
+      "nameIt": "Resiliente",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            169
+          ],
+          "printedPages": [
+            168
+          ],
+          "section": "Resilient",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Incrementi una caratteristica scelta e acquisisci competenza nei relativi tiri salvezza.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "castingAbilityFromChosenClass": [
+          0
+        ],
+        "classChoice": [
+          0
+        ],
+        "copy": [
+          0
+        ],
+        "initialRitualSpells": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "requires": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:ritual-caster",
+      "index": "ritual-caster",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "castingAbilityFromChosenClass": true,
+        "classChoice": [
+          "bard",
+          "cleric",
+          "druid",
+          "sorcerer",
+          "warlock",
+          "wizard"
+        ],
+        "copy": {
+          "gpPerLevel": 50,
+          "hoursPerLevel": 2,
+          "maxLevel": "ceil(characterLevel/2)",
+          "mustBeOnChosenClassList": true,
+          "mustBeRitual": true
+        },
+        "initialRitualSpells": {
+          "choose": 2,
+          "level": 1
+        },
+        "prerequisites": {
+          "any": [
+            {
+              "ability": "intelligence",
+              "minimum": 13
+            },
+            {
+              "ability": "wisdom",
+              "minimum": 13
+            }
+          ]
+        },
+        "requires": "ritual-book-in-hand"
+      },
+      "name": "Ritual Caster",
+      "nameIt": "Incantatore Rituale",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            170
+          ],
+          "printedPages": [
+            169
+          ],
+          "section": "Ritual Caster",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Usi un libro di rituali, inizi con due magie di primo livello e puoi copiarne altre rispettando lista e limite di livello.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "choose": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "reroll": [
+          0
+        ],
+        "usesPerTurn": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:savage-attacker",
+      "index": "savage-attacker",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "choose": "either-total",
+        "prerequisites": {},
+        "reroll": "melee-weapon-damage-dice",
+        "usesPerTurn": 1
+      },
+      "name": "Savage Attacker",
+      "nameIt": "Attaccante Selvaggio",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            170
+          ],
+          "printedPages": [
+            169
+          ],
+          "section": "Savage Attacker",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Una volta per turno puoi ritirare i dadi di danno di un attacco con arma da mischia e scegliere il totale.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "editorialCorrections": [
+        {
+          "correctedValue": null,
+          "entityId": "phb2014:feat:sentinel",
+          "field": "disengageDoesNotPreventOpportunityWithinFt",
+          "operation": "remove",
+          "originalValue": 5,
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Sentinel",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        },
+        {
+          "correctedValue": true,
+          "entityId": "phb2014:feat:sentinel",
+          "field": "disengageDoesNotPreventOpportunity",
+          "operation": "add",
+          "originalValue": null,
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Sentinel",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        }
+      ],
+      "fieldSources": {
+        "disengageDoesNotPreventOpportunity": [
+          2
+        ],
+        "duration": [
+          0
+        ],
+        "opportunityHitSpeed": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "reactionAttack": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:sentinel",
+      "index": "sentinel",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "disengageDoesNotPreventOpportunity": true,
+        "duration": "rest-of-turn",
+        "opportunityHitSpeed": 0,
+        "prerequisites": {},
+        "reactionAttack": {
+          "trigger": "creature-within-5-ft-attacks-other-target-without-this-feat",
+          "type": "melee-weapon"
+        }
+      },
+      "name": "Sentinel",
+      "nameIt": "Sentinella",
+      "optional": true,
+      "originalPrintingSummaryIt": "Gli attacchi di opportunità a segno fermano il bersaglio; alcune azioni vicine permettono una reazione aggiuntiva.",
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            170,
+            171
+          ],
+          "printedPages": [
+            169,
+            170
+          ],
+          "section": "Sentinel",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Sentinel",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Sentinel",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Colpire con attacco di opportunità azzera velocità per il turno. Disimpegno non evita le tue opportunità; il distinto attacco di reazione contro chi attacca altri mantiene il limite di cinque piedi.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "ignoreCover": [
+          0
+        ],
+        "longRangeDisadvantage": [
+          0
+        ],
+        "powerAttack": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:sharpshooter",
+      "index": "sharpshooter",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "ignoreCover": [
+          "half",
+          "three-quarters"
+        ],
+        "longRangeDisadvantage": false,
+        "powerAttack": {
+          "attackPenalty": 5,
+          "damageBonus": 10,
+          "requires": "proficient-ranged-weapon"
+        },
+        "prerequisites": {}
+      },
+      "name": "Sharpshooter",
+      "nameIt": "Tiratore Scelto",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            171
+          ],
+          "printedPages": [
+            170
+          ],
+          "section": "Sharpshooter",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Ignori penalità di lunga gittata e coperture parziali; puoi scegliere −5 al tiro per colpire e +10 al danno.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "bonusShove": [
+          0
+        ],
+        "dexSaveBonus": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "reactionOnSuccessfulDexHalfDamageSave": [
+          0
+        ],
+        "requires": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:shield-master",
+      "index": "shield-master",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "bonusShove": {
+          "rangeFt": 5,
+          "requiresAction": "attack"
+        },
+        "dexSaveBonus": "shieldAC-if-effect-targets-only-self-and-not-incapacitated",
+        "prerequisites": {},
+        "reactionOnSuccessfulDexHalfDamageSave": "no-damage",
+        "requires": "shield-wielded"
+      },
+      "name": "Shield Master",
+      "nameIt": "Maestro degli Scudi",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            171
+          ],
+          "printedPages": [
+            170
+          ],
+          "section": "Shield Master",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Lo scudo può aiutare a spingere, nei TS di Destrezza diretti solo a te e nell’evitare danni con una reazione dopo un TS riuscito.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "prerequisites": [
+          0
+        ],
+        "proficiencyChoices": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:skilled",
+      "index": "skilled",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "prerequisites": {},
+        "proficiencyChoices": {
+          "categories": [
+            "skills",
+            "tools"
+          ],
+          "choose": 3
+        }
+      },
+      "name": "Skilled",
+      "nameIt": "Abile",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            171
+          ],
+          "printedPages": [
+            170
+          ],
+          "section": "Skilled",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Acquisisci tre competenze in qualsiasi combinazione di abilità e strumenti.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "dimLightSightPerceptionDisadvantage": [
+          0
+        ],
+        "hideWhen": [
+          0
+        ],
+        "missedHiddenRangedWeaponAttackRevealsPosition": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:skulker",
+      "index": "skulker",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "dimLightSightPerceptionDisadvantage": false,
+        "hideWhen": "lightly-obscured",
+        "missedHiddenRangedWeaponAttackRevealsPosition": false,
+        "prerequisites": {
+          "ability": "dexterity",
+          "minimum": 13
+        }
+      },
+      "name": "Skulker",
+      "nameIt": "Furtivo",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            171
+          ],
+          "printedPages": [
+            170
+          ],
+          "section": "Skulker",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Nascondersi è più facile; un attacco a distanza mancato da nascosto non rivela la posizione e la penombra non penalizza Percezione visiva.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "cantripChoice": [
+          0
+        ],
+        "castingAbilityFromChosenClass": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "rangedSpellAttackIgnoreCover": [
+          0
+        ],
+        "spellAttackRangeMultiplier": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:spell-sniper",
+      "index": "spell-sniper",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "cantripChoice": {
+          "choose": 1,
+          "classes": [
+            "bard",
+            "cleric",
+            "druid",
+            "sorcerer",
+            "warlock",
+            "wizard"
+          ],
+          "requiresAttackRoll": true
+        },
+        "castingAbilityFromChosenClass": true,
+        "prerequisites": {
+          "canCastSpell": true
+        },
+        "rangedSpellAttackIgnoreCover": [
+          "half",
+          "three-quarters"
+        ],
+        "spellAttackRangeMultiplier": 2
+      },
+      "name": "Spell Sniper",
+      "nameIt": "Cecchino Magico",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            171
+          ],
+          "printedPages": [
+            170
+          ],
+          "section": "Spell Sniper",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Raddoppi la gittata delle magie con tiro per colpire, ignori coperture parziali con attacchi magici a distanza e impari un trucchetto d’attacco.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "editorialCorrections": [
+        {
+          "correctedValue": [
+            "improvised-weapons"
+          ],
+          "entityId": "phb2014:feat:tavern-brawler",
+          "field": "proficiencies",
+          "operation": "replace",
+          "originalValue": [
+            "improvised-weapons",
+            "unarmed-strikes"
+          ],
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Tavern Brawler",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        }
+      ],
+      "fieldSources": {
+        "abilityBonusChoice": [
+          0
+        ],
+        "bonusActionGrappleTrigger": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "proficiencies": [
+          0,
+          1
+        ],
+        "unarmedDamageDice": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:tavern-brawler",
+      "index": "tavern-brawler",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "abilityBonusChoice": {
+          "bonus": 1,
+          "from": [
+            "strength",
+            "constitution"
+          ],
+          "maximum": 20
+        },
+        "bonusActionGrappleTrigger": "hit-with-unarmed-or-improvised-weapon-on-own-turn",
+        "prerequisites": {},
+        "proficiencies": [
+          "improvised-weapons"
+        ],
+        "unarmedDamageDice": "1d4"
+      },
+      "name": "Tavern Brawler",
+      "nameIt": "Lottatore da Taverna",
+      "optional": true,
+      "originalPrintingSummaryIt": "Incrementi una caratteristica fisica, migliori il combattimento improvvisato e puoi afferrare dopo un colpo appropriato.",
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            171
+          ],
+          "printedPages": [
+            170
+          ],
+          "section": "Tavern Brawler",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Tavern Brawler",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Incremento Forza o Costituzione; competenza nelle armi improvvisate e danno senz’armi d4. Dopo colpo senz’armi o improvvisato nel tuo turno puoi afferrare con azione bonus. La competenza senz’armi viene dalla regola generale corretta.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "hitPointsPerCharacterLevel": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "retroactive": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:tough",
+      "index": "tough",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "hitPointsPerCharacterLevel": 2,
+        "prerequisites": {},
+        "retroactive": true
+      },
+      "name": "Tough",
+      "nameIt": "Tenace",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            171
+          ],
+          "printedPages": [
+            170
+          ],
+          "section": "Tough",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Il massimo dei PF aumenta di due per ogni livello, compresi quelli già raggiunti.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "concentrationSaveAdvantageAgainst": [
+          0
+        ],
+        "opportunitySpell": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "somaticComponentsWithOccupiedWeaponOrShieldHands": [
+          0
+        ]
+      },
+      "id": "phb2014:feat:war-caster",
+      "index": "war-caster",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "concentrationSaveAdvantageAgainst": "damage",
+        "opportunitySpell": {
+          "activation": "reaction",
+          "castingTime": "1-action",
+          "target": "only-provoking-creature",
+          "trigger": "hostile-movement-provokes-opportunity"
+        },
+        "prerequisites": {
+          "canCastSpell": true
+        },
+        "somaticComponentsWithOccupiedWeaponOrShieldHands": true
+      },
+      "name": "War Caster",
+      "nameIt": "Incantatore da Guerra",
+      "optional": true,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            171
+          ],
+          "printedPages": [
+            170
+          ],
+          "section": "War Caster",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Migliori la concentrazione sotto danno, esegui componenti somatiche con armi o scudi in mano e puoi sostituire un attacco di opportunità con una magia adatta.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "editorialCorrections": [
+        {
+          "correctedValue": [
+            "simple",
+            "martial"
+          ],
+          "entityId": "phb2014:feat:weapon-master",
+          "field": "weaponProficiencyChoice.categories",
+          "operation": "add",
+          "originalValue": null,
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Weapon Master",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        }
+      ],
+      "fieldSources": {
+        "abilityBonusChoice": [
+          0
+        ],
+        "prerequisites": [
+          0
+        ],
+        "weaponProficiencyChoice": [
+          0,
+          1
+        ]
+      },
+      "id": "phb2014:feat:weapon-master",
+      "index": "weapon-master",
+      "interpretations": [],
+      "kind": "feat",
+      "mechanics": {
+        "abilityBonusChoice": {
+          "bonus": 1,
+          "from": [
+            "strength",
+            "dexterity"
+          ],
+          "maximum": 20
+        },
+        "prerequisites": {},
+        "weaponProficiencyChoice": {
+          "categories": [
+            "simple",
+            "martial"
+          ],
+          "choose": 4
+        }
+      },
+      "name": "Weapon Master",
+      "nameIt": "Maestro delle Armi",
+      "optional": true,
+      "originalPrintingSummaryIt": "Un incremento fisico e quattro competenze in armi a scelta.",
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            171
+          ],
+          "printedPages": [
+            170
+          ],
+          "section": "Weapon Master",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Weapon Master",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Incremento Forza o Destrezza e quattro competenze in armi, ciascuna semplice o da guerra.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "editorialCorrections": [
+        {
+          "correctedValue": true,
+          "entityId": "phb2014:weapon-property:ammunition",
+          "field": "freeHandToLoadOneHandedWeapon",
+          "operation": "add",
+          "originalValue": null,
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Ammunition",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        }
+      ],
+      "fieldSources": {
+        "expendedPerAttack": [
+          0
+        ],
+        "freeHandToLoadOneHandedWeapon": [
+          1
+        ],
+        "meleeUse": [
+          0
+        ],
+        "recoverFraction": [
+          0
+        ],
+        "searchMinutes": [
+          0
+        ]
+      },
+      "id": "phb2014:weapon-property:ammunition",
+      "index": "ammunition",
+      "interpretations": [],
+      "kind": "weapon-property",
+      "mechanics": {
+        "expendedPerAttack": 1,
+        "freeHandToLoadOneHandedWeapon": true,
+        "meleeUse": "improvised",
+        "recoverFraction": 0.5,
+        "searchMinutes": 1
+      },
+      "name": "Ammunition",
+      "nameIt": "Munizioni",
+      "optional": false,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            147,
+            148
+          ],
+          "printedPages": [
+            146,
+            147
+          ],
+          "section": "Ammunition",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Ammunition",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Servono munizioni; un minuto di ricerca dopo lo scontro ne recupera metà.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "abilityChoice": [
+          0
+        ],
+        "sameAbilityForAttackAndDamage": [
+          0
+        ]
+      },
+      "id": "phb2014:weapon-property:finesse",
+      "index": "finesse",
+      "interpretations": [],
+      "kind": "weapon-property",
+      "mechanics": {
+        "abilityChoice": [
+          "strength",
+          "dexterity"
+        ],
+        "sameAbilityForAttackAndDamage": true
+      },
+      "name": "Finesse",
+      "nameIt": "Accurata",
+      "optional": false,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            148
+          ],
+          "printedPages": [
+            147
+          ],
+          "section": "Finesse",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Puoi scegliere Forza o Destrezza, mantenendo la scelta per attacco e danni.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "editorialCorrections": [
+        {
+          "correctedValue": [
+            "Small",
+            "Tiny"
+          ],
+          "entityId": "phb2014:weapon-property:heavy",
+          "field": "attackDisadvantageSizes",
+          "operation": "add",
+          "originalValue": null,
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Heavy",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        }
+      ],
+      "fieldSources": {
+        "attackDisadvantageSizes": [
+          1
+        ],
+        "smallCreaturesAttackDisadvantage": [
+          0
+        ]
+      },
+      "id": "phb2014:weapon-property:heavy",
+      "index": "heavy",
+      "interpretations": [],
+      "kind": "weapon-property",
+      "mechanics": {
+        "attackDisadvantageSizes": [
+          "Small",
+          "Tiny"
+        ],
+        "smallCreaturesAttackDisadvantage": true
+      },
+      "name": "Heavy",
+      "nameIt": "Pesante",
+      "optional": false,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            148
+          ],
+          "printedPages": [
+            147
+          ],
+          "section": "Heavy",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Heavy",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Le creature Piccole hanno svantaggio; non applicare i requisiti di Forza del 2024.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "enables": [
+          0
+        ]
+      },
+      "id": "phb2014:weapon-property:light",
+      "index": "light",
+      "interpretations": [],
+      "kind": "weapon-property",
+      "mechanics": {
+        "enables": "two-weapon-fighting-with-other-light-melee-weapon"
+      },
+      "name": "Light",
+      "nameIt": "Leggera",
+      "optional": false,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            148
+          ],
+          "printedPages": [
+            147
+          ],
+          "section": "Light",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "La proprietà permette il combattimento con due armi secondo i relativi requisiti.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "activations": [
+          0
+        ],
+        "maxAmmunitionPerActivation": [
+          0
+        ]
+      },
+      "id": "phb2014:weapon-property:loading",
+      "index": "loading",
+      "interpretations": [],
+      "kind": "weapon-property",
+      "mechanics": {
+        "activations": [
+          "action",
+          "bonus-action",
+          "reaction"
+        ],
+        "maxAmmunitionPerActivation": 1
+      },
+      "name": "Loading",
+      "nameIt": "Ricarica",
+      "optional": false,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            148
+          ],
+          "printedPages": [
+            147
+          ],
+          "section": "Loading",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Limita il numero di proiettili per singola azione, azione bonus o reazione.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "beyondLong": [
+          0
+        ],
+        "beyondNormal": [
+          0
+        ],
+        "unit": [
+          0
+        ]
+      },
+      "id": "phb2014:weapon-property:range",
+      "index": "range",
+      "interpretations": [],
+      "kind": "weapon-property",
+      "mechanics": {
+        "beyondLong": "cannot-attack",
+        "beyondNormal": "disadvantage",
+        "unit": "ft"
+      },
+      "name": "Range",
+      "nameIt": "Gittata",
+      "optional": false,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            148
+          ],
+          "printedPages": [
+            147
+          ],
+          "section": "Range",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Le due distanze rappresentano gittata normale e massima.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "editorialCorrections": [
+        {
+          "correctedValue": "normal-reach-plus-5-ft-with-this-weapon",
+          "entityId": "phb2014:weapon-property:reach",
+          "field": "opportunityReach",
+          "operation": "replace",
+          "originalValue": null,
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Reach",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        }
+      ],
+      "fieldSources": {
+        "attackReachBonusFt": [
+          0
+        ],
+        "opportunityReach": [
+          0,
+          1
+        ]
+      },
+      "id": "phb2014:weapon-property:reach",
+      "index": "reach",
+      "interpretations": [],
+      "kind": "weapon-property",
+      "mechanics": {
+        "attackReachBonusFt": 5,
+        "opportunityReach": "normal-reach-plus-5-ft-with-this-weapon"
+      },
+      "name": "Reach",
+      "nameIt": "Portata",
+      "optional": false,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            148
+          ],
+          "printedPages": [
+            147
+          ],
+          "section": "Reach",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Reach",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "La portata aumenta di cinque piedi per gli attacchi e per determinare gli attacchi di opportunita con questa arma.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "weaponSpecific": [
+          0
+        ]
+      },
+      "id": "phb2014:weapon-property:special",
+      "index": "special",
+      "interpretations": [],
+      "kind": "weapon-property",
+      "mechanics": {
+        "weaponSpecific": true
+      },
+      "name": "Special",
+      "nameIt": "Speciale",
+      "optional": false,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            148,
+            149
+          ],
+          "printedPages": [
+            147,
+            148
+          ],
+          "section": "Special",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Consulta le regole proprie di lancia da cavaliere e rete.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "enables": [
+          0
+        ],
+        "meleeWeaponAbility": [
+          0
+        ]
+      },
+      "id": "phb2014:weapon-property:thrown",
+      "index": "thrown",
+      "interpretations": [],
+      "kind": "weapon-property",
+      "mechanics": {
+        "enables": "ranged-attack",
+        "meleeWeaponAbility": "same-as-melee-attack"
+      },
+      "name": "Thrown",
+      "nameIt": "Lancio",
+      "optional": false,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            148
+          ],
+          "printedPages": [
+            147
+          ],
+          "section": "Thrown",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Un’arma da mischia lanciata mantiene la caratteristica usata negli attacchi da mischia.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "editorialCorrections": [
+        {
+          "correctedValue": "attacking",
+          "entityId": "phb2014:weapon-property:two-handed",
+          "field": "handsRequiredWhen",
+          "operation": "add",
+          "originalValue": null,
+          "sources": [
+            {
+              "book": "phb-errata",
+              "edition": "2014",
+              "filename": "PH-Errata.pdf",
+              "pdfPages": [
+                3
+              ],
+              "printedPages": null,
+              "section": "Two-Handed",
+              "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+              "verification": "read-local-text"
+            }
+          ],
+          "verification": "verified-official-erratum"
+        }
+      ],
+      "fieldSources": {
+        "handsRequiredWhen": [
+          1
+        ],
+        "handsToUse": [
+          0
+        ]
+      },
+      "id": "phb2014:weapon-property:two-handed",
+      "index": "two-handed",
+      "interpretations": [],
+      "kind": "weapon-property",
+      "mechanics": {
+        "handsRequiredWhen": "attacking",
+        "handsToUse": 2
+      },
+      "name": "Two-Handed",
+      "nameIt": "A Due Mani",
+      "optional": false,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            148
+          ],
+          "printedPages": [
+            147
+          ],
+          "section": "Two-Handed",
+          "verification": "read-local-text"
+        },
+        {
+          "book": "phb-errata",
+          "edition": "2014",
+          "filename": "PH-Errata.pdf",
+          "pdfPages": [
+            3
+          ],
+          "printedPages": null,
+          "section": "Two-Handed",
+          "url": "https://media.wizards.com/2021/dnd/downloads/PH-Errata.pdf",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "L’uso dell’arma richiede entrambe le mani.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    },
+    {
+      "edition": "2014",
+      "fieldSources": {
+        "handsChoice": [
+          0
+        ],
+        "twoHandMeleeDamage": [
+          0
+        ]
+      },
+      "id": "phb2014:weapon-property:versatile",
+      "index": "versatile",
+      "interpretations": [],
+      "kind": "weapon-property",
+      "mechanics": {
+        "handsChoice": [
+          1,
+          2
+        ],
+        "twoHandMeleeDamage": "weapon-specific"
+      },
+      "name": "Versatile",
+      "nameIt": "Versatile",
+      "optional": false,
+      "sources": [
+        {
+          "book": "phb",
+          "edition": "2014",
+          "filename": "D&D_5_Player_Original_Handbook.pdf",
+          "pdfPages": [
+            148
+          ],
+          "printedPages": [
+            147
+          ],
+          "section": "Versatile",
+          "verification": "read-local-text"
+        }
+      ],
+      "summaryIt": "Il dado indicato tra parentesi vale per l’attacco da mischia con due mani.",
+      "translation": {
+        "language": "it",
+        "status": "assistant-translation"
+      },
+      "verification": {
+        "complete": true,
+        "identity": "verified",
+        "mechanics": "verified-fields",
+        "missingFields": []
+      }
+    }
+  ],
+  "edition": "2014",
+  "policy": "optional-feats-and-variants-are-explicit-selections; replacement-fields-do-not-stack-with-base-fields",
+  "schemaVersion": 1
+}

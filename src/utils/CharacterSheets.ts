@@ -10,7 +10,7 @@ export const characterFields = {
 
 export const numericCharacterFields = ['hitPoints', 'armorClass', 'initiative', 'strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const
 
-export type SheetAbility = { name: string; duration: keyof typeof durationTurns; catalogId?: string; remainingTurns?: number; timed?: boolean; description?: string }
+export type SheetAbility = { name: string; duration: keyof typeof durationTurns; catalogId?: string; remainingTurns?: number; timed?: boolean; description?: string; expiresAt?:'start'|'end'; repeatSave?:string;ruleId?:string;concentration?:boolean }
 
 export type CharacterSheet = { id: string; abilities: SheetAbility[]; catalogId?: string; playerDetails?: Record<string, string> } & Record<keyof typeof characterFields, string>
 
@@ -53,6 +53,10 @@ export function parseCharacterSheets(raw: string | null): CharacterSheet[] {
             && (!('remainingTurns' in ability) || ability.remainingTurns === undefined || (Number.isSafeInteger(ability.remainingTurns) && Number(ability.remainingTurns) >= 0))
             && (!('timed' in ability) || ability.timed === undefined || typeof ability.timed === 'boolean')
             && (!('description' in ability) || ability.description === undefined || typeof ability.description === 'string')
+            && (!('expiresAt' in ability) || ability.expiresAt===undefined || ['start','end'].includes(String(ability.expiresAt)))
+            && (!('repeatSave' in ability) || ability.repeatSave===undefined || typeof ability.repeatSave==='string')
+            && (!('ruleId' in ability) || ability.ruleId===undefined || typeof ability.ruleId==='string')
+            && (!('concentration' in ability) || ability.concentration===undefined || typeof ability.concentration==='boolean')
         )))
         && numericCharacterFields.every((key) => sheet[key] === '' || (sheet[key].trim() !== '' && Number.isSafeInteger(Number(sheet[key]))))
     ) || new Set(value.map((sheet) => sheet.id)).size !== value.length) {

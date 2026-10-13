@@ -2,11 +2,17 @@ import { lazy, Suspense, useState } from 'react'
 import { Link, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthPage } from './auth/AuthPage'
 import { useAuth } from './auth/useAuth'
-import { TurnsTracker } from './components/TurnsTracker'
 import './App.css'
 import './auth.css'
 
+const BarbarianCharacterSheet = lazy(() => import('./barbarian/CharacterSheet'))
 const BarbarianSheet = lazy(() => import('./barbarian/BarbarianSheet'))
+const TurnsTracker=lazy(()=>import('./components/TurnsTracker').then(module=>({default:module.TurnsTracker})))
+const AccountLayout=lazy(()=>import('./components/PlayPages').then(module=>({default:module.AccountLayout})))
+const HomePage=lazy(()=>import('./components/PlayPages').then(module=>({default:module.HomePage})))
+const CharacterPage=lazy(()=>import('./components/PlayPages').then(module=>({default:module.CharacterPage})))
+const InvitePage=lazy(()=>import('./components/PlayPages').then(module=>({default:module.InvitePage})))
+const GamePage=lazy(()=>import('./components/PlayPages').then(module=>({default:module.GamePage})))
 
 function ProtectedTrackers() {
   const { status, user, error, refreshUser, logout: endUserSession } = useAuth()
@@ -55,6 +61,7 @@ function ProtectedTrackers() {
   return (
     <>
       <header className="user-bar">
+        <Link to="/">Il mio tavolo</Link>
         <span>Accesso effettuato come <strong>{user.username}</strong></span>
         <Link to="/schede/barbaro">Scheda Barbaro</Link>
         <label>Lingua <select value={language} onChange={(event) => changeLanguage(event.target.value)}>
@@ -71,14 +78,19 @@ function ProtectedTrackers() {
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/trackers" replace />} />
+    <Suspense fallback={<p className="auth-status" role="status">Caricamento di Dev &amp; Dice…</p>}><Routes>
+      <Route path="/" element={<AccountLayout><HomePage/></AccountLayout>} />
+      <Route path="/characters/new" element={<AccountLayout><CharacterPage/></AccountLayout>} />
+      <Route path="/characters/:id" element={<AccountLayout><CharacterPage/></AccountLayout>} />
+      <Route path="/join/:token" element={<AccountLayout><InvitePage/></AccountLayout>} />
+      <Route path="/games/:id" element={<AccountLayout><GamePage/></AccountLayout>} />
       <Route path="/login" element={<AuthPage mode="login" />} />
       <Route path="/register" element={<AuthPage mode="register" />} />
       <Route path="/trackers" element={<ProtectedTrackers />} />
-      <Route path="/schede/barbaro" element={<Suspense fallback={<p role="status">Caricamento della scheda…</p>}><BarbarianSheet /></Suspense>} />
+      <Route path="/schede/barbaro" element={<Suspense fallback={<p role="status">Caricamento della scheda…</p>}><BarbarianCharacterSheet /></Suspense>} />
+      <Route path="/schede/barbaro/pdf" element={<Suspense fallback={<p role="status">Caricamento della scheda…</p>}><BarbarianSheet /></Suspense>} />
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    </Routes></Suspense>
   )
 }
 

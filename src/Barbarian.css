@@ -1,0 +1,65 @@
+/* ponytail: il Barbaro riusa cornici, campi e impaginazione del Mago; solo le differenze sono qui. */
+.barbarian-character-sheet { max-width: 1220px; margin: 0 auto; padding: 24px; }
+.player-barbarian-navigation { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-bottom: 16px; }
+.player-barbarian-navigation h1 { flex: 1; margin: 0; font-size: 24px; }
+.player-barbarian-navigation button { min-height: 44px; padding: 8px 16px; color: white; background: #147d72; border: 0; border-radius: 4px; font: inherit; cursor: pointer; }
+.player-barbarian-navigation button:disabled { opacity: .5; cursor: default; }
+.player-paper-barbarian .player-wizard-class > strong::before { display: none; }
+.player-paper-barbarian .player-wizard-identity-0 .player-wizard-class > strong { padding-left: 12px; font-size: clamp(24px, 2.9cqw, 44px); }
+.player-paper-barbarian .player-box.player-barbarian-rage {
+    padding: 22px 18px;
+    border-image: var(--wizard-scroll);
+}
+.player-paper-barbarian .player-barbarian-rage > h3 { font-size: 24px; }
+.player-paper-barbarian .player-barbarian-rage-counts { gap: 8px; text-align: center; }
+.player-paper-barbarian .player-barbarian-rage-counts .player-field > span { font-size: 10px; text-transform: none; }
+.player-paper-barbarian .player-barbarian-rage-counts :is(input, output) { height: 44px; padding: 6px 0; font-size: 24px; text-align: center; }
+.player-paper-barbarian .player-barbarian-rage-counts output { box-sizing: border-box; }
+.player-paper-barbarian .player-barbarian-rage-remaining { font-size: 16px; text-align: center; }
+.player-paper-barbarian .player-barbarian-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.player-paper-barbarian .player-barbarian-actions button { min-height: 44px; padding: 8px; border: 1px solid var(--paper-line); background: white; color: var(--paper-ink); font: inherit; cursor: pointer; }
+.player-paper-barbarian .player-barbarian-actions button:disabled { opacity: .5; cursor: default; }
+.player-paper-barbarian .player-barbarian-actions button:focus-visible { outline: 2px solid #147d72; outline-offset: 2px; }
+.player-paper-barbarian .player-hint { font-size: 12px; line-height: 1.5; }
+.player-paper-barbarian .player-barbarian-source { display: block; font-size: 10px; overflow-wrap: anywhere; }
+.player-paper-barbarian .player-barbarian-feature { padding: 8px 0; border-bottom: 1px solid #bebec1; }
+.player-paper-barbarian .player-barbarian-feature summary { cursor: pointer; font-size: 13px; }
+.player-paper-barbarian .player-barbarian-feature p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.player-paper-barbarian .player-box.player-wizard-privilege { min-height: 220px; padding: 24px 16px 12px; }
+.player-paper-barbarian .player-wizard-privilege h3 { padding-right: 36px; font-size: 14px; }
+.player-paper-barbarian .player-wizard-privilege .player-field > span { font-size: 11px; text-transform: none; }
+.player-paper-barbarian .player-wizard-privilege textarea { min-height: 170px; font-size: 13px; }
+.player-paper-barbarian .player-barbarian-notes textarea { min-height: 240px; }
+.player-paper-barbarian .player-box:has(> .player-table-scroll) { min-width: 0; }
+
+@media screen and (max-width: 850px) {
+    .barbarian-character-sheet { padding: 16px; }
+    .player-paper-barbarian { min-width: 0; padding: 20px; }
+    .player-paper-barbarian .player-stat-page, .player-paper-barbarian .player-story-page { grid-template-columns: minmax(0, 1fr); gap: 24px; min-height: 0; }
+    .player-paper-barbarian .player-wizard-identity-0 { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+    .player-paper-barbarian .player-wizard-identity-0 .player-name { margin: 0; height: 120px; }
+    .player-paper-barbarian .player-wizard-identity-0 .player-wizard-bio { min-height: 170px; }
+    .player-paper-barbarian .player-wizard-identity-0 :is(input, select) { font-size: 18px; }
+    .player-paper-barbarian .player-wizard-identity-0 .player-field > span { font-size: 12px; }
+    .player-paper-barbarian .player-wizard-identity-0 .player-wizard-class > strong { min-height: 80px; font-size: 32px; }
+    .player-paper-barbarian .player-wizard-identity-0 .player-wizard-class-fields { grid-template-columns: 60px minmax(0, 1fr); }
+    .player-paper-barbarian .player-wizard-identity-0 .player-wizard-class-fields > .player-field:first-child { min-height: 70px; }
+    .player-paper-barbarian .player-wizard-score .player-roll { min-height: 28px; }
+    .player-paper-barbarian .player-wizard-score .player-roll .player-check { min-width: 24px; min-height: 32px; justify-content: center; }
+    .player-paper-barbarian .player-wizard-score .player-roll > span { min-width: 0; font-size: 11px; overflow-wrap: anywhere; }
+    .player-paper-barbarian .player-wizard-score .player-roll > input { width: 30px; height: 28px; font-size: 16px; }
+    .player-paper-barbarian .player-wizard-story .player-column { gap: 20px; }
+    .player-paper-barbarian .player-wizard-identity-1 { display: grid; grid-template-columns: minmax(0, 1fr); aspect-ratio: auto; background: none; }
+    .player-paper-barbarian .player-wizard-identity-1 :is(.player-name, .player-wizard-appearance, .player-wizard-appearance > div) { position: static; pointer-events: auto; }
+    .player-paper-barbarian .player-wizard-identity-1 .player-name { width: auto; height: auto; padding: 16px; }
+    .player-paper-barbarian .player-wizard-identity-1 .player-name input { height: 44px; font-size: 24px; }
+    .player-paper-barbarian .player-wizard-identity-1 .player-wizard-appearance > div { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 12px 0; }
+    .player-paper-barbarian .player-wizard-identity-1 .player-field > span { position: static; width: auto; height: auto; clip-path: none; font-size: 11px; }
+    .player-paper-barbarian .player-wizard-identity-1 .player-field input { height: 40px; font-size: 16px; }
+    .player-paper-barbarian .player-wizard-inventory-row { grid-template-columns: minmax(0, 1fr) repeat(3, 40px); gap: 4px; }
+    .player-paper-barbarian .player-wizard-worn-page { display: grid; gap: 16px; aspect-ratio: auto; background-image: none !important; }
+    .player-paper-barbarian :is(.player-wizard-worn-name, .player-wizard-attunements, .player-worn-slot) { position: static; width: auto; height: auto; }
+    .player-paper-barbarian .player-wizard-attunements::before { content: 'Sintonie attive: '; }
+    .player-paper-barbarian :is(.player-wizard-worn-name, .player-worn-slot) .player-field > span { position: static; clip-path: none; width: auto; height: auto; font-size: 12px; }
+    .player-paper-barbarian .player-worn-slot textarea { min-height: 60px; padding: 8px; border: 1px solid #8e8984; font-size: 16px; }
+}

@@ -1,5 +1,11 @@
 # Riferimento verificato locale D&D 5e 2014
 
+**Integrazione nell’app:** il payload verificato è ora pubblicato in
+`public/data/rules2014` e caricato dal loader attivo. Il vecchio `public/data`
+rimane conservato. Vedere [integrazione, compatibilità e ripristino](../../docs/database-regole-2014.md)
+per lo stato operativo corrente. I paragrafi seguenti descrivono la costruzione
+della release sorgente locale, che resta immutabile e distinta dall’attivazione.
+
 Strumenti per costruire un riferimento e un database integrato **separati da
 `public/data`**. Backup, release precedenti e cataloghi operativi rimangono immutabili.
 L’adattatore candidato non è collegato al loader dell’app. Nessun commit o push

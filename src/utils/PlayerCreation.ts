@@ -1,13 +1,16 @@
 import { abilityModifier, signedBonus, characterFields, characterLevel, clampCurrentHitPointsToMaximum, integerValue, inventoryTotalWeight, patchSheetStats, type SheetStats, type CharacterSheet } from './CharacterSheets.ts'
-import { castingAbilityKey, classId, spellEdition, spellProfile, spellCounts, grantedSpells, spellLimitIssue, type SpellSource, type SpellSelectionLimit, type RulesEdition } from './Spellcasting.ts'
+import { castingAbilityKey, classId, classLevel, spellEdition, spellProfile, spellCounts, grantedSpells, spellLimitIssue, type SpellSource, type SpellSelectionLimit, type RulesEdition } from './Spellcasting.ts'
 import { wizardFeatures2024, wizardBookIssues, wizardBookLimits, wizardFeatureSelected, selectedWizardFeatures, addWizardFeatureSpells, wizardSpellPool, wizardWardMaximum, featureResourceKey } from './Wizard.ts'
 import { reconcileInventory, ownedInventoryItems, inventoryEquipment, inventoryFieldValue, inventoryReferenceKey, referencedInventoryItem, updateInventoryField, projectInventory, inventoryCarriedWeight, inventoryItems, type InventoryGrant } from './Inventory.ts'
 import type { Catalog } from './Catalog.ts'
 import { appearanceFieldKey, appearanceLegacyKey } from './CharacterAppearance.ts'
+import { creationDataForEdition, sheetClassLevels, verifiedSheetFields, multiclassIssues, referenceFor, sheetSelectedOptions, loadActiveDatabase, availableRuleFeatures } from '../domain/dnd/ActiveRules.ts'
+import { patronExpandedSpellChoices } from '../domain/dnd/VerifiedDatabase.ts'
+import type { CandidateCreationData } from '../domain/dnd/VerifiedDatabase.ts'
 
 export const abilityKeys = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const
 export type AbilityKey = typeof abilityKeys[number]
-export type Ref = { index: string; name: string; nameIt?: string; aliases?: string[] }
+export type Ref = { index: string; name: string; nameIt?: string; aliases?: string[]; referenceId?: string; ruleStatus?: 'verified'|'partial'|'legacy'; ruleSources?: string }
 export type Option = { option_type: string; item?: Ref; of?: Ref; count?: number; items?: Option[]; choice?: Choice; ability_score?: Ref; bonus?: number; desc?: string }
 export type Choice = { choose: number; desc?: string; type: string; from: { option_set_type: string; options?: Option[]; equipment_category?: Ref } }
 export type Equipment = Ref & { weight?: number; contents?: { item: Ref; quantity: number }[]; desc?: string[]; armor_class?: { base: number; dex_bonus: boolean; max_bonus?: number }; armor_category?: string; str_minimum?: number; stealth_disadvantage?: boolean; weapon_category?: string; weapon_range?: string; properties?: Ref[]; damage?: { damage_dice: string; damage_type: Ref } }
@@ -22,6 +25,7 @@ export type Origin = Ref & {
     trait_specific?: { spell_options?: Omit<Choice, 'type'>; subtrait_options?: Omit<Choice, 'type'> };
     minimumLevel?: number; editions?: RulesEdition[]; status?: 'published' | 'ua' | 'archived-ua'; sources?: string[]; sourceUrl?: string; automationStatus?: string;
     features?: ClassFeature[];
+    multi_classing?: { prerequisites?: {ability_score:Ref;minimum_score:number}[]; prerequisite_options?: {choose:number;from:{options:{ability_score:Ref;minimum_score:number}[]}};proficiencies?:Ref[];proficiency_choices?:Choice[] }
 }
 export type ClassFeature = Ref & { class: Ref; subclass?: Ref; level: number; desc: string[]; editions?: RulesEdition[]; sourceUrl?: string; activation?: 'active' | 'passive'; rounds?: number; choice?: boolean;
     parent?: Ref; feature_specific?: { subfeature_options?: Choice; expertise_options?: Choice };
@@ -29,6 +33,8 @@ export type ClassFeature = Ref & { class: Ref; subclass?: Ref; level: number; de
     grants?: { index: string; name: string; level: number; minimum?: number; always?: boolean; free?: boolean }[]; grantOptions?: string[];
 }
 export type CreationData = {
+    verified?: CandidateCreationData; legacy?: CreationData
+    legacyCatalogs?:Record<'it'|'en',Catalog>
     experienceThresholds?: { levels: { level: number; minimumXP: number }[] };
     classes: Origin[]; subclasses: Origin[]; races: Origin[]; subraces: Origin[]; backgrounds: Origin[]; alignments: Ref[]; languages: Ref[]; traits: Origin[];
     features: ClassFeature[];
@@ -40,16 +46,12 @@ export type CreationData = {
 
 export function translatedCreationData(data: CreationData, catalog?: Catalog): CreationData {
     const translated = new Map(catalog?.abilities.filter((x) => typeof x.data.level === 'number').flatMap((x) => (Array.isArray(x.data.aliases) ? x.data.aliases : [x.name]).filter((name): name is string => typeof name === 'string').map((name) => [name.toLowerCase(), x] as const)))
-    return { ...data, spells: data.spells.map((x) => { const entry = translated.get(x.name.toLowerCase()); return { ...x, nameIt: entry?.name, desc: entry?.description.trim() ? [entry.description] : x.desc, aliases: Array.isArray(entry?.data.aliases) ? entry.data.aliases.filter((name): name is string => typeof name === 'string') : x.aliases } }) }
+    return { ...data, spells: data.spells.map((x) => { if (x.referenceId) return x; const entry = translated.get(x.name.toLowerCase()); return { ...x, nameIt: entry?.name, desc: entry?.description.trim() ? [entry.description] : x.desc, aliases: Array.isArray(entry?.data.aliases) ? entry.data.aliases.filter((name): name is string => typeof name === 'string') : x.aliases } }) }
 }
 
 let cached: Promise<CreationData> | undefined
 export function loadCreationData(): Promise<CreationData> {
-    cached ??= Promise.all(['character-options', 'character-equipment', 'character-rules', 'wizard-catalog'].map(async (file) => {
-        const response = await fetch(`${import.meta.env.BASE_URL}data/${file}.json`)
-        if (!response.ok) throw new Error('Impossibile caricare le opzioni del personaggio.')
-        return response.json()
-    })).then(([options, equipment, rules, wizard]) => withWizardCatalog({ ...options, ...equipment, skills: rules.skills, experienceThresholds:rules.experienceThresholds }, wizard))
+    cached ??= loadActiveDatabase().then((value) => value.creationData)
         .catch((error: unknown) => { cached = undefined; throw error })
     return cached
 }
@@ -116,7 +118,7 @@ export function characterCalculationIssues(sheet: CharacterSheet): string[] {
     const ids=inventoryItems(sheet).map((x) => x.id).filter(Boolean)
     if (new Set(ids).size !== ids.length) issues.push('Gli identificativi dell’inventario devono essere distinti: verifica i collegamenti senza eliminare gli oggetti.')
     if (sheet.hitPoints.trim() && (integerValue(sheet.hitPoints) === undefined || Number(sheet.hitPoints) < 0)) issues.push('I PF attuali devono essere un intero non negativo.')
-    if (sheet.level.trim() && characterLevel(sheet) === undefined) issues.push('Il livello deve essere un intero tra 1 e 20.')
+    if (sheet.kind==='PG' && sheet.level.trim() && characterLevel(sheet) === undefined) issues.push('Il livello deve essere un intero tra 1 e 20.')
     for (const key of abilityKeys) if (sheet[key].trim() && modifier(sheet[key]) === undefined) issues.push(`${characterFields[key]} deve essere un intero tra 1 e 30.`)
     for (const [key, value] of Object.entries(d)) {
         if (!value.trim()) continue
@@ -220,10 +222,14 @@ export function creationChoices(sheet: CharacterSheet, data: CreationData): { ch
         if (trait?.trait_specific?.spell_options) result.push({ choice: { ...trait.trait_specific.spell_options, type: 'racial-spells' }, path: `choice.trait.${ref.index}.spell`, label: 'Trucchetto razziale (Intelligenza)' })
         if (trait?.trait_specific?.subtrait_options) result.push({ choice: { ...trait.trait_specific.subtrait_options, type: 'trait' }, path: `choice.trait.${ref.index}.ancestry`, label: labelOf(ref) })
     }
-    for (const feature of data.features.filter((x) => x.class.index === characterClass?.index && (!x.subclass || x.subclass.index === selectedOrigins(sheet, data).subclass?.index) && x.level <= Number(sheet.level) && (x.editions ? x.editions.includes(spellEdition(sheet)) : spellEdition(sheet) === '2014'))) {
+    const levels=data.verified ? sheetClassLevels(sheet) : {[characterClass?.index ?? '']:classLevel(sheet)}
+    for (const feature of data.features.filter((x) => (levels[x.class.index] ?? 0)>0 && (!x.subclass || x.subclass.index===(sheet.playerDetails?.[`rules2014.subclass.${x.class.index}`] ?? (x.class.index===characterClass?.index ? selectedOrigins(sheet,data).subclass?.index : undefined))) && x.level <= (levels[x.class.index] ?? 0) && (x.editions ? x.editions.includes(spellEdition(sheet)) : spellEdition(sheet) === '2014'))) {
         const specific = feature.feature_specific
         if (specific?.subfeature_options) result.push({ choice: specific.subfeature_options, path: `choice.feature.${feature.index}`, label: labelOf(feature) })
         if (specific?.expertise_options) result.push({ choice: { ...specific.expertise_options, type: 'expertise' }, path: `choice.expertise.${feature.index}`, label: `Maestria: ${labelOf(feature)}` })
+    }
+    if (data.verified && spellEdition(sheet)==='2014') for (const cls of Object.keys(sheetClassLevels(sheet)).filter((cls)=>cls!==characterClass?.index)) {
+        data.classes.find((c)=>c.index===cls)?.multi_classing?.proficiency_choices?.forEach((choice,i)=>result.push({choice:{...choice,type:'proficiencies'},path:`choice.multiclass.${cls}.proficiency.${i}`,label:`Competenze da multiclassamento: ${cls}`}))
     }
     return result
 }
@@ -236,13 +242,18 @@ export function sheetWithSpellGrants(sheet: CharacterSheet, data: CreationData):
 
 export function spellRules(sheet: CharacterSheet, data: CreationData, edition?: RulesEdition) {
     const profile = spellProfile(sheet, data, edition)
-    const { characterClass, subclass } = selectedOrigins(sheet, data)
+    const characterClass=data.classes.find((cls) => cls.index===profile.classIndex)
+    const subclass=data.subclasses.find((sub) => sub.index===(sheet.playerDetails?.[`rules2014.subclass.${profile.classIndex}`] ?? sheet.playerDetails?.['creation.subclass']))
     const fiend = profile.edition === '2014' && subclass?.index === 'fiend' ? ['burning-hands', 'command', 'blindness-deafness', 'scorching-ray', 'fireball', 'stinking-cloud', 'fire-shield', 'wall-of-fire', 'flame-strike', 'hallow'] : []
-    return { ...profile, spells: (characterClass?.index === 'wizard' ? wizardSpellPool(sheet, data) : data.spells).filter((x) => x.level <= profile.maxLevel && (x.classes.some((c) => c.index === characterClass?.index) || fiend.includes(x.index)) && (x.level > 0 || profile.cantrips > 0)) }
+    const patron=data.verified && subclass && profile.edition==='2014' && profile.classIndex==='warlock' ? referenceFor(data.verified,'subclasses',subclass.index) : undefined
+    const expanded=patron && data.verified ? patronExpandedSpellChoices(data.verified,patron.id,profile.maxLevel) : []
+    const classList=['fighter','rogue'].includes(profile.classIndex) && profile.maxLevel ? 'wizard' : profile.classIndex
+    return { ...profile, spells: (characterClass?.index === 'wizard' ? wizardSpellPool(sheet, data) : data.spells).filter((x) => x.level <= profile.maxLevel && (x.classes.some((c) => c.index === classList) || fiend.includes(x.index) || expanded.includes(x.referenceId ?? '')) && (x.level > 0 || profile.cantrips > 0)) }
 }
 
 /** Reconcile only fields still owned by automation; edits to generated fields become overrides. */
 export function applyCreation(input: CharacterSheet, data: CreationData): CharacterSheet {
+    data = creationDataForEdition(data,spellEdition(input))
     const starting: InventoryGrant[] = []
     if (creationEnabled(input)) {
         const origins = selectedOrigins(input,data)
@@ -254,18 +265,31 @@ export function applyCreation(input: CharacterSheet, data: CreationData): Charac
     const sheet = { ...inventorySheet, playerDetails: { ...inventorySheet.playerDetails } }
     const d = sheet.playerDetails
     const { race, subrace, characterClass, background, subclass } = selectedOrigins(sheet, data)
-    const level = characterLevel(sheet) ?? 0
+    const totalLevel = characterLevel(sheet) ?? 0
+    let level = totalLevel
+    if (data.verified && totalLevel) {
+        try { level = sheetClassLevels(sheet)[classId(sheet)] ?? 0 }
+        catch (error) { return {...input,playerDetails:{...input.playerDetails,'rules2014.issues':error instanceof Error ? error.message : 'Livelli di classe non validi.'}} }
+    }
     const edition = spellEdition(sheet)
+    if (data.verified && characterClass?.index==='warlock' && !d['rules2014.release'] && d['rules2014.used.pact']===undefined) {
+        const legacy=Array.from({length:9},(_,i)=>integerValue(input.playerDetails?.[`slots.${i+1}.used`]) ?? 0)
+        if (legacy.some((used)=>used>0)) {
+            d['rules2014.used.pact']=String(legacy.reduce((a,b)=>a+b,0))
+            legacy.forEach((used,i)=>{d[`rules2014.legacySlotUsed.${i+1}`]=String(used);d[`slots.${i+1}.used`]='0'})
+        }
+    }
     const rawExhaustion = integerValue(d.exhaustion) ?? 0
     const exhaustion = rawExhaustion >= 0 && rawExhaustion <= 6 ? rawExhaustion : 0
     const previousExhaustion = integerValue(d['creation.state.exhaustion']) ?? exhaustion
     d['creation.state.exhaustion'] = String(exhaustion)
     const testPenalty = edition === '2024' && exhaustion >= 0 && exhaustion <= 6 ? 2 * exhaustion : 0
-    updateGeneratedField(d, 'proficiencyBonus', level ? 2 + Math.floor((level - 1) / 4) : undefined)
+    updateGeneratedField(d, 'proficiencyBonus', totalLevel ? 2 + Math.floor((totalLevel - 1) / 4) : undefined)
     const pbValue = integerValue(d.proficiencyBonus)
     const pb = pbValue !== undefined && pbValue >= 0 ? pbValue : undefined
     const choices = creationChoices(sheet, data)
     const selectedFeatures = new Set(choices.filter((x) => x.choice.type === 'feature').flatMap(({ choice, path }) => resolveChoice(choice, path, d, data).map((x) => x.ref.index)))
+    if (data.verified) for (const id of sheetSelectedOptions(sheet)) {const option=data.verified.verifiedOptions.find((option)=>option.id===id);if (option?.mechanics.optionType==='fighting-style') selectedFeatures.add('fighting-style-'+option.index)}
     const land = [...selectedFeatures].find((x) => x.startsWith('circle-of-the-land-'))
     if (edition === '2014' && characterClass?.index === 'druid' && subclass?.index === 'land') updateGeneratedField(d, 'creation.land', land?.slice('circle-of-the-land-'.length) ?? '')
     const wizardFeatures = selectedWizardFeatures(sheet, data)
@@ -293,6 +317,14 @@ export function applyCreation(input: CharacterSheet, data: CreationData): Charac
         sheet[key] = score === undefined ? base : String(score + (bonuses[key] ?? 0))
         d[`creation.bonus.${key}`] = String(bonuses[key] ?? 0)
     }
+    if (data.verified) for (const feature of availableRuleFeatures(sheet,data.verified)) {
+        const effect=feature.mechanics.effect
+        if (!feature.verification.complete || !effect || typeof effect!=='object' || Array.isArray(effect) || !effect.abilityBonuses || typeof effect.abilityBonuses!=='object' || Array.isArray(effect.abilityBonuses)) continue
+        for (const key of abilityKeys) {
+            const bonus=effect.abilityBonuses[key],score=integerValue(sheet[key])
+            if (typeof bonus==='number' && score!==undefined) sheet[key]=String(Math.max(score,Math.min(typeof effect.newMaximum==='number' ? effect.newMaximum : 30,score+bonus)))
+        }
+    }
     const next: Record<string, string> = {}
     const put = (key: string, value: string | number | boolean) => { next[key] = String(value) }
     const traitRefs = [...(race?.traits ?? []), ...(subrace?.racial_traits ?? [])]
@@ -301,6 +333,7 @@ export function applyCreation(input: CharacterSheet, data: CreationData): Charac
     const classProfs = (characterClass?.proficiencies ?? []).filter((ref) => !revisedSimple || !(ref.index.endsWith('-weapons') || data.equipment.some((item) => item.weapon_category && item.index === ref.index.replace(/s(?=-|$)/g, '')) || characterClass?.index === 'druid' && ref.index === 'medium-armor'))
     if (revisedSimple) classProfs.push({ index: 'simple-weapons', name: 'Simple Weapons' })
     const profs = [...classProfs, ...(background?.starting_proficiencies ?? []), ...traits.flatMap((x) => x.proficiencies ?? [])]
+    if (data.verified) for (const cls of Object.keys(sheetClassLevels(sheet)).filter((cls) => cls!==characterClass?.index)) profs.push(...(data.classes.find((c) => c.index===cls)?.multi_classing?.proficiencies ?? []))
     choices.filter((x) => x.choice.type === 'proficiencies').forEach(({ choice, path }) => profs.push(...resolveChoice(choice, path, d, data).map((x) => x.ref).filter((ref) => !(edition === '2024' && path.startsWith('choice.class.rogue.') && ref.index === 'skill-performance'))))
     if (hasWizardFeature('Training in War and Song')) profs.push({ index: 'light-armor', name: 'Light Armor' }, { index: 'skill-performance', name: 'Intrattenere' })
     if (hasWizardFeature('Arcanomechanical Armor')) profs.push({ index: 'light-armor', name: 'Light Armor' })
@@ -324,7 +357,7 @@ export function applyCreation(input: CharacterSheet, data: CreationData): Charac
     if (hasWizardFeature('Impeccable Physicality')) put('save.dexterity.proficient', true)
     for (const skill of data.skills) put(skill.playerDetailsKeys.proficient, profSet.has(`skill-${skill.index}`))
     const expertise = new Set(choices.filter((x) => x.choice.type === 'expertise').flatMap(({ choice, path }) => resolveChoice(choice, path, d, data).map((x) => x.ref.index)))
-    if (characterClass?.index !== 'wizard') for (const skill of data.skills) if (expertise.size || d[`creation.auto.${skill.playerDetailsKeys.expertise}`] !== undefined) put(skill.playerDetailsKeys.expertise, expertise.has(`skill-${skill.index}`) && profSet.has(`skill-${skill.index}`))
+    if (characterClass?.index !== 'wizard'||data.verified) for (const skill of data.skills) if (expertise.size || d[`creation.auto.${skill.playerDetailsKeys.expertise}`] !== undefined) put(skill.playerDetailsKeys.expertise, expertise.has(`skill-${skill.index}`) && profSet.has(`skill-${skill.index}`))
     const categories: Record<string, string[]> = { Leggere: ['light-armor', 'all-armor'], Medie: ['medium-armor', 'all-armor'], Pesanti: ['heavy-armor', 'all-armor'], Scudi: ['shields'], 'Armi semplici': ['simple-weapons'], 'Armi da guerra': ['martial-weapons'] }
     Object.entries(categories).forEach(([name, refs]) => updateGeneratedField(d, `proficiency.${name}`, refs.some((x) => profSet.has(x))))
     put('tools', profs.filter((x) => !x.index.startsWith('skill-') && !x.index.startsWith('saving-throw') && !Object.values(categories).flat().includes(x.index)).map(labelOf).join(', '))
@@ -356,7 +389,7 @@ export function applyCreation(input: CharacterSheet, data: CreationData): Charac
     put('wizard.featureRules', JSON.stringify(characterClass?.index === 'wizard' ? selectedWizardFeatures(sheet, data) : []))
     if (characterClass?.index === 'wizard' && spellEdition(sheet) === '2014' && level >= 3 && d['wizard.cantripFormulas'] === 'true') put('classFeatures', next.classFeatures + '\n\nCantrip Formulas (livello 3)\nRegola opzionale: dopo un riposo lungo puoi sostituire un trucchetto da mago consultando il libro.')
     put('hitDice', characterClass?.hit_die ? `1d${characterClass.hit_die}` : '')
-    put('hitDiceTotal', characterClass ? level : '')
+    put('hitDiceTotal', characterClass ? totalLevel : '')
     const con = modifier(sheet.constitution)
     if (level && characterClass?.hit_die && con !== undefined) {
         // ponytail: avanzamenti con PF medi; i tiri reali si conservano tramite l'override dei PF massimi.
@@ -405,8 +438,11 @@ export function applyCreation(input: CharacterSheet, data: CreationData): Charac
     function unarmoredAC(withShield: boolean): number | undefined {
         if (dexBonus === undefined) return undefined
         const normal = 10 + dexBonus
-        if (characterClass?.index === 'barbarian') return con === undefined ? undefined : Math.max(normal, normal + con)
-        if (characterClass?.index === 'monk' && !withShield) {
+        const levels=data.verified ? sheetClassLevels(sheet) : {[characterClass?.index ?? '']:level}
+        const choices=['barbarian','monk'].filter((cls)=>(levels[cls] ?? 0)>0)
+        const defenseClass=choices.includes(characterClass?.index ?? '') ? characterClass?.index : choices.length===1 ? choices[0] : d['rules2014.unarmoredClass']
+        if (defenseClass === 'barbarian') return con === undefined ? undefined : Math.max(normal, normal + con)
+        if (defenseClass === 'monk' && !withShield) {
             const wis = modifier(sheet.wisdom)
             return wis === undefined ? undefined : Math.max(normal, normal + wis)
         }
@@ -425,8 +461,10 @@ export function applyCreation(input: CharacterSheet, data: CreationData): Charac
     put('unshieldedAC', noShield ?? '')
     if (race) {
         let speed = race.speed ?? 30
-        if (characterClass?.index === 'barbarian' && level >= 5 && armor?.armor_category !== 'Heavy') speed += 10
-        if (characterClass?.index === 'monk' && !armor && !shield) speed += data.levels.find((x) => x.index === `monk-${level}`)?.class_specific?.unarmored_movement ?? 0
+        const levels=data.verified ? sheetClassLevels(sheet) : {[characterClass?.index ?? '']:level}
+        if ((levels.barbarian ?? 0) >= 5 && armor?.armor_category !== 'Heavy') speed += 10
+        if ((levels.monk ?? 0)>0 && !armor && !shield) speed += data.levels.find((x) => x.index === `monk-${levels.monk}`)?.class_specific?.unarmored_movement ?? 0
+        if (data.verified && d['rules2014.featsEnabled']==='true') for (const id of sheetSelectedOptions(sheet)) {const feat=data.verified.verifiedCreationOptions.find((e)=>e.id===id&&e.kind==='feat');if (typeof feat?.mechanics.speedBonusFt==='number') speed+=feat.mechanics.speedBonusFt}
         if (armor?.armor_category === 'Heavy' && race.index !== 'dwarf' && sheet.strength !== '' && Number(sheet.strength) < (armor.str_minimum ?? 0)) speed -= 10
         speed = edition === '2024' ? Math.max(0, speed - 5 * exhaustion) : exhaustion >= 5 ? 0 : exhaustion >= 2 ? speed / 2 : speed
         const needsStrength = armor?.armor_category === 'Heavy' && race.index !== 'dwarf' && !!armor.str_minimum
@@ -438,7 +476,7 @@ export function applyCreation(input: CharacterSheet, data: CreationData): Charac
     const wardMaximum = hasWizardFeature('Arcane Ward') ? wizardWardMaximum(sheet) : undefined
     updateDetail('wizard.ward.max', wardMaximum)
     if (wardMaximum !== undefined && (integerValue(d['wizard.ward.current']) ?? 0) > wardMaximum) d['wizard.ward.current'] = String(wardMaximum)
-    if (characterClass?.index === 'wizard') for (const skill of data.skills) if (['arcana','history','nature','religion'].includes(skill.index) && (hasWizardFeature('Lore Mastery') || d[`creation.auto.${skill.playerDetailsKeys.expertise}`] !== undefined)) updateDetail(skill.playerDetailsKeys.expertise, String(hasWizardFeature('Lore Mastery') && d[skill.playerDetailsKeys.proficient] === 'true'))
+    if (characterClass?.index === 'wizard') for (const skill of data.skills) if (['arcana','history','nature','religion'].includes(skill.index) && (hasWizardFeature('Lore Mastery') || d[`creation.auto.${skill.playerDetailsKeys.expertise}`] !== undefined)) updateDetail(skill.playerDetailsKeys.expertise, String((hasWizardFeature('Lore Mastery')||expertise.has('skill-'+skill.index)) && d[skill.playerDetailsKeys.proficient] === 'true'))
     for (const key of abilityKeys) {
         const bonus = modifier(sheet[key]), trained = d[`save.${key}.proficient`] === 'true'
         updateDetail(`save.${key}`, bonus === undefined || trained && pb === undefined ? undefined : bonus + (trained ? pb! : 0) - testPenalty)
@@ -466,6 +504,12 @@ export function applyCreation(input: CharacterSheet, data: CreationData): Charac
     updateDetail('spellDC', magic.maxLevel && castingBonus !== undefined ? 8 + castingBonus : undefined)
     updateDetail('spellAttackBonus', magic.maxLevel && castingBonus !== undefined ? castingBonus - testPenalty : undefined)
     for (let i = 1; i <= 9; i++) updateDetail(`slots.${i}.total`, String(magic.progression[`spell_slots_level_${i}`] ?? 0))
+    if (data.verified && totalLevel && data.classes.some((cls) => cls.index===classId(sheet))) {
+        try {
+            for (const [key,value] of Object.entries(verifiedSheetFields(sheet,data.verified))) updateDetail(key,value)
+            d['rules2014.issues']=multiclassIssues(sheet,data).join(' ')
+        } catch (error) { d['rules2014.issues']=error instanceof Error ? error.message : 'Regole non verificate: consultare il DM.' }
+    }
     const rows = [...new Set(Object.keys(d).flatMap((key) => /^inventory\.(\d+)\.[012]$/.exec(key)?.[1] ?? []))]
     for (const row of rows) d[`inventory.${row}.3`] = characterFieldValue(sheet, `inventory.${row}.3`)
     updateDetail('carriedWeight', inventoryCarriedWeight(sheet))
@@ -513,6 +557,11 @@ export function resetCreationOverrides(sheet: CharacterSheet, data: CreationData
 
 export function spellSelection(sheet: CharacterSheet, data: CreationData) {
     const rules = spellRules(sheet, data)
+    if (data.verified) sheet={...sheet,level:String(rules.classLevel),playerDetails:Object.fromEntries(Object.entries(sheet.playerDetails ?? {}).filter(([key])=>{
+        const root=/^(spell\.\d+\.\d+)\./.exec(key)?.[1]
+        return !root || (sheet.playerDetails?.[root+'.class'] ?? classId(sheet))===rules.classIndex
+    }))}
+    if (data.verified) sheet={...sheet,playerDetails:{...sheet.playerDetails,'creation.class':rules.classIndex,'creation.subclass':sheet.playerDetails?.[`rules2014.subclass.${rules.classIndex}`] ?? sheet.playerDetails?.['creation.subclass'] ?? ''}}
     const d = sheet.playerDetails ?? {}
     const { entries, cantrips, spells, prepared, extra, secrets } = spellCounts(sheet)
     const lore = rules.edition === '2014' && classId(sheet) === 'bard' && d['creation.subclass'] === 'lore' && Number(sheet.level) >= 6

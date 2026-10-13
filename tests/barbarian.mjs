@@ -1,0 +1,150 @@
+// Run: node --experimental-strip-types tests/barbarian.mjs (with npm run dev running).
+import assert from 'node:assert/strict'
+import { readFileSync, existsSync } from 'node:fs'
+import { resolve, join } from 'node:path'
+import { chromium } from 'playwright'
+import { loadCandidateCreationData } from '../src/domain/dnd/VerifiedDatabase.ts'
+import { sheetRuleResources } from '../src/domain/dnd/ActiveRules.ts'
+import { newCharacterSheet, parseCharacterSheets } from '../src/utils/CharacterSheets.ts'
+import { barbarianRules, setBarbarianRageUsed, rageUsedKey } from '../src/utils/Barbarian.ts'
+import { playerTemplate } from '../src/utils/PlayerTemplates.ts'
+import { playerBarbarianCharacter } from '../src/barbarian/player.ts'
+
+const directory = resolve('public/data/rules2014')
+const verified = await loadCandidateCreationData('runtime', async url => {
+    const path = join(directory, url.replace('runtime/', ''))
+    return { ok: existsSync(path), text: async () => readFileSync(path, 'utf8') }
+})
+const data = { ...verified, verified }
+const sheet = { ...newCharacterSheet(), name: 'Barbaro QA', characterClass: 'Barbaro', level: '1' }
+for (const [level, total, damage] of [[1,2,2],[2,2,2],[3,3,2],[5,3,2],[6,4,2],[9,4,3],[12,5,3],[16,5,4],[17,6,4],[19,6,4],[20,'unlimited',4]]) {
+    const rules = barbarianRules({ ...sheet, level: String(level) }, data)
+    assert.equal(rules.total, total)
+    assert.equal(rules.damage, damage)
+}
+assert.equal(playerTemplate(sheet), 'barbarian')
+assert.equal(playerTemplate({ ...sheet, playerDetails: { 'sheet.template': 'barbarian-pdf' } }), 'barbarian-pdf')
+assert.equal(playerTemplate({ ...sheet, playerDetails: { 'sheet.template': 'generic' } }), 'generic')
+assert.equal(playerTemplate({ ...sheet, characterClass: 'Mago', playerDetails: { 'sheet.template': 'barbarian' } }), 'barbarian')
+assert.equal(barbarianRules({ ...sheet, level: '' }, data), undefined)
+assert.equal(barbarianRules({ ...sheet, playerDetails: { 'rules.edition': '2024' } }, data), undefined)
+assert.equal(barbarianRules(sheet), undefined)
+const multi = { ...sheet, level: '10', playerDetails: { 'creation.class': 'barbarian', 'rules2014.level.barbarian': '3', 'rules2014.level.fighter': '7' } }
+assert.equal(barbarianRules(multi, data).total, 3, 'Use class level, not total character level')
+assert.throws(() => barbarianRules({ ...multi, level: '11' }, data), /somma/)
+const legacy = { ...sheet, playerDetails: { 'barbarian.combat.rageUsed': '1', notes: 'Da conservare' } }
+assert.equal(barbarianRules(legacy, data).used, 1)
+const spent = setBarbarianRageUsed(legacy, data, '2')
+assert.equal(barbarianRules(spent, data).remaining, 0)
+assert.equal(sheetRuleResources(spent, verified).find(pool => pool.name === 'Ira').used, 2)
+assert.equal(legacy.playerDetails[rageUsedKey], undefined, 'No mutation of existing saves')
+assert.equal(spent.playerDetails.notes, 'Da conservare')
+for (const value of ['-1','3','1.5','NaN','','  ']) assert.throws(() => setBarbarianRageUsed(spent, data, value))
+const excess = { ...sheet, playerDetails: { [rageUsedKey]: '5' } }
+assert.equal(barbarianRules(excess, data).valid, false)
+assert.equal(excess.playerDetails[rageUsedKey], '5', 'Do not silently clamp after level changes')
+assert.equal(barbarianRules(setBarbarianRageUsed(excess, data, '0'), data).remaining, 2)
+assert.equal(barbarianRules(setBarbarianRageUsed({ ...sheet, level: '20' }, data, '100'), data).remaining, 'unlimited')
+assert.deepEqual(parseCharacterSheets(JSON.stringify([spent]))[0], spent)
+const layouts = [1,2,3].map(n => JSON.parse(readFileSync(`src/barbarian/page${n}.json`, 'utf8')))
+assert.equal(playerBarbarianCharacter(spent, layouts).combat.rageUsed, '2', 'The previous PDF uses the same resource')
+console.log('PASS: 2014 progression, unlimited Rage, multiclass, validation, legacy data and shared resources.')
+
+const browser = await chromium.launch({ headless: true })
+try {
+    const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } })
+    const page = await context.newPage(), errors = []
+    page.setDefaultTimeout(10000)
+    page.on('pageerror', error => errors.push(error.message))
+    const url = process.env.BARBARIAN_URL ?? 'http://localhost:5173/schede/barbaro'
+    await page.goto(url)
+    const paper = page.locator('.player-paper-barbarian')
+    await page.getByRole('button', { name: 'Segna un uso di Ira', exact: true }).waitFor()
+    await page.waitForFunction(() => [...document.querySelectorAll('button')].some(button => button.textContent === 'Segna un uso di Ira' && !button.disabled))
+    const use = page.getByRole('button', { name: 'Segna un uso di Ira', exact: true })
+    await use.click()
+    assert.equal(await page.getByRole('spinbutton', { name: 'Usi spesi di Ira', exact: true }).inputValue(), '1')
+    await use.click(); assert(await use.isDisabled())
+    await page.getByRole('button', { name: 'Riposo lungo · recupera Ira', exact: true }).click()
+    assert.equal(await page.getByRole('spinbutton', { name: 'Usi spesi di Ira', exact: true }).inputValue(), '0')
+    assert.equal(await paper.locator('[data-field="spellDC"], [data-field^="slots."], .player-wizard-favorites').count(), 0)
+    assert.equal(await paper.locator('.player-wizard-hit-die').textContent(), 'd12')
+    await paper.locator('[data-field="name"] input').fill('Kara del clan')
+    await paper.locator('[data-field="level"] input').fill('5')
+    await page.getByRole('spinbutton', { name: 'Usi spesi di Ira', exact: true }).fill('4')
+    assert.equal(await page.getByRole('spinbutton', { name: 'Usi spesi di Ira', exact: true }).inputValue(), '0')
+    await page.getByRole('alert').filter({ hasText: 'intero' }).waitFor()
+    await page.getByRole('spinbutton', { name: 'Usi spesi di Ira', exact: true }).fill('3')
+    await page.getByRole('button', { name: 'Salva scheda', exact: true }).click()
+    await page.reload(); await paper.waitFor()
+    await page.waitForFunction(() => document.querySelector('.player-barbarian-rage-counts input')?.value === '3')
+    assert.equal(await page.getByRole('spinbutton', { name: 'Usi spesi di Ira', exact: true }).inputValue(), '3')
+    await page.getByLabel('Cammino primordiale', { exact: true }).selectOption('berserker')
+    await page.locator('.player-wizard-right textarea').first().waitFor()
+    assert((await page.locator('.player-wizard-right textarea').first().inputValue()).includes('Frenesia'))
+    await page.getByLabel('Modello della scheda').selectOption('barbarian-pdf')
+    await page.locator('[data-page="1"]').waitFor()
+    assert.equal(await page.getByRole('spinbutton', { name: 'Ira usata', exact: true }).inputValue(), '3')
+    await page.getByLabel('Modello della scheda').selectOption('barbarian')
+    await paper.waitFor()
+    await page.getByRole('tab', { name: '2. Personaggio e inventario', exact: true }).click()
+    assert.equal(await paper.locator('[data-field="name"] input').inputValue(), 'Kara del clan')
+    await paper.screenshot({ path: '/tmp/dev-and-dice-barbarian-story.png' })
+    await page.getByRole('tab', { name: '3. Equipaggiamento indossato', exact: true }).click()
+    assert.equal(await paper.locator('.player-wizard-worn-page').count(), 1)
+    await page.getByRole('tab', { name: '1. Statistiche e cammino primordiale', exact: true }).click()
+    await paper.screenshot({ path: '/tmp/dev-and-dice-barbarian-desktop.png' })
+    await page.addInitScript(() => { window.print = () => {} })
+    await page.getByRole('button', { name: 'Esporta scheda in PDF', exact: true }).click()
+    await page.locator('.character-print-frame').waitFor({ state: 'attached' })
+    const frame = page.frames().find(frame => frame.parentFrame())
+    await frame.waitForFunction(() => document.querySelectorAll('.sheet-print-page .player-paper-barbarian').length === 3 && !document.querySelector('input,textarea,select'))
+    assert((await frame.locator('body').textContent()).includes('Kara del clan'))
+    assert.equal(await frame.locator('.player-wizard-slot-box').count(), 0)
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await page.screenshot({ path: '/tmp/dev-and-dice-barbarian-mobile-viewport.png' })
+    await paper.screenshot({ path: '/tmp/dev-and-dice-barbarian-mobile.png' })
+    await paper.locator('.player-barbarian-rage').screenshot({ path: '/tmp/dev-and-dice-barbarian-mobile-rage.png' })
+    const fit = await paper.evaluate(el => ({ width: el.clientWidth, scroll: el.scrollWidth }))
+    assert(fit.scroll <= fit.width + 2, JSON.stringify(fit))
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 2))
+    assert.equal(await paper.locator('.player-stat-page').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length), 1)
+    await page.getByRole('tab', { name: '2. Personaggio e inventario', exact: true }).click()
+    await paper.screenshot({ path: '/tmp/dev-and-dice-barbarian-mobile-story.png' })
+    await page.getByRole('tab', { name: '3. Equipaggiamento indossato', exact: true }).click()
+    assert.equal(await paper.locator('.player-worn-slot').first().evaluate(el => getComputedStyle(el).position), 'static')
+    assert.deepEqual(errors, [])
+    const damaged = await browser.newContext()
+    await damaged.addInitScript(() => localStorage.setItem('dev-and-dice.barbarian.character.v1', '{damaged'))
+    const recovery = await damaged.newPage()
+    await recovery.goto(url)
+    await recovery.getByRole('status').filter({ hasText: 'originale è conservato' }).waitFor()
+    assert(await recovery.getByRole('button', { name: 'Salva scheda', exact: true }).isDisabled())
+    assert.equal(await recovery.evaluate(() => localStorage.getItem('dev-and-dice.barbarian.character.v1')), '{damaged')
+    const tracker = await context.newPage()
+    await tracker.route('**/api/me', route => route.fulfill({ json: { user: { id: 'barbarian-picker-test', username: 'QA' } } }))
+    await tracker.addInitScript(saved => { if (!localStorage.getItem('dev-and-dice.character-sheets.v1')) localStorage.setItem('dev-and-dice.character-sheets.v1', JSON.stringify([saved])) }, {
+        ...sheet, name: 'Modello QA', characterClass: 'Mago', level: '5',
+        playerDetails: { classFeatures: 'Privilegio del mago (livello 3)\nDa conservare.' },
+    })
+    await tracker.goto(new URL('/trackers', url).href)
+    await tracker.getByRole('button', { name: 'Apri scheda di Modello QA', exact: true }).click()
+    const dialog = tracker.getByRole('dialog', { name: 'Modello QA', exact: true })
+    const picker = dialog.getByLabel('Modello della scheda')
+    await picker.selectOption('barbarian')
+    assert.equal(await picker.inputValue(), 'barbarian')
+    assert(await dialog.getByRole('button', { name: 'Segna un uso di Ira', exact: true }).isDisabled())
+    assert.equal(await dialog.locator('.player-wizard-right textarea:disabled').count(), 4)
+    assert.equal(await dialog.locator('.player-barbarian-feature').count(), 0)
+    await dialog.getByRole('button', { name: 'Salva scheda', exact: true }).click()
+    const stored = await tracker.evaluate(() => JSON.parse(localStorage.getItem('dev-and-dice.character-sheets.v1'))[0])
+    assert.equal(stored.playerDetails['sheet.template'], 'barbarian')
+    assert.equal(stored.characterClass, 'Mago')
+    assert.equal(stored.playerDetails.classFeatures, 'Privilegio del mago (livello 3)\nDa conservare.')
+    await tracker.reload()
+    await tracker.getByRole('button', { name: 'Apri scheda di Modello QA', exact: true }).click()
+    assert.equal(await picker.inputValue(), 'barbarian')
+    console.log('PASS: Barbarian model can be selected and saved in the shared character-sheet picker.')
+    console.log('PASS: editing, save/reload, 3 tabs, 3-page print, no spell sections and mobile layout.')
+} finally { await browser.close() }

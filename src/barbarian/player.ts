@@ -3,12 +3,14 @@ import { normalizeHitPoints, type CharacterSheet } from '../utils/CharacterSheet
 import { inventoryItems, referencedInventoryItem } from '../utils/Inventory.ts'
 import { featuresAtLevel, updateFeaturesAtLevel } from '../utils/PlayerTemplates.ts'
 import { emptyCharacter, type Field, type PageLayout } from './model.ts'
+import { rageUsedKey } from '../utils/Barbarian.ts'
 
 const aliases: Record<string, string> = {
   'identity.name':'name', 'identity.race':'race', 'identity.level':'level', 'identity.player':'playerName', 'identity.path':'subclass',
   'combat.proficiency':'proficiencyBonus', 'combat.passive':'passivePerception', 'combat.inspiration':'inspiration',
   'combat.maxHP':'maxHitPoints', 'combat.currentHP':'hitPoints', 'combat.temporaryHP':'temporaryHitPoints',
   'combat.unarmored':'unarmoredAC', 'combat.shield':'unshieldedAC',
+  'combat.rageUsed':rageUsedKey,
   'notes.languages':'languages', 'notes.combatFeatures':'classFeatures', 'notes.appearance':'appearanceDescription',
   'notes.talents':'additionalTraits', 'notes.background':'backgroundStory', 'notes.allies':'faction',
   'notes.enemies':'personality.Nemici', 'notes.traits':'personality.Tratti caratteriali',
@@ -52,6 +54,7 @@ export function playerBarbarianCharacter(sheet: CharacterSheet, pages: PageLayou
   const result = emptyCharacter(pages)
   for (const field of pages.flatMap(page=>page.fields)) {
     let value = characterFieldValue(sheet, barbarianFieldKey(field,sheet))
+    if (field.key === 'rageUsed') value = sheet.playerDetails?.[rageUsedKey] ?? sheet.playerDetails?.['barbarian.combat.rageUsed'] ?? ''
     if (field.group === 'abilities' && field.key.endsWith('Base') && !creationEnabled(sheet)) value = characterFieldValue(sheet,field.key.slice(0,-4))
     if (field.group === 'features') value = featuresAtLevel(sheet.playerDetails?.classFeatures ?? '', [3,6,10,14][Number(field.key.split('.')[1])])
     if (field.key.startsWith('exhaustion.')) value = String(Number(sheet.playerDetails?.exhaustion ?? 0) >= Number(field.key.split('.')[1]))

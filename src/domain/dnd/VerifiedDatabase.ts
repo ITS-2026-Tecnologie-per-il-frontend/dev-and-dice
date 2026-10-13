@@ -1,4 +1,4 @@
-/** Isolated candidate loader. The running application's loader does not import this module. */
+/** Verified 2014 rules; accepts immutable candidates and their published runtime payloads. */
 import type { CreationData, Origin } from '../../utils/PlayerCreation.ts'
 import type { Ability, BackgroundMechanics, BackgroundTable, CreatureMechanics, MagicItemMechanics, SupernaturalGiftMechanics, TrinketEntry, FirearmStatistics, PoisonMechanics, PoisonDelivery, StoredSpell, TreasureTableMechanics, CoinDenomination, TreasureCoinFormula, ChaseMechanics, ObjectStatisticsMechanics, SpellPointsMechanics } from '../../../scripts/rules2014/schema.ts'
 
@@ -8,7 +8,7 @@ export type ReviewedEntity = {
     id: string; index: string; edition: '2014'; kind: string; name: string; nameIt: string | null
     mechanics: { [key: string]: Json }; relations: Record<string, string | string[]>; sources: RuleSource[]
     verification: { identity?: string; mechanics: string; complete: boolean; missingFields: string[] }
-    fieldSources?: Record<string, number[]>
+    fieldSources?: Record<string, number[]>; summaryIt?: string; optional?: boolean
 }
 export type SelectionOrigin = {
     originId: string; classId?: string; minimumClassLevel?: number; subclassId?: string; featId?: string
@@ -62,6 +62,8 @@ export type CandidateCreationData = CreationData & {
     edition: '2014'; candidateReleaseId: string; reviewedEntities: ReviewedEntity[]; verifiedOptions: VerifiedOption[]; verifiedCreatures:ReviewedCreature[]; verifiedEquipment:ReviewedEquipment[]; verifiedMagicItems:ReviewedMagicItem[]; verifiedCreationOptions:ReviewedEntity[]
     /** Legacy records remain available, but are not automatically certified by this adapter. */
     legacyVerification: 'preserved-not-fully-reverified'
+    rawCatalog: unknown
+    idMap: { referenceId: string; catalog: string; array: string; currentId: string; operation: string }[]
 }
 export type ReviewedMagicItem=Omit<ReviewedEntity,'kind'|'mechanics'> & {kind:'magic-item';mechanics:MagicItemMechanics}
 
@@ -440,7 +442,8 @@ export async function loadCandidateCreationData(baseUrl: string, fetcher: Fetche
     }
     const manifest: unknown = JSON.parse(await getText('RELEASE.json'))
     if (!object(manifest) || manifest.schemaVersion !== 1 || typeof manifest.releaseId !== 'string'
-        || manifest.runtimeActivated !== false || manifest.status !== 'partial-candidate-not-active'
+        || !(manifest.runtimeActivated === false && manifest.status === 'partial-candidate-not-active'
+            || manifest.runtimeActivated === true && manifest.status === 'active-2014-with-explicit-partial-records')
         || manifest.editionPolicy !== '2014-reference-with-separate-unverified-legacy-content' || !object(manifest.files)) throw new Error('Manifesto candidato non valido.')
     const release = manifest as Manifest
     const read = async (file: string): Promise<unknown> => {
@@ -449,9 +452,9 @@ export async function loadCandidateCreationData(baseUrl: string, fetcher: Fetche
         if (release.files[file] !== hash) throw new Error(`Impronta non valida: ${file}.`)
         return JSON.parse(text)
     }
-    const [options, equipment, rules, wizard, choices, reference] = await Promise.all([
+    const [options, equipment, rules, wizard, choices, reference, rawCatalog, idMap] = await Promise.all([
         'data/character-options.json', 'data/character-equipment.json', 'data/character-rules.json',
-        'data/wizard-catalog.json', 'data/verified-options-2014.json', 'verified-reference.json',
+        'data/wizard-catalog.json', 'data/verified-options-2014.json', 'verified-reference.json', 'data/database.json', 'id-map.json',
     ].map(read))
     if (![options, equipment, rules, wizard, choices, reference].every(object)) throw new Error('Cataloghi candidati non validi.')
     const catalogs = [options, equipment, rules, wizard, choices, reference] as Record<string, unknown>[]
@@ -462,6 +465,8 @@ export async function loadCandidateCreationData(baseUrl: string, fetcher: Fetche
     if (!list(w.subclasses) || !list(e.equipment) || !list(e.equipmentCategories) || !list(r.skills)
         || c.edition !== '2014' || !list(c.options) || ref.edition !== '2014' || !list(ref.entities)) throw new Error('Edizione o collezioni non valide.')
     const entities = ref.entities as unknown as ReviewedEntity[]
+    if (!list(idMap) || idMap.some((row) => !['referenceId','catalog','array','currentId','operation'].every((key) => typeof row[key] === 'string')))
+        throw new Error('Mappa degli identificativi non valida.')
     if (entities.some((x) => x.edition !== '2014') || new Set(entities.map((x) => x.id)).size !== entities.length) throw new Error('Entità di riferimento non valide.')
     const equipmentFile='data/verified-equipment-2014.json'
     const equipmentCatalog=release.files[equipmentFile] ? await read(equipmentFile) : {edition:'2014',equipment:[]}
@@ -536,7 +541,8 @@ export async function loadCandidateCreationData(baseUrl: string, fetcher: Fetche
         ...wizardSubclasses.filter((x) => !data.subclasses.some((s) => s.index === x.index))]
     const features = [...data.features, ...wizardSubclasses.flatMap((x) => x.features ?? []).filter((x) => !data.features.some((f) => f.index === x.index))]
     return { ...data, subclasses, features, edition: '2014', candidateReleaseId: release.releaseId, reviewedEntities: entities,
-        verifiedOptions, verifiedCreatures, verifiedEquipment, verifiedMagicItems, verifiedCreationOptions, legacyVerification: 'preserved-not-fully-reverified' }
+        verifiedOptions, verifiedCreatures, verifiedEquipment, verifiedMagicItems, verifiedCreationOptions, rawCatalog,
+        idMap: idMap as CandidateCreationData['idMap'], legacyVerification: 'preserved-not-fully-reverified' }
 }
 
 export type ChoiceContext = {
@@ -1461,8 +1467,11 @@ export function multiclassSpellPools(data:CandidateCreationData,levels:Record<st
 export type SpellCastContext={
     edition:'2014'|'2024';classLevels:Record<string,number>;classIndex:string;subclassIds?:string[]
     knownSpellIds:string[];preparedSpellIds:string[];spellbookIds?:string[]
-    mode:'cantrip'|'ritual'|'spellcasting-slot'|'pact-slot';slotLevel?:number
+    mode:'cantrip'|'ritual'|'spellcasting-slot'|'pact-slot'|'mystic-arcanum';slotLevel?:number
     remainingSpellSlots?:number[];remainingPactSlots?:number
+    remainingArcanumUses?:number;arcanumSpellIds?:string[];createdSpellSlots?:number[]
+    landTerrain?:LandTerrain;dmApproved?:boolean;alignment?:string
+    additionalAccess?:{originId:string;selectedSpellIds:string[]}
     castingAlternative?:number;spellsThisTurn?:{level:number;unit:string}[]
     components:{canSpeak:boolean;freeSomaticHand:boolean;materialHand:boolean;materialSource:'specific'|'pouch'|'focus'|'none';focusClassIndex?:string;specificMaterialsConfirmed:boolean}
     armorProficient:boolean
@@ -1474,10 +1483,26 @@ export function spellCastPlan(data:CandidateCreationData,id:string,context:Spell
     const cls=context.classIndex,level=m.level as number,ownLevel=context.classLevels[cls] ?? 0
     const classRow=data.reviewedEntities.find((e)=>e.id==='phb2014:class:'+cls)
     const classList=['fighter','rogue'].includes(cls) ? 'wizard' : cls
-    if(ownLevel<1 || !(m.classes as string[]).includes(classList))throw new Error('Incantesimo fuori dalla lista della classe scelta.')
+    let inList=(m.classes as string[]).includes(classList)
+    for(const subclassId of context.subclassIds ?? []) {
+        const sub=data.reviewedEntities.find(e=>e.id===subclassId && e.kind==='subclass' && e.relations.classId==='phb2014:class:'+cls)
+        if(!sub)continue
+        const permission={dmApproved:context.dmApproved,alignment:context.alignment}
+        if(cls==='warlock')inList ||= patronExpandedSpellChoices(data,subclassId,9).includes(id)
+        if(cls==='cleric')inList ||= clericDomainSpellGrants(data,subclassId,context.classLevels,permission).some(g=>g.spellId===id)
+        if(cls==='paladin')inList ||= paladinOathSpellGrants(data,context.classLevels,subclassId,permission).some(g=>g.spellId===id)
+        if(cls==='druid' && subclassId==='phb2014:subclass:land' && context.landTerrain)inList ||= druidCircleSpellGrants(data,context.classLevels,context.landTerrain).some(g=>g.spellId===id)
+    }
+    if(context.additionalAccess) {
+        if(cls!=='bard' || magicalSecretSelectionIssues(data,context.classLevels,context.additionalAccess.selectedSpellIds,{originId:context.additionalAccess.originId,subclassId:context.subclassIds?.find(id=>data.reviewedEntities.find(e=>e.id===id)?.relations?.classId==='phb2014:class:bard')}).length)throw new Error('Segreti Magici non validi.')
+        inList ||= context.additionalAccess.selectedSpellIds.includes(id)
+    }
+    if(ownLevel<1 || !inList)throw new Error('Incantesimo fuori dalla lista della classe scelta.')
     const maximum=cls==='warlock' ? pools.pactSlots?.level ?? 0 : pools.ownClassMaximumSpellLevel[cls] ?? 0
     if(cls!=='warlock' && !(cls in pools.ownClassMaximumSpellLevel))throw new Error('La classe o sottoclasse non concede Incantesimi.')
-    if(level>maximum || level===0 && ['paladin','ranger'].includes(cls))throw new Error('Livello della magia superiore alla progressione della singola classe.')
+    const arcanum=context.mode==='mystic-arcanum'
+    if(arcanum && (cls!=='warlock' || !warlockProgression(data,context.classLevels).mysticArcanumLevels.includes(level) || !context.arcanumSpellIds?.includes(id) || context.arcanumSpellIds.filter(selected=>data.reviewedEntities.find(e=>e.id===selected)?.mechanics.level===level).length!==1 || context.remainingArcanumUses!==1 || context.slotLevel!==undefined))throw new Error('Arcanum Mistico non scelto, duplicato o già consumato.')
+    if(!arcanum && level>maximum || level===0 && ['paladin','ranger'].includes(cls))throw new Error('Livello della magia superiore alla progressione della singola classe.')
     const prepared=['cleric','druid','paladin','wizard'].includes(cls),ritual=context.mode==='ritual'
     if(ritual && (level===0 || m.ritual!==true || !['bard','cleric','druid','wizard'].includes(cls)))throw new Error('Rituale non autorizzato dalla classe.')
     const access=ritual && cls==='wizard' ? context.spellbookIds ?? [] : level>0 && prepared ? context.preparedSpellIds : context.knownSpellIds
@@ -1499,13 +1524,17 @@ export function spellCastPlan(data:CandidateCreationData,id:string,context:Spell
     let castLevel=level
     if(context.mode==='cantrip'){
         if(level!==0 || context.slotLevel!==undefined)throw new Error('Trucchetto senza slot richiesto.')
+    }else if(arcanum){
+        // A selected Arcanum has one use, outside both kinds of slots.
     }else if(ritual){
         if(context.slotLevel!==undefined)throw new Error('Un rituale non usa slot o potenziamento.')
     }else{
         castLevel=context.slotLevel ?? 0
         if(level===0 || !Number.isInteger(castLevel) || castLevel<level || castLevel>9)throw new Error('Livello slot non valido.')
         if(context.mode==='spellcasting-slot'){
-            if(!spellSlots || spellSlots.length!==9 || spellSlots.some((n,i)=>!Number.isSafeInteger(n) || n<0 || n>pools.spellcastingSlots[i]) || spellSlots[castLevel-1]<1)throw new Error('Slot di Incantesimi non disponibile.')
+            const created=context.createdSpellSlots ?? Array<number>(9).fill(0)
+            if(created.length!==9 || created.some((n,i)=>!Number.isSafeInteger(n)||n<0||i>=5&&n!==0||n>0&&!(context.classLevels.sorcerer>=2)))throw new Error('Slot creati tramite stregoneria non validi.')
+            if(!spellSlots || spellSlots.length!==9 || spellSlots.some((n,i)=>!Number.isSafeInteger(n) || n<0 || n>pools.spellcastingSlots[i]+created[i]) || spellSlots[castLevel-1]<1)throw new Error('Slot di Incantesimi non disponibile.')
             spellSlots[castLevel-1]-=1
         }else if(context.mode==='pact-slot'){
             if(!pools.pactSlots || castLevel!==pools.pactSlots.level || pactSlots===null || !Number.isSafeInteger(pactSlots) || pactSlots<1 || pactSlots>pools.pactSlots.count)throw new Error('Slot del Patto non disponibile.')
@@ -1516,7 +1545,7 @@ export function spellCastPlan(data:CandidateCreationData,id:string,context:Spell
         castLevel,casting:structuredClone(casting),ritualAdditionalMinutes:ritual ? 10 : 0,concentration:m.concentration===true,
         concentrationDuringCasting:ritual || ['minute','hour'].includes(casting.unit),actionEachTurnDuringLongCasting:ritual || ['minute','hour'].includes(casting.unit),
         effect:structuredClone(m.effect),upcast:structuredClone(m.upcast),materialConsumptionStatus:m.materialConsumptionStatus,
-        resultingSlots:{spellcasting:spellSlots,pact:pactSlots},slotSpendOccurs:'on-successful-cast-completion' as const,sources:structuredClone(spell.sources)}
+        resultingSlots:{spellcasting:spellSlots,pact:pactSlots},arcanumUseSpent:arcanum,slotSpendOccurs:'on-successful-cast-completion' as const,sources:structuredClone(spell.sources)}
 }
 
 /** One Attack-action attack, not a 2024 saving throw; exceptions remain in the reviewed record. */

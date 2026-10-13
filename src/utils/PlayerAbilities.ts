@@ -36,6 +36,8 @@ export type PdfAbility = { key: string; name: string; description: string; activ
 export function pdfAbilities(sheet: CharacterSheet): PdfAbility[] {
     if (sheet.kind !== 'PG') return []
     const details = sheet.playerDetails ?? {}
+    let verified:{id?:string;name:string;complete:boolean;activation:PdfAbility['activation'];rounds?:number}[]=[]
+    try {const raw:unknown=JSON.parse(details['rules.edition']==='2024' ? '[]' : details['rules2014.abilityRules'] ?? '[]');if (Array.isArray(raw)) verified=raw.filter((row)=>row && typeof row.name==='string' && typeof row.complete==='boolean' && ['active','passive','review'].includes(row.activation) && (row.rounds===undefined || Number.isSafeInteger(row.rounds)&&row.rounds>=0))} catch { /* Invalid optional metadata never grants an automatic ability. */ }
     return ['classFeatures', 'racialTraits', 'additionalTraits'].flatMap((source) =>
         (details[source] ?? '').split(/\n\s*\n/).filter((block) => block.trim()).map((block) => {
             const lines = block.trim().split('\n')
@@ -46,12 +48,13 @@ export function pdfAbilities(sheet: CharacterSheet): PdfAbility[] {
             const text = normalized(description).split(/(?<=[.!?])\s+/).filter((sentence) => !/\b(?:cannot|can't|non puoi|non puo)\b/.test(sentence)).join(' ')
             const rule = actionRules.find(([, pattern]) => pattern.test(text))
             const reviewedFeature = source === 'classFeatures' ? savedWizardFeatures(sheet).find((x) => x.name === name) : undefined
+            const verifiedFeature=source==='classFeatures' ? verified.find((row)=>normalized(row.name)===normalized(name)) : undefined
             const passive = reviewedFeature ? reviewedFeature.activation === 'passive' : passiveNames.has(baseName(name))
             const wizardActivation = wizardActivations[baseName(name)]
-            const automatic = reviewedFeature?.activation ?? (!description ? 'review' : passive ? 'passive' : rule || wizardActivation ? 'active' : 'review')
+            const automatic = verifiedFeature ? verifiedFeature.complete ? verifiedFeature.activation : 'review' : reviewedFeature?.activation ?? (!description ? 'review' : passive ? 'passive' : rule || wizardActivation ? 'active' : 'review')
             const override = details[key]
             const activation = override === 'include' ? 'active' : override === 'exclude' ? 'passive' : automatic
-            const rounds = reviewedFeature?.rounds ?? reviewedRounds[baseName(name)]
+            const rounds = verifiedFeature?.rounds ?? reviewedFeature?.rounds ?? reviewedRounds[baseName(name)]
             const suggested = (Object.keys(durationTurns) as SheetAbility['duration'][]).find((duration) => rounds !== undefined && durationTurns[duration] === rounds) ?? (rounds ? 'Personalizzata' : 'Senza conteggio')
             const duration = Object.hasOwn(durationTurns, details[`${key}.duration`] ?? '') ? details[`${key}.duration`] as SheetAbility['duration'] : suggested
             const customTurns = Number(details[`${key}.turns`] ?? rounds ?? 0)
@@ -59,7 +62,7 @@ export function pdfAbilities(sheet: CharacterSheet): PdfAbility[] {
             return {
                 key, name, description: description || block.trim(), activation,
                 reason: override === 'include' ? 'Confermato manualmente' : override === 'exclude' ? 'Escluso manualmente' : passive ? 'Privilegio passivo / effetto condizionale' : wizardActivation ?? rule?.[0] ?? 'Attivazione da verificare',
-                template: { name, description: description || block.trim(), duration, remainingTurns, timed: duration !== 'Senza conteggio' },
+                template: { name, description: description || block.trim(), duration, remainingTurns, timed: duration !== 'Senza conteggio',...(typeof verifiedFeature?.id==='string' ? {ruleId:verifiedFeature.id} : {}) },
             }
         }),
     )

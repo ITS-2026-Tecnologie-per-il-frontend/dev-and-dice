@@ -24,7 +24,7 @@ try {
  const page=await context.newPage()
  page.setDefaultTimeout(5000)
  const errors=[];page.on('pageerror',error=>errors.push(error.message))
- await page.goto(process.env.BARBARIAN_URL ?? 'http://127.0.0.1:5174/schede/barbaro')
+ await page.goto(process.env.BARBARIAN_URL ?? 'http://127.0.0.1:5174/schede/barbaro/pdf')
  await page.locator('[data-page="3"]').waitFor()
  await page.locator('[data-page="1"]').getByRole('textbox',{name:'Nome del personaggio',exact:true}).fill('Conan')
  await page.getByRole('spinbutton',{name:'Forza',exact:true}).fill('18')

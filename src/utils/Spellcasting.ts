@@ -1,10 +1,12 @@
-import { abilityModifier, characterFields, characterLevel, type CharacterSheet } from './CharacterSheets.ts'
+import { abilityModifier, characterFields, characterLevel, integerValue, type CharacterSheet } from './CharacterSheets.ts'
 import type { CreationData } from './PlayerCreation.ts'
 import { spellcasting2024 } from '../data/Spellcasting2024.ts'
+import { verifiedSpellProfile } from '../domain/dnd/ActiveRules.ts'
 
 export type RulesEdition = '2014' | '2024'
 export const spellEdition = (sheet: CharacterSheet): RulesEdition => sheet.playerDetails?.['rules.edition'] === '2024' ? '2024' : '2014'
 export const classId = (sheet: CharacterSheet) => sheet.playerDetails?.['creation.class'] || ({ barbaro: 'barbarian', bardo: 'bard', chierico: 'cleric', druido: 'druid', guerriero: 'fighter', monaco: 'monk', ladro: 'rogue', paladino: 'paladin', ranger: 'ranger', stregone: 'sorcerer', warlock: 'warlock', mago: 'wizard' } as Record<string, string>)[sheet.characterClass.trim().toLowerCase()] || sheet.characterClass.trim().toLowerCase()
+export const classLevel = (sheet:CharacterSheet,id=classId(sheet)) => (spellEdition(sheet)==='2014' ? integerValue(sheet.playerDetails?.['rules2014.level.'+id]) : undefined) ?? characterLevel(sheet) ?? 0
 
 export function castingAbilityKey(sheet: CharacterSheet, fallback?: import('./PlayerCreation.ts').AbilityKey) {
     const custom = sheet.playerDetails?.castingAbility?.trim().toLowerCase().replace(/\.$/, '')
@@ -12,22 +14,29 @@ export function castingAbilityKey(sheet: CharacterSheet, fallback?: import('./Pl
 }
 
 export function spellProfile(sheet: CharacterSheet, data: CreationData, edition = spellEdition(sheet)) {
-    const id = classId(sheet)
-    const level = characterLevel(sheet) ?? 0
+    let verified: ReturnType<typeof verifiedSpellProfile>
+    try { verified = edition==='2014' ? verifiedSpellProfile(sheet,data) : undefined } catch { verified=undefined }
+    const id = verified?.id ?? classId(sheet)
+    const level = verified?.level ?? characterLevel(sheet) ?? 0
     const characterClass = data.classes.find((item) => item.index === id)
     const progression = { ...(data.levels.find((item) => item.index === `${id}-${level}`)?.spellcasting ?? {}) }
     const revised = edition === '2024' ? spellcasting2024[id]?.[level - 1] : undefined
+    if (verified) {
+        progression.cantrips_known=verified.cantrips
+        if (verified.known!==undefined) progression.spells_known=verified.known
+        for (let i=1;i<=9;i++) progression[`spell_slots_level_${i}`]=verified.slots[i-1] ?? 0
+    }
     if (revised) {
         progression.cantrips_known = revised[0]
         for (let i = 1; i <= 9; i++) progression[`spell_slots_level_${i}`] = revised[i + 1]
     }
     const maxLevel = Math.max(0, ...Array.from({ length: 9 }, (_, i) => progression[`spell_slots_level_${i + 1}`] ? i + 1 : 0))
     const daily = (edition === '2014' ? ['cleric', 'druid', 'paladin', 'wizard'] : ['cleric', 'druid', 'paladin', 'ranger', 'wizard']).includes(id)
-    const key = castingAbilityKey(sheet, characterClass?.castingAbility)
+    const key = verified && sheet.playerDetails?.['creation.override.castingAbility']!=='true' ? ['fighter','rogue'].includes(id) ? 'intelligence' : characterClass?.castingAbility : castingAbilityKey(sheet, characterClass?.castingAbility)
     const modifier = key ? abilityModifier(sheet[key]) : undefined
     const preparedLimit = !maxLevel ? 0 : revised ? revised[1] : modifier === undefined ? 0 : Math.max(1, modifier + (id === 'paladin' ? Math.floor(level / 2) : level))
     return {
-        edition, progression, maxLevel, cantrips: progression.cantrips_known ?? 0,
+        edition, progression, maxLevel, classIndex:id, classLevel:level, cantrips: progression.cantrips_known ?? 0,
         prepared: daily, preparedLimit: daily ? preparedLimit : 0,
         known: id === 'wizard' ? level ? 6 + (level - 1) * 2 : 0 : revised ? revised[1] : progression.spells_known,
         changePolicy: daily ? (edition === '2024' && ['paladin', 'ranger'].includes(id) ? 'one-per-long-rest' : 'long-rest') : 'level-up',
@@ -46,7 +55,8 @@ export function spellLimitIssue(limit: SpellSelectionLimit) {
 
 export function spellRowState(sheet: CharacterSheet, level: number, index: number) {
     const d = sheet.playerDetails ?? {}, root = `spell.${level}.${index}`
-    const id = classId(sheet), edition = spellEdition(sheet)
+    const id = d[`${root}.class`] || classId(sheet), edition = spellEdition(sheet)
+    const ownLevel=classLevel(sheet,id)
     const rawSource = d[`${root}.source`]
     let source: SpellSource = Object.hasOwn(spellSources, rawSource ?? '') ? rawSource as SpellSource : id === 'warlock' && level >= 6 ? 'arcanum' : 'class'
     const granted = savedSpellGrants(sheet).find((grant) => grant.index === d[`${root}.index`] || [grant.name, ...(grant.aliases ?? [])].some((name) => name.toLowerCase() === d[`${root}.name`]?.trim().toLowerCase()))
@@ -54,8 +64,8 @@ export function spellRowState(sheet: CharacterSheet, level: number, index: numbe
     const preparedClass = (edition === '2014' ? ['cleric', 'druid', 'paladin', 'wizard'] : ['cleric', 'druid', 'paladin', 'ranger', 'wizard']).includes(id)
     const knownClass = ['bard', 'sorcerer', 'warlock', ...(edition === '2014' ? ['ranger'] : [])].includes(id)
     const classSpell = source === 'class'
-    const signature = classSpell && id === 'wizard' && Number(sheet.level) >= 20 && level === 3 && [d['wizard.signature.0'], d['wizard.signature.1']].includes(root)
-    const mastery = classSpell && id === 'wizard' && edition === '2024' && Number(sheet.level) >= 18 && [1, 2].includes(level) && d[`wizard.mastery.${level}`] === root
+    const signature = classSpell && id === 'wizard' && ownLevel >= 20 && level === 3 && [d['wizard.signature.0'], d['wizard.signature.1']].includes(root)
+    const mastery = classSpell && id === 'wizard' && edition === '2024' && ownLevel >= 18 && [1, 2].includes(level) && d[`wizard.mastery.${level}`] === root
     const alwaysPrepared = signature || mastery || classSpell && id === 'wizard' && d[`${root}.always`] === 'true' && !!d[`${root}.grant`]
     const needsPreparation = classSpell && level > 0 && (preparedClass || !knownClass)
     const selected = !!d[`${root}.name`]?.trim()

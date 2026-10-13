@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "releaseId": "0d0d275e18ee23737904",
+  "status": "active-2014-with-explicit-partial-records",
+  "runtimeActivated": true,
+  "editionPolicy": "2014-reference-with-separate-unverified-legacy-content",
+  "files": {
+    "data/character-options.json": "7d8f89c9366e07a4118928547b52548ab9728ccecc68a9502d6207d33b4f518d",
+    "data/character-equipment.json": "6e4a8b8d2bf1e824b76abdc783961ddb0addb6e4d8efc16de442826e6b61bb59",
+    "data/character-rules.json": "78d2095ce3055800f6d900e33ce4620cc30328fc817cd786b77bc14aaa29e9fc",
+    "data/wizard-catalog.json": "7d6e507b7f991618669f6ac381a874beb69bc70069a84f7807fa08b81f748a3e",
+    "data/database.json": "ae75fa076e2e494cc6bda3645d29f8d0484ad50f5047af08147fb3c95c53ef7d",
+    "data/verified-options-2014.json": "a787304e9d6d57132261b03f3379a49707d7befc83fc7ea8ce0fe43b6a38e161",
+    "data/verified-creatures-2014.json": "1ba3653927039985a81df52fac310b4bd4a03c0dd57d387b0e810dac01f3bdfc",
+    "data/verified-equipment-2014.json": "f2a3b9427540b12a82c3b697e6e5d4b7408e8c161521fbcc5834f269f50e62dc",
+    "data/verified-magic-items-2014.json": "d3913da60c22d936282ce5fb4569f93c0153d7044603698866e366a11379942b",
+    "data/verified-creation-options-2014.json": "1facaea7e446f3ef76c6e1ff90d9da750fb216ce6877d11d09b43f83f3d1bf68",
+    "verified-reference.json": "851f63389168ffa9caa84b32650beaa996ac19b7a823fb2c63b55aa96143b88d",
+    "id-map.json": "b40c6bf482c9d6b6e03610337bd8cb7f6c066881c062ea06febd471b088624fe",
+    "coverage.json": "43338f2de217b44a343ab59df025dde52f5247a975619cf8fc99c83d0032e9cf",
+    "data/ogl-1.0a.txt": "051898c339d3e279c12db5a7272fdf954558b96c1346c55e1bd7c8170fcf4bfc",
+    "data/srd-database-license.txt": "86271294069a91d9f43d9e902d9710719998fe8dd040d607737c85617617baa9"
+  },
+  "sourceManifestSHA256": "254576e186fe74886c666df29458cdb215049344c191df705481df532b5d9be3"
+}

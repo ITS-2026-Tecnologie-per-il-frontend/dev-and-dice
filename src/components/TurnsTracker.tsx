@@ -1,17 +1,19 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent } from 'react'
 import { ColumnSeparator } from './ColumnSeparator'
 import { useDialogDismiss } from '../utils/Dialog'
 import { CharacterSheets, type CharacterSheetsHandle } from './CharacterSheets'
 import { characterFields, clampHitPointsToMaximum, normalizeHitPoints, turnFromSheet, importSheetAbility, initiativeBonus, syncTurnStats, type CharacterSheet } from '../utils/CharacterSheets'
 import { AbilitiesTracker } from './AbilitiesTracker'
-import { nextCombatTurn, sortByInitiative, advanceAbilityDurations, removeParticipantAbilities, hitPointsAfterDamageWithTemporary, hitPointsAfterHealing, type Ability, type Combat } from '../utils/Combat'
+import { nextCombatTurn, sortByInitiative, activateAbility, advanceCombatAbilities, removeParticipantAbilities, hitPointsAfterDamageWithTemporary, hitPointsAfterHealing, type Ability, type Combat } from '../utils/Combat'
 import { getDropIndex, getDropTargetId, reorderByDrop, reorderById } from '../utils/Reorder'
-import { parseCatalog, refreshCombatSheetAbilities, sheetFromCatalog, sheetWithCombatAbilities, type Catalog, type CatalogEntry } from '../utils/Catalog'
+import { refreshCombatSheetAbilities, sheetFromCatalog, sheetWithCombatAbilities, type Catalog, type CatalogEntry } from '../utils/Catalog'
 import { CatalogSearch } from './CatalogSearch'
-import { applyCreation, translatedCreationData, patchCalculatedSheetStats, loadCreationData, type CreationData } from '../utils/PlayerCreation'
+import { applyCreation, translatedCreationData, patchCalculatedSheetStats, type CreationData } from '../utils/PlayerCreation'
+import { loadActiveDatabase, concentrationSave, sheetRuleResources, catalogForSheet } from '../domain/dnd/ActiveRules'
+import { spellEdition } from '../utils/Spellcasting'
 import { InfoButton } from './InfoButton'
 
-type Turn = {
+export type Turn = {
     id: number
     description: string
     initiative: string
@@ -21,9 +23,13 @@ type Turn = {
     sheet?: CharacterSheet
     availableAbilityIndexes?: number[]
     damage?: string
+    concentrationChecks?:number[]
 }
+const RulesPanel=lazy(()=>import('./RulesPanel'))
+export type TrackerState = {turns:Turn[];abilities:Ability[];combat:Combat|null}
+export type SessionWorkspace = {state:TrackerState;sheets:CharacterSheet[];storageKey:string;onChange:(state:TrackerState,sheets:CharacterSheet[])=>void;canRemove:(sheet:CharacterSheet)=>boolean;remove:(sheet:CharacterSheet)=>Promise<void>}
 
-export function TurnsTracker({ language }: { language: 'it' | 'en' }) {
+export function TurnsTracker({ language, workspace }: { language: 'it' | 'en'; workspace?:SessionWorkspace }) {
     const sheetEditor = useRef<CharacterSheetsHandle>(null)
     const dismissRemovalDialog = useDialogDismiss()
     const [libraryWidth, setLibraryWidth] = useState<string>()
@@ -34,9 +40,31 @@ export function TurnsTracker({ language }: { language: 'it' | 'en' }) {
     const creationData = useMemo(() => rawCreationData ? translatedCreationData(rawCreationData, catalog) : undefined, [rawCreationData, catalog])
 
     const [catalogStatus, setCatalogStatus] = useState('Caricamento del catalogo…')
-    const [turns, setTurns] = useState<Turn[]>([])
-    const [abilities, setAbilities] = useState<Ability[]>([])
-    const [combat, setCombat] = useState<Combat | null>(null)
+    const [combatRuleError,setCombatRuleError]=useState('')
+    const [turns, setTurns] = useState<Turn[]>(workspace?.state.turns ?? [])
+    const [abilities, setAbilities] = useState<Ability[]>(workspace?.state.abilities ?? [])
+    const [combat, setCombat] = useState<Combat | null>(workspace?.state.combat ?? null)
+    const [sessionSheets,setSessionSheets]=useState(workspace?.sheets ?? [])
+    const writeSessionSheets=useCallback((sheets:CharacterSheet[])=>setSessionSheets(sheets),[])
+    const nextId = useRef(Math.max(-1,...(workspace?.state.turns.map(turn=>turn.id) ?? []))+1)
+    const nextAbilityId = useRef(Math.max(-1,...(workspace?.state.abilities.map(ability=>ability.id) ?? []))+1)
+    const incoming=JSON.stringify(workspace ? {state:workspace.state,sheets:workspace.sheets} : null)
+    const lastSnapshot=useRef(incoming),lastIncoming=useRef(incoming),hydrating=useRef(false)
+    useEffect(()=>{
+        if (!workspace || incoming===lastIncoming.current) return
+        lastIncoming.current=incoming;lastSnapshot.current=incoming;hydrating.current=true
+        setTurns(workspace.state.turns);setAbilities(workspace.state.abilities);setCombat(workspace.state.combat);setSessionSheets(workspace.sheets)
+        nextId.current=Math.max(nextId.current,...workspace.state.turns.map(turn=>turn.id+1))
+        nextAbilityId.current=Math.max(nextAbilityId.current,...workspace.state.abilities.map(ability=>ability.id+1))
+    },[incoming,workspace])
+    useEffect(()=>{
+        if (!workspace) return
+        if (hydrating.current) {hydrating.current=false;return}
+        const snapshot=JSON.stringify({state:{turns,abilities,combat},sheets:sessionSheets})
+        if (snapshot===lastSnapshot.current) return
+        lastSnapshot.current=snapshot
+        workspace.onChange({turns,abilities,combat},sessionSheets)
+    },[turns,abilities,combat,sessionSheets,incoming,workspace])
     const [pendingRemoval, setPendingRemoval] = useState<number[] | null>(null)
     const removalDialog = useRef<HTMLDialogElement>(null)
     const presentSheetIds = turns.flatMap((turn) => turn.sheet ? [turn.sheet.id] : [])
@@ -48,16 +76,12 @@ export function TurnsTracker({ language }: { language: 'it' | 'en' }) {
     }, [pendingRemoval])
 
     useEffect(() => {
-        const controller = new AbortController()
-        Promise.all([fetch(`${import.meta.env.BASE_URL}data/database.json`, { signal: controller.signal })
-            .then((response) => { if (!response.ok) throw new Error('Database non disponibile.'); return response.json() }), loadCreationData()])
-            .then(([raw, data]: [unknown, CreationData]) => { setCreationData(data); setCatalogs({ it: parseCatalog(raw, 'it'), en: parseCatalog(raw, 'en') }); setCatalogStatus('') })
-            .catch((error: unknown) => { if (!controller.signal.aborted) setCatalogStatus(`Catalogo non disponibile: ${error instanceof Error ? error.message : String(error)} Puoi inserire i dati manualmente.`) })
-        return () => controller.abort()
+        let active=true
+        loadActiveDatabase().then(({creationData,catalogs}) => {if (active) {setCreationData(creationData);setCatalogs(catalogs);setCatalogStatus('')}})
+            .catch((error: unknown) => { if (active) setCatalogStatus(`Catalogo non disponibile: ${error instanceof Error ? error.message : String(error)} Puoi inserire i dati manualmente.`) })
+        return () => {active=false}
     }, [])
 
-    const nextId = useRef(0)
-    const nextAbilityId = useRef(0)
 
     function createTurn(): Turn {
         return { id: nextId.current++, description: '', initiative: '', hitPoints: '', armorClass: '', temporaryHitPoints: '' }
@@ -70,13 +94,13 @@ export function TurnsTracker({ language }: { language: 'it' | 'en' }) {
 
     function addCharacter(sheet: CharacterSheet) {
         if (combat || presentSheetIds.includes(sheet.id)) return
-        const turn = turnFromSheet(sheetWithCombatAbilities(creationData ? applyCreation(sheet, creationData) : sheet, catalog), nextId.current++)
+        const turn = turnFromSheet(sheetWithCombatAbilities(creationData ? applyCreation(sheet, creationData) : sheet, catalogForSheet(creationData,catalog,sheet) ?? catalog), nextId.current++)
         if (sheet.initiative !== turn.initiative && sheetEditor.current?.patchStats(sheet.id, { initiative: turn.initiative }) === false) return
         setTurns((current) => [...current, turn])
     }
 
     function syncSavedSheet(sheet: CharacterSheet) {
-        setTurns((current) => current.map((turn) => turn.sheet?.id === sheet.id ? { ...syncTurnStats(turn, sheet), ...refreshCombatSheetAbilities(turn.sheet, sheet, catalog) } : turn))
+        setTurns((current) => current.map((turn) => turn.sheet?.id === sheet.id ? { ...syncTurnStats(turn, sheet), ...refreshCombatSheetAbilities(turn.sheet, sheet, catalogForSheet(creationData,catalog,sheet) ?? catalog) } : turn))
     }
 
     function addAbility() {
@@ -104,9 +128,9 @@ export function TurnsTracker({ language }: { language: 'it' | 'en' }) {
 
     function updateTurn(id: number, field: 'description' | 'initiative' | 'hitPoints' | 'armorClass' | 'temporaryHitPoints' | 'damage', value: string, clearAdjustment?: 'damage', temporaryHitPoints?: string) {
         const turn = turns.find((item) => item.id === id)
-        if (!turn) return
+        if (!turn) return false
         const normalizedValue = field === 'hitPoints' || field === 'temporaryHitPoints' ? normalizeHitPoints(value) : value
-        if (field === 'temporaryHitPoints' && normalizedValue !== '' && (!Number.isSafeInteger(Number(normalizedValue)) || Number(normalizedValue) < 0)) return
+        if (field === 'temporaryHitPoints' && normalizedValue !== '' && (!Number.isSafeInteger(Number(normalizedValue)) || Number(normalizedValue) < 0)) return false
         const updatedValue = field === 'hitPoints' ? clampHitPointsToMaximum(normalizedValue, maximumHitPoints(turn)) : normalizedValue
         const nextTemporaryHitPoints = temporaryHitPoints ?? (field === 'temporaryHitPoints' ? normalizedValue : undefined)
         const isSheetStat = field === 'initiative' || field === 'hitPoints' || field === 'armorClass'
@@ -114,7 +138,7 @@ export function TurnsTracker({ language }: { language: 'it' | 'en' }) {
             ? { ...(isSheetStat ? { [field]: updatedValue } : {}), ...(nextTemporaryHitPoints !== undefined ? { temporaryHitPoints: nextTemporaryHitPoints } : {}) }
             : null
         if (stats && turn.sheet) {
-            if (!patchCalculatedSheetStats(turn.sheet, stats, creationData) || sheetEditor.current?.patchStats(turn.sheet.id, stats) === false) return
+            if (!patchCalculatedSheetStats(turn.sheet, stats, creationData) || sheetEditor.current?.patchStats(turn.sheet.id, stats) === false) return false
         }
         setTurns((currentTurns) =>
             currentTurns.map((turn) =>
@@ -123,6 +147,7 @@ export function TurnsTracker({ language }: { language: 'it' | 'en' }) {
                     : undefined } : turn,
             ),
         )
+        return true
     }
 
     function maximumHitPoints(turn: Turn): string {
@@ -141,7 +166,55 @@ export function TurnsTracker({ language }: { language: 'it' | 'en' }) {
         if (!turn) return
         const temporaryHitPoints = turn.temporaryHitPoints
         const result = hitPointsAfterDamageWithTemporary(turn.hitPoints, temporaryHitPoints ?? '', turn.damage ?? '')
-        if (result !== null) updateTurn(id, 'hitPoints', result.hitPoints, 'damage', temporaryHitPoints === undefined ? undefined : result.temporaryHitPoints)
+        if (result !== null && updateTurn(id, 'hitPoints', result.hitPoints, 'damage', temporaryHitPoints === undefined ? undefined : result.temporaryHitPoints)
+            && creationData?.verified && turn.sheet && spellEdition(turn.sheet)==='2014' && turn.sheet.playerDetails?.['rules2014.concentration'] && Number(turn.damage)>0) {
+            const save=concentrationSave(creationData.verified,Number(turn.damage))
+            setTurns((turns)=>turns.map((turn)=>turn.id===id ? {...turn,concentrationChecks:[...(turn.concentrationChecks ?? []),save.dc]} : turn))
+        }
+    }
+
+    function resolveConcentration(id:number,success:boolean) {
+        const turn=turns.find((turn)=>turn.id===id)
+        if (!turn?.sheet) return
+        if (!success && sheetEditor.current?.patchDetails(turn.sheet.id,{'rules2014.concentration':''})===false) return
+        if (!success) setAbilities((abilities)=>abilities.map((ability)=>ability.ownerId===id&&ability.concentration ? {...ability,remainingTurns:0,timed:true} : ability))
+        setTurns((turns)=>turns.map((turn)=>turn.id===id ? {...turn,concentrationChecks:success ? turn.concentrationChecks?.slice(1) : [],
+            sheet:success || !turn.sheet ? turn.sheet : {...turn.sheet,playerDetails:{...turn.sheet.playerDetails,'rules2014.concentration':''}}} : turn))
+    }
+
+    function patchAbilityOwner(ability:Ability,details:Record<string,string>):boolean {
+        const turn=turns.find((turn)=>turn.id===ability.ownerId)
+        if (!turn?.sheet) return true
+        if (sheetEditor.current?.patchDetails(turn.sheet.id,details)===false) return false
+        setTurns((turns)=>turns.map((turn)=>turn.id===ability.ownerId&&turn.sheet ? {...turn,sheet:{...turn.sheet,playerDetails:{...turn.sheet.playerDetails,...details}}} : turn))
+        return true
+    }
+    function activateCombatAbility(ability:Ability) {
+        const active=activateAbility(ability,combat,turns)
+        if (!active.active) return
+        const owner=turns.find((turn)=>turn.id===ability.ownerId)?.sheet
+        if (owner&&spellEdition(owner)==='2024'&&ability.ruleId?.includes('2014:')) {setCombatRuleError('Questa voce usa regole 2014. Seleziona la voce della scheda 2024 e verifica la sua fonte con il DM.');return}
+        const rage=ability.ruleId==='phb2014:class-feature:barbarian-1-rage'
+        if (rage&&combat&&ability.ownerId!==combat.activeId) {setCombatRuleError('L’ira richiede un’azione bonus nel proprio turno.');return}
+        if (ability.concentration&&owner?.playerDetails?.['rules2014.raging']==='true') {setCombatRuleError('Durante l’ira non puoi mantenere concentrazione.');return}
+        const details:Record<string,string>|null=rage ? {'rules2014.raging':'true','rules2014.concentration':''} : ability.concentration ? {'rules2014.concentration':ability.ruleId ?? ability.catalogId ?? ability.name} : null
+        if (rage&&owner&&creationData?.verified) {
+            const pool=sheetRuleResources(owner,creationData.verified).find((pool)=>pool.id===ability.ruleId)
+            if (pool&&pool.used>=pool.maximum) {setCombatRuleError('Usi di Ira esauriti.');return}
+            if (pool&&details) details['rules2014.used.'+pool.id]=String(pool.used+1)
+        }
+        if (details&&!patchAbilityOwner(ability,details)) {setCombatRuleError('Salvataggio delle regole del personaggio non riuscito.');return}
+        setAbilities((abilities)=>abilities.map((item)=>item.id===ability.id ? active : (rage||ability.concentration)&&item.ownerId===ability.ownerId&&item.concentration ? {...item,remainingTurns:0,timed:true} : item))
+        setCombatRuleError('')
+    }
+    function endCombatAbility(ability:Ability) {
+        const owner=turns.find((turn)=>turn.id===ability.ownerId)?.sheet
+        const details:Record<string,string>={}
+        if (ability.ruleId==='phb2014:class-feature:barbarian-1-rage') details['rules2014.raging']='false'
+        if (ability.concentration&&owner?.playerDetails?.['rules2014.concentration']===(ability.ruleId ?? ability.catalogId ?? ability.name)) details['rules2014.concentration']=''
+        if (Object.keys(details).length&&!patchAbilityOwner(ability,details)) {setCombatRuleError('Salvataggio delle regole del personaggio non riuscito.');return false}
+        setAbilities((abilities)=>abilities.map((item)=>item.id===ability.id ? {...item,remainingTurns:0,timed:true} : item))
+        return true
     }
 
     function selectCreature(id: number, entry: CatalogEntry) {
@@ -188,7 +261,15 @@ export function TurnsTracker({ language }: { language: 'it' | 'en' }) {
     function advanceTurn() {
         if (!combat) return
         const next = nextCombatTurn(turns, combat)
-        if (next && next.round > combat.round) setAbilities(advanceAbilityDurations)
+        if (next) {
+            for (const turn of turns) if (turn.sheet?.playerDetails?.['rules2014.spellsThisTurn'] && turn.sheet.playerDetails['rules2014.spellsThisTurn']!=='[]') {
+                if (sheetEditor.current?.patchDetails(turn.sheet.id,{'rules2014.spellsThisTurn':'[]'})===false) {setCombatRuleError('Salvataggio della cronologia del turno non riuscito.');return}
+            }
+            setTurns((turns)=>turns.map((turn)=>turn.sheet ? {...turn,sheet:{...turn.sheet,playerDetails:{...turn.sheet.playerDetails,'rules2014.spellsThisTurn':'[]'}}} : turn))
+            const updated=advanceCombatAbilities(abilities,combat,next)
+            for (const ability of updated) if (ability.active&&ability.remainingTurns===0&&ability.timed!==false&&abilities.find((a)=>a.id===ability.id)?.remainingTurns!==0&&ability.ruleId==='phb2014:class-feature:barbarian-1-rage') patchAbilityOwner(ability,{'rules2014.raging':'false'})
+            setAbilities(updated)
+        }
         setCombat(next)
     }
 
@@ -222,8 +303,10 @@ export function TurnsTracker({ language }: { language: 'it' | 'en' }) {
 
     return (
         <>
+        {combatRuleError && <p role="alert">{combatRuleError}</p>}
+        {creationData?.verified && <Suspense fallback={<p role="status">Caricamento del riferimento 2014…</p>}><RulesPanel data={creationData}/></Suspense>}
         <div className="tracker-layout" style={{ '--library-width': libraryWidth } as CSSProperties}>
-            <CharacterSheets ref={sheetEditor} onAdd={addCharacter} onSaved={syncSavedSheet} combatStarted={combat !== null || catalogStatus === 'Caricamento del catalogo…'} presentSheetIds={presentSheetIds} catalog={catalog} creationData={creationData} />
+            <CharacterSheets ref={sheetEditor} onAdd={addCharacter} onSaved={syncSavedSheet} combatStarted={combat !== null || catalogStatus === 'Caricamento del catalogo…'} presentSheetIds={presentSheetIds} catalog={catalog} creationData={creationData} repository={workspace ? {sheets:sessionSheets,write:writeSessionSheets,storageKey:workspace.storageKey,canRemove:workspace.canRemove,remove:workspace.remove} : undefined} />
             <ColumnSeparator label="Ridimensiona schede e combattimento" side="left" minimum={160} otherMinimum={600} onResize={setLibraryWidth} />
             <main className="tracker-main" style={{ '--abilities-width': abilitiesWidth } as CSSProperties}>
                 <section className="combat-tracker" aria-labelledby="turns-heading">
@@ -372,6 +455,7 @@ export function TurnsTracker({ language }: { language: 'it' | 'en' }) {
                                             </div>
                                         </div>
                                     </div>
+                                    {!!turn.concentrationChecks?.length && <p role="status">Concentrazione · TS Costituzione CD {turn.concentrationChecks[0]} <button type="button" onClick={()=>resolveConcentration(turn.id,true)}>TS riuscito</button><button type="button" onClick={()=>resolveConcentration(turn.id,false)}>TS fallito: termina concentrazione</button></p>}
                                     {((turn.availableAbilityIndexes?.length ?? turn.sheet?.abilities?.length ?? 0) > 0 || abilities.some((ability) => ability.ownerId === turn.id)) && (
                                         <div className="participant-abilities" aria-label={`Abilità di ${turn.description || 'creatura'}`}>
                                             {turn.sheet?.abilities?.map((template, index) => {
@@ -413,7 +497,7 @@ export function TurnsTracker({ language }: { language: 'it' | 'en' }) {
                     </form>
                 </section>
                 <ColumnSeparator label="Ridimensiona combattimento e abilità" side="right" minimum={280} otherMinimum={280} onResize={setAbilitiesWidth} />
-                <AbilitiesTracker onAdd={addAbility} abilities={abilities} setAbilities={setAbilities} participants={turns} catalog={catalog} />
+                <AbilitiesTracker onAdd={addAbility} abilities={abilities} setAbilities={setAbilities} participants={turns} catalog={catalog} catalogForOwner={(id)=>{const sheet=turns.find((turn)=>turn.id===id)?.sheet;return sheet ? catalogForSheet(creationData,catalog,sheet) ?? catalog : catalog}} combat={combat} onActivate={activateCombatAbility} onEnd={endCombatAbility} />
                 <dialog ref={removalDialog} className="character-dialog" aria-labelledby="removal-heading" {...dismissRemovalDialog} onClose={() => setPendingRemoval(null)}>
                     {pendingRemoval && (
                         <>

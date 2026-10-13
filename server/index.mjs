@@ -8,6 +8,7 @@ import express from 'express'
 import session from 'express-session'
 import sessionFileStore from 'session-file-store'
 import { rateLimit } from 'express-rate-limit'
+import { gamesRouter } from './games.mjs'
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const scryptAsync = promisify(scrypt)
@@ -114,7 +115,19 @@ export async function createApp({
   const secret = sessionSecret ?? randomBytes(32).toString('hex')
 
   app.disable('x-powered-by')
-  app.use(express.json({ limit: '16kb' }))
+  app.use('/api', (req,res,next) => {
+    res.set('Cache-Control','no-store')
+    if (!['GET','HEAD','OPTIONS'].includes(req.method)) {
+      const origin=req.get('origin')
+      if (req.get('sec-fetch-site') === 'cross-site') return next(new HttpError(403,'Origine della richiesta non consentita.'))
+      if (origin) {
+        try {if (new URL(origin).host !== req.get('host')) return next(new HttpError(403,'Origine della richiesta non consentita.'))}
+        catch {return next(new HttpError(403,'Origine della richiesta non consentita.'))}
+      }
+    }
+    next()
+  })
+  app.use(['/api/register','/api/login','/api/logout'], express.json({ limit: '16kb' }))
   app.use(session({
     name: 'dev-and-dice.sid',
     secret,
@@ -241,6 +254,15 @@ export async function createApp({
     }
   })
 
+  app.use('/api/play', await gamesRouter({dataDir, authenticate:async (req,_res,next) => {
+    try {
+      const user=(await readUsers()).find(user => user.id === req.session.userId)
+      if (!user) throw new HttpError(401,'Accesso richiesto.')
+      req.userId=user.id
+      next()
+    } catch (error) {next(error)}
+  }}))
+
   if (production) {
     app.use(express.static(resolve(projectRoot, 'dist'), { index: false }))
     app.get(/.*/, (req, res, next) => {
@@ -255,7 +277,7 @@ export async function createApp({
       return res.status(error.status).json({ error: error.message })
     }
     if (Number.isInteger(error.status) && error.status >= 400 && error.status < 500) {
-      return res.status(error.status).json({ error: 'Richiesta non valida.' })
+      return res.status(error.status).json({ error: error.type ? 'Richiesta non valida.' : error.message })
     }
     console.error('Errore durante la richiesta:', error)
     res.status(500).json({ error: 'Errore interno del server.' })

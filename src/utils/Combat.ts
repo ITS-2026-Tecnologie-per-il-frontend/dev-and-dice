@@ -63,16 +63,36 @@ export type Ability = {
     sheetAbilityIndex?: number
     timed?: boolean
     description?: string
+    expiresAt?:'start'|'end'
+    expiryOwnerId?:number
+    expiryRound?:number
+    repeatSave?:string
+    ruleId?:string
+    concentration?:boolean
 }
 
 export function advanceAbilityDurations(abilities: Ability[]): Ability[] {
-    // il conteggio avanza a fine round; per scadenze nel singolo turno servirà un turno di attivazione.
-    return abilities.map((ability) => ability.active && ability.timed !== false ? { ...ability, remainingTurns: Math.max(0, ability.remainingTurns - 1) } : ability)
+    return abilities.map((ability) => ability.active && ability.timed !== false && !ability.expiresAt ? { ...ability, remainingTurns: Math.max(0, ability.remainingTurns - 1) } : ability)
 }
 
-export function activateAbility(ability: Ability): Ability {
+export function activateAbility(ability: Ability, combat?:Combat|null, participants:Pick<Participant,'id'>[]=[]): Ability {
     if (ability.active || (ability.remainingTurns === 0 && ability.timed !== false) || !ability.name.trim() || ability.ownerId === null) return ability
+    if (ability.expiresAt && combat) {
+        const owner=ability.expiryOwnerId ?? ability.ownerId,ownerIndex=participants.findIndex((p)=>p.id===owner),activeIndex=participants.findIndex((p)=>p.id===combat.activeId)
+        if (ownerIndex<0 || activeIndex<0) return ability
+        return {...ability,active:true,expiryRound:combat.round+(ownerIndex>activeIndex ? 0 : 1)}
+    }
     return { ...ability, active: true }
+}
+
+export function advanceCombatAbilities(abilities:Ability[],previous:Combat,next:Combat):Ability[] {
+    const timed=next.round>previous.round ? advanceAbilityDurations(abilities) : abilities
+    return timed.map((ability)=>{
+        if (!ability.active || !ability.expiresAt) return ability
+        const owner=ability.expiryOwnerId ?? ability.ownerId
+        const event=ability.expiresAt==='end' ? previous : next
+        return owner===event.activeId && event.round>=(ability.expiryRound ?? event.round) ? {...ability,remainingTurns:0} : ability
+    })
 }
 
 export function removeParticipantAbilities(abilities: Ability[], participantIds: number[], remove: boolean): Ability[] {

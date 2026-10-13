@@ -1,5 +1,5 @@
 import type { CharacterSheet } from './CharacterSheets.ts'
-import { classId } from './Spellcasting.ts'
+import { classId, spellEdition } from './Spellcasting.ts'
 
 const wizardPages = ['Statistiche e tradizione arcana', 'Personaggio e inventario', 'Incantesimi', 'Equipaggiamento indossato'] as const
 
@@ -7,13 +7,18 @@ export const sheetTemplates = {
     generic: { name: 'Scheda generale', pages: ['Statistiche e combattimento', 'Personaggio e inventario', 'Incantesimi'] },
     wizard: { name: 'Mago', pages: wizardPages },
     'wizard-pdf': { name: 'Mago · stile PDF', pages: wizardPages },
+    barbarian: { name: 'Barbaro', pages: ['Statistiche e cammino primordiale', 'Personaggio e inventario', 'Equipaggiamento indossato'] },
     'barbarian-pdf': { name: 'Barbaro · stile PDF', pages: ['Statistiche e cammino primordiale', 'Personaggio e inventario', 'Equipaggiamento indossato'] },
 } as const
 
 export function playerTemplate(sheet: CharacterSheet): keyof typeof sheetTemplates {
     const explicit = sheet.playerDetails?.['sheet.template']
     if (explicit === 'generic' || explicit === 'wizard' || explicit === 'wizard-pdf') return explicit
-    if (sheet.kind === 'PG' && classId(sheet) === 'barbarian') return 'barbarian-pdf'
+    if (explicit === 'barbarian' && sheet.kind === 'PG' && spellEdition(sheet) === '2014') return 'barbarian'
+    if (sheet.kind === 'PG' && classId(sheet) === 'barbarian') {
+        if (explicit === 'barbarian-pdf' || spellEdition(sheet) === '2024') return 'barbarian-pdf'
+        return 'barbarian'
+    }
     return sheet.playerDetails?.['creation.class'] === 'wizard' || /^(mago|wizard)$/i.test(sheet.characterClass.trim()) ? 'wizard' : 'generic'
 }
 

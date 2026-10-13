@@ -8,9 +8,9 @@ import { characterFieldValue } from '../src/utils/PlayerCreation.ts'
 import { playerBarbarianCharacter, updatePlayerBarbarian } from '../src/barbarian/player.ts'
 const layouts = await Promise.all([1,2,3].map(async n=>JSON.parse(await readFile(new URL(`../src/barbarian/page${n}.json`,import.meta.url),'utf8'))))
 let sheet = {...newCharacterSheet(),name:'Barbaro QA',characterClass:'Barbaro',level:'5',hitPoints:'20',strength:'14',dexterity:'12',constitution:'14',intelligence:'10',wisdom:'10',charisma:'10'}
-assert.equal(playerTemplate(sheet),'barbarian-pdf')
-assert.equal(playerTemplate({...sheet,characterClass:' barbarian '}),'barbarian-pdf')
-assert.equal(playerTemplate({...sheet,characterClass:'Personalizzata',playerDetails:{'creation.class':'barbarian'}}),'barbarian-pdf')
+assert.equal(playerTemplate(sheet),'barbarian')
+assert.equal(playerTemplate({...sheet,characterClass:' barbarian '}),'barbarian')
+assert.equal(playerTemplate({...sheet,characterClass:'Personalizzata',playerDetails:{'creation.class':'barbarian'}}),'barbarian')
 assert.equal(playerTemplate({...sheet,playerDetails:{'sheet.template':'generic'}}),'generic')
 assert.equal(playerTemplate({...sheet,characterClass:'Guerriero',playerDetails:{'sheet.template':'barbarian-pdf'}}),'generic')
 const field = id => layouts.flatMap(p=>p.fields).find(f=>`${f.group}.${f.key}`===id)
@@ -29,7 +29,7 @@ try {
  const context=await browser.newContext({viewport:{width:1440,height:1100}}),page=await context.newPage(),errors=[]
  page.on('pageerror',e=>errors.push(e.message))
  await page.route('**/api/me',r=>r.fulfill({json:{user:{id:'template-test',username:'Template QA'}}}))
- await page.addInitScript(sheets=>{if(!localStorage.getItem('dev-and-dice.character-sheets.v1')) localStorage.setItem('dev-and-dice.character-sheets.v1',JSON.stringify(sheets))},[sheet,fighter])
+ await page.addInitScript(sheets=>{if(!localStorage.getItem('dev-and-dice.character-sheets.v1')) localStorage.setItem('dev-and-dice.character-sheets.v1',JSON.stringify(sheets))},[{...sheet,playerDetails:{...sheet.playerDetails,'sheet.template':'barbarian-pdf'}},fighter])
  await page.goto(process.env.BARBARIAN_URL ?? 'http://localhost:5173/trackers')
  await page.getByRole('button',{name:'Apri scheda di Barbaro QA',exact:true}).click()
  const dialog=page.getByRole('dialog',{name:'Barbaro QA',exact:true}),picker=dialog.getByLabel('Modello della scheda')

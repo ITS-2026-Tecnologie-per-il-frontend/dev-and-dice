@@ -9,7 +9,9 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "start": "node server/index.mjs",
-    "test:auth": "node --test tests/auth.mjs"
+    "test:auth": "node --test tests/auth.mjs",
+    "test:play": "node tests/play.mjs",
+    "test:rules": "node --experimental-strip-types tests/runtime-database.mjs && node --experimental-strip-types --experimental-specifier-resolution=node tests/verified-database.mjs public/data/rules2014"
   },
   "dependencies": {
     "express": "^5.2.1",

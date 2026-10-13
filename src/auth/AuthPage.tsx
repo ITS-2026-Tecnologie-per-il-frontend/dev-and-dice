@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from './useAuth'
 
 type Props = { mode: 'login' | 'register' }
@@ -7,6 +7,9 @@ type Props = { mode: 'login' | 'register' }
 export function AuthPage({ mode }: Props) {
   const { status, signIn } = useAuth()
   const navigate = useNavigate()
+  const [params]=useSearchParams()
+  const candidate=params.get('next') ?? '/'
+  const destination=/^\/(?:join\/[A-Za-z\d_-]{1,128}|games\/[a-f\d-]{36}|characters\/(?:new|[a-f\d-]{36}))?$/i.test(candidate) ? candidate : '/'
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -14,8 +17,8 @@ export function AuthPage({ mode }: Props) {
   const registering = mode === 'register'
 
   useEffect(() => {
-    if (status === 'authenticated') navigate('/trackers', { replace: true })
-  }, [status, navigate])
+    if (status === 'authenticated') navigate(destination, { replace: true })
+  }, [status, navigate, destination])
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -23,7 +26,7 @@ export function AuthPage({ mode }: Props) {
     setSubmitting(true)
     try {
       await signIn(mode, username.trim(), password)
-      navigate('/trackers', { replace: true })
+      navigate(destination, { replace: true })
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Operazione non riuscita.')
     } finally {
@@ -38,14 +41,16 @@ export function AuthPage({ mode }: Props) {
         <h1 id="auth-title">{registering ? 'Crea un account' : 'Bentornato'}</h1>
         <p className="auth-intro">
           {registering
-            ? 'Registrati per accedere ai tracker.'
-            : 'Accedi per continuare ai tracker.'}
+            ? 'Registrati per creare personaggi e partecipare alle sessioni.'
+            : 'Accedi per ritrovare i tuoi personaggi e le tue sessioni.'}
         </p>
 
         <form className="auth-form" onSubmit={(event) => void submit(event)}>
           <label>
             <span>Nome utente</span>
             <input
+              aria-label="Nome utente"
+              aria-describedby={registering ? 'auth-username-hint' : undefined}
               autoComplete="username"
               autoFocus
               maxLength={24}
@@ -55,11 +60,13 @@ export function AuthPage({ mode }: Props) {
               value={username}
               onChange={(event) => setUsername(event.target.value)}
             />
-            {registering && <small>Da 3 a 24 caratteri: lettere, numeri, punto, trattino o underscore.</small>}
+            {registering && <small id="auth-username-hint">Da 3 a 24 caratteri: lettere, numeri, punto, trattino o underscore.</small>}
           </label>
           <label>
             <span>Password</span>
             <input
+              aria-label="Password"
+              aria-describedby={registering ? 'auth-password-hint' : undefined}
               autoComplete={registering ? 'new-password' : 'current-password'}
               maxLength={128}
               minLength={registering ? 8 : 1}
@@ -68,7 +75,7 @@ export function AuthPage({ mode }: Props) {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
             />
-            {registering && <small>Usa almeno 8 caratteri.</small>}
+            {registering && <small id="auth-password-hint">Usa almeno 8 caratteri.</small>}
           </label>
 
           {error && <p className="auth-error" role="alert">{error}</p>}
@@ -81,7 +88,7 @@ export function AuthPage({ mode }: Props) {
         <p className="auth-switch">
           {registering ? 'Hai già un account?' : 'Non hai ancora un account?'}
           {' '}
-          <Link to={registering ? '/login' : '/register'}>
+          <Link to={`${registering ? '/login' : '/register'}${destination==='/'?'':'?next='+encodeURIComponent(destination)}`}>
             {registering ? 'Accedi' : 'Registrati'}
           </Link>
         </p>

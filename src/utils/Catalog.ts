@@ -13,7 +13,7 @@ export type CatalogEntry = {
     rounds: number | null
     data: Record<string, unknown>
 }
-export type Catalog = { creatures: CatalogEntry[]; abilities: CatalogEntry[] }
+export type Catalog = { creatures: CatalogEntry[]; abilities: CatalogEntry[];language?:'it'|'en' }
 
 function normalized(text: string) {
     return text.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('it').trim()
@@ -65,7 +65,11 @@ export function parseCatalog(raw: unknown, language: 'it' | 'en' = 'it'): Catalo
 
 export function templateFromCatalog(entry: CatalogEntry): SheetAbility {
     const duration = entry.rounds === 0 ? 'Senza conteggio' : (Object.keys(durationTurns) as SheetAbility['duration'][]).find((key) => durationTurns[key] === entry.rounds) ?? 'Personalizzata'
-    return { name: entry.name, catalogId: entry.id, duration, remainingTurns: entry.rounds ?? 0, timed: duration !== 'Senza conteggio' }
+    return { name: entry.name, catalogId: entry.id, duration, remainingTurns: entry.rounds ?? 0, timed: duration !== 'Senza conteggio',
+        ...(entry.data.expiresAt==='start'||entry.data.expiresAt==='end' ? {expiresAt:entry.data.expiresAt} : {}),
+        ...(typeof entry.data.repeatSave==='string' ? {repeatSave:entry.data.repeatSave} : {}),
+        ...(typeof entry.data.referenceId==='string' ? {ruleId:entry.data.referenceId} : {}),
+        ...(entry.data.edition==='2014' && entry.data.mechanics && typeof entry.data.mechanics==='object' && 'concentration' in entry.data.mechanics && entry.data.mechanics.concentration===true ? {concentration:true} : {}) }
 }
 
 export function sheetWithCombatSpells(sheet: CharacterSheet, catalog: Catalog, availableOnly = false): CharacterSheet {

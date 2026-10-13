@@ -33,9 +33,63 @@ Il backend basato su JSON è adatto a un'installazione singola: non avviare più
 istanze che scrivono lo stesso file. Per un servizio pubblico o scalabile usa un
 database e configura il proxy HTTPS secondo l'hosting.
 
-La registrazione salva l'account sul server, ma le schede dei personaggi restano
-nel `localStorage` del browser: non sono ancora sincronizzate con l'account o
-con altri dispositivi.
+La home personale (`/`) mostra i personaggi dell'account e le sue sessioni di
+gioco. Il creatore di una sessione è il Master: in `/games/:id` usa i tracker
+esistenti, aggiunge proprie schede e condivide il link `/join/:token`. Il
+giocatore sceglie un proprio PG libero oppure ne crea uno nell'invito; nella
+partita modifica la propria scheda e vede soltanto nomi e turno attuale.
+
+La vista giocatore mette la scheda al centro, gli appunti privati a sinistra e
+turni ed effetti attivi sul proprio personaggio a destra. Su mobile la scheda
+precede i riquadri laterali. La rotellina apre modello, esportazione PDF, opzioni
+di compilazione e regole in una finestra accessibile anche da tastiera.
+Gli appunti si inviano con **Salva appunti**, fino a 20.000 caratteri: sono legati
+alla partecipazione alla partita, visibili soltanto all'autore e conservati sul
+server. Uscire dalla partita elimina quella partecipazione e i suoi appunti.
+Una revisione separata protegge dalle sovrascritture tra dispositivi senza
+interferire con il combattimento; gli appunti non fanno parte della scheda
+consultabile dal Master.
+
+Personaggi, proprietari, partecipazioni e combattimenti sono salvati in
+`server/data/games.json`, con una coda di scrittura e sostituzione atomica del
+file. Questa prima versione richiede **una sola istanza Node**: per più istanze
+serve un database transazionale. I ruoli e la proprietà sono verificati dal
+server a ogni richiesta; un personaggio può essere associato a una sola partita.
+Le risposte ai giocatori escludono statistiche altrui, strumenti del Master e
+token di invito. Il token casuale contiene 32 byte ed è valido fino alla chiusura
+della partita. I link usano l'indirizzo del browser: `localhost` non è
+raggiungibile dai dispositivi degli altri giocatori. Per giocare online occorrono
+un server raggiungibile e HTTPS, con `SESSION_SECRET` configurato.
+
+Il Master salva automaticamente le modifiche confermate nelle schede e quelle
+del combattimento; i partecipanti ricevono aggiornamenti ogni due secondi. Le
+modifiche ancora aperte nella scheda del giocatore si inviano con **Salva
+personaggio**. I salvataggi controllano una revisione: modifiche concorrenti
+generano un conflitto anziché sovrascrivere dati. Una bozza del tavolo non inviata
+resta nel browser, separata per account e partita; l'interfaccia consente di
+riprovare o ricaricare il server scartando esplicitamente la bozza.
+
+**Da fare: migrare la sincronizzazione dal polling ai WebSocket**, per inviare
+gli aggiornamenti ai partecipanti appena avvengono. Conservare autenticazione,
+permessi per partita, selezione dei dati per ruolo e controlli sulle revisioni;
+gestire riconnessione e recupero dello stato. In questa versione il polling
+rimane ogni due secondi.
+
+In home, **Recupera le schede di questo browser** importa le vecchie schede e i
+due modelli locali del Barbaro nell'account corrente. L'importazione assegna nuovi
+ID sul server, conserva gli originali e riconosce quelle già importate. Poiché le
+vecchie schede non hanno un proprietario registrato, il recupero è esplicito:
+importare soltanto quelle proprie. **Riprendi bozza locale** recupera il tutorial
+precedente. `/trackers` e i vecchi modelli del Barbaro rimangono strumenti locali
+compatibili con i dati precedenti; le partite condivise usano `/games/:id`.
+
+Il giocatore può uscire da una partita per rendere di nuovo disponibile il
+personaggio. Il Master può rimuovere le proprie schede dal tavolo oppure chiudere
+la partita; i personaggi rimangono sempre nei rispettivi account.
+
+Verifiche: `npm run test:play`, `npm run test:auth` e `node tests/play-ui.mjs`.
+Il test del browser avvia frontend e backend isolati, usa due account e un archivio
+temporanei e verifica il proxy HTTP reale, senza modificare i dati del server di sviluppo.
 
 Currently, two official plugins are available:
 
