@@ -35,8 +35,9 @@
     outline-offset: 1px;
 }
 .player-paper-wizard-pdf :is(input, textarea)::placeholder { color: #77716c; opacity: 1; }
-.player-paper-wizard-pdf input[type='number'] { appearance: textfield; }
-.player-paper-wizard-pdf input[type='number']::-webkit-inner-spin-button { appearance: none; }
+.player-paper-wizard-pdf .player-score > input[type='number'] { appearance: textfield; -moz-appearance: textfield; }
+.player-paper-wizard-pdf .player-score > input[type='number']::-webkit-inner-spin-button,
+.player-paper-wizard-pdf .player-score > input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .player-paper-wizard-pdf input[type='checkbox'] {
     appearance: none;
     padding: 0;
@@ -309,29 +310,47 @@
     background: url('../public/templates/mago-caratteristica.svg') center / 100% 100% no-repeat;
     font-family: Arial, Helvetica, sans-serif;
 }
-.player-paper-wizard-pdf .player-wizard-score .player-score .player-field { height: 82px; grid-template-rows: 14px 1fr; gap: 0; }
-.player-paper-wizard-pdf .player-wizard-score .player-score .player-field > span { font-size: 9px; font-weight: 700; line-height: 14px; letter-spacing: .3px; }
-.player-paper-wizard-pdf .player-wizard-score .player-score input { align-self: center; height: 54px; padding: 0; border: 0; font-size: 42px; }
-.player-paper-wizard-pdf .player-wizard-score .player-score > output {
+.player-paper-wizard-pdf .player-wizard-score .player-score-label { font-size: 9px; font-weight: 700; line-height: 14px; letter-spacing: .3px; }
+.player-paper-wizard-pdf .player-wizard-score .player-score input {
     position: absolute;
     bottom: 6px;
     left: 50%;
     transform: translateX(-50%);
+    z-index: 1;
     display: grid;
     place-items: center;
     box-sizing: border-box;
     width: 52px;
     height: 28px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    font-size: 18px;
+    font-weight: 400;
+}
+.player-paper-wizard-pdf .player-wizard-score .player-score > .player-score-modifier {
+    position: absolute;
+    top: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    width: 100%;
+    height: 54px;
     min-height: 0;
     margin: 0;
     padding: 0;
     border: 0;
     border-radius: 0;
     background: none;
-    font-size: 18px;
-    font-weight: 400;
+    font-size: 42px;
+    font-weight: 700;
 }
 .player-paper-wizard-pdf .player-wizard-score .player-score > .player-wizard-score-base {
+    position: absolute;
     z-index: 1;
     bottom: -2px;
     left: -14px;

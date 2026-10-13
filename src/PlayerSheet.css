@@ -79,9 +79,13 @@
 .player-score-skills { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 10px; }
 .player-scores { display: flex; flex-direction: column; justify-content: space-between; gap: 14px; padding: 10px 6px; border-radius: 12px; background: #dededb; }
 .player-score { padding: 10px 4px; border: 3px double var(--paper-line); border-radius: 12px 2px; text-align: center; background: #faf9f6; }
-.player-score .player-field > span { font-size: 9px; letter-spacing: 0; }
-.player-score input { padding: 4px 0; text-align: center; font-size: 24px; }
-.player-score output { display: block; width: 36px; margin: 8px auto -22px; padding: 3px; border: 2px solid var(--paper-line); border-radius: 50%; background: #fff; font-size: 16px; font-weight: 700; }
+.player-score-label { display: block; font-size: 9px; font-weight: 650; text-transform: uppercase; }
+.player-score input { display: block; box-sizing: border-box; width: 36px; height: 36px; margin: 8px auto -22px; padding: 3px 0; border: 2px solid var(--paper-line); border-radius: 50%; background: #fff; text-align: center; font-size: 14px; font-weight: 700; }
+.player-score > input[type='number'] { appearance: textfield; -moz-appearance: textfield; }
+.player-score > input[type='number']::-webkit-inner-spin-button, .player-score > input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.player-field-no-spinner > input[type='number'] { appearance: textfield; -moz-appearance: textfield; }
+.player-field-no-spinner > input[type='number']::-webkit-inner-spin-button, .player-field-no-spinner > input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.player-score > .player-score-modifier { display: block; margin: 0; padding: 2px 0; border: 0; border-radius: 0; background: transparent; font-size: 24px; font-weight: 700; }
 .player-box { display: flex; flex-direction: column; min-width: 0; gap: 8px; padding: 12px; border: 3px double var(--paper-line); border-radius: 10px 2px; background: #ffffff55; }
 .player-box h3 { margin: 0; padding-bottom: 6px; border-bottom: 1px solid #c5c5c2; text-align: center; font-size: 10px; font-weight: 750; letter-spacing: 0.7px; text-transform: uppercase; }
 .player-box-grow { flex: 1; }
@@ -166,7 +170,7 @@
 }
 .player-paper-statistics .player-roll { min-height: 24px; }
 .player-paper-statistics .player-roll > input { flex-shrink: 0; }
-.player-paper-statistics .player-score output { margin-bottom: -16px; }
+.player-paper-statistics .player-score input { margin-bottom: -16px; }
 .player-paper-statistics .player-box-grow textarea { min-height: 240px; }
 .creation-panel { margin: .75rem 0; padding: 1rem; border: 1px solid #777; border-radius: .5rem; }
 .creation-panel summary { cursor: pointer; font-weight: 700; }
@@ -220,7 +224,7 @@
 .player-wizard-score { display: grid; grid-template-columns: 80px minmax(0, 1fr); align-items: start; gap: 12px; min-height: 110px; }
 .player-wizard-score .player-score { border-radius: 8px 2px; padding: 8px 4px; margin-bottom: 12px; }
 .player-wizard-score .player-score input { font-size: 24px; }
-.player-paper-statistics .player-wizard-score .player-score output { margin-bottom: -20px; }
+.player-paper-statistics .player-wizard-score .player-score input { margin-bottom: -20px; }
 .player-wizard-score .player-column { gap: 4px; padding-top: 8px; }
 .player-wizard-score .player-roll { gap: 4px; }
 .player-wizard-score .player-roll > span { font-size: 10px; }

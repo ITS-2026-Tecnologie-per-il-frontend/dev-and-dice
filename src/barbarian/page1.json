@@ -2605,10 +2605,10 @@
       "key": "strength",
       "label": "Forza",
       "box": [
-        17,
-        192,
-        42,
-        31
+        25,
+        227,
+        25,
+        11
       ],
       "kind": "number",
       "min": 1,
@@ -2619,10 +2619,10 @@
       "key": "strengthModifier",
       "label": "Modificatore Forza",
       "box": [
-        25,
-        227,
-        25,
-        11
+        17,
+        192,
+        42,
+        31
       ],
       "kind": "number"
     },
@@ -2703,10 +2703,10 @@
       "key": "dexterity",
       "label": "Destrezza",
       "box": [
-        17,
-        267,
-        42,
-        31
+        25,
+        302,
+        25,
+        11
       ],
       "kind": "number",
       "min": 1,
@@ -2717,10 +2717,10 @@
       "key": "dexterityModifier",
       "label": "Modificatore Destrezza",
       "box": [
-        25,
-        302,
-        25,
-        11
+        17,
+        267,
+        42,
+        31
       ],
       "kind": "number"
     },
@@ -2873,10 +2873,10 @@
       "key": "constitution",
       "label": "Costituzione",
       "box": [
-        17,
-        341,
-        42,
-        31
+        25,
+        376,
+        25,
+        11
       ],
       "kind": "number",
       "min": 1,
@@ -2887,10 +2887,10 @@
       "key": "constitutionModifier",
       "label": "Modificatore Costituzione",
       "box": [
-        25,
-        376,
-        25,
-        11
+        17,
+        341,
+        42,
+        31
       ],
       "kind": "number"
     },
@@ -2935,10 +2935,10 @@
       "key": "intelligence",
       "label": "Intelligenza",
       "box": [
-        17,
-        415,
-        42,
-        31
+        25,
+        450,
+        25,
+        11
       ],
       "kind": "number",
       "min": 1,
@@ -2949,10 +2949,10 @@
       "key": "intelligenceModifier",
       "label": "Modificatore Intelligenza",
       "box": [
-        25,
-        450,
-        25,
-        11
+        17,
+        415,
+        42,
+        31
       ],
       "kind": "number"
     },
@@ -3177,10 +3177,10 @@
       "key": "wisdom",
       "label": "Saggezza",
       "box": [
-        17,
-        490,
-        42,
-        31
+        25,
+        525,
+        25,
+        11
       ],
       "kind": "number",
       "min": 1,
@@ -3191,10 +3191,10 @@
       "key": "wisdomModifier",
       "label": "Modificatore Saggezza",
       "box": [
-        25,
-        525,
-        25,
-        11
+        17,
+        490,
+        42,
+        31
       ],
       "kind": "number"
     },
@@ -3419,10 +3419,10 @@
       "key": "charisma",
       "label": "Carisma",
       "box": [
-        17,
-        564,
-        42,
-        31
+        25,
+        599,
+        25,
+        11
       ],
       "kind": "number",
       "min": 1,
@@ -3433,10 +3433,10 @@
       "key": "charismaModifier",
       "label": "Modificatore Carisma",
       "box": [
-        25,
-        599,
-        25,
-        11
+        17,
+        564,
+        42,
+        31
       ],
       "kind": "number"
     },

@@ -41,11 +41,15 @@ function SourceText({ line }: { line: PageLayout['texts'][number] }) {
   return <span ref={ref} className={`barbarian-source-text ${small ? 'smallcaps' : ''} ${number ? 'number' : ''} ${title ? 'title' : ''}`} style={{ left: x, top: y, fontSize: number ? height * 1.4 : title ? 18 : height * 1.45, fontWeight: line.kind === 'brand' ? 900 : ['plain', 'base', 'level'].includes(line.kind ?? '') || (x < 400 && y < 90 && !title && line.kind !== 'heading') ? 400 : 700 }}>{content}</span>
 }
 function SheetField({ field, value, onChange, readOnly = false }: { field: Field; value: string | boolean; onChange: (value: string | boolean) => void; readOnly?: boolean }) {
-  const shared = { 'aria-label': field.label, 'data-field': `${field.group}.${field.key}`, readOnly, className: `barbarian-field ${field.kind}`, style: { ...position(field.box), ...(['text', 'number'].includes(field.kind) ? { fontSize: Math.min(9, field.box[3] * .8) } : {}) } }
+  const abilityScore = field.group === 'abilities' && /^(strength|dexterity|constitution|intelligence|wisdom|charisma)$/.test(field.key)
+  const abilityBase = field.group === 'abilities' && /^(strength|dexterity|constitution|intelligence|wisdom|charisma)Base$/.test(field.key)
+  const noSpinner = abilityScore || abilityBase || (field.group === 'combat' && ['passive', 'proficiency', 'initiative', 'speed'].includes(field.key))
+  const abilityModifier = field.group === 'abilities' && /^(strength|dexterity|constitution|intelligence|wisdom|charisma)Modifier$/.test(field.key)
+  const shared = { 'aria-label': field.label, 'data-field': `${field.group}.${field.key}`, readOnly, className: `barbarian-field ${field.kind}${noSpinner ? ' no-spinner' : ''}`, style: { ...position(field.box), ...(['text', 'number'].includes(field.kind) ? { fontSize: Math.min(9, field.box[3] * .8) } : {}) } }
   if (field.kind === 'checkbox') return <input {...shared} type="checkbox" checked={value === true} onChange={event => onChange(event.target.checked)} />
   if (field.kind === 'textarea') return <textarea {...shared} value={String(value)} onChange={event => onChange(event.target.value)} spellCheck={false} />
   if (field.kind === 'select') return <select {...shared} value={String(value)} onChange={event => onChange(event.target.value)}>{field.options?.map(option => <option key={option}>{option}</option>)}</select>
-  return <input {...shared} type={field.kind === 'number' ? 'number' : 'text'} value={String(value)} onChange={event => onChange(event.target.value)} min={field.min} max={field.max} step="any" spellCheck={false} />
+  return <input {...shared} type={field.kind === 'number' && !abilityModifier ? 'number' : 'text'} value={String(value)} onChange={event => onChange(event.target.value)} min={field.min} max={field.max} step="any" spellCheck={false} />
 }
 export function DocumentPage({ layout, index, character, onChange, readOnly }: { layout: PageLayout; index: number; character: Character; onChange: (field: Field, value: string | boolean) => void; readOnly?: (field: Field) => boolean }) {
   return <article className="barbarian-page" data-page={index + 1} aria-label={`Scheda Barbaro, pagina ${index + 1}`} style={{ width: layout.width, height: layout.height }}>

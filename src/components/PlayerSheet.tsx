@@ -111,6 +111,17 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
     function modifier(score: typeof scores[number]) {
         return characterFieldValue(sheet, `modifier.${score}`)
     }
+    function abilityScore(score: typeof scores[number], showBase = false) {
+        return <div className="player-score" key={score}>
+            <span className="player-score-label">{characterFields[score]}</span>
+            <output className="player-score-modifier" aria-label={`Modificatore ${characterFields[score]}`}>{modifier(score) || '—'}</output>
+            <input type="number" step="1" aria-label={`Valore ${characterFields[score]}`} value={sheet[score]} onChange={(event) => updateBase(score, event.target.value)} />
+            {showBase && <output className="player-wizard-score-base" aria-label={`Valore base ${characterFields[score]}`}>{(creationEnabled(sheet) ? details[`creation.base.${score}`] : sheet[score]) || '—'}<small>Base</small></output>}
+        </div>
+    }
+    function hideNumberSpinner(key: string) {
+        return ['passivePerception', 'proficiencyBonus', 'initiative', 'speed', 'spellDC', 'spellAttackBonus'].includes(key)
+    }
     function field(key: string, label: ReactNode, options: { base?: boolean; multiline?: boolean; numeric?: boolean; placeholder?: string; onBlur?: () => void } = {}) {
         const value = options.base ? sheet[key as keyof typeof characterFields] : characterFieldValue(sheet,key)
         const notes=/^magicItem\.(\d+)\.notes$/.exec(key),referenceKey=notes && !referencedInventoryItem(sheet,`magicItem.${notes[1]}.name`) ? `magicItem.${notes[1]}.name` : key
@@ -122,7 +133,7 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
             return options.base ? updateBase(key, normalized) : detail(key, normalized)
         }
         const numeric = options.numeric || (options.base && (numericCharacterFields as readonly string[]).includes(key))
-        return <label data-field={key} className={`player-field${options.multiline ? ' player-field-prose' : ''}`} key={key}>
+        return <label data-field={key} className={`player-field${options.multiline ? ' player-field-prose' : ''}${hideNumberSpinner(key) ? ' player-field-no-spinner' : ''}`} key={key}>
             <span>{label}</span>
             {options.multiline
                 ? <textarea {...inventoryProps} rows={4} value={value} onChange={(event) => update(event.target.value)} placeholder={options.placeholder} />
@@ -322,7 +333,7 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
                     <div className="player-wizard-competence">{field('proficiencyBonus','Competenza',{numeric:true})}</div>
                     <div className="player-two-fields player-wizard-perception">{field('passivePerception','Percezione passiva',{numeric:true})}{check('inspiration','Ispirazione')}</div>
                     <div className="player-wizard-abilities">{scores.map((score) => <section className="player-wizard-score" key={score}>
-                        <div className="player-score">{field(score,characterFields[score],{base:true})}<output aria-label={`Modificatore ${characterFields[score]}`}>{modifier(score) || '—'}</output>{template === 'wizard-pdf' && <output className="player-wizard-score-base" aria-label={`Valore base ${characterFields[score]}`}>{(creationEnabled(sheet) ? details[`creation.base.${score}`] : sheet[score]) || '—'}<small>Base</small></output>}</div>
+                        {abilityScore(score,template === 'wizard-pdf')}
                         <div className="player-column">{rollRow(`save.${score}`,`Tiro salvezza ${characterFields[score]}`,score)}{skills.filter(([,ability]) => ability === score).map(([label]) => rollRow(`skill.${label}`,label,score,true))}</div>
                     </section>)}</div>
                     {box('Linguaggi, tratti e privilegi aggiuntivi',<>{field('languages','Linguaggi',{multiline:true})}{field('racialTraits','Tratti razziali e privilegi da background',{multiline:true})}</>,'player-wizard-traits')}
@@ -382,9 +393,7 @@ export function PlayerSheet({ sheet, catalog, creationData: suppliedData, onChan
             {visiblePage === 0 && !wizardTemplate && <div className="player-stat-page">
                 <div className="player-column">
                    <div className="player-score-skills">
-                        <div className="player-scores">{scores.map((key) => <div className="player-score" key={key}>
-                            {field(key, characterFields[key], { base: true })}<output aria-label={`Modificatore ${characterFields[key]}`}>{modifier(key) || '—'}</output>
-                        </div>)}</div>
+                        <div className="player-scores">{scores.map((key) => abilityScore(key))}</div>
                         <div className="player-column">
                             {box('Ispirazione', check('inspiration', 'Ispirazione'))}
                             {box('Bonus di competenza', field('proficiencyBonus', 'Bonus', { numeric: true }))}
