@@ -32,3 +32,10 @@ export function updateFeaturesAtLevel(text: string, level: number, value: string
     const blocks = value.split(/\n\s*\n/).filter((block) => block.trim()).map((block) => /\(livello \d+\)\s*$/i.test(block.split('\n')[0]) ? block : `Privilegio di classe (livello ${level})\n${block}`)
     return [...rest, ...blocks].join('\n\n')
 }
+
+export const proseField=(key:string,base=false)=>key==='name'||key==='notes'||key==='creation.override.classFeatures'||!base&&['playerName','backgroundStory','appearanceDescription','faction','factionName','factionSymbol','additionalTraits','racialTraits','classFeatures','feats'].includes(key)||!base&&key.startsWith('personality.')
+
+export function playerSheetLayoutKey(sheet:CharacterSheet) {
+    // ponytail: only prose skips the full layout; every mechanical field still refreshes all derived values.
+    return JSON.stringify(sheet.playerDetails?.['tutorial.active']==='true'||playerTemplate(sheet)==='barbarian-pdf' ? sheet : {...sheet,name:'',notes:'',playerDetails:Object.fromEntries(Object.entries(sheet.playerDetails??{}).filter(([key])=>!proseField(key)))})
+}

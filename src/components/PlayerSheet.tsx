@@ -14,7 +14,7 @@ import { copyCost, wizardRules } from '../utils/Wizard'
 import { barbarianRules, setBarbarianRageUsed } from '../utils/Barbarian'
 import { classLevel } from '../utils/Spellcasting'
 import { type Catalog } from '../utils/Catalog'
-import { sheetTemplates, playerTemplate, wizardPrivilegeLevels, featuresAtLevel, updateFeaturesAtLevel } from '../utils/PlayerTemplates'
+import { sheetTemplates, playerTemplate, proseField, playerSheetLayoutKey, wizardPrivilegeLevels, featuresAtLevel, updateFeaturesAtLevel } from '../utils/PlayerTemplates'
 import { printCharacterSheet } from '../utils/PrintCharacterSheet'
 import { favoriteSpellCapacity, favoriteSpellOptions, favoriteSpellSlots, setFavoriteSpell, hasOtherSpell, spellNameLookup, spellNameRoots } from '../utils/SpellPage'
 import { useDialogDismiss } from '../utils/Dialog'
@@ -22,7 +22,6 @@ import '../PlayerSheet.css'
 import '../WizardPdf.css'
 import '../Barbarian.css'
 
-const proseField=(key:string,base=false)=>key==='name'||key==='notes'||key==='creation.override.classFeatures'||!base&&['playerName','backgroundStory','appearanceDescription','faction','factionName','factionSymbol','additionalTraits','racialTraits','classFeatures','feats'].includes(key)||!base&&key.startsWith('personality.')
 type SheetStore={read:()=>CharacterSheet;layout:()=>string|undefined;update:(sheet:CharacterSheet,key?:string)=>void;subscribe:(listener:()=>void)=>()=>void}
 function createSheetStore(sheet:CharacterSheet):SheetStore {
     let layoutKey:string|undefined
@@ -741,10 +740,10 @@ function PlayerSheetLayout({ sheet:layoutSheet, catalog:baseCatalog, creationDat
 const MemoPlayerSheet=memo(PlayerSheetLayout,(previous,next)=>previous.layoutKey===next.layoutKey
     && previous.catalog===next.catalog && previous.creationData===next.creationData && previous.onChange===next.onChange
     && previous.exportPage===next.exportPage && previous.children===next.children && previous.settingsInDialog===next.settingsInDialog && previous.historyControl===next.historyControl)
+
 export function PlayerSheet(props:Parameters<typeof PlayerSheetLayout>[0]) {
     const [store]=useState(()=>createSheetStore(props.sheet))
-    // ponytail: only prose skips the full layout; every mechanical field still refreshes all derived values.
-    const layoutKey=JSON.stringify(props.sheet.playerDetails?.['tutorial.active']==='true'||playerTemplate(props.sheet)==='barbarian-pdf' ? props.sheet : {...props.sheet,name:'',notes:'',playerDetails:Object.fromEntries(Object.entries(props.sheet.playerDetails??{}).filter(([key])=>!proseField(key)))})
+    const layoutKey=playerSheetLayoutKey(props.sheet)
     const latest=useRef(props)
     useLayoutEffect(()=>{latest.current=props;store.update(props.sheet,layoutKey)})
     const change=useCallback((next:CharacterSheet,previous=store.read())=>{

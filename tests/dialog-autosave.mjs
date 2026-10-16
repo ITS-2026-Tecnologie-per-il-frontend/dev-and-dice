@@ -27,6 +27,11 @@ registerHooks({
             export function useState(initial) { const i = h.cursor++; if (!(i in h.values)) h.values[i] = typeof initial === 'function' ? initial() : initial; return [h.values[i], value => { h.values[i] = typeof value === 'function' ? value(h.values[i]) : value; }]; }
             export function useRef(initial) { const i = h.cursor++; return h.values[i] ??= { current: initial }; }
             export function useEffect(effect) { h.effects.push(effect); }
+            export const useLayoutEffect=useEffect;
+            export function memo(component) { return component; }
+            export function useDeferredValue(value) { if (!h.freezeDeferred) h.deferred = value; return h.deferred; }
+            export function createContext(value) { const context={value}; function Provider() {} Provider.context=context; return Provider; }
+            export function useContext(provider) { return provider.context.value; }
             export function useMemo(create) { return create(); }
             export function useCallback(callback) { return callback; }
             export function useImperativeHandle(ref, create) { if (ref) ref.current = create(); }
@@ -57,6 +62,8 @@ function render() {
         if (!node || typeof node !== 'object') return
         if (Array.isArray(node)) { node.forEach(visit); return }
         nodes.push(node)
+        if(node.type?.context)node.type.context.value=node.props.value
+        if(['CharacterSheetsLayout','CharacterSheetInputs','CharacterCombatPanels'].includes(node.type?.name)) {visit(node.type(node.props));return}
         if (node.type === 'dialog') {
             node.props.ref.current ??= { open: false, showModal() { this.open = true }, close() { this.open = false }, getBoundingClientRect: () => ({ left: 10, right: 100, top: 10, bottom: 100 }) }
         }
@@ -241,3 +248,14 @@ assert.equal(stored,libraryBeforeDiscard,'Discarding a tutorial cannot delete sa
 assert.equal(sheetDialog.props.ref.current.open,false)
 cleanups.forEach((cleanup)=>cleanup())
 console.log('Tutorial footer handlers passed: final save, template/spell retention, draft removal, pause/resume and discard without deleting saved sheets.')
+
+ref.current.open(original); render()
+hooks.freezeDeferred=true
+edit({name:'Ultimo testo durante il rendering'})
+assert.equal(nodes.find(node=>node.props?.id==='character-dialog-heading').props.children,'Aria','The surrounding preview is deliberately still on the previous draft')
+assert.equal(nodes.find(node=>node.type?.name==='PlayerSheet').props.sheet.name,'Ultimo testo durante il rendering','The input already receives the newest draft')
+await outside()
+assert.equal(JSON.parse(stored).find(sheet=>sheet.id===original.id).name,'Ultimo testo durante il rendering','Saving never reads the deferred preview')
+hooks.freezeDeferred=false
+cleanups.forEach(cleanup=>cleanup())
+console.log('Deferred preview check passed: visible input and immediate save retain the latest text while the surrounding panel is pending.')

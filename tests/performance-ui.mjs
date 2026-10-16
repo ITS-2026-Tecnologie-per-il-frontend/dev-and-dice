@@ -1,5 +1,6 @@
 // Run: node tests/performance-ui.mjs [report path] [--production] [--profile] [--master] (build first).
 // Isolated data; Chromium CPU throttled 4x. Timings are diagnostic; assertions check behavior and redundant work.
+// --library-source=/tmp/CharacterSheets-before.tsx compares an earlier Master implementation without editing the app.
 import assert from 'node:assert/strict'
 import { once } from 'node:events'
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
@@ -11,13 +12,26 @@ import express from 'express'
 import { createApp } from '../server/index.mjs'
 import { newCharacterSheet } from '../src/utils/CharacterSheets.ts'
 
+const reportPath=process.argv.slice(2).find(arg=>!arg.startsWith('--'))
 const sheetSource=process.argv.find(arg=>arg.startsWith('--sheet-source='))?.slice('--sheet-source='.length)
+const librarySource=process.argv.find(arg=>arg.startsWith('--library-source='))?.slice('--library-source='.length)
+function trackInputs() {
+    window.perfQA={renders:{},inputs:[],events:[],phaseStart:0}
+    new PerformanceObserver(list=>{
+        for(const entry of list.getEntries())if(entry.name==='keydown'&&entry.target?.tagName==='TEXTAREA'&&entry.startTime>=window.perfQA.phaseStart)window.perfQA.events.push({duration:entry.duration,queue:entry.processingStart-entry.startTime,handler:entry.processingEnd-entry.processingStart})
+    }).observe({type:'event',durationThreshold:16})
+    document.addEventListener('input',()=>{const start=performance.now();requestAnimationFrame(()=>requestAnimationFrame(()=>window.perfQA.inputs.push(performance.now()-start)))},true)
+}
+function keyTiming(events) {
+    const values=events.map(event=>event.duration).toSorted((a,b)=>a-b),queue=events.map(event=>event.queue).toSorted((a,b)=>a-b)
+    return {samples:values.length,median:values[Math.floor(values.length/2)],p95:values[Math.floor(values.length*.95)],queueP95:queue[Math.floor(queue.length*.95)]}
+}
 const dir=await mkdtemp(join(tmpdir(),'dev-and-dice-perf-'))
 const app=await createApp({dataDir:dir,production:false,sessionSecret:'performance-test-secret-at-least-thirty-two-bytes'})
 if(process.argv.includes('--production')) {app.use(express.static(resolve('dist')));app.get('/games/:id',(_req,res)=>res.sendFile(resolve('dist/index.html')))}
 const server=app.listen(0)
 await once(server,'listening')
-const frontend=await createServer({plugins:[{name:'performance-render-counts',enforce:'pre',async transform(code,id){if(!id.includes('/src/components/'))return;if(sheetSource&&id.split('?')[0].endsWith('/src/components/PlayerSheet.tsx'))code=await readFile(sheetSource,'utf8');return code.replace(/^(?:export (?:default )?)?function (CharacterSheets|PlayerSheetLayout|PlayerSheet|SheetField|CharacterEditor|SheetChanges|InventoryEditor|RulesPanel|WizardAdvancement)\([^\n]*\{\n/gm,(line,name)=>line+`if(globalThis.perfQA) globalThis.perfQA.renders['${name}']=(globalThis.perfQA.renders['${name}']||0)+1;\n`)}}],logLevel:'error',server:{host:'127.0.0.1',port:0,proxy:{'/api':{target:`http://127.0.0.1:${server.address().port}`,changeOrigin:false}}}})
+const frontend=await createServer({plugins:[{name:'performance-render-counts',enforce:'pre',async transform(code,id){if(!id.includes('/src/components/'))return;if(sheetSource&&id.split('?')[0].endsWith('/src/components/PlayerSheet.tsx'))code=await readFile(sheetSource,'utf8');if(librarySource&&id.split('?')[0].endsWith('/src/components/CharacterSheets.tsx'))code=await readFile(librarySource,'utf8');return code.replace(/^(?:export (?:default )?)?function (CharacterSheetsLayout|CharacterSheets|PlayerSheetLayout|PlayerSheet|SheetField|CharacterEditor|SheetChanges|InventoryEditor|RulesPanel|WizardAdvancement)\([^\n]*\{\n/gm,(line,name)=>line+`if(globalThis.perfQA) globalThis.perfQA.renders['${name}']=(globalThis.perfQA.renders['${name}']||0)+1;\n`)}}],logLevel:'error',server:{host:'127.0.0.1',port:0,proxy:{'/api':{target:`http://127.0.0.1:${server.address().port}`,changeOrigin:false}}}})
 let browser
 try {
     await frontend.listen()
@@ -41,10 +55,7 @@ try {
         await page.setViewportSize({width:1440,height:1000})
         page.on('pageerror',error=>errors.push(error.message))
         page.on('console',message=>{if(message.type()==='error'&&message.text().includes('same key'))errors.push(message.text())})
-        await page.addInitScript(()=>{
-            window.perfQA={renders:{},inputs:[]}
-            document.addEventListener('input',()=>{const start=performance.now();requestAnimationFrame(()=>requestAnimationFrame(()=>window.perfQA.inputs.push(performance.now()-start)))},true)
-        })
+        await page.addInitScript(trackInputs)
         await page.goto(url+'/games/'+game.id)
         await page.getByRole('button',{name:'Apri scheda di Mago QA',exact:true}).click()
         const dialog=page.locator('.player-sheet-dialog[open]'),fields=dialog.locator('.player-wizard-privilege textarea'),field=fields.first()
@@ -63,6 +74,7 @@ try {
         await field.blur()
         const cdp=await master.newCDPSession(page)
         await cdp.send('Emulation.setCPUThrottlingRate',{rate:4})
+        await cdp.send('Performance.enable')
         if(process.argv.includes('--profile')) {await cdp.send('Profiler.enable');await cdp.send('Profiler.start')}
         await page.evaluate(()=>{window.perfQA.inputs=[];window.perfQA.renders={}})
         await field.press('Control+End');await field.pressSequentially('abcdefgh',{delay:60,timeout:120000});await page.waitForTimeout(150)
@@ -70,23 +82,25 @@ try {
         await field.screenshot({path:'/tmp/dev-and-dice-master-privileges.png'})
         assert.equal(await field.inputValue(),'Privilegio QA (livello 2)\nPuoi usare una azione bonus.abcdefgh')
         assert.equal(await fields.nth(1).inputValue(),'Altro privilegio (livello 6)\nDescrizione conservata.')
-        const report={role:'master',cpu:4,typing:{samples:typing.inputs.length,median:typing.inputs.toSorted((a,b)=>a-b)[Math.floor(typing.inputs.length/2)],p95:typing.inputs.toSorted((a,b)=>a-b)[Math.floor(typing.inputs.length*.95)],renders:typing.renders}}
+        const report={role:'master',mode:process.argv.includes('--production')?'production':'development',cpu:4,typing:{samples:typing.inputs.length,median:typing.inputs.toSorted((a,b)=>a-b)[Math.floor(typing.inputs.length/2)],p95:typing.inputs.toSorted((a,b)=>a-b)[Math.floor(typing.inputs.length*.95)],renders:typing.renders}}
         for(const phase of ['rapid','backspace','delete']) {
             await field.press(phase==='delete' ? 'Home' : 'Control+End')
-            await page.evaluate(()=>{window.perfQA.inputs=[];window.perfQA.renders={}})
-            const start=performance.now(),before=await field.inputValue()
+            await page.evaluate(()=>{window.perfQA.inputs=[];window.perfQA.renders={};window.perfQA.events=[];window.perfQA.phaseStart=performance.now()})
+            const metricsBefore=await cdp.send('Performance.getMetrics'),start=performance.now(),before=await field.inputValue()
             if(phase==='rapid')await field.pressSequentially('Scrittura veloce senza pause!',{delay:0,timeout:120000})
             else for(let n=0;n<10;n++)await field.press(phase==='delete' ? 'Delete' : 'Backspace')
             const elapsed=performance.now()-start
             await page.waitForTimeout(150)
             const result=await page.evaluate(()=>window.perfQA),values=result.inputs.toSorted((a,b)=>a-b)
-            report[phase]={samples:values.length,elapsed,median:values[Math.floor(values.length/2)],p95:values[Math.floor(values.length*.95)],renders:result.renders}
+            const metricsAfter=await cdp.send('Performance.getMetrics')
+            const work=Object.fromEntries(metricsAfter.metrics.filter(m=>['ScriptDuration','LayoutDuration','RecalcStyleDuration','TaskDuration'].includes(m.name)).map(m=>[m.name,1000*(m.value-metricsBefore.metrics.find(b=>b.name===m.name).value)]))
+            report[phase]={samples:values.length,elapsed,median:values[Math.floor(values.length/2)],p95:values[Math.floor(values.length*.95)],keyTiming:keyTiming(result.events),work,renders:result.renders}
             assert.equal(await field.inputValue(),phase==='rapid' ? before+'Scrittura veloce senza pause!' : phase==='backspace' ? before.slice(0,-10) : before.slice(0,before.indexOf('\n')+1)+before.slice(before.indexOf('\n')+11),'Fast typing and deletion keep every character and the caret position')
         }
         await field.fill('Privilegio QA (livello 2)\nPuoi usare una azione bonus.abcdefgh')
-        if(process.argv.includes('--profile')) {const {profile}=await cdp.send('Profiler.stop');await writeFile((process.argv[2]??'/tmp/dev-and-dice-perf.json')+'.cpuprofile',JSON.stringify(profile))}
+        if(process.argv.includes('--profile')) {const {profile}=await cdp.send('Profiler.stop');await writeFile((reportPath??'/tmp/dev-and-dice-perf.json')+'.cpuprofile',JSON.stringify(profile))}
         console.log(JSON.stringify(report,null,2))
-        if(process.argv[2])await writeFile(process.argv[2],JSON.stringify(report,null,2)+'\n')
+        if(reportPath)await writeFile(reportPath,JSON.stringify(report,null,2)+'\n')
         if(!sheetSource&&!process.argv.includes('--production'))assert.equal(typing.renders.PlayerSheetLayout??0,0,'Master privilege edits must not render the whole sheet')
         const info=dialog.getByRole('button',{name:'Altro su Privilegio QA',exact:true})
         await info.click()
@@ -114,16 +128,29 @@ try {
         await dialog.getByRole('button',{name:'Ripristina i campi generati (annulla le loro modifiche manuali)',exact:true}).click()
         assert(!(await full.inputValue()).includes('PROVA_OVERRIDE'),'Reset uses the latest text and removes the override')
         await dialog.getByRole('button',{name:'Passa a compilazione manuale',exact:true}).click()
-        const final='Privilegio QA (livello 2)\nPuoi usare una azione bonus. Ultimo carattere!\n\nAltro privilegio (livello 6)\nTesto con accenti: città.'
+        const final='Altro privilegio (livello 6)\nTesto con accenti: città.\n\nPrivilegio QA (livello 2)\nPuoi usare una azione bonus. Ultimo carattere!'
         await full.fill(final)
         assert.equal(await field.inputValue(),'Privilegio QA (livello 2)\nPuoi usare una azione bonus. Ultimo carattere!')
         assert.equal(await fields.nth(1).inputValue(),'Altro privilegio (livello 6)\nTesto con accenti: città.')
+        await field.press('Control+End');await field.pressSequentially(' Subito!',{delay:0})
+        await dialog.getByLabel('Durata di Privilegio QA',{exact:true}).selectOption('1 minuto')
+        await dialog.getByRole('button',{name:'+ Aggiungi abilità',exact:true}).click()
+        await dialog.getByLabel('Nome abilità 1 della scheda',{exact:true}).fill('Abilità di prova')
+        assert((await field.inputValue()).endsWith(' Subito!'),'Other controls preserve prose while the surrounding preview catches up')
         await dialog.locator('[data-field="name"] input').fill('Nome Master aggiornato')
         const saved=page.waitForResponse(response=>response.url().endsWith('/state')&&response.request().method()==='PUT'&&response.ok())
         await dialog.getByRole('button',{name:'Salva scheda',exact:true}).click();await saved
         const record=await api(master,'/api/play/characters/'+sheet.id)
         assert.equal(record.sheet.name,'Nome Master aggiornato')
-        assert.equal(record.sheet.playerDetails.classFeatures,final,'Master saves the last typed character and preserves all feature levels')
+        assert.equal(record.sheet.playerDetails.classFeatures,final+' Subito!','Master saves the last typed character and preserves all feature levels')
+        assert.equal(record.sheet.abilities[0].name,'Abilità di prova')
+        assert.equal(record.sheet.playerDetails['combatFeature.'+encodeURIComponent('classFeatures:privilegio qa')+'.duration'],'1 minuto')
+        await page.getByRole('button',{name:'Apri scheda di Nome Master aggiornato',exact:true}).click()
+        await field.press('Control+End');await field.pressSequentially(' Autosalvato',{delay:0})
+        const autoSaved=page.waitForResponse(response=>response.url().endsWith('/state')&&response.request().method()==='PUT'&&response.ok())
+        await page.mouse.click(2,2);await autoSaved;await dialog.waitFor({state:'hidden'})
+        const afterOutside=await api(master,'/api/play/characters/'+sheet.id)
+        assert.equal(afterOutside.sheet.playerDetails.classFeatures,final+' Subito! Autosalvato','Outside-click save reads the newest draft even during a pending preview')
         const randomButton=page.getByRole('button',{name:'+ Crea personaggio casuale',exact:true}),random=page.getByRole('dialog',{name:'Personaggio casuale',exact:true})
         await randomButton.click()
         await random.waitFor()
@@ -133,6 +160,28 @@ try {
         await randomButton.click()
         assert.equal(await random.getByRole('combobox').first().inputValue(),'wizard','Reopening the lazy dialog preserves its selections')
         await random.getByRole('button',{name:'Annulla',exact:true}).click();await random.waitFor({state:'hidden'})
+        const comparisonRecord=await api(master,'/api/play/characters/'+sheet.id)
+        await api(master,'/api/play/characters/'+sheet.id,'PUT',{revision:comparisonRecord.revision,sheet:{...sheet,notes:'Nota 24'}})
+        const playerPage=await player.newPage()
+        playerPage.on('pageerror',error=>errors.push(error.message))
+        await playerPage.addInitScript(trackInputs)
+        await playerPage.goto(url+'/games/'+game.id)
+        const playerField=playerPage.locator('.player-wizard-privilege textarea').first()
+        await playerField.waitFor();await playerPage.locator('.inventory-editor').waitFor();await playerPage.evaluate(()=>document.fonts.ready)
+        await playerField.fill('Privilegio QA (livello 2)\nPuoi usare una azione bonus.abcdefgh')
+        const playerCdp=await player.newCDPSession(playerPage)
+        await playerCdp.send('Emulation.setCPUThrottlingRate',{rate:4})
+        await playerField.screenshot({path:'/tmp/dev-and-dice-player-privileges.png'})
+        await playerPage.waitForTimeout(150)
+        await playerField.press('Control+End')
+        await playerPage.evaluate(()=>{window.perfQA.inputs=[];window.perfQA.renders={};window.perfQA.events=[];window.perfQA.phaseStart=performance.now()})
+        await playerField.pressSequentially('Scrittura veloce senza pause!',{delay:0,timeout:120000})
+        await playerPage.waitForTimeout(150)
+        assert.equal(await playerField.inputValue(),'Privilegio QA (livello 2)\nPuoi usare una azione bonus.abcdefghScrittura veloce senza pause!')
+        const playerResult=await playerPage.evaluate(()=>window.perfQA),playerTimes=playerResult.inputs.toSorted((a,b)=>a-b)
+        report.playerRapid={samples:playerTimes.length,median:playerTimes[Math.floor(playerTimes.length/2)],p95:playerTimes[Math.floor(playerTimes.length*.95)],keyTiming:keyTiming(playerResult.events),renders:playerResult.renders}
+        if(reportPath)await writeFile(reportPath,JSON.stringify(report,null,2)+'\n')
+        console.log('Same-field player comparison:',JSON.stringify(report.playerRapid))
         assert.deepEqual(errors,[])
         console.log('PASS: Master privilege typing, other levels, full-text synchronization, consecutive edits and immediate save.')
     } else {
@@ -159,7 +208,7 @@ try {
     await page.waitForTimeout(150)
     console.log('QA: typing complete');const typing=await page.evaluate(()=>({...window.perfQA}))
     const typingRequests=requests.filter(r=>r.method!=='GET')
-    const {profile}=process.argv.includes('--profile') ? await cdp.send('Profiler.stop') : {profile:{nodes:[],samples:[]}};const metricsAfter=await cdp.send('Performance.getMetrics');await writeFile((process.argv[2]??'/tmp/dev-and-dice-perf.json')+'.cpuprofile',JSON.stringify(profile));console.log('QA metrics',metricsAfter.metrics.filter(m=>['ScriptDuration','LayoutDuration','RecalcStyleDuration','TaskDuration'].includes(m.name)).map(m=>({name:m.name,ms:1000*(m.value-metricsBefore.metrics.find(b=>b.name===m.name).value)})))
+    const {profile}=process.argv.includes('--profile') ? await cdp.send('Profiler.stop') : {profile:{nodes:[],samples:[]}};const metricsAfter=await cdp.send('Performance.getMetrics');await writeFile((reportPath??'/tmp/dev-and-dice-perf.json')+'.cpuprofile',JSON.stringify(profile));console.log('QA metrics',metricsAfter.metrics.filter(m=>['ScriptDuration','LayoutDuration','RecalcStyleDuration','TaskDuration'].includes(m.name)).map(m=>({name:m.name,ms:1000*(m.value-metricsBefore.metrics.find(b=>b.name===m.name).value)})))
     console.log('QA DOM',await page.locator('*').count());const counts=new Map()
     for(const id of profile.samples??[])counts.set(id,(counts.get(id)||0)+1)
     const hot=profile.nodes.filter(n=>n.callFrame.url.includes('/src/')).map(n=>({name:n.callFrame.functionName,file:n.callFrame.url.split('/src/')[1].split('?')[0],samples:counts.get(n.id)||0})).sort((a,b)=>b.samples-a.samples).slice(0,15)
@@ -237,7 +286,7 @@ try {
     const metrics=metricsAfter.metrics.filter(m=>['ScriptDuration','LayoutDuration','RecalcStyleDuration','TaskDuration'].includes(m.name)).map(m=>({name:m.name,ms:1000*(m.value-metricsBefore.metrics.find(b=>b.name===m.name).value)}))
     const report={metrics,environment:`${process.argv.includes('--production') ? 'Production build' : 'Vite development, React StrictMode'}, Chromium headless, 1440x1000, CPU 4x`,typing:{samples:typing.inputs.length,median:typing.inputs.toSorted((a,b)=>a-b)[Math.floor(typing.inputs.length/2)],p95:typing.inputs.toSorted((a,b)=>a-b)[Math.floor(typing.inputs.length*.95)],renders:typing.renders,mutations:typingRequests.length,hot},openings,errors}
     console.log(JSON.stringify(report,null,2))
-    if(process.argv[2]) await writeFile(process.argv[2],JSON.stringify(report,null,2)+'\n')
+    if(reportPath) await writeFile(reportPath,JSON.stringify(report,null,2)+'\n')
     assert.deepEqual(errors,[])
     }
 } finally {
