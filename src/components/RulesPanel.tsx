@@ -11,7 +11,7 @@ const names:Record<string,string>={class:'Classi',subclass:'Sottoclassi','class-
 const message=(error:unknown) => error instanceof Error ? error.message : 'Operazione non disponibile: verifica con il DM.'
 const listIds=(value:string) => value.split(',').map((v) => v.trim()).filter(Boolean)
 
-export default function RulesPanel({data,sheet,onChange}:{data:CreationData;sheet?:CharacterSheet;onChange?:(sheet:CharacterSheet)=>void}) {
+export default function RulesPanel({data,sheet,onChange,expanded}:{data:CreationData;sheet?:CharacterSheet;onChange?:(sheet:CharacterSheet)=>void;expanded?:boolean}) {
     const verified=data.verified!
     const [open,setOpen]=useState(false)
     const [error,setError]=useState(''),[result,setResult]=useState<unknown>()
@@ -103,7 +103,7 @@ export default function RulesPanel({data,sheet,onChange}:{data:CreationData;shee
         })
     }
 
-    return <details className="player-sheet-settings player-sheet-controls rules-panel" data-print="exclude" onToggle={(event)=>{if (event.target===event.currentTarget) setOpen(event.currentTarget.open)}}><summary>{sheet ? 'Regole, scelte e risorse · 2014' : 'Manuali e strumenti del DM · 2014'}</summary>{open && <>
+    return <details className="player-sheet-settings player-sheet-controls rules-panel" data-print="exclude" open={expanded || undefined} onToggle={(event)=>{if (event.target===event.currentTarget) setOpen(event.currentTarget.open)}}><summary>{sheet ? 'Regole, scelte e risorse · 2014' : 'Manuali e strumenti del DM · 2014'}</summary>{open && <>
         <p>{verified.reviewedEntities.length} voci con fonti e stato di verifica. Le interpretazioni aperte richiedono una decisione del DM.</p>
         {sheet && !is2014 && <p>Questa scheda usa le regole 2024. I calcoli 2014 qui sotto sono disponibili per consultazione separata.</p>}
         {stateError && <p role="alert">{stateError}</p>}{details['rules2014.issues'] && <p role="alert">{details['rules2014.issues']}</p>}

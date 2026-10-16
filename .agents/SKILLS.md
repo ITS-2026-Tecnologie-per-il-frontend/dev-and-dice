@@ -1,13 +1,13 @@
 # Inventario delle skill
 
-Confronto effettuato il **10 ottobre 2026** sul filesystem Windows e sul catalogo della sessione Codex.
+Inventario aggiornato il **16 ottobre 2026** sul filesystem Windows e sul catalogo della sessione Codex. Le verifiche storiche del 10 ottobre e i riferimenti ad altri ambienti sono conservati.
 
-- **27 skill disponibili nel catalogo della sessione**, tutte con `SKILL.md` presente.
+- **29 skill disponibili nel catalogo della sessione**, tutte con `SKILL.md` presente.
 - **1 skill locale non elencata nel catalogo corrente**: `review-agent`.
-- **26 ulteriori file di skill nella cache dei plugin**: la presenza in cache non dimostra l’attivazione del plugin o la disponibilità nella sessione.
+- **26 ulteriori file di skill nella cache dei plugin**, registrati il 10 ottobre e conservati come riferimento: la presenza in cache non dimostra l’attivazione del plugin o la disponibilità nella sessione.
 - **Tutte le 18 voci del vecchio documento sono ora presenti in locale**; `pdf-to-react-fidelity` è stata recuperata dallo ZIP fornito dall’utente.
 
-Sono stati verificati **54 file `SKILL.md`** nelle directory skill dell’utente, di sistema, del progetto e nella cache dei plugin. Il conteggio dei file in cache non viene presentato come numero di skill attive. I percorsi precedenti `/home/xlini/...` sono stati sostituiti con percorsi verificati su questa macchina.
+Nel confronto del 10 ottobre erano stati verificati **54 file `SKILL.md`** nelle directory skill dell’utente, di sistema, del progetto e nella cache dei plugin. Il conteggio dei file in cache non viene presentato come numero di skill attive. Il 16 ottobre sono stati verificati i file delle 29 skill del catalogo corrente. Le voci già documentate restano conservate anche quando non sono installate su questa macchina, inclusi i riferimenti Linux nella sezione dedicata.
 
 ## Skill utente disponibili nella sessione
 
@@ -15,6 +15,8 @@ Sono stati verificati **54 file `SKILL.md`** nelle directory skill dell’utente
 |---|---|---|
 | `find-skills` | Cercare skill aggiuntive e relative fonti. | [SKILL.md](C:/Users/utente/.agents/skills/find-skills/SKILL.md) |
 | `frontend-design` | Progettare e migliorare l’aspetto delle interfacce. | [SKILL.md](C:/Users/utente/.agents/skills/frontend-design/SKILL.md) |
+| `redesign-existing-projects` | Esaminare e migliorare interfacce esistenti: layout, spaziature, gerarchia visiva e stile, preservando le funzionalità. | [SKILL.md](C:/Users/utente/.agents/skills/redesign-existing-projects/SKILL.md) |
+| `ui-ux-pro-max` | Progettare e rivedere UX/UI con indicazioni consultabili su layout, interazioni, accessibilità, colori, tipografia e sistemi di design. | [SKILL.md](C:/Users/utente/.agents/skills/ui-ux-pro-max/SKILL.md) |
 | `security-best-practices` | Esaminare la sicurezza di codice Python, JavaScript/TypeScript e Go su richiesta esplicita. | [SKILL.md](C:/Users/utente/.agents/skills/security-best-practices/SKILL.md) |
 | `vercel-composition-patterns` | Organizzare componenti React e API riutilizzabili. | [SKILL.md](C:/Users/utente/.agents/skills/vercel-composition-patterns/SKILL.md) |
 | `vercel-react-best-practices` | Migliorare prestazioni e struttura di applicazioni React e Next.js. | [SKILL.md](C:/Users/utente/.agents/skills/vercel-react-best-practices/SKILL.md) |
@@ -49,8 +51,8 @@ I nomi includono il prefisso del plugin usato dal catalogo corrente.
 | `pdf:pdf` | Leggere, creare e verificare PDF, compresa la resa visiva. | [SKILL.md](C:/Users/utente/.codex/plugins/cache/openai-primary-runtime/pdf/26.723.12215/skills/pdf/SKILL.md) |
 | `plugin-management:plugin-management` | Gestire plugin, connessioni, permessi e dipendenze. | [SKILL.md](C:/Users/utente/.codex/plugins/cache/openai-curated-remote/plugin-management/0.1.0/skills/plugin-management/SKILL.md) |
 | `presentations:Presentations` | Creare, modificare e verificare presentazioni PowerPoint. | [SKILL.md](C:/Users/utente/.codex/plugins/cache/openai-primary-runtime/presentations/26.723.12215/skills/presentations/SKILL.md) |
-| `sites:sites` | Creare, modificare e pubblicare siti con Sites. | [SKILL.md](C:/Users/utente/.codex/plugins/cache/openai-curated-remote/sites/1.0.1/skills/sites/SKILL.md) |
-| `spreadsheets:spreadsheets` | Creare e analizzare fogli di calcolo e file XLSX/CSV. | [SKILL.md](C:/Users/utente/.codex/plugins/cache/openai-primary-runtime/spreadsheets/26.723.12215/skills/spreadsheets/SKILL.md) |
+| `sites:sites` | Creare, modificare e pubblicare siti con Sites. | [SKILL.md](C:/Users/utente/.codex/plugins/cache/openai-curated-remote/sites/1.0.2-remix-a.1/skills/sites/SKILL.md) |
+| `spreadsheets:Spreadsheets` (in precedenza `spreadsheets:spreadsheets`) | Creare e analizzare fogli di calcolo e file XLSX/CSV. | [SKILL.md](C:/Users/utente/.codex/plugins/cache/openai-primary-runtime/spreadsheets/26.723.12215/skills/spreadsheets/SKILL.md) |
 | `spreadsheets:excel-live-control` | Controllare una cartella Excel aperta tramite la sessione connessa. | [SKILL.md](C:/Users/utente/.codex/plugins/cache/openai-primary-runtime/spreadsheets/26.723.12215/skills/excel-live-control/SKILL.md) |
 | `template-creator:template-creator` | Creare o aggiornare skill per modelli personali riutilizzabili. | [SKILL.md](C:/Users/utente/.codex/plugins/cache/openai-primary-runtime/template-creator/26.723.12215/skills/template-creator/SKILL.md) |
 | `visualize:visualize` | Creare visualizzazioni e strumenti interattivi nella conversazione. | [SKILL.md](C:/Users/utente/.codex/plugins/cache/openai-bundled/visualize/1.0.15/skills/visualize/SKILL.md) |
@@ -140,7 +142,15 @@ Queste **26 voci non sono nel catalogo della sessione**. Vengono registrate come
 | `artifact-template-team-alignment` | openai-templates 0.1.1 | [SKILL.md](C:/Users/utente/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-team-alignment/SKILL.md) |
 | `artifact-template-three-statement-forecast` | openai-templates 0.1.1 | [SKILL.md](C:/Users/utente/.codex/plugins/cache/openai-curated-remote/openai-templates/0.1.1/skills/artifact-template-three-statement-forecast/SKILL.md) |
 
-## Esito del confronto
+## Aggiornamento UX/UI - 16 ottobre 2026
+
+Sono state rilevate sul filesystem e nel catalogo corrente due ulteriori skill utente: `ui-ux-pro-max` e `redesign-existing-projects`. Entrambe sono riportate nella tabella delle skill utente con il percorso locale verificato. Il totale delle skill disponibili nella sessione passa da 27 a 29.
+
+Il collegamento di `sites:sites` punta ora alla versione corrente `1.0.2-remix-a.1`. Il precedente riferimento `C:/Users/utente/.codex/plugins/cache/openai-curated-remote/sites/1.0.1/skills/sites/SKILL.md` resta qui come dato storico, ma non è presente su questa macchina. Il nome corrente della skill per i file di calcolo è `spreadsheets:Spreadsheets`; il precedente identificatore resta indicato nella tabella.
+
+Nessuna voce preesistente è stata eliminata, comprese quelle relative ad altri ambienti, alle skill non esposte nel catalogo e ai file nella cache dei plugin. Questo aggiornamento documenta le installazioni rilevate e non esegue installazioni aggiuntive.
+
+## Esito del confronto del 10 ottobre 2026
 
 Il documento precedente elencava **18 nomi**. Tutte le voci sono state mantenute e i percorsi sono stati aggiornati; la skill inizialmente non reperita è stata installata dallo ZIP successivamente fornito.
 

@@ -14,17 +14,21 @@ export type UseOption={id:string;label:string;remaining:number|null;cost?:number
 export function combatAbilityInfo(ability:Pick<Ability,'catalogId'|'duration'|'remainingTurns'|'instantaneous'|'damageEnabled'|'spellLevel'|'castingAlternative'|'description'>,catalog:Catalog) {
     const entry=catalog.abilities.find(entry=>entry.id===ability.catalogId),m=object(entry?.data.mechanics)
     const level=ability.spellLevel ?? (typeof entry?.data.level==='number' ? entry.data.level : undefined)
+    // PHB 2014, D&D_5_Player_Original_Handbook.pdf, PDF 260, Mending:
+    // repairs a touched object; "former damage" describes the repair, not damage dealt.
+    // Keep this verified exception scoped to its edition and identity, including old saved overrides.
+    const repairsObject=entry?.data.referenceId==='phb2014:spell:mending' && entry.data.edition==='2014'
     const attack=typeof m.kind==='string' && m.kind.includes('attack')
-    const instantaneous=ability.instantaneous ?? (m.duration==='Instantaneous' || object(entry?.data.durationInfo).kind==='instantaneous' || entry?.rounds===0 || attack)
+    const instantaneous=repairsObject || (ability.instantaneous ?? (m.duration==='Instantaneous' || object(entry?.data.durationInfo).kind==='instantaneous' || entry?.rounds===0 || attack))
     // ponytail: damage text only suggests a checkbox; the DM confirms targets and final damage, never an inferred dice formula.
-    const damage=ability.damageEnabled ?? (attack || /damage|\bdanni\b/i.test(Object.keys(m).length ? JSON.stringify(m) : entry?.description || ability.description || ''))
+    const damage=!repairsObject && (ability.damageEnabled ?? (attack || /damage|\bdanni\b/i.test(Object.keys(m).length ? JSON.stringify(m) : entry?.description || ability.description || '')))
     const alternatives=Array.isArray(m.castingAlternatives) ? m.castingAlternatives.map(object) : []
     const casting=alternatives[ability.castingAlternative ?? 0] ?? object(m.casting),castingText=String(entry?.data.castingTime ?? '')
     const prolonged=casting.unit==='minute' || casting.unit==='hour' || !casting.unit && /\bminut|\bor[ae]\b|\bhours?\b/i.test(castingText)
     const ritual=m.ritual===true || entry?.data.ritual===true
     const concentration=m.concentration===true || object(entry?.data.durationInfo).concentration===true
     const unit=typeof casting.unit==='string' ? casting.unit : /bonus/i.test(castingText) ? 'bonus-action' : /reazion|reaction/i.test(castingText) ? 'reaction' : prolonged ? 'minute' : 'action'
-    return {entry,level,instantaneous,damage,prolonged,ritual,concentration,unit,alternatives}
+    return {entry,level,instantaneous,damage,prolonged,ritual,concentration,unit,alternatives,repairsObject}
 }
 
 function pool(sheet:CharacterSheet,key:string) {

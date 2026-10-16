@@ -1,0 +1,186 @@
+/* Master workspace: the original layout keeps its existing styles. */
+.master-settings-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:10px 14px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text-h); font:inherit; font-size:14px; cursor:pointer; }
+.master-settings-dialog { box-sizing:border-box; width:min(560px,calc(100% - 32px)); max-height:calc(100dvh - 32px); overflow:auto; padding:24px; border:1px solid var(--border); border-radius:12px; color:var(--text-h); background:var(--bg); text-align:left; box-shadow:var(--shadow); }
+.master-settings-dialog::backdrop { background:#0007; }
+.master-settings-dialog header { display:flex; align-items:start; gap:16px; margin-bottom:24px; }
+.master-settings-dialog header > div { flex:1; min-width:0; }
+.master-settings-dialog h2 { font-size:24px; line-height:1.25; margin:0 0 8px; }
+.master-settings-dialog header p,.master-settings-note { color:var(--text); font-size:14px; line-height:1.5; }
+.master-settings-dialog button { min-height:44px; cursor:pointer; }
+.master-settings-dialog header > button { flex-shrink:0; width:44px; padding:0; border:1px solid var(--border); border-radius:6px; color:var(--text-h); background:var(--bg); font-size:26px; }
+.master-settings-dialog fieldset { border:0; margin:0; padding:0; }
+.master-settings-dialog legend { padding:0; margin-bottom:12px; font-size:16px; font-weight:650; }
+.master-view-option { display:flex; align-items:start; gap:12px; margin:0 0 12px; padding:16px; border:1px solid var(--border); border-radius:8px; cursor:pointer; }
+.master-view-option:has(input:checked) { border-color:#147d72; background:color-mix(in srgb,#147d72 8%,var(--bg)); box-shadow:inset 3px 0 #147d72; }
+.master-view-option input { width:20px; height:20px; flex-shrink:0; margin:2px 0 0; accent-color:#147d72; }
+.master-view-option > span { display:grid; gap:6px; font-size:14px; line-height:1.5; }
+.master-view-option strong { font-size:16px; }
+.master-view-option > span > span { color:var(--text); }
+.master-settings-extra { display:grid; gap:16px; margin-top:20px; padding-top:20px; border-top:1px solid var(--border); }
+.master-settings-extra label { display:grid; gap:6px; font-size:14px; }
+.master-settings-extra select { min-height:44px; padding:8px; background:var(--bg); color:var(--text-h); border:1px solid var(--border); border-radius:4px; font:inherit; }
+.master-settings-dialog footer { display:flex; justify-content:flex-end; margin-top:24px; }
+.master-settings-dialog footer button { padding:10px 18px; border:0; border-radius:6px; background:#147d72; color:white; font:inherit; font-size:14px; }
+.master-settings-button:focus-visible,.master-settings-dialog :focus-visible { outline:3px solid #147d72; outline-offset:3px; }
+.master-original .master-inspector { min-width:0; }
+.master-original .character-library-actions { display:contents; }
+.master-original-options { display:contents; }
+.master-original-options > summary { display:none; }
+.master-back-to-table,.master-mobile-combat-bar { display:none; }
+
+.master-renewed { --master-accent:#147d72; --master-tint:color-mix(in srgb,var(--master-accent) 7%,var(--bg)); --master-subtle:color-mix(in srgb,var(--border) 22%,var(--bg)); text-align:left; color:var(--text-h); }
+.master-renewed [hidden] { display:none !important; }
+.master-renewed :where(button,input,select) { font:inherit; }
+.master-renewed button { cursor:pointer; }
+.master-renewed button:disabled { cursor:not-allowed; }
+.master-renewed :focus-visible { outline:3px solid var(--master-accent); outline-offset:3px; }
+.master-renewed .master-workspace-nav { display:flex; align-items:center; gap:6px; margin:0 0 24px; padding:0 0 12px; border-bottom:1px solid var(--border); }
+.master-renewed .master-workspace-nav > button { display:flex; align-items:center; gap:8px; min-height:44px; padding:10px 16px; border:1px solid transparent; border-radius:6px; background:transparent; color:var(--text); font-size:15px; }
+.master-workspace-nav > button[aria-pressed="true"] { background:var(--master-tint); color:var(--text-h); border-color:color-mix(in srgb,var(--master-accent) 40%,var(--border)); font-weight:650; }
+.master-workspace-nav > button > span { padding:1px 7px; border-radius:4px; background:var(--bg); font-size:12px; font-variant-numeric:tabular-nums; }
+.master-workspace-caption { margin-left:auto; color:var(--text); font-size:13px; }
+.master-renewed .tracker-layout { display:block; padding:0; }
+.master-renewed .column-separator { display:none; }
+.master-renewed .tracker-main { display:grid; grid-template-columns:minmax(0,1fr) minmax(320px,390px); gap:24px; align-items:start; }
+.master-renewed .tracker-layout:not([data-section="table"]) > .tracker-main { display:none; }
+.master-renewed .character-library { position:static; max-height:none; padding:24px; }
+.master-renewed .character-library.library-shelved { padding:0; border:0; height:0; overflow:visible; }
+.master-renewed .character-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr)); gap:16px; margin-top:24px; }
+.master-renewed .character-card { margin:0; }
+.master-renewed .character-library-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+.master-renewed .character-library-actions button { min-height:44px; margin-top:0; font-size:14px; }
+.master-section-heading { margin:0 0 24px; }
+.master-section-heading h2 { margin:0 0 8px; font-size:24px; }
+.master-section-heading p { color:var(--text); font-size:15px; line-height:1.5; }
+.master-renewed .combat-tracker > h2 { font-size:20px; margin-bottom:16px; }
+.master-renewed .combat-controls { position:sticky; top:0; z-index:3; gap:8px; min-height:52px; padding:12px 0; margin:0; background:var(--bg); }
+.master-renewed .combat-controls > .sort-turns { min-height:44px; padding:10px 16px; border-radius:6px; font-weight:650; font-size:15px; }
+.master-renewed .combat-controls > .end-combat { font-size:13px; padding:8px; border:0; background:transparent; }
+.master-renewed .combat-controls kbd { font-size:12px; border:1px solid var(--border); border-radius:4px; padding:3px 6px; }
+.master-renewed .combat-status { margin:0 0 16px; padding:12px 14px; border-left:3px solid var(--master-accent); border-radius:0 4px 4px 0; background:var(--master-tint); font-size:14px; }
+.master-table-options { position:relative; margin-left:auto; font-size:13px; }
+.master-table-options > summary { display:flex; align-items:center; min-height:44px; cursor:pointer; padding:0 10px; border:1px solid var(--border); border-radius:6px; list-style:none; }
+.master-table-options > summary::after { content:'⌄'; padding-left:8px; }
+.master-table-options[open] { flex-basis:100%; padding:12px; border:1px solid var(--border); border-radius:6px; background:var(--master-subtle); }
+.master-table-options[open] > summary { border:0; justify-content:space-between; padding:0; }
+.master-table-options .turn-header-actions { justify-content:flex-start; gap:8px; margin:8px 0; }
+.master-table-options .combat-shortcut-settings { width:100%; margin:8px 0 0; }
+.master-renewed .turns-list { gap:0; border:1px solid var(--border); border-radius:8px; background:var(--bg); }
+.master-renewed .tracker-main .turn-row { position:relative; box-sizing:border-box; grid-template-columns:28px minmax(130px,1fr) 64px 98px 56px 118px 28px; grid-template-areas:'drag name initiative pf ca damage delete' '. warning warning warning warning warning .'; min-height:88px; padding:12px; gap:0 10px; border:0; border-bottom:1px solid var(--border); border-radius:0; background:transparent; font-variant-numeric:tabular-nums; }
+.master-renewed .tracker-main .turn-row:first-child { border-radius:7px 7px 0 0; }
+.master-renewed .tracker-main .turn-row.selected-participant { background:var(--master-subtle); box-shadow:inset 3px 0 color-mix(in srgb,var(--master-accent) 55%,var(--border)); }
+.master-renewed .tracker-main .turn-row.active-turn { background:var(--master-tint); box-shadow:inset 4px 0 var(--master-accent); }
+.master-renewed .tracker-main .turn-row .turn-temporary-pf,.master-renewed .tracker-main .turn-row .card-info,.master-renewed .tracker-main .turn-row .active-turn-label { display:none; }
+.master-renewed .tracker-main .turn-row input { min-height:36px; padding:6px; font-size:14px; background:var(--bg); }
+.master-renewed .turn-stat,.master-renewed .initiative-field { gap:5px; color:var(--text); font-size:12px; }
+.master-renewed .tracker-main .turn-row .turn-drag-handle,.master-renewed .tracker-main .turn-row .delete-turn { width:28px; height:44px; border:0; background:transparent; }
+.master-renewed .tracker-main .turn-row .turn-drag-handle:disabled { opacity:.3; }
+.master-renewed .turn-max-hitpoints { font-size:12px; }
+.master-renewed .master-participant-name { min-width:0; }
+.master-participant-name > button { display:grid; width:100%; min-height:44px; gap:4px; padding:4px 0; border:0; background:transparent; color:var(--text-h); text-align:left; }
+.master-participant-name strong { font-size:15px; line-height:1.3; overflow-wrap:anywhere; }
+.master-participant-name button > span,.master-participant-effects { color:var(--text); font-size:12px; line-height:1.4; }
+.master-participant-effects { display:block; margin-top:3px; }
+.master-renewed .damage-controls { gap:5px; font-size:11px; color:var(--text); }
+.master-renewed .hitpoint-adjustment { gap:4px; }
+.master-renewed .hitpoint-buttons { gap:4px; }
+.master-renewed .apply-damage { width:30px; min-height:36px; height:36px; border-color:var(--border); }
+.master-renewed .master-concentration-check { grid-area:warning; display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:10px 0 0; font-size:13px; }
+.master-renewed .master-concentration-check button { min-height:36px; }
+.master-renewed .add-turn { display:flex; align-items:center; justify-content:center; gap:8px; min-height:48px; margin:0; padding:12px; border:0; border-radius:0 0 7px 7px; font-size:14px; background:transparent; color:var(--text-h); }
+.master-empty-table { padding:28px 24px; margin-bottom:16px; border:1px dashed var(--border); border-radius:8px; }
+.master-empty-table h3 { margin:0 0 8px; font-size:19px; }
+.master-empty-table p { margin-bottom:16px; color:var(--text); font-size:15px; line-height:1.5; }
+.master-empty-table button { min-height:44px; padding:8px 14px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text-h); font-size:14px; }
+.master-renewed .master-inspector { position:sticky; top:16px; min-width:0; max-height:calc(100dvh - 32px); overflow:auto; overscroll-behavior:contain; padding:20px; border:1px solid var(--border); border-radius:8px; background:var(--master-subtle); box-sizing:border-box; scrollbar-gutter:stable; }
+.master-inspector-navigation { display:flex; gap:4px; margin:0 0 20px; padding:4px; background:var(--bg); border:1px solid var(--border); border-radius:6px; }
+.master-inspector-navigation button { flex:1; min-height:44px; padding:8px 4px; border:0; border-radius:4px; color:var(--text); background:transparent; font-size:13px; }
+.master-inspector-navigation button[aria-pressed="true"] { color:var(--text-h); font-weight:650; background:var(--master-tint); }
+.master-detail-label { color:var(--text); font-size:12px; margin-bottom:6px; }
+.master-participant-detail > h2 { font-size:26px; line-height:1.2; margin-bottom:16px; overflow-wrap:anywhere; }
+.master-detail-stats { display:flex; flex-wrap:wrap; gap:12px 20px; padding:12px 0; border-block:1px solid var(--border); font-size:12px; color:var(--text); font-variant-numeric:tabular-nums; }
+.master-detail-stats strong { display:block; font-size:16px; color:var(--text-h); margin-top:4px; }
+.master-detail-fields { display:grid; grid-template-columns:minmax(0,1fr) 92px; gap:12px; margin-top:16px; }
+.master-detail-fields label { min-width:0; display:grid; align-content:start; gap:6px; font-size:12px; color:var(--text); }
+.master-detail-fields input,.master-available-abilities > input { box-sizing:border-box; width:100%; min-width:0; min-height:44px; padding:8px; border:1px solid var(--border); border-radius:5px; background:var(--bg); color:var(--text-h); font-size:14px; }
+.master-open-sheet { width:100%; min-height:44px; margin-top:12px; padding:8px 12px; border:1px solid var(--border); border-radius:5px; background:var(--bg); color:var(--text-h); font-size:14px; }
+.master-available-abilities { margin:24px 0; }
+.master-available-abilities h3,.master-active-effects h3 { margin:0 0 12px; font-size:15px; font-weight:650; }
+.master-available-abilities .participant-abilities { margin-top:12px; gap:6px; }
+.master-available-abilities .participant-abilities button,.master-available-abilities .participant-abilities a { min-height:36px; font-size:12px; padding:6px 8px; line-height:1.5; text-align:left; }
+.master-available-abilities > p,.master-active-effects > p,.master-inspector-empty p { color:var(--text); font-size:14px; line-height:1.5; }
+.master-active-effects { margin:20px 0; padding-top:20px; border-top:1px solid var(--border); }
+.master-active-effects h3 { display:flex; align-items:center; justify-content:space-between; }
+.master-active-effects h3 > span { font-size:12px; padding:2px 7px; border:1px solid var(--border); border-radius:4px; }
+.master-active-effects ul { list-style:none; margin:0; padding:0; display:grid; gap:8px; }
+.master-active-effects li button { display:grid; gap:4px; width:100%; min-height:44px; padding:10px; border:1px solid var(--border); border-radius:5px; background:var(--bg); color:var(--text-h); text-align:left; overflow-wrap:anywhere; }
+.master-active-effects li strong { font-size:13px; }
+.master-active-effects li span { font-size:12px; color:var(--text); }
+.master-renewed .tracker-main .abilities-tracker { padding:0; border:0; background:transparent; }
+.master-renewed .abilities-tracker > h2 { font-size:17px; }
+.master-renewed .ability-help { font-size:12px; line-height:1.5; }
+.master-renewed .ability-row { background:var(--bg); padding:12px; }
+.master-renewed .ability-row input,.master-renewed .ability-row select { font-size:13px; min-height:36px; }
+.master-renewed .ability-use-controls { font-size:13px; }
+.master-renewed .ability-actions button { font-size:12px; min-height:44px; }
+.master-renewed .add-ability { min-height:44px; }
+.master-inspector-empty h2 { font-size:20px; }
+.play-master-page.master-page-renewed .play-session-heading { margin-bottom:16px; }
+.play-master-page.master-page-renewed .play-session-heading h1 { font-size:28px; }
+.play-master-page.master-page-renewed .play-session-heading p { margin-top:4px; font-size:13px; }
+.play-master-page.master-page-renewed .play-session-heading a { font-size:13px; }
+.play-master-page.master-page-renewed .play-session-actions { gap:8px; flex-wrap:wrap; }
+.play-master-page.master-page-renewed .play-master-tools { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:0 0 12px; padding:0; border:0; }
+.master-invite { font-size:14px; }
+.master-invite summary { display:flex; align-items:center; min-height:44px; cursor:pointer; font-weight:600; }
+.master-invite[open] { flex:1 1 100%; }
+.master-invite-content { display:flex; flex-wrap:wrap; gap:12px; padding:12px 0; }
+.master-invite-content label { flex:1; min-width:min(100%,220px); }
+.master-sync-status { font-size:13px; margin-left:auto; color:var(--text); }
+.master-renewed .play-recovery { padding:16px 0 0; }
+@media (min-width:1800px) { .master-renewed .tracker-main { grid-template-columns:minmax(0,1fr) minmax(390px,440px); gap:32px; } }
+@media (max-width:1200px) {
+    .master-renewed .tracker-main { grid-template-columns:minmax(0,1fr) 320px; gap:16px; }
+    .master-renewed .tracker-main .turn-row { grid-template-columns:24px minmax(90px,1fr) 60px 90px 48px 24px; grid-template-areas:'drag name initiative pf ca delete' '. name damage damage damage . ' '. warning warning warning warning .'; gap:8px; }
+    .master-renewed .damage-controls { flex-direction:row; align-items:center; justify-content:flex-end; }
+    .master-renewed .hitpoint-adjustment { width:118px; }
+    .master-renewed .master-inspector { padding:16px; }
+    .master-workspace-caption { display:none; }
+}
+@media (max-width:900px) {
+    .master-renewed .tracker-main { grid-template-columns:minmax(0,1fr); }
+    .master-renewed .master-inspector { position:static; max-height:none; overflow:visible; scrollbar-gutter:auto; }
+    .master-renewed .tracker-main .turn-row { grid-template-columns:28px minmax(110px,1fr) 64px 98px 56px 118px 28px; grid-template-areas:'drag name initiative pf ca damage delete' '. warning warning warning warning warning .'; gap:0 8px; }
+    .master-renewed .damage-controls { flex-direction:column; align-items:stretch; }
+    .master-renewed .hitpoint-adjustment { width:auto; }
+    .master-participant-detail { scroll-margin-top:100px; }
+    .master-renewed { padding-bottom:80px; }
+    .master-renewed .master-back-to-table { display:block; min-height:44px; margin-bottom:12px; padding:8px 0; border:0; background:transparent; color:var(--text-h); font-size:14px; text-decoration:underline; text-underline-offset:4px; }
+    .master-renewed .master-mobile-combat-bar { display:flex; align-items:center; justify-content:space-between; gap:12px; position:fixed; inset:auto 0 0; z-index:5; padding:12px 16px max(12px,env(safe-area-inset-bottom)); border-top:1px solid var(--border); background:var(--bg); box-sizing:border-box; }
+    .master-mobile-combat-bar > span { min-width:0; font-size:12px; color:var(--text); }
+    .master-mobile-combat-bar strong { display:block; color:var(--text-h); font-size:14px; overflow-wrap:anywhere; }
+    .master-mobile-combat-bar > button { flex-shrink:0; min-height:44px; padding:10px 14px; border:0; border-radius:5px; color:white; background:var(--master-accent); font-size:14px; }
+    .master-renewed .turns-list,.master-renewed .master-inspector { scroll-margin-bottom:80px; }
+}
+@media (max-width:640px) {
+    .master-renewed .master-workspace-nav { gap:4px; margin-bottom:16px; flex-wrap:wrap; }
+    .master-renewed .master-workspace-nav > button { padding:10px; font-size:13px; }
+    .master-renewed .tracker-main .turn-row { grid-template-columns:24px minmax(0,1fr) 60px 24px; grid-template-areas:'drag name initiative delete' '. pf ca .' '. damage damage .' '. warning warning .'; gap:10px 8px; padding:12px; }
+    .master-renewed .turn-pf { display:flex; align-items:center; gap:8px; }
+    .master-renewed .turn-ca { display:flex; align-items:center; gap:6px; }
+    .master-renewed .turn-pf .turn-hitpoints { max-width:120px; }
+    .master-renewed .turn-ca input { width:44px; }
+    .master-renewed .damage-controls { flex-direction:row; align-items:center; justify-content:flex-start; gap:12px; }
+    .master-renewed .hitpoint-adjustment { width:132px; }
+    .master-renewed .combat-controls { flex-wrap:wrap; }
+    .master-renewed .combat-controls > .end-combat { order:3; }
+    .master-renewed .combat-controls kbd { display:none; }
+    .master-table-options { font-size:12px; }
+    .master-table-options > summary { padding:0 6px; }
+    .play-master-page.master-page-renewed .play-session-actions { width:100%; }
+    .play-master-page.master-page-renewed .play-session-heading h1 { font-size:25px; }
+    .master-renewed .character-library { padding:16px; }
+    .master-settings-dialog { padding:20px; }
+    .master-settings-dialog h2 { font-size:21px; }
+}
+@media (prefers-reduced-motion:no-preference) { .master-renewed button { transition:background-color .15s,border-color .15s; } }

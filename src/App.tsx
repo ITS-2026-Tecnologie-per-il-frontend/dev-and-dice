@@ -2,6 +2,8 @@ import { lazy, Suspense, useState } from 'react'
 import { Link, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthPage } from './auth/AuthPage'
 import { useAuth } from './auth/useAuth'
+import { MasterViewSettings } from './components/MasterViewSettings'
+import { useMasterView } from './utils/MasterView'
 import './App.css'
 import './auth.css'
 
@@ -17,6 +19,7 @@ const GamePage=lazy(()=>import('./components/PlayPages').then(module=>({default:
 function ProtectedTrackers() {
   const { status, user, error, refreshUser, logout: endUserSession } = useAuth()
   const [logoutError, setLogoutError] = useState('')
+  const masterView = useMasterView(user?.id)
   const [language, setLanguage] = useState<'it' | 'en'>(() => {
     try { return localStorage.getItem('dev-and-dice.spell-language') === 'en' ? 'en' : 'it' } catch { return 'it' }
   })
@@ -63,6 +66,7 @@ function ProtectedTrackers() {
       <header className="user-bar">
         <Link to="/">Il mio tavolo</Link>
         <span>Accesso effettuato come <strong>{user.username}</strong></span>
+        <MasterViewSettings view={masterView.view} onChange={masterView.changeView} error={masterView.error}/>
         <Link to="/schede/barbaro">Scheda Barbaro</Link>
         <label>Lingua <select value={language} onChange={(event) => changeLanguage(event.target.value)}>
           <option value="it">Italiano</option><option value="en">English</option>
@@ -71,7 +75,7 @@ function ProtectedTrackers() {
       </header>
       {logoutError && <p className="auth-inline-error" role="alert">{logoutError}</p>}
       {languageError && <p className="auth-inline-error" role="status">{languageError}</p>}
-      <TurnsTracker language={language} />
+      <TurnsTracker language={language} view={masterView.view} />
     </>
   )
 }

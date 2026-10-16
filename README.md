@@ -50,6 +50,16 @@ esistenti, aggiunge proprie schede e condivide il link `/join/:token`. Il
 giocatore sceglie un proprio PG libero oppure ne crea uno nell'invito; nella
 partita modifica la propria scheda e vede soltanto nomi e turno attuale.
 
+Il Master può scegliere **Impostazioni → Tipo di vista → Originale / Rinnovata**.
+La vista iniziale è Originale; la preferenza è salvata per account nel browser.
+Rinnovata organizza gli strumenti in Tavolo, Schede e creature e Regole, con
+partecipanti compatti e un dettaglio laterale. La selezione del partecipante è
+indipendente dal turno corrente. Cambiare vista conserva il combattimento e
+non modifica i dati della sessione. Su mobile il dettaglio segue la lista, con
+un pulsante per tornarvi e un comando persistente per il turno successivo.
+Verifica: `node tests/master-view-ui.mjs`; su Windows usa Edge se disponibile,
+oppure imposta `PLAYWRIGHT_CHANNEL` per scegliere il browser installato.
+
 La vista giocatore mette la scheda al centro, gli appunti privati a sinistra e
 turni ed effetti attivi sul proprio personaggio a destra. Su mobile la scheda
 precede i riquadri laterali. La rotellina apre modello, esportazione PDF, opzioni

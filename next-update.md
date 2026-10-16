@@ -1,5 +1,7 @@
 # Prossimi aggiornamenti
 
+- [ ] Rivedere il flusso di lancio di **tutti gli incantesimi e tutte le abilità**, verificando per ciascuna voce se infligge danni e quali bersagli ammette (creature, oggetti, sé stessi, aree o nessun bersaglio da selezionare). Mostrare soltanto i controlli pertinenti, mantenere le scelte effettive di risorse/slot e sostituire i menu senza alternative con informazioni statiche. Verificare separatamente edizioni 2014 e 2024 e correggere anche le vecchie impostazioni salvate errate. Primo caso corretto: **Riparare / Mending 2014**, senza danni né selezione di creature, con oggetto a contatto e lancio di un minuto. Riferimento: `MANUALI/D&D_5_Player_Original_Handbook.pdf`, pagina PDF 260, «Mending». La correzione specifica non certifica ancora gli altri incantesimi; il rilevamento generico dei danni da testo resta da sostituire con dati verificati.
+
 - [x] Tutorial iniziale guidato per il catalogo disponibile: nove passaggi, spiegazioni, calcoli condivisi, bozza riprendibile e salvataggio nelle schede. Riferimento Fandom 2014 e adattamenti 2024 distinti; fonti, verifiche e limiti in [docs/tutorial-creazione-personaggio.md](docs/tutorial-creazione-personaggio.md).
 
 - [x] Ampliare i background 2014: il catalogo attivo contiene i 13 background del PHB. Sono presenti anche 42 talenti 2014, con controlli dei prerequisiti e alcuni effetti automatici.

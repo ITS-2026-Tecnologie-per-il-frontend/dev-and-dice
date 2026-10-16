@@ -17,7 +17,7 @@ import { preserveSavedSheets, catalogForSheet } from '../domain/dnd/ActiveRules'
 const legacyStorageKey = 'dev-and-dice.character-sheets.v1'
 
 export type CharacterSheetsHandle = { open: (sheet: CharacterSheet) => void; patchStats: (id: string, stats: Partial<SheetStats>) => boolean;patchDetails:(id:string,details:Record<string,string>)=>boolean; patchMany:(sheets:CharacterSheet[])=>boolean }
-type Props = { onAdd: (sheet: CharacterSheet) => void; onSaved: (sheet: CharacterSheet) => void; combatStarted: boolean; presentSheetIds: string[]; catalog: Catalog; creationData?: CreationData; ref?: Ref<CharacterSheetsHandle>; repository?:{sheets:CharacterSheet[];storageKey:string;write:(sheets:CharacterSheet[])=>void;canRemove:(sheet:CharacterSheet)=>boolean;remove:(sheet:CharacterSheet)=>Promise<void>} }
+type Props = { libraryHidden?: boolean; onAdd: (sheet: CharacterSheet) => void; onSaved: (sheet: CharacterSheet) => void; combatStarted: boolean; presentSheetIds: string[]; catalog: Catalog; creationData?: CreationData; ref?: Ref<CharacterSheetsHandle>; repository?:{sheets:CharacterSheet[];storageKey:string;write:(sheets:CharacterSheet[])=>void;canRemove:(sheet:CharacterSheet)=>boolean;remove:(sheet:CharacterSheet)=>Promise<void>} }
 
 const DraftContext=createContext<CharacterSheet|null>(null)
 const CharacterSheetInputs=memo(function CharacterSheetInputs(props:Omit<Parameters<typeof PlayerSheet>[0],'sheet'>) {
@@ -38,7 +38,7 @@ export function CharacterSheets(props:Props) {
     return <DraftContext value={draft}><MemoCharacterSheetsLayout {...props} draft={layoutDraft} setDraft={setDraft} readDraft={readDraft}/></DraftContext>
 }
 
-function CharacterSheetsLayout({ onAdd, onSaved, combatStarted, presentSheetIds, catalog:baseCatalog, creationData, ref, repository, draft, setDraft, readDraft }: Props&{draft:CharacterSheet|null;setDraft:Dispatch<SetStateAction<CharacterSheet|null>>;readDraft:()=>CharacterSheet|null}) {
+function CharacterSheetsLayout({ libraryHidden, onAdd, onSaved, combatStarted, presentSheetIds, catalog:baseCatalog, creationData, ref, repository, draft, setDraft, readDraft }: Props&{draft:CharacterSheet|null;setDraft:Dispatch<SetStateAction<CharacterSheet|null>>;readDraft:()=>CharacterSheet|null}) {
     const storageKey=repository?.storageKey ?? legacyStorageKey
     const tutorialDraftKey=repository ? storageKey+'.tutorial' : legacyTutorialDraftKey
     const repositorySheets=repository?.sheets, repositoryWrite=repository?.write
@@ -295,13 +295,16 @@ function CharacterSheetsLayout({ onAdd, onSaved, combatStarted, presentSheetIds,
                 )),[saved.sheets,combatStarted,presentSheetIds,onAdd,openDraft])
 
     return (
-        <aside className="character-library" aria-labelledby="characters-heading">
+        <aside className={`character-library${libraryHidden ? " library-shelved" : ""}`} aria-labelledby={libraryHidden ? undefined : "characters-heading"}>
+            <div className="character-library-content" hidden={libraryHidden}>
             <h2 id="characters-heading">Schede</h2>
             <p className="library-help">{repository ? 'Personaggi e mostri della sessione. Le modifiche vengono sincronizzate con il server.' : 'Personaggi e mostri salvati in questo browser.'}</p>
             {saved.error && <p role="alert">{saved.error}</p>}
+            <div className="character-library-actions">
             <button className="sort-turns" type="button" disabled={saved.blocked} onClick={() => openDraft(newCharacterSheet())}>+ Nuova scheda</button>
             <button className="sort-turns" type="button" disabled={saved.blocked || !creationData || !!tutorial.draft || !!tutorial.error} onClick={() => openDraft(newTutorial())}>+ Crea personaggio guidato</button>
             <button className="sort-turns" type="button" disabled={saved.blocked || !creationData || !!tutorial.draft || !!tutorial.error} onClick={() => {setRandomError('');setRandomOpen(true)}}>+ Crea personaggio casuale</button>
+            </div>
             {tutorial.error && <p role="alert">{tutorial.error}</p>}
             {tutorial.draft && !saved.sheets.some((s) => s.id === tutorial.draft!.id && s.playerDetails?.['tutorial.completed'] === 'true') && <button className="character-open tutorial-resume" type="button" disabled={!creationData} onClick={() => openDraft(tutorial.draft!)}>Riprendi creazione · {tutorial.draft.name || 'Personaggio senza nome'}</button>}
             {saved.sheets.length === 0 && <p className="library-empty">Crea una scheda e aggiungila al combattimento quando serve.</p>}
@@ -309,6 +312,7 @@ function CharacterSheetsLayout({ onAdd, onSaved, combatStarted, presentSheetIds,
                 {libraryCards}
             </div>
             {combatStarted && <p className="library-help">Termina il combattimento per aggiungere partecipanti.</p>}
+            </div>
             <dialog ref={dialog} className={`character-dialog${draft?.kind === 'PG' ? ' player-sheet-dialog' : ' info-dialog monster-sheet-dialog'}${guided ? ' tutorial-dialog' : ''}`} aria-labelledby="character-dialog-heading" {...dismissDialog} onClose={(event) => {
                 if (event.target !== event.currentTarget) return
                 deleteDialog.current?.close()
