@@ -4,6 +4,7 @@ import { resolve } from 'node:path'
 import express from 'express'
 import { rateLimit } from 'express-rate-limit'
 import { isDeepStrictEqual } from 'node:util'
+import { combatRules, actionContext, actionChoices, requestProposal, validCombatRequest, requestStatus, visibleRequests, prepareAction, applyCombatRequest } from './combat-requests.mjs'
 
 const fields = 'name kind race characterClass level hitPoints armorClass initiative speed strength dexterity constitution intelligence wisdom charisma notes'.split(' ')
 const numeric = 'hitPoints armorClass initiative strength dexterity constitution intelligence wisdom charisma'.split(' ')
@@ -95,6 +96,8 @@ export async function gamesRouter({ dataDir, authenticate }) {
       if (!idPattern.test(game.id) || !idPattern.test(game.masterId) || typeof game.name !== 'string' || !/^[A-Za-z\d_-]{43}$/.test(game.inviteToken) || !Array.isArray(game.players) || !integer(game.revision)) throw new Error('Partita salvata non valida.')
       if (!game.players.every(player => object(player) && idPattern.test(player.userId) && idPattern.test(player.characterId) && (player.notes === undefined || validNotes(player.notes)))) throw new Error('Partecipazione salvata non valida.')
       validateState(game.state)
+      if (game.requestsRevision!==undefined && !integer(game.requestsRevision) || game.combatRequests!==undefined && (!Array.isArray(game.combatRequests)
+        || !game.combatRequests.every(validCombatRequest) || new Set(game.combatRequests.map(entry=>entry.id)).size!==game.combatRequests.length)) throw new Error('Richieste di combattimento non valide; originale conservato.')
       if (game.notificationRevision!==undefined && !integer(game.notificationRevision) || game.sheetChanges!==undefined && (!Array.isArray(game.sheetChanges) || !game.sheetChanges.every(entry=>object(entry)
         && [entry.id,entry.characterId,entry.ownerId,entry.actorId].every(id=>idPattern.test(id)) && typeof entry.actorName==='string' && typeof entry.characterName==='string'
         && ['master','player'].includes(entry.actorRole) && ['applied','rejected'].includes(entry.status) && typeof entry.createdAt==='string'
@@ -149,7 +152,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
     record.sheet=sheet;record.revision++
   }
   function view(db,game,user) {
-    const result = {...summary(game,user),notifications:notificationSummary(game,user)}
+    const result = {...summary(game,user),notifications:notificationSummary(game,user),requestsRevision:game.requestsRevision??0,combatRequests:visibleRequests(game,user)}
     if (result.role === 'master') {
       const characters = db.characters.filter(character => character.gameId === game.id)
       const state = structuredClone(game.state)
@@ -180,6 +183,67 @@ export async function gamesRouter({ dataDir, authenticate }) {
     db.characters.push(record)
     return record
   }
+
+  router.get('/games/:id/actions', async (req,res)=>{
+    gameFor(await read(),req.params.id,req.userId)
+    const rules=await combatRules(),db=await read(),game=gameFor(db,req.params.id,req.userId)
+    res.json(actionChoices(actionContext(db,game,req.userId,rules),game,db))
+  })
+  router.post('/games/:id/requests', async (req,res)=>{
+    gameFor(await read(),req.params.id,req.userId)
+    const proposal=requestProposal(req.body),rules=await combatRules()
+    res.json(await write(db=>{
+      const game=gameFor(db,req.params.id,req.userId)
+      const duplicate=game.combatRequests?.find(entry=>entry.id===proposal.id)
+      if (duplicate) {
+        if (duplicate.ownerId!==req.userId || !isDeepStrictEqual(duplicate.proposal,proposal)) fail(409,'Identificativo già usato da un’altra richiesta.')
+        return view(db,game,req.userId)
+      }
+      checkRevision(game,proposal.revision)
+      const context=actionContext(db,game,req.userId,rules)
+      if (game.combatRequests?.some(entry=>entry.ownerId===req.userId && requestStatus(game,entry)==='pending')) fail(409,'Hai già un’azione in attesa di approvazione.')
+      if (!proposal.targets.every(target=>game.state.turns.some(turn=>turn.id===target.id))) fail(400,'Bersaglio non disponibile.')
+      const targetSheets=proposal.targets.flatMap(target=>game.state.turns.find(turn=>turn.id===target.id)?.sheet?.id ?? [])
+      if (new Set(targetSheets).size!==targetSheets.length) fail(400,'La stessa scheda compare in più bersagli: il Master deve correggere i partecipanti duplicati.')
+      const {action,option}=prepareAction(context,proposal,rules)
+      const entry={id:proposal.id,ownerId:req.userId,characterId:context.record.id,characterName:context.record.sheet.name,actorName:req.username,
+        actionName:action.ability.name,optionLabel:option.label,prolonged:action.info.prolonged || option.id==='ritual',createdAt:new Date().toISOString(),status:'pending',proposal,
+        targets:proposal.targets.map(target=>{const turn=game.state.turns.find(turn=>turn.id===target.id);return {...target,name:db.characters.find(record=>record.id===turn.sheet?.id)?.sheet.name ?? turn.description}})}
+      if (!validCombatRequest(entry)) fail(400,'Testo dell’azione o dei bersagli troppo lungo.')
+      ;(game.combatRequests??=[]).push(entry)
+      game.requestsRevision=(game.requestsRevision??0)+1
+      return view(db,game,req.userId)
+    }))
+  })
+  router.post('/games/:id/requests/:requestId/:decision', async (req,res)=>{
+    const initial=gameFor(await read(),req.params.id,req.userId)
+    if (initial.masterId!==req.userId) fail(403,'Solo il Master può approvare o rifiutare un’azione.')
+    if (!['approve','reject'].includes(req.params.decision)) fail(400,'Decisione non valida.')
+    const rules=req.params.decision==='approve' ? await combatRules() : undefined
+    res.json(await write(db=>{
+      const game=gameFor(db,req.params.id,req.userId)
+      if (game.masterId!==req.userId) fail(403,'Solo il Master può decidere.')
+      const entry=game.combatRequests?.find(entry=>entry.id===req.params.requestId),status=req.params.decision==='approve'?'approved':'rejected'
+      if (!entry) fail(404,'Richiesta non disponibile.')
+      if (entry.status===status) return view(db,game,req.userId)
+      if (entry.status!=='pending') fail(409,'Questa richiesta è già stata conclusa.')
+      checkRevision(game,req.body?.revision)
+      if (status==='approved') {
+        if (requestStatus(game,entry)!=='pending') fail(409,'Turno o dati della sessione cambiati: chiedi al giocatore una nuova richiesta.')
+        const result=applyCombatRequest(db,game,entry,rules,req.body)
+        const state=validateState(result.state)
+        for (const sheet of result.sheets) {
+          const record=db.characters.find(record=>record.id===sheet.id && record.gameId===game.id)
+          if (!record) fail(409,'Personaggio non più disponibile.')
+          saveSheet(game,record,validateSheet(sheet),req)
+        }
+        game.state=state;game.revision++
+        entry.targets=entry.targets.map(target=>({...target,damage:req.body.targets.find(final=>final.id===target.id).damage}))
+      }
+      entry.status=status;entry.resolvedAt=new Date().toISOString();game.requestsRevision=(game.requestsRevision??0)+1
+      return view(db,game,req.userId)
+    }))
+  })
 
   router.get('/home', async (req,res) => {
     const db = await read(), user = req.userId

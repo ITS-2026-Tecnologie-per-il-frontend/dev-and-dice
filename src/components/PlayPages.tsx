@@ -9,6 +9,7 @@ import { loadActiveDatabase } from '../domain/dnd/ActiveRules'
 import { useDialogDismiss } from '../utils/Dialog'
 import { PlayerSheet } from './PlayerSheet'
 import { TurnsTracker, type TrackerState } from './TurnsTracker'
+import { MasterCombatRequests, PlayerCombatActions } from './CombatRequests'
 import { playApi, type HomeData, type Game, type MasterGame, type OwnedCharacter, type PrivateNotes, type NotificationPage, type NotificationSummary } from '../utils/PlayApi'
 import '../PlayPages.css'
 
@@ -266,10 +267,11 @@ function SessionPage() {
                     if(cached.revision!==next.revision){setBlocked(true);setError('La bozza locale precede le modifiche della sessione. Ricarica i dati del server prima di continuare.')};return}
             }
             const current=gameRef.current
-            if(current&&next.revision<current.revision)return
+            if(current&&(next.revision<current.revision||next.requestsRevision<current.requestsRevision))return
             if(current?.role==='player'&&next.role==='player'&&current.notes.revision>next.notes.revision)next.notes=current.notes
+            if(current?.role==='player'&&next.role==='player'&&current.character.revision>next.character.revision)next.character=current.character
             if(current && current.notifications.revision>next.notifications.revision) next.notifications=current.notifications
-            if(current?.revision!==next.revision||current?.notifications.revision!==next.notifications.revision||current?.role==='player'&&next.role==='player'&&current.notes.revision!==next.notes.revision){gameRef.current=next;setGame(next)}setError('')
+            if(current?.revision!==next.revision||current?.requestsRevision!==next.requestsRevision||current?.notifications.revision!==next.notifications.revision||current?.role==='player'&&next.role==='player'&&current.notes.revision!==next.notes.revision){gameRef.current=next;setGame(next)}setError('')
         }catch(error){if(active)setError(message(error))}finally{inFlight=false}}
         void refresh()
         // ponytail: polling ogni 2 secondi per questa versione; migrazione a WebSocket pianificata nel README per ridurre la latenza.
@@ -315,9 +317,28 @@ function SessionPage() {
             else setGame(next)
         } finally {savingRef.current=false;setSaving(false)}
     }
+    const decideAction=useCallback(async(requestId:string,decision:'approve'|'reject',body:unknown)=>{
+        if (draftRef.current || savingRef.current || blocked) throw new Error('Concludi il salvataggio della sessione prima di decidere un’azione.')
+        savingRef.current=true;setSaving(true)
+        try {
+            const next=await playApi<MasterGame>('/games/'+id+'/requests/'+requestId+'/'+decision,'POST',{...(body as object),revision:gameRef.current?.revision})
+            gameRef.current=next
+            if (draftRef.current) {setBlocked(true);setError('Decisione salvata. Hai iniziato altre modifiche durante l’attesa: la bozza è conservata. Ricarica i dati del server prima di continuare.')}
+            else setGame(next)
+        } finally {savingRef.current=false;setSaving(false)}
+    },[id,blocked])
+    function updatePlayerAction(next:Game) {
+        const current=gameRef.current
+        if (current && (next.revision<current.revision || next.requestsRevision<current.requestsRevision)) return
+        if (current?.role==='player' && next.role==='player' && current.notes.revision>next.notes.revision) next.notes=current.notes
+        if (current?.role==='player' && next.role==='player' && current.character.revision>next.character.revision) next.character=current.character
+        if (current && current.notifications.revision>next.notifications.revision) next.notifications=current.notifications
+        gameRef.current=next;setGame(next)
+    }
     if(!game)return <main className="play-home"><h1>Sessione</h1>{error?<p role="alert">{error}</p>:<p role="status">Caricamento della sessione…</p>}<Link to="/">Torna alla home</Link></main>
     return <main className={game.role==='master'?'play-master-page':'play-player-page'}><header className="play-session-heading"><div><Link to="/">Le mie sessioni</Link><h1>{game.name}</h1><p>{game.role==='master'?'Sessione Master':'La tua avventura'}</p></div><div className="play-session-actions"><SheetChanges game={game} disabled={!!draft||saving||blocked} onRead={readNotification} onReject={rejectNotification}/><button className="play-secondary" onClick={()=>void leave()}>{game.role==='master'?'Chiudi sessione':'Esci dalla sessione'}</button></div></header>
         {error&&<p role="alert">{error}</p>}{blocked&&<div className="play-actions"><button onClick={()=>{setBlocked(false);setRetry(value=>value+1)}}>Riprova salvataggio</button><button className="play-secondary" onClick={()=>void reload()}>Ricarica dati del server</button></div>}
+        {game.role==='master'&&<MasterCombatRequests game={game} disabled={!!draft||saving||blocked} onDecide={decideAction}/>}
         {game.role==='master'?<><div className="play-master-tools"><label>Invito alla sessione<input aria-label="Link di invito" readOnly value={new URL('/join/'+game.inviteToken,window.location.origin).href}/></label><button type="button" onClick={()=>void navigator.clipboard.writeText(new URL('/join/'+game.inviteToken,window.location.origin).href).then(()=>setCopied(true)).catch(()=>setError('Copia non riuscita: seleziona e copia il link dal campo.'))}>{copied?'Link copiato':'Copia invito'}</button><label>Lingua<select aria-label="Lingua" value={language} onChange={event=>setLanguage(event.target.value as 'it'|'en')}><option value="it">Italiano</option><option value="en">English</option></select></label><p role="status">{saving?'Salvataggio della sessione…':draft?'Modifiche da salvare':'Sessione sincronizzata'}</p></div><details className="play-recovery" onToggle={event=>{if(event.currentTarget.open)void playApi<HomeData>('/home').then(home=>setAvailable(home.characters.filter(character=>!character.gameId))).catch(error=>setError(message(error)))}}><summary>Aggiungi una tua scheda esistente</summary><form className="play-create-game" onSubmit={event=>void addOwned(event)}><label>Scheda disponibile<select aria-label="Scheda disponibile" value={selected} onChange={event=>setSelected(event.target.value)}><option value="">Scegli una scheda…</option>{available.map(character=><option value={character.id} key={character.id}>{character.sheet.name}</option>)}</select></label><button disabled={!selected||!!draft||saving}>Aggiungi alla sessione</button></form></details><TurnsTracker language={language} workspace={workspace}/></>:<><nav className="play-player-navigation" aria-label="Sezioni della sessione"><a href="#player-character">Scheda</a><a href="#player-turns">Combattimento</a><a href="#player-effects">Effetti</a><a href="#player-notes">Appunti</a></nav><div className="play-player-layout">
             <div className="play-player-sheet" id="player-character"><CharacterEditor record={game.character} settingsInDialog historyControl={<SheetChanges game={game} history/>} onCancel={()=>navigate('/')} onSave={async(sheet,revision)=>{
                 const character=await playApi<OwnedCharacter>('/characters/'+game.character.id,'PUT',{sheet,revision})
@@ -330,6 +351,7 @@ function SessionPage() {
                 if(current?.role==='player'){const next={...current,notes:saved};setGame(next);gameRef.current=next}return saved
             }}/>
             <aside className="play-player-sidebar" aria-label="Combattimento ed effetti">
+                <PlayerCombatActions game={game} onUpdate={updatePlayerAction}/>
                 <section className="play-player-turns" aria-labelledby="player-turns"><h2 id="player-turns">Ordine di combattimento</h2>{!game.turns.length&&<p>Il Master non ha ancora aggiunto partecipanti al combattimento.</p>}<ol>{game.turns.map((turn,index)=><li key={index} aria-current={turn.current?'step':undefined}><span>{turn.name||'Partecipante da nominare'}</span>{turn.current&&<strong>Turno attuale</strong>}</li>)}</ol></section>
                 <section className="play-player-effects" aria-labelledby="player-effects"><h2 id="player-effects">Effetti e abilità attivi</h2>{!game.effects.length&&<p>Nessun effetto attivo sul tuo personaggio.</p>}<ul>{game.effects.map((effect,index)=><li key={index}><h3>{effect.name}</h3><p>{effect.timed?`${effect.remainingTurns} turni rimanenti · ${effect.duration}`:'Senza conteggio'}</p>{effect.concentration&&<p>Concentrazione</p>}{effect.expiresAt&&<p>Scade a {effect.expiresAt==='start'?'inizio':'fine'} turno.</p>}{effect.repeatSave&&<p>{effect.repeatSave}</p>}{effect.description&&<p>{effect.description}</p>}</li>)}</ul></section>
             </aside>

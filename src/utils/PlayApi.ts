@@ -6,10 +6,14 @@ export type NotificationSummary = {revision:number;unreadCount:number}
 export type SheetNotification = {id:string;characterId:string;characterName:string;actorName:string;actorRole:'master'|'player';createdAt:string;status:'applied'|'rejected';rejectedAt?:string;read:boolean;canReject:boolean;changes:{path:string[];before:unknown;after:unknown}[]}
 export type NotificationPage = {revision:number;items:SheetNotification[];next:string|null}
 export type GameSummary = { id:string; name:string; role:'master'|'player'; revision:number }
-export type MasterGame = GameSummary & { role:'master'; notifications:NotificationSummary;inviteToken:string; characters:OwnedCharacter[]; state:TrackerState }
+export type CombatTarget = {id:number;name:string;roll:string;hit:boolean;damageRoll:string;damage:string}
+export type CombatRequest = {id:string;characterName:string;actorName:string;actionName:string;createdAt:string;status:'pending'|'approved'|'rejected'|'stale';optionLabel:string;cost:number;spendsResources:boolean;mode:'attack'|'save'|'automatic'|'none';damageEnabled:boolean;prolonged:boolean;targets:CombatTarget[];resolvedAt?:string}
+type Requests = {requestsRevision:number;combatRequests:CombatRequest[]}
+export type ActionChoices = {revision:number;targets:{id:number;name:string}[];actions:{key:string;name:string;description:string;options:{id:string;label:string;remaining:number|null;cost?:number}[];error:string;cost:number;damageEnabled:boolean;mode:CombatRequest['mode'];prolonged:boolean;ritual:boolean}[]}
+export type MasterGame = GameSummary & Requests & { role:'master'; notifications:NotificationSummary;inviteToken:string; characters:OwnedCharacter[]; state:TrackerState }
 export type PrivateNotes = {text:string;revision:number}
 export type PlayerEffect = {name:string;duration:string;remainingTurns:number;timed:boolean;concentration:boolean;description?:string;expiresAt?:'start'|'end';repeatSave?:string}
-export type PlayerGame = GameSummary & { role:'player'; notifications:NotificationSummary;character:OwnedCharacter; turns:{name:string;current:boolean}[]; effects:PlayerEffect[]; notes:PrivateNotes }
+export type PlayerGame = GameSummary & Requests & { role:'player'; notifications:NotificationSummary;character:OwnedCharacter; turns:{name:string;current:boolean}[]; effects:PlayerEffect[]; notes:PrivateNotes }
 export type Game = MasterGame | PlayerGame
 export type HomeData = { characters:OwnedCharacter[]; games:GameSummary[] }
 export class PlayApiError extends Error {

@@ -87,6 +87,22 @@
 .play-player-effects li { padding:16px 0; border-top:1px solid var(--border); }
 .play-player-effects h3 { margin:0; color:var(--text-h); font-size:17px; overflow-wrap:anywhere; }
 .play-player-effects li p { margin:8px 0 0; white-space:pre-wrap; }
+.play-combat-requests,.play-player-actions { box-sizing:border-box; padding:20px; border:1px solid var(--border); border-radius:6px; min-width:0; }
+.play-combat-requests { margin-bottom:24px; }
+.play-combat-requests summary { cursor:pointer; color:var(--text-h); font-weight:600; }
+.play-player-actions h2 { margin-top:0; font-size:21px; color:var(--text-h); }
+.combat-request { margin-top:16px; padding:16px; border:1px solid var(--border); border-radius:6px; overflow-wrap:anywhere; }
+.combat-request h3 { margin-top:0; color:var(--text-h); }
+.play-player-actions p,.combat-request p,.combat-request li { font-size:14px; line-height:1.6; }
+:is(.play-player-actions,.combat-request) fieldset { min-width:0; margin:12px 0; padding:12px; border:1px solid var(--border); }
+:is(.play-player-actions,.combat-request) label { display:flex; flex-direction:column; gap:6px; margin:12px 0; }
+:is(.play-player-actions,.combat-request) :is(input,select,button) { max-width:100%; box-sizing:border-box; }
+:is(.play-player-actions,.combat-request) :is(input:not([type="checkbox"]),select) { width:100%; min-height:44px; padding:8px; font:inherit; color:var(--text-h); background:var(--bg); border:1px solid var(--border); border-radius:4px; }
+:is(.play-player-actions,.combat-request) .combat-request-check { flex-direction:row; align-items:flex-start; }
+.combat-request-check { min-height:44px; }
+.combat-request-check input { flex-shrink:0; margin-top:4px; }
+.combat-request-description { white-space:pre-wrap; overflow-wrap:anywhere; }
+.combat-request-history { max-height:650px; overflow:auto; }
 .play-sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
 .player-sheet-controls:has(> .player-settings-button) { display:grid; grid-template-columns:minmax(0,1fr) 44px; gap:12px; align-items:start; }
 .player-sheet-controls > .player-settings-button { grid-column:2; grid-row:1; display:grid; place-items:center; width:44px; height:44px; padding:8px; }

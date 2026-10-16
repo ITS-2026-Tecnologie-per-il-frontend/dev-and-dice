@@ -12,6 +12,11 @@ HttpOnly e le sessioni sono conservate in `server/data/sessions/`.
 In sviluppo la chiave dei cookie viene conservata in `server/data/session-secret`,
 escluso da Git: le sessioni restano valide anche dopo i riavvii del backend.
 
+Usa Node **22.18 o successivo della serie 22**, oppure **24 o successivo**.
+Il backend riusa direttamente le funzioni TypeScript del combattimento tramite
+il supporto nativo di Node; in produzione servono anche `src/` e `public/data/`,
+oltre a `server/` e `dist/`.
+
 Per lo sviluppo avvia entrambi i processi con:
 
 ```sh
@@ -104,6 +109,46 @@ Mostra tutti i salvataggi registrati nella sessione, sia del giocatore sia del
 Master, con autore, data, valori prima/dopo ed eventuali rifiuti. Le voci più
 recenti compaiono per prime; **Mostra precedenti** carica altre 20 modifiche.
 La cronologia è in sola lettura e non cambia il conteggio delle notifiche.
+
+Durante il proprio turno, **Le tue azioni → Scegli azione** propone le abilità e
+gli incantesimi salvati nella scheda, come le voci «Usa» del Master. Si scelgono
+risorsa e bersagli; per gli attacchi si indica prima il tiro per colpire, poi
+l'esito e i danni. Tiri salvezza, colpi automatici ed effetti senza danno hanno
+percorsi distinti. Per più attacchi sullo stesso bersaglio si riportano tutti i
+tiri e il totale dei danni. Le modalità suggerite per voci personalizzate o legacy
+richiedono la verifica del Master.
+
+Il Master riceve la proposta nel riquadro **Azioni dei giocatori**, con contatore
+delle richieste in attesa, autore, azione, bersagli, tiri e consumo previsto.
+**Approva azione** richiede la conferma di requisiti ed esiti e consente di
+correggere i danni finali. Soltanto allora il server applica insieme consumo,
+danni (prima ai PF temporanei) e timer/concentrazione già supportati. Un attacco
+mancato approvato consuma comunque la risorsa; **Rifiuta azione** non applica nulla.
+Condizioni, guarigioni, distanze, componenti, economia delle azioni e altri effetti
+non modellati restano affidati al Master, come nel percorso «Usa» esistente.
+La proposta non avvia un lancio prolungato: il Master ne gestisce tempo e
+concentrazione e conferma solo la risoluzione completata. Un lancio interrotto va
+rifiutato senza consumo.
+
+Il server ricontrolla identità, proprietà, turno, azione e risorse. Invii e
+decisioni ripetuti con lo stesso identificativo sono idempotenti e persistono
+anche dopo un riavvio. Ogni cambiamento della revisione di combattimento o schede
+rende le proposte precedenti **superate**, anche se il valore viene poi
+ripristinato: occorre aggiornarle e inviarne una nuova. Letture delle notifiche e
+appunti privati non le invalidano. È consentita una richiesta corrente per
+giocatore. I giocatori vedono soltanto le proprie; la vista mostra le ultime 20
+e le eventuali richieste ancora in attesa. L'archivio conserva tutte le richieste
+fino alla chiusura della partita. La sincronizzazione resta ogni due secondi.
+
+Verifiche dedicate: `node tests/combat-requests.mjs` e
+`node tests/combat-requests-ui.mjs`, con account e archivio temporanei.
+Regole ricontrollate: `MANUALI/D&D_5_Player_Original_Handbook.pdf` (2014),
+PDF 195 «Making an Attack / Attack Rolls», 202–203 «Spell Slots / Casting Time»,
+204–206 «Duration / Targets / Saving Throws / Attack Rolls»;
+`MANUALI/D&D_5.5_manuale_compatto_italiano.pdf` (**SRD 5.2.1**, 2024),
+PDF 118–121 «Slot incantesimo / Tempo di lancio / Durata / Bersagli / Tiri salvezza /
+Tiri per colpire». Il motore mantiene separati il vincolo 2014 sulle magie con
+azione bonus e quello 2024 sul singolo slot speso per turno.
 
 **Da fare: migrare la sincronizzazione dal polling ai WebSocket**, per inviare
 gli aggiornamenti ai partecipanti appena avvengono. Conservare autenticazione,
