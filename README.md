@@ -80,6 +80,13 @@ generano un conflitto anziché sovrascrivere dati. Una bozza del tavolo non invi
 resta nel browser, separata per account e partita; l'interfaccia consente di
 riprovare o ricaricare il server scartando esplicitamente la bozza.
 
+Le letture API si interrompono dopo 15 secondi, anche se si blocca il trasferimento
+del JSON. Se la prima apertura della sessione non riesce, compare l'errore con
+**Riprova caricamento**, che ripete subito la richiesta. Il polling successivo
+può recuperare automaticamente la connessione. Le scritture mantengono i controlli
+di revisione e non vengono annullate dal timeout delle letture.
+Verifica riproducibile: `node tests/session-loading-ui.mjs`.
+
 La **campanella quadrata** nell'intestazione mostra il numero di notifiche non
 lette. Apre **Notifiche e storico delle schede** in un fumetto con lo sfondo
 sfocato e i confronti già aperti; si chiude con la croce, Escape o un clic fuori.

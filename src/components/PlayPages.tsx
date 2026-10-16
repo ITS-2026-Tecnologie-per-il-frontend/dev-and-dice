@@ -249,7 +249,7 @@ function SessionPage() {
     const draftRef=useRef(draft),gameRef=useRef(game),savingRef=useRef(false),initialized=useRef(false)
     const cacheKey=`dev-and-dice.game-draft.${user!.id}.${id}`
     const [language,setLanguage]=useState<'it'|'en'>('it')
-    const [available,setAvailable]=useState<OwnedCharacter[]>([]),[selected,setSelected]=useState('')
+    const [available,setAvailable]=useState<OwnedCharacter[]>([]),[selected,setSelected]=useState(''),[loadRetry,setLoadRetry]=useState(0)
     useEffect(()=>{
         const protect=(event:BeforeUnloadEvent)=>{if(draft||saving){event.preventDefault();event.returnValue=''}}
         window.addEventListener('beforeunload',protect);return()=>window.removeEventListener('beforeunload',protect)
@@ -276,7 +276,7 @@ function SessionPage() {
         void refresh()
         // ponytail: polling ogni 2 secondi per questa versione; migrazione a WebSocket pianificata nel README per ridurre la latenza.
         const timer=setInterval(()=>void refresh(),2000);return()=>{active=false;clearInterval(timer)}
-    },[id,cacheKey,user])
+    },[id,cacheKey,user,loadRetry])
     const change=useCallback((state:TrackerState,sheets:CharacterSheet[])=>{
         const next={state,sheets};draftRef.current=next;setDraft(next)
         try{localStorage.setItem(cacheKey,JSON.stringify({...next,revision:gameRef.current?.revision}))}catch{setError('Bozza non salvata nel browser. Lascia aperta la pagina fino al salvataggio sul server.')}
@@ -335,7 +335,7 @@ function SessionPage() {
         if (current && current.notifications.revision>next.notifications.revision) next.notifications=current.notifications
         gameRef.current=next;setGame(next)
     }
-    if(!game)return <main className="play-home"><h1>Sessione</h1>{error?<p role="alert">{error}</p>:<p role="status">Caricamento della sessione…</p>}<Link to="/">Torna alla home</Link></main>
+    if(!game)return <main className="play-home"><h1>Sessione</h1>{error?<><p role="alert">{error}</p><button type="button" onClick={()=>{setError('');setLoadRetry(value=>value+1)}}>Riprova caricamento</button></>:<p role="status">Caricamento della sessione…</p>}<Link to="/">Torna alla home</Link></main>
     return <main className={game.role==='master'?'play-master-page':'play-player-page'}><header className="play-session-heading"><div><Link to="/">Le mie sessioni</Link><h1>{game.name}</h1><p>{game.role==='master'?'Sessione Master':'La tua avventura'}</p></div><div className="play-session-actions"><SheetChanges game={game} disabled={!!draft||saving||blocked} onRead={readNotification} onReject={rejectNotification}/><button className="play-secondary" onClick={()=>void leave()}>{game.role==='master'?'Chiudi sessione':'Esci dalla sessione'}</button></div></header>
         {error&&<p role="alert">{error}</p>}{blocked&&<div className="play-actions"><button onClick={()=>{setBlocked(false);setRetry(value=>value+1)}}>Riprova salvataggio</button><button className="play-secondary" onClick={()=>void reload()}>Ricarica dati del server</button></div>}
         {game.role==='master'&&<MasterCombatRequests game={game} disabled={!!draft||saving||blocked} onDecide={decideAction}/>}

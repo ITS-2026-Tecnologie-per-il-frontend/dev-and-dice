@@ -21,9 +21,15 @@ export class PlayApiError extends Error {
     constructor(message:string, status:number) {super(message);this.status=status}
 }
 export async function playApi<T>(path:string, method='GET', body?:unknown):Promise<T> {
-    const response=await fetch('/api/play'+path,{method,headers:body===undefined ? undefined : {'Content-Type':'application/json'},body:body===undefined ? undefined : JSON.stringify(body)})
-    let result
-    try {result=await response.json()} catch {throw new PlayApiError('Risposta del server non valida. Le modifiche restano aperte.',response.status)}
-    if (!response.ok) throw new PlayApiError(result.error ?? 'Operazione non riuscita.',response.status)
-    return result
+    const signal=method==='GET' ? AbortSignal.timeout(15_000) : undefined
+    try {
+        const response=await fetch('/api/play'+path,{method,signal,headers:body===undefined ? undefined : {'Content-Type':'application/json'},body:body===undefined ? undefined : JSON.stringify(body)})
+        let result
+        try {result=await response.json()} catch {throw new PlayApiError('Risposta del server non valida. Le modifiche restano aperte.',response.status)}
+        if (!response.ok) throw new PlayApiError(result.error ?? 'Operazione non riuscita.',response.status)
+        return result
+    } catch(error) {
+        if (signal?.aborted) throw new PlayApiError('Il server non ha risposto entro 15 secondi. Controlla la connessione e riprova.',408)
+        throw error
+    }
 }
