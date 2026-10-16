@@ -1,5 +1,6 @@
 import { memo, useEffect, useRef, useState, type FormEvent } from 'react'
 import { playApi, type ActionChoices, type CombatRequest, type CombatTarget, type Game, type PlayerGame } from '../utils/PlayApi'
+import { NotificationPopover } from './NotificationPopover'
 
 const modeLabels={attack:'Tiro per colpire',save:'Tiro salvezza',automatic:'Colpo / effetto automatico',none:'Senza danni'}
 const statusLabels={pending:'In attesa del Master',approved:'Approvata',rejected:'Rifiutata',stale:'Superata: turno o dati cambiati'}
@@ -33,9 +34,14 @@ function ReviewRequest({request,disabled,onDecide}:{request:CombatRequest;disabl
 }
 
 export const MasterCombatRequests=memo(function MasterCombatRequests({game,disabled,onDecide}:{game:Game;disabled:boolean;onDecide:(id:string,decision:'approve'|'reject',body:unknown)=>Promise<void>}) {
+    const [open,setOpen]=useState(false)
     const pending=game.combatRequests.filter(request=>request.status==='pending').length
-    return <details className="play-combat-requests"><summary>Azioni dei giocatori · <span role="status">{pending} in attesa</span></summary><p>Ogni azione richiede approvazione esplicita. Le modifiche ordinarie alla scheda seguono le notifiche della campanella.</p>
-        {!game.combatRequests.length&&<p>Nessuna azione proposta.</p>}{game.combatRequests.map(request=><ReviewRequest key={request.id} request={request} disabled={disabled} onDecide={onDecide}/>)}</details>
+    return <NotificationPopover id="combat-requests" title="Azioni dei giocatori" label={`Azioni dei giocatori: ${pending} in attesa`} closeLabel="Chiudi azioni" iconPath="M14 3h7v7L10 21l-7-7L14 3ZM13 4l7 7M3 21l3-3M3 14l7 7" count={pending} open={open} onOpenChange={setOpen}>
+        <p>Ogni azione richiede approvazione esplicita. Le modifiche ordinarie alla scheda seguono le notifiche della campanella.</p>
+        {!game.combatRequests.length&&<p>Nessuna azione proposta.</p>}
+        <ol className="play-notification-list">{game.combatRequests.map(request=><li key={request.id} data-unread={request.status==='pending'}><ReviewRequest request={request} disabled={disabled} onDecide={onDecide}/></li>)}</ol>
+        {disabled&&<p>Concludi il salvataggio della sessione prima di approvare o rifiutare un’azione.</p>}
+    </NotificationPopover>
 })
 
 export function PlayerCombatActions({game,onUpdate}:{game:PlayerGame;onUpdate:(game:Game)=>void}) {

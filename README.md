@@ -125,8 +125,14 @@ percorsi distinti. Per più attacchi sullo stesso bersaglio si riportano tutti i
 tiri e il totale dei danni. Le modalità suggerite per voci personalizzate o legacy
 richiedono la verifica del Master.
 
-Il Master riceve la proposta nel riquadro **Azioni dei giocatori**, con contatore
-delle richieste in attesa, autore, azione, bersagli, tiri e consumo previsto.
+Il Master riceve la proposta nel pulsante quadrato **Azioni dei giocatori**, accanto
+alla campanella, con contatore delle richieste in attesa. Apre lo stesso fumetto
+delle notifiche: sfondo sfocato, chiusura con croce, Escape o clic fuori, ritorno
+del focus al pulsante e scorrimento dall'ultima richiesta a ogni riapertura.
+Le voci mostrano autore, azione, bersagli, tiri e consumo previsto; quelle in attesa
+hanno lo stesso accento delle notifiche non lette. Posizionamento, altezza e
+scorrimento su desktop e mobile riusano `NotificationPopover`, condiviso anche
+con campanella e cronologia della scheda.
 **Approva azione** richiede la conferma di requisiti ed esiti e consente di
 correggere i danni finali. Soltanto allora il server applica insieme consumo,
 danni (prima ai PF temporanei) e timer/concentrazione già supportati. Un attacco

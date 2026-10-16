@@ -87,11 +87,10 @@
 .play-player-effects li { padding:16px 0; border-top:1px solid var(--border); }
 .play-player-effects h3 { margin:0; color:var(--text-h); font-size:17px; overflow-wrap:anywhere; }
 .play-player-effects li p { margin:8px 0 0; white-space:pre-wrap; }
-.play-combat-requests,.play-player-actions { box-sizing:border-box; padding:20px; border:1px solid var(--border); border-radius:6px; min-width:0; }
-.play-combat-requests { margin-bottom:24px; }
-.play-combat-requests summary { cursor:pointer; color:var(--text-h); font-weight:600; }
+.play-player-actions { box-sizing:border-box; padding:20px; border:1px solid var(--border); border-radius:6px; min-width:0; }
 .play-player-actions h2 { margin-top:0; font-size:21px; color:var(--text-h); }
 .combat-request { margin-top:16px; padding:16px; border:1px solid var(--border); border-radius:6px; overflow-wrap:anywhere; }
+.play-notification-list .combat-request { margin:0; padding:0; border:0; }
 .combat-request h3 { margin-top:0; color:var(--text-h); }
 .play-player-actions p,.combat-request p,.combat-request li { font-size:14px; line-height:1.6; }
 :is(.play-player-actions,.combat-request) fieldset { min-width:0; margin:12px 0; padding:12px; border:1px solid var(--border); }
