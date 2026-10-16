@@ -1,13 +1,13 @@
 import { durationTurns } from '../utils/Combat'
 import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from 'react'
-import { characterFields, clampCurrentHitPointsToMaximum, characterLevel, numericCharacterFields, newCharacterSheet, parseCharacterSheets, initiativeBonus, type SheetStats, type CharacterSheet, type SheetAbility } from '../utils/CharacterSheets'
+import { abilityModifier, signedBonus, creatureAbilitySections, characterFields, clampCurrentHitPointsToMaximum, characterLevel, numericCharacterFields, newCharacterSheet, parseCharacterSheets, initiativeBonus, type SheetStats, type CharacterSheet, type SheetAbility } from '../utils/CharacterSheets'
 import { sheetFromCatalog, sheetWithCombatSpells, templateFromCatalog, type Catalog } from '../utils/Catalog'
 import { CatalogSearch } from './CatalogSearch'
 import { InfoButton } from './InfoButton'
 import { useDialogDismiss } from '../utils/Dialog'
 import { PlayerSheet } from './PlayerSheet'
 import { pdfAbilities } from '../utils/PlayerAbilities'
-import { applyCreation, patchCalculatedSheetStats, characterCalculationIssues, spellSelection, labelOf, type CreationData } from '../utils/PlayerCreation'
+import { abilityKeys, applyCreation, patchCalculatedSheetStats, characterCalculationIssues, spellSelection, labelOf, type CreationData } from '../utils/PlayerCreation'
 import { newTutorial, parseTutorialDraft, tutorialDraftKey as legacyTutorialDraftKey, tutorialIssues } from '../utils/CharacterTutorial'
 import { classId } from '../utils/Spellcasting'
 import { randomCharacter } from '../utils/RandomCharacter'
@@ -15,7 +15,7 @@ import { preserveSavedSheets, catalogForSheet } from '../domain/dnd/ActiveRules'
 
 const legacyStorageKey = 'dev-and-dice.character-sheets.v1'
 
-export type CharacterSheetsHandle = { open: (sheet: CharacterSheet) => void; patchStats: (id: string, stats: Partial<SheetStats>) => boolean;patchDetails:(id:string,details:Record<string,string>)=>boolean }
+export type CharacterSheetsHandle = { open: (sheet: CharacterSheet) => void; patchStats: (id: string, stats: Partial<SheetStats>) => boolean;patchDetails:(id:string,details:Record<string,string>)=>boolean; patchMany:(sheets:CharacterSheet[])=>boolean }
 type Props = { onAdd: (sheet: CharacterSheet) => void; onSaved: (sheet: CharacterSheet) => void; combatStarted: boolean; presentSheetIds: string[]; catalog: Catalog; creationData?: CreationData; ref?: Ref<CharacterSheetsHandle>; repository?:{sheets:CharacterSheet[];storageKey:string;write:(sheets:CharacterSheet[])=>void;canRemove:(sheet:CharacterSheet)=>boolean;remove:(sheet:CharacterSheet)=>Promise<void>} }
 
 export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds, catalog:baseCatalog, creationData, ref, repository }: Props) {
@@ -64,6 +64,8 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
     const randomDialog=useRef<HTMLDialogElement>(null),dismissRandomDialog=useDialogDismiss()
     const [randomOrigins,setRandomOrigins]=useState({characterClass:'',race:'',level:1})
     const [randomError,setRandomError]=useState('')
+    const [randomOpen,setRandomOpen]=useState(false)
+    useEffect(()=>{if(randomOpen)randomDialog.current?.showModal()},[randomOpen])
 
     function openDraft(sheet: CharacterSheet) {
         initialSavedDraft.current=JSON.stringify(currentSheets.current.find(item=>item.id===sheet.id)??null)
@@ -96,6 +98,12 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
 
     useImperativeHandle(ref, () => ({
         open: (sheet) => openDraft(saved.sheets.find((item) => item.id === sheet.id) ?? sheet),
+        patchMany: (sheets) => {
+            const updates=new Map(sheets.map(sheet=>[sheet.id,sheet]))
+            if (!writeSheets(currentSheets.current.map(sheet=>updates.get(sheet.id) ?? sheet))) return false
+            setDraft(draft=>draft && updates.has(draft.id) ? {...draft,playerDetails:{...draft.playerDetails,...updates.get(draft.id)!.playerDetails},hitPoints:updates.get(draft.id)!.hitPoints} : draft)
+            return true
+        },
         patchDetails:(id,details)=>{
             const sheet=currentSheets.current.find((sheet)=>sheet.id===id)
             if (!sheet) return true
@@ -250,7 +258,7 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                                             aria-label={`Nome ${spell ? 'magia' : 'abilità'} ${index + 1} della scheda`}
                                             entries={catalog.abilities}
                                             onChange={(name) => setDraft({ ...draft, abilities: draft.abilities.map((item, i) => i === index ? { ...item, name, catalogId: undefined } : item) })}
-                                            onSelect={(entry) => setDraft({ ...draft, abilities: draft.abilities.map((item, i) => i === index ? templateFromCatalog(entry) : item) })}
+                                            onSelect={(entry) => setDraft({ ...draft, abilities: draft.abilities.map((item, i) => i === index ? {...templateFromCatalog(entry),...(item.section ? {section:item.section} : {})} : item) })}
                                         />
                                     </label>
                                     <label>
@@ -268,6 +276,8 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                                     }} /></label>}
                                     <InfoButton name={catalog.abilities.find((entry) => entry.id === ability.catalogId)?.name ?? ability.name} description={ability.description} entry={catalog.abilities.find((entry) => entry.id === ability.catalogId)} fields={{ duration: ability.duration, remainingTurns: ability.remainingTurns ?? durationTurns[ability.duration] }} />
                                     <button className="delete-turn" type="button" aria-label={`Elimina ${ability.name || `abilità ${index + 1}`} dalla scheda`} onClick={() => setDraft({ ...draft, abilities: draft.abilities.filter((_, i) => i !== index) })}>×</button>
+                                    {draft.kind!=='PG' && <label className="sheet-ability-section"><span>Sezione</span><select aria-label={`Sezione abilità o azione ${index+1}`} value={ability.section ?? 'trait'} onChange={event => setDraft({...draft,abilities:draft.abilities.map((item,i) => i===index ? {...item,section:event.target.value as SheetAbility['section']} : item)})}>{Object.entries(creatureAbilitySections).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>}
+                                    {draft.kind!=='PG' && !draft.catalogId && <label className="sheet-ability-description"><span>Descrizione dell’abilità o azione</span><textarea aria-label={`Descrizione abilità o azione ${index+1}`} rows={3} value={ability.description ?? ''} onChange={event => setDraft({...draft,abilities:draft.abilities.map((item,i) => i===index ? {...item,description:event.target.value,catalogId:undefined} : item)})} /></label>}
                                 </div>)
     }
 
@@ -281,6 +291,20 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
         if (draft) setDraft({ ...draft, playerDetails: { ...draft.playerDetails, [key]: value } })
     }
 
+    function creatureField(key: string, label: string) {
+        if (!draft) return null
+        const base=Object.hasOwn(characterFields,key),value=base ? draft[key as keyof typeof characterFields] : draft.playerDetails?.[key] ?? ''
+        const change=(value:string) => setDraft(base ? {...draft,[key]:value} : {...draft,playerDetails:{...draft.playerDetails,[key]:value}})
+        const numeric=(numericCharacterFields as readonly string[]).includes(key),score=(abilityKeys as readonly string[]).includes(key)
+        return <div key={key}><label><span>{label}</span>{key==='kind' ? <select value={value} onChange={event => change(event.target.value)}><option>Mostro</option><option>PNG</option><option>PG</option></select>
+            : key==='notes' ? <textarea rows={4} value={value} onChange={event => change(event.target.value)} />
+            : key==='name' ? <CatalogSearch required pattern={'.*\\S.*'} aria-label="Nome della scheda" value={value} entries={catalog.creatures} onChange={name => setDraft({...draft,name,catalogId:undefined})} onSelect={entry => setDraft(sheetFromCatalog(entry,catalog,draft))} />
+            : <input type={numeric ? 'number' : 'text'} step={numeric ? '1' : undefined} value={value} onChange={event => change(event.target.value)} />}</label>
+            {score && <output aria-label={`Modificatore ${label}`}>{signedBonus(abilityModifier(value)) || '—'}</output>}
+            {key==='initiative' && <small>Modificatore: {initiativeBonus(draft) || '—'}</small>}
+        </div>
+    }
+
     return (
         <aside className="character-library" aria-labelledby="characters-heading">
             <h2 id="characters-heading">Schede</h2>
@@ -288,7 +312,7 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
             {saved.error && <p role="alert">{saved.error}</p>}
             <button className="sort-turns" type="button" disabled={saved.blocked} onClick={() => openDraft(newCharacterSheet())}>+ Nuova scheda</button>
             <button className="sort-turns" type="button" disabled={saved.blocked || !creationData || !!tutorial.draft || !!tutorial.error} onClick={() => openDraft(newTutorial())}>+ Crea personaggio guidato</button>
-            <button className="sort-turns" type="button" disabled={saved.blocked || !creationData || !!tutorial.draft || !!tutorial.error} onClick={() => {setRandomError('');randomDialog.current?.showModal()}}>+ Crea personaggio casuale</button>
+            <button className="sort-turns" type="button" disabled={saved.blocked || !creationData || !!tutorial.draft || !!tutorial.error} onClick={() => {setRandomError('');setRandomOpen(true)}}>+ Crea personaggio casuale</button>
             {tutorial.error && <p role="alert">{tutorial.error}</p>}
             {tutorial.draft && !saved.sheets.some((s) => s.id === tutorial.draft!.id && s.playerDetails?.['tutorial.completed'] === 'true') && <button className="character-open tutorial-resume" type="button" disabled={!creationData} onClick={() => openDraft(tutorial.draft!)}>Riprendi creazione · {tutorial.draft.name || 'Personaggio senza nome'}</button>}
             {saved.sheets.length === 0 && <p className="library-empty">Crea una scheda e aggiungila al combattimento quando serve.</p>}
@@ -307,7 +331,7 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                 ))}
             </div>
             {combatStarted && <p className="library-help">Termina il combattimento per aggiungere partecipanti.</p>}
-            <dialog ref={dialog} className={`character-dialog${draft?.kind === 'PG' ? ' player-sheet-dialog' : ''}${guided ? ' tutorial-dialog' : ''}`} aria-labelledby="character-dialog-heading" {...dismissDialog} onClose={(event) => {
+            <dialog ref={dialog} className={`character-dialog${draft?.kind === 'PG' ? ' player-sheet-dialog' : ' info-dialog monster-sheet-dialog'}${guided ? ' tutorial-dialog' : ''}`} aria-labelledby="character-dialog-heading" {...dismissDialog} onClose={(event) => {
                 if (event.target !== event.currentTarget) return
                 deleteDialog.current?.close()
                 setDraft(null)
@@ -319,46 +343,40 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                             <div className="player-dialog-title">
                             <h2 id="character-dialog-heading">{guided ? 'Creazione del personaggio' : draft.name || 'Nuova scheda'}</h2>
                             {draft.kind === 'PG' && !guided && <p>{draft.characterClass || 'Personaggio'}{draft.level && ` di livello ${draft.level}`}</p>}
+                            {draft.kind!=='PG' && <p className="library-help">{draft.kind}{!draft.catalogId && ' personalizzato'}</p>}
                             </div>
                             <button className="delete-turn" type="button" aria-label="Chiudi scheda" onClick={() => guided ? setConfirmTutorialExit(true) : closeDialog()}>×</button>
                         </div>
-                        {draft.kind === 'PG' ? <PlayerSheet sheet={draft} catalog={catalog} creationData={creationData} onChange={setDraft}>{guided && <><div className="tutorial-utility-buttons"><button type="button" onClick={closeDialog}>Salva e riprendi più tardi</button><button className="tutorial-discard" type="button" onClick={discardCreation} aria-label="Cancella la bozza del personaggio">Cancella</button></div><p className="tutorial-save-status" role="status">{progressSaved ? 'Progressi salvati in questo browser.' : 'Salvataggio dei progressi…'}</p>{error && <p className="tutorial-save-error" role="alert">{error}</p>}</>}</PlayerSheet> : <div className="character-fields">
-                            {(Object.entries(characterFields) as [keyof typeof characterFields, string][]).map(([field, label]) => (
-                                <label key={field} className={field === 'notes' ? 'character-notes' : undefined}>
-                                    <span>{field === 'initiative' && draft.kind !== 'PG' ? 'Iniziativa inserita' : label}</span>
-                                    {field === 'kind' ? (
-                                        <select value={draft[field]} onChange={(event) => setDraft({ ...draft, [field]: event.target.value })}>
-                                            <option>PG</option><option>Mostro</option><option>PNG</option>
-                                        </select>
-                                    ) : field === 'notes' ? (
-                                        <textarea rows={5} value={draft[field]} onChange={(event) => setDraft({ ...draft, [field]: event.target.value })} />
-                                    ) : field === 'name' ? (
-                                        <CatalogSearch autoFocus required pattern={'.*\\S.*'} aria-label="Nome della scheda" value={draft.name}
-                                            entries={catalog.creatures} onChange={(name) => setDraft({ ...draft, name, catalogId: undefined })}
-                                            onSelect={(entry) => setDraft(sheetFromCatalog(entry, catalog, draft))} />
-                                    ) : (
-                                        <input
-                                            type={(numericCharacterFields as readonly string[]).includes(field) ? 'number' : 'text'}
-                                            step={(numericCharacterFields as readonly string[]).includes(field) ? '1' : undefined}
-                                            value={draft[field]}
-                                            placeholder={field === 'initiative' ? initiativeBonus(draft) : undefined}
-                                            onChange={(event) => setDraft({ ...draft, [field]: event.target.value })}
-                                        />
-                                    )}
-                                </label>
-                            ))}
-                        </div>}
+                        {draft.kind === 'PG' ? <PlayerSheet sheet={draft} catalog={catalog} creationData={creationData} onChange={setDraft}>{guided && <><div className="tutorial-utility-buttons"><button type="button" onClick={closeDialog}>Salva e riprendi più tardi</button><button className="tutorial-discard" type="button" onClick={discardCreation} aria-label="Cancella la bozza del personaggio">Cancella</button></div><p className="tutorial-save-status" role="status">{progressSaved ? 'Progressi salvati in questo browser.' : 'Salvataggio dei progressi…'}</p>{error && <p className="tutorial-save-error" role="alert">{error}</p>}</>}</PlayerSheet> : <>
+                            <section className="info-section" aria-label="Dati principali"><div className="info-fields">
+                                {[['name','Nome'],['kind','Tipo'],['level','Grado di sfida'],['armorClass','Classe armatura'],['hitPoints','Punti ferita'],['initiative','Iniziativa inserita']].map(([key,label]) => creatureField(key,label))}
+                            </div></section>
+                            <section className="info-section" aria-label="Caratteristiche"><h3>Caratteristiche</h3><div className="info-fields info-scores">
+                                {abilityKeys.map(key => creatureField(key,characterFields[key]))}
+                            </div></section>
+                            <section className="info-section" aria-label="Statistiche"><h3>Statistiche</h3><div className="info-fields">
+                                {[['monster.size','Taglia'],['race','Tipo di creatura'],['monster.alignment','Allineamento'],['speed','Velocità'],['monster.languages','Linguaggi'],['monster.senses','Sensi'],['monster.skills','Abilità e competenze'],['monster.savingThrows','Tiri salvezza'],['monster.resistances','Resistenze ai danni'],['monster.immunities','Immunità ai danni'],['monster.conditionImmunities','Immunità alle condizioni'],['monster.vulnerabilities','Vulnerabilità ai danni'],['characterClass','Classe / ruolo']].map(([key,label]) => creatureField(key,label))}
+                            </div></section>
+                            <section className="info-section info-prose" aria-label="Descrizione"><h3>Descrizione</h3><div className="info-fields">{creatureField('notes','Descrizione e note')}</div></section>
+                        </>}
                         {!guided && <>
                         <details className="sheet-combat-help"><summary>Come usare abilità e magie in combattimento</summary>
                             <p>Nel combattimento, clicca un nome nella card del personaggio per importarlo; clicca di nuovo per raggiungerlo.</p>
                             {draft.kind === 'PG' && <p>I privilegi con un’attivazione riconoscibile compaiono qui. Per modificarli nella scheda sopra, scrivi nome e descrizione su righe separate e lascia una riga vuota tra privilegi.</p>}
                         </details>
-                        <div className={draft.kind === 'PG' ? 'sheet-ability-columns' : undefined}>
-                        <section className="sheet-abilities" aria-labelledby="sheet-abilities-heading">
-                            <header className="sheet-section-heading"><h3 id="sheet-abilities-heading">Abilità del personaggio</h3><span className="sheet-section-count" aria-label="Numero di abilità">{activePdf.length + rows.filter((row) => draft.kind !== 'PG' || !row.spell).length}</span></header>
+                        <div className={draft.kind === 'PG' ? 'sheet-ability-columns' : 'info-ability-sections'}>
+                        {draft.kind!=='PG' ? ([['trait','legendary'],['action','bonus','reaction','lair']] as const).map((sections,column) => <div className="info-ability-column" key={column}>
+                            {sections.filter(section => section==='trait' || section==='action' || rows.some(row => row.ability.section===section)).map(section => <section className="info-section info-panel sheet-abilities" aria-label={creatureAbilitySections[section]} key={section}>
+                                <h3>{creatureAbilitySections[section]}</h3>
+                                {!rows.some(row => (row.ability.section ?? 'trait')===section) && <p className="library-help">Nessuna voce. Aggiungine una qui sotto.</p>}
+                                {rows.filter(row => (row.ability.section ?? 'trait')===section).map(({ability,index}) => abilityRow(ability,index))}
+                                <button className="end-combat sheet-add-ability" type="button" onClick={() => setDraft({...draft,abilities:[...draft.abilities,{name:'',duration:'Senza conteggio',section}]})}>{section==='trait' ? '+ Aggiungi abilità' : section==='action' ? '+ Aggiungi azione' : '+ Aggiungi voce'}</button>
+                            </section>)}
+                        </div>) : <section className="sheet-abilities" aria-labelledby="sheet-abilities-heading">
+                            <header className="sheet-section-heading"><h3 id="sheet-abilities-heading">Abilità del personaggio</h3><span className="sheet-section-count" aria-label="Numero di abilità">{activePdf.length + rows.filter(row => !row.spell).length}</span></header>
                             <p className="library-help sheet-section-intro">Privilegi e abilità da attivare, con la loro durata.</p>
                             {!activePdf.length && !rows.some((row) => draft.kind !== 'PG' || !row.spell) && <p className="library-empty">Nessuna abilità da attivare. Aggiungine una o compila i privilegi nella scheda sopra.</p>}
-                            {activePdf.map((item) => <article className="pdf-ability-card" key={item.key}>
+                            {activePdf.map((item,index) => <article className="pdf-ability-card" key={`${item.key}-${index}`}>
                                 <strong>{item.name}</strong><p className="library-help">{item.reason}</p>
                                 <div className="pdf-ability-controls">
                                 <label>Durata<select aria-label={`Durata di ${item.name}`} value={item.template.duration} onChange={(event) => pdfSetting(`${item.key}.duration`, event.target.value)}>{Object.keys(durationTurns).map((duration) => <option key={duration}>{duration}</option>)}</select></label>
@@ -370,9 +388,9 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                             {rows.filter((row) => draft.kind !== 'PG' || !row.spell).map(({ ability, index }) => abilityRow(ability, index))}
                             <button className="end-combat sheet-add-ability" type="button" onClick={() => setDraft({ ...draft, abilities: [...draft.abilities, { name: '', duration: '1 minuto' }] })}>+ Aggiungi abilità</button>
                             {reviewPdf.length > 0 && <details className="pdf-ability-review"><summary>Privilegi da verificare o esclusi ({reviewPdf.length})</summary>
-                                {reviewPdf.map((item) => <article className="pdf-ability-card" key={item.key}><strong>{item.name}</strong><p className="library-help">{item.reason}</p><div className="turn-actions"><InfoButton name={item.name} description={item.description} /><button className="more-info" type="button" onClick={() => pdfSetting(item.key, 'include')}>Includi tra le abilità da attivare</button></div></article>)}
+                                {reviewPdf.map((item,index) => <article className="pdf-ability-card" key={`${item.key}-${index}`}><strong>{item.name}</strong><p className="library-help">{item.reason}</p><div className="turn-actions"><InfoButton name={item.name} description={item.description} /><button className="more-info" type="button" onClick={() => pdfSetting(item.key, 'include')}>Includi tra le abilità da attivare</button></div></article>)}
                             </details>}
-                        </section>
+                        </section>}
                         {draft.kind === 'PG' && <section className="sheet-abilities sheet-spells" aria-labelledby="sheet-spells-heading">
                             <header className="sheet-section-heading"><h3 id="sheet-spells-heading">Magie del personaggio</h3><span className="sheet-section-count" aria-label="Numero di magie">{selectedSpells.length + rows.filter((row) => row.spell).length}</span></header>
                             <p className="library-help sheet-section-intro">Le magie della scheda, con livello e durata. Modificale nella pagina Incantesimi sopra.</p>
@@ -422,8 +440,8 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                     <button className="clear-turns" type="button" onClick={discardCreation}>Cancella scheda</button>
                 </div>
             </dialog>
-            <dialog ref={randomDialog} className="character-dialog" aria-labelledby="random-character-heading" {...dismissRandomDialog}>
-                <form onSubmit={(event) => {event.preventDefault();generateRandom()}}>
+            <dialog ref={randomDialog} className="character-dialog" aria-labelledby="random-character-heading" {...dismissRandomDialog} onClose={()=>setRandomOpen(false)}>
+                {randomOpen && <form onSubmit={(event) => {event.preventDefault();generateRandom()}}>
                     <h2 id="random-character-heading">Personaggio casuale</h2>
                     <p>D&D 5e 2014. Scegli il livello e fissa classe e razza, oppure lascia queste ultime casuali. «Genera e rivedi» apre il tutorial; «Genera veloce» salva direttamente il personaggio tra le schede.</p>
                     <div className="tutorial-grid">
@@ -434,7 +452,7 @@ export function CharacterSheets({ onAdd, onSaved, combatStarted, presentSheetIds
                     <p className="player-hint">Caratteristiche: array standard assegnato casualmente. Competenze, lingue, dotazioni e magie usano le opzioni del catalogo. Sopra il livello 1 vanno verificati aumenti di caratteristica/talenti e avanzamenti nel tutorial. Il Ranger richiede ancora alcune scelte manuali. Per le regole 2024 usa la creazione guidata.</p>
                     {randomError && <p role="alert">{randomError}</p>}
                     <div className="turn-actions"><button className="sort-turns" type="submit">Genera e rivedi</button><button className="sort-turns" type="button" onClick={() => generateRandom(true)}>Genera veloce</button><button className="end-combat" type="button" onClick={() => randomDialog.current?.close()}>Annulla</button></div>
-                </form>
+                </form>}
             </dialog>
         </aside>
     )

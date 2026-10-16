@@ -61,6 +61,19 @@ export async function createApp({
   const usersFile = resolve(dataDir, 'users.json')
   const sessionsDir = resolve(dataDir, 'sessions')
   await mkdir(sessionsDir, { recursive: true, mode: 0o700 })
+  if (!sessionSecret) {
+    // ponytail: persist the development key beside the sessions; production requires SESSION_SECRET.
+    const secretFile = resolve(dataDir, 'session-secret')
+    try {
+      await writeFile(secretFile, randomBytes(32).toString('hex'), { flag: 'wx', mode: 0o600 })
+    } catch (error) {
+      if (error.code !== 'EEXIST') throw error
+    }
+    sessionSecret = await readFile(secretFile, 'utf8')
+    if (!/^[a-f0-9]{64}$/.test(sessionSecret)) {
+      throw new Error('La chiave di sessione locale non è valida; file conservato.')
+    }
+  }
   if (!existsSync(usersFile)) {
     await writeFile(usersFile, '[]\n', { flag: 'wx', mode: 0o600 })
   }
@@ -112,7 +125,6 @@ export async function createApp({
     ttl: Math.floor(sessionMaxAge / 1000),
     retries: 0,
   })
-  const secret = sessionSecret ?? randomBytes(32).toString('hex')
 
   app.disable('x-powered-by')
   app.use('/api', (req,res,next) => {
@@ -130,7 +142,7 @@ export async function createApp({
   app.use(['/api/register','/api/login','/api/logout'], express.json({ limit: '16kb' }))
   app.use(session({
     name: 'dev-and-dice.sid',
-    secret,
+    secret: sessionSecret,
     store,
     resave: false,
     saveUninitialized: false,
@@ -259,6 +271,7 @@ export async function createApp({
       const user=(await readUsers()).find(user => user.id === req.session.userId)
       if (!user) throw new HttpError(401,'Accesso richiesto.')
       req.userId=user.id
+      req.username=user.username
       next()
     } catch (error) {next(error)}
   }}))

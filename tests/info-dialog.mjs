@@ -6,7 +6,11 @@ import ts from 'typescript'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 
-registerHooks({ load(url, context, nextLoad) {
+registerHooks({ resolve(specifier,context,nextResolve) {
+    if(specifier==='react'&&context.parentURL?.endsWith('/src/components/InfoButton.tsx'))return {url:'test:info-react',shortCircuit:true}
+    return nextResolve(specifier,context)
+},load(url, context, nextLoad) {
+    if(url==='test:info-react')return {format:'module',shortCircuit:true,source:`export {useEffect,useId,useRef} from ${JSON.stringify(import.meta.resolve('react'))}; export function useState(initial) {return [globalThis.infoDialogOpen??initial,()=>{}]}`}
     if (!url.endsWith('/src/components/InfoButton.tsx')) return nextLoad(url, context)
     return { format: 'module', shortCircuit: true, source: ts.transpileModule(readFileSync(fileURLToPath(url), 'utf8'), {
         compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.ESNext },
@@ -16,6 +20,9 @@ const { InfoButton } = await import('../src/components/InfoButton.tsx')
 const database = JSON.parse(readFileSync(new URL('../public/data/database.json', import.meta.url), 'utf8'))
 const creature = database.creatures.find((entry) => entry.name === 'Aboleth')
 const props = { name: creature.name, entry: { type: 'creature', data: creature, description: creature.description, label: 'Mostro', sourceUrl: creature.sourceUrl } }
+const closed=renderToStaticMarkup(createElement(InfoButton,props))
+assert(closed.includes('Altro su Aboleth')&&!closed.includes('Nube di Muco'),'Closed dialogs keep their trigger without building details')
+globalThis.infoDialogOpen=true
 const markup = renderToStaticMarkup(createElement(InfoButton, props))
 assert.ok(markup.includes('info-scores'))
 assert.ok(markup.includes('21 (+5)'))

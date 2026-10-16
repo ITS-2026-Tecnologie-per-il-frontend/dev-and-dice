@@ -1,17 +1,101 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
-import { newCharacterSheet, parseCharacterSheets, clampCurrentHitPointsToMaximum, characterLevel, type CharacterSheet } from '../utils/CharacterSheets'
+import { characterFields, newCharacterSheet, parseCharacterSheets, clampCurrentHitPointsToMaximum, characterLevel, type CharacterSheet } from '../utils/CharacterSheets'
 import { newTutorial, parseTutorialDraft, tutorialDraftKey, tutorialIssues } from '../utils/CharacterTutorial'
 import { applyCreation, characterCalculationIssues, spellSelection, type CreationData } from '../utils/PlayerCreation'
 import { classId } from '../utils/Spellcasting'
 import { loadActiveDatabase } from '../domain/dnd/ActiveRules'
+import { useDialogDismiss } from '../utils/Dialog'
 import { PlayerSheet } from './PlayerSheet'
 import { TurnsTracker, type TrackerState } from './TurnsTracker'
-import { playApi, type HomeData, type Game, type MasterGame, type OwnedCharacter, type PrivateNotes } from '../utils/PlayApi'
+import { playApi, type HomeData, type Game, type MasterGame, type OwnedCharacter, type PrivateNotes, type NotificationPage, type NotificationSummary } from '../utils/PlayApi'
 import '../PlayPages.css'
 
 const message=(error:unknown)=>error instanceof Error ? error.message : 'Operazione non riuscita. Riprova.'
+
+function changeLabel(path:string[]):string {
+    if (path[0]!=='playerDetails') return ({...characterFields,abilities:'Abilità e azioni',catalogId:'Voce del catalogo'} as Record<string,string>)[path[0]] ?? path[0]
+    const key=path[1],slot=/^slots\.(\d+)\.(total|used)$/.exec(key)
+    if (slot) return `Slot di ${slot[1]}º livello · ${slot[2]==='used'?'usati':'totali'}`
+    return ({portrait:'Ritratto',maxHitPoints:'PF massimi',temporaryHitPoints:'PF temporanei',classFeatures:'Privilegi di classe',racialTraits:'Tratti della specie',additionalTraits:'Altri tratti'} as Record<string,string>)[key] ?? `Dettaglio della scheda: ${key}`
+}
+function changeValue(value:unknown,portrait:boolean) {
+    if (portrait && typeof value==='string' && /^data:image\/(png|jpeg|webp);base64,/.test(value)) return <img src={value} alt="Ritratto salvato"/>
+    return <pre>{value===null?'Non impostato':value===''?'Vuoto':typeof value==='string'?value:JSON.stringify(value,null,2)}</pre>
+}
+type SheetChangesProps={game:Game}&({history:true}|{history?:false;disabled:boolean;onRead:(id:string)=>Promise<void>;onReject:(id:string)=>Promise<void>})
+function SheetChanges(props:SheetChangesProps) {
+    const {game}=props,history=props.history===true,title=history?'Cronologia della scheda':'Notifiche e storico delle schede',dialogId=history?'sheet-history':'sheet-notifications'
+    const [open,setOpen]=useState(false),[page,setPage]=useState<NotificationPage>(),[loading,setLoading]=useState(false),[action,setAction]=useState(''),[error,setError]=useState(''),[retry,setRetry]=useState(0)
+    const loaded=useRef<{endpoint:string;revision:number;retry:number;page:NotificationPage}>(undefined)
+    const dialog=useRef<HTMLDialogElement>(null),trigger=useRef<HTMLButtonElement>(null),dismiss=useDialogDismiss()
+    const placeDialog=useCallback(()=>{
+        const element=dialog.current,button=trigger.current
+        if (!element || !button) return
+        const bounds=button.getBoundingClientRect(),width=Math.min(680,window.innerWidth-32),left=Math.max(16,Math.min(bounds.right-width,window.innerWidth-width-16)),top=bounds.bottom+window.scrollY+14
+        element.style.setProperty('--notification-left',`${left+window.scrollX}px`)
+        element.style.setProperty('--notification-top',`${top}px`)
+        element.style.setProperty('--notification-arrow',`${bounds.left+bounds.width/2-left}px`)
+        element.style.setProperty('--notification-height',`${Math.max(0,document.documentElement.scrollHeight-top-12)}px`)
+    },[])
+    useEffect(()=>{
+        if (!open) return
+        const observer=new ResizeObserver(placeDialog),root=document.getElementById('root')
+        if (root) observer.observe(root)
+        window.addEventListener('resize',placeDialog)
+        return ()=>{observer.disconnect();window.removeEventListener('resize',placeDialog)}
+    },[open,placeDialog])
+    const revision=history&&game.role==='player'?game.character.revision:game.notifications.revision,endpoint='/games/'+game.id+(history?'/history':'/notifications')
+    useEffect(()=>{
+        if (!open) return
+        if (loaded.current?.endpoint===endpoint && loaded.current.revision===revision && loaded.current.retry===retry) {setPage(loaded.current.page);setError('');return}
+        let active=true
+        // eslint-disable-next-line react/set-state-in-effect -- Fetch the persisted history when the session reports a new notification revision.
+        setLoading(true);setError('')
+        playApi<NotificationPage>(endpoint).then(value=>{if(active){loaded.current={endpoint,revision:value.revision,retry,page:value};setPage(value)}}).catch(error=>{if(active)setError(message(error))}).finally(()=>{if(active)setLoading(false)})
+        return ()=>{active=false}
+    },[endpoint,revision,open,retry])
+    async function older() {
+        if (!page?.next || loading) return
+        const current=page
+        setLoading(true);setError('')
+        try {const next=await playApi<NotificationPage>(endpoint+'?before='+encodeURIComponent(page.next));setPage(value=>value===current && next.revision===current.revision ? {...next,items:[...current.items,...next.items]} : value)}
+        catch(error){setError(message(error))}finally{setLoading(false)}
+    }
+    const perform=useCallback(async(id:string,operation:()=>Promise<void>)=>{setAction(id);setError('');try{await operation()}catch(error){setError(message(error))}finally{setAction('')}},[])
+    // ponytail: cache one page per feed; the existing two-second revision polling invalidates it.
+    const entries=useMemo(()=><ol className="play-notification-list">{page?.items.map(entry=><li key={entry.id} data-notification-id={entry.id} data-unread={!history&&!entry.read}>
+            <h3>{entry.characterName} · {!history&&entry.status==='rejected'&&game.role==='player'?'Rifiuto del Master':`${entry.actorName} (${entry.actorRole==='master'?'Master':'Giocatore'})`}</h3>
+            <p><time dateTime={entry.createdAt}>{new Date(entry.createdAt).toLocaleString('it-IT')}</time> · {entry.status==='rejected'?'Rifiutata dal Master':entry.actorRole==='player'?'Applicata automaticamente':'Applicata dal Master'}{!history&&!entry.read?' · Da leggere':''}</p>
+            {entry.rejectedAt&&<p>Ripristinata il <time dateTime={entry.rejectedAt}>{new Date(entry.rejectedAt).toLocaleString('it-IT')}</time>.</p>}
+            <details open><summary>Modifiche ({entry.changes.length})</summary><div className="play-change-table"><table><caption className="play-sr-only">Valori prima e dopo la modifica di {entry.characterName}</caption><thead><tr><th scope="col">Campo</th><th scope="col">Prima</th><th scope="col">Dopo</th></tr></thead><tbody>{entry.changes.map(change=><tr key={JSON.stringify(change.path)}><th scope="row">{changeLabel(change.path)}</th><td>{changeValue(change.before,change.path[1]==='portrait')}</td><td>{changeValue(change.after,change.path[1]==='portrait')}</td></tr>)}</tbody></table></div></details>
+            {!props.history&&<div className="play-actions">{!entry.read&&<button type="button" className="play-secondary" disabled={!!action} onClick={()=>void perform(entry.id,()=>props.onRead(entry.id))}>Segna come letta</button>}{entry.canReject&&<button type="button" className="play-secondary" disabled={props.disabled||!!action||loading} onClick={()=>void perform(entry.id,()=>props.onReject(entry.id))}>{action===entry.id?'Attendi…':'Rifiuta modifica'}</button>}</div>}
+        </li>)}</ol>,[page,props,action,loading,perform,history,game.role])
+    return <div className="play-notifications">
+        <button ref={trigger} type="button" className="play-secondary play-notification-button" aria-label={history?title:`Notifiche: ${game.notifications.unreadCount} non lette`} aria-haspopup="dialog" aria-controls={dialogId} aria-expanded={open} onClick={()=>{
+            if (!dialog.current) return
+            placeDialog()
+            dialog.current.showModal();setOpen(true)
+            const body=dialog.current.querySelector<HTMLElement>('.play-notifications-body')
+            if (body) body.scrollTop=0
+        }}>
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={history?'M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.4 2.6L3 8M3 3v5h5M12 7v5l3 2':'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4M12 2V1'}/></svg>
+            {!history&&<span className="play-notification-count" data-unread={game.notifications.unreadCount>0} aria-hidden="true">{game.notifications.unreadCount}</span>}
+        </button>
+        <dialog ref={dialog} id={dialogId} className="play-notification-dialog" aria-labelledby={dialogId+'-title'} onClose={()=>setOpen(false)} {...dismiss}>
+        <div className="play-notification-heading"><h2 id={dialogId+'-title'}>{title}</h2><button type="button" className="play-secondary" aria-label={history?'Chiudi cronologia':'Chiudi notifiche'} onClick={()=>dialog.current?.close()}>×</button></div>
+        <div className="play-notifications-body">
+        <p>{history?'Tutte le modifiche salvate da te e dal Master, dalla più recente. Per ogni modifica trovi autore, data e valori prima e dopo.':game.role==='master'?'Le modifiche dei giocatori sono già applicate. Puoi rifiutarle se i campi coinvolti non sono stati modificati nuovamente.':'Qui trovi gli interventi del Master sulla tua scheda e gli eventuali rifiuti delle tue modifiche.'}</p>
+        {loading&&<p role="status">{history?'Caricamento della cronologia…':'Caricamento delle notifiche…'}</p>}
+        {error&&<p role="alert">{error} <button type="button" className="play-secondary" onClick={()=>setRetry(value=>value+1)}>Aggiorna storico</button></p>}
+        {page&&!page.items.length&&<p>{history?'Nessuna modifica alla scheda registrata.':'Nessuna notifica da mostrare.'}</p>}
+        {entries}
+        {page?.next&&<button type="button" className="play-secondary" disabled={loading} onClick={()=>void older()}>Mostra precedenti</button>}
+        {!props.history&&props.disabled&&game.role==='master'&&<p>Concludi il salvataggio della sessione prima di rifiutare una modifica.</p>}
+        </div></dialog>
+    </div>
+}
 
 export function AccountLayout({children}:{children:ReactNode}) {
     const {user,status,error,refreshUser,logout}=useAuth(),location=useLocation(),[logoutError,setLogoutError]=useState('')
@@ -27,7 +111,7 @@ function useCreationData() {
     return {data,error,retry:()=>setRetry(value=>value+1)}
 }
 
-export function CharacterEditor({record,initial,onSave,onCancel,settingsInDialog=false}:{record?:OwnedCharacter;initial?:CharacterSheet;onSave:(sheet:CharacterSheet,revision?:number)=>Promise<void>;onCancel:()=>void;settingsInDialog?:boolean}) {
+export function CharacterEditor({record,initial,onSave,onCancel,settingsInDialog=false,historyControl}:{record?:OwnedCharacter;initial?:CharacterSheet;onSave:(sheet:CharacterSheet,revision?:number)=>Promise<void>;onCancel:()=>void;settingsInDialog?:boolean;historyControl?:ReactNode}) {
     const {data,error:rulesError,retry}=useCreationData()
     const [sheet,setSheet]=useState(()=>record?.sheet ?? initial ?? {...newCharacterSheet(),level:'1'})
     const [baseline,setBaseline]=useState(()=>({revision:record?.revision,raw:JSON.stringify(record?.sheet ?? initial ?? null)}))
@@ -59,11 +143,14 @@ export function CharacterEditor({record,initial,onSave,onCancel,settingsInDialog
             setSheet(next);setBaseline({revision:record?.revision,raw:JSON.stringify(next)})
         } catch(error){setError(message(error))} finally{setSaving(false)}
     }
+    const saveAction=useRef(save)
+    useLayoutEffect(()=>{saveAction.current=save})
+    const sheetActions=useMemo(()=><><button type="button" disabled={saving} onClick={()=>void saveAction.current()}>Salva personaggio nella sessione</button>{error&&<p role="alert">{error}</p>}</>,[saving,error])
     return <section className="play-editor" aria-label="Scheda del personaggio">
         <div className="play-editor-heading"><h2>{sheet.name || 'Nuovo personaggio'}</h2>{!record&&!sheet.name&&sheet.playerDetails?.['tutorial.active']!=='true'&&<button type="button" onClick={()=>setSheet(newTutorial())}>Usa creazione guidata</button>}</div>
         {rulesError&&<p role="alert">Regole non caricate: {rulesError} <button onClick={retry}>Riprova</button></p>}
         {changed&&dirty&&<p role="alert">La scheda è stata modificata anche da un’altra schermata. Le tue modifiche restano aperte. <button type="button" onClick={()=>{if(window.confirm('Ricaricare la scheda dal server e scartare le modifiche aperte?')){setSheet(record.sheet);setBaseline({revision:record.revision,raw:JSON.stringify(record.sheet)});setError('')}}}>Ricarica scheda</button></p>}
-        {sheet.kind==='PG' ? <PlayerSheet sheet={sheet} creationData={data} settingsInDialog={settingsInDialog} onChange={next=>setSheet(data ? applyCreation(next,data) : next)}><button type="button" disabled={saving} onClick={()=>void save()}>Salva personaggio nella sessione</button>{error&&<p role="alert">{error}</p>}</PlayerSheet> : <div className="play-form-grid">{Object.entries(sheet).filter(([key,value])=>typeof value==='string'&&!['id','catalogId'].includes(key)).map(([key,value])=><label key={key}>{key}<input value={String(value)} onChange={event=>setSheet({...sheet,[key]:event.target.value})}/></label>)}</div>}
+        {sheet.kind==='PG' ? <PlayerSheet sheet={sheet} creationData={data} settingsInDialog={settingsInDialog} historyControl={historyControl} onChange={next=>setSheet(data ? applyCreation(next,data) : next)}>{sheetActions}</PlayerSheet> : <div className="play-form-grid">{Object.entries(sheet).filter(([key,value])=>typeof value==='string'&&!['id','catalogId'].includes(key)).map(([key,value])=><label key={key}>{key}<input value={String(value)} onChange={event=>setSheet({...sheet,[key]:event.target.value})}/></label>)}</div>}
         <footer className="play-editor-actions"><button type="button" disabled={saving} onClick={()=>void save()}>{saving?'Salvataggio…':'Salva personaggio'}</button><button type="button" className="play-secondary" disabled={saving} onClick={onCancel}>Annulla</button>{error&&<p role="alert">{error}</p>}</footer>
     </section>
 }
@@ -131,7 +218,7 @@ export function HomePage() {
         {!home&&!error&&<p role="status">Caricamento del tuo tavolo…</p>}
         <div className="play-home-columns"><section aria-labelledby="my-characters"><h2 id="my-characters">I tuoi personaggi</h2>{home?.characters.length===0&&<p>Crea il tuo primo personaggio o recupera le schede salvate nel browser.</p>}
             <ul className="play-list">{home?.characters.map(character=><li key={character.id}><div><Link to={'/characters/'+character.id}><strong>{character.sheet.name}</strong></Link><p>{character.sheet.characterClass || character.sheet.kind}{character.sheet.level&&` · livello ${character.sheet.level}`}</p></div><span className="play-status">{character.gameId ? <Link to={'/games/'+character.gameId}>In sessione</Link> : 'Disponibile'}</span></li>)}</ul>
-        </section><section aria-labelledby="my-games"><h2 id="my-games">Le tue sessioni</h2>{home?.games.length===0&&<p>Crea una sessione come Master o apri un link di invito per giocare.</p>}<ul className="play-list">{home?.games.map(game=><li key={game.id}><Link to={'/games/'+game.id}><strong>{game.name}</strong></Link><span className="play-status">{game.role==='master'?'Dungeon Master':'Giocatore'}</span></li>)}</ul></section></div>
+        </section><section aria-labelledby="my-games"><h2 id="my-games">Le tue sessioni</h2>{home?.games.length===0&&<p>Crea una sessione come Master o apri un link di invito per giocare.</p>}<ul className="play-list">{home?.games.map(game=><li key={game.id}><div><Link to={'/games/'+game.id}><strong>{game.name}</strong></Link><p className="play-session-role">{game.role==='master'?'Master':'Giocatore'}</p></div><Link className="play-status" to={'/games/'+game.id} aria-label={`Apri ${game.name}`}>Apri</Link></li>)}</ul></section></div>
         <details className="play-recovery"><summary>Recupera le schede di questo browser</summary><p>Le vecchie schede non hanno un proprietario registrato. Importa nel tuo account soltanto quelle che ti appartengono. Il recupero conserva gli originali e non duplica le schede già importate.</p><div className="play-actions"><button disabled={busy} onClick={()=>void recover()}>Importa le schede locali</button><button disabled={busy} onClick={resume}>Riprendi bozza locale</button><Link to="/schede/barbaro/pdf">Apri il vecchio modello Barbaro</Link></div>{imported&&<p role="status">{imported}</p>}</details>
     </main>
 }
@@ -181,7 +268,8 @@ function SessionPage() {
             const current=gameRef.current
             if(current&&next.revision<current.revision)return
             if(current?.role==='player'&&next.role==='player'&&current.notes.revision>next.notes.revision)next.notes=current.notes
-            if(current?.revision!==next.revision||current?.role==='player'&&next.role==='player'&&current.notes.revision!==next.notes.revision){gameRef.current=next;setGame(next)}setError('')
+            if(current && current.notifications.revision>next.notifications.revision) next.notifications=current.notifications
+            if(current?.revision!==next.revision||current?.notifications.revision!==next.notifications.revision||current?.role==='player'&&next.role==='player'&&current.notes.revision!==next.notes.revision){gameRef.current=next;setGame(next)}setError('')
         }catch(error){if(active)setError(message(error))}finally{inFlight=false}}
         void refresh()
         // ponytail: polling ogni 2 secondi per questa versione; migrazione a WebSocket pianificata nel README per ridurre la latenza.
@@ -212,11 +300,26 @@ function SessionPage() {
     async function reload(){if(!window.confirm('Ricaricare la sessione dal server e scartare la bozza locale?'))return;try{const next=await playApi<Game>('/games/'+id);localStorage.removeItem(cacheKey);draftRef.current=null;setDraft(null);gameRef.current=next;setGame(next);setBlocked(false);setError('')}catch(error){setError(message(error))}}
     async function leave(){if(!window.confirm(game?.role==='master'?'Chiudere la sessione? I personaggi resteranno ai loro proprietari.':'Uscire dalla sessione con il tuo personaggio? Gli appunti personali di questa partita verranno eliminati.'))return;try{await playApi('/games/'+id+(game?.role==='master'?'':'/leave'),game?.role==='master'?'DELETE':'POST');localStorage.removeItem(cacheKey);navigate('/')}catch(error){setError(message(error))}}
     async function addOwned(event:FormEvent){event.preventDefault();try{const next=await playApi<MasterGame>('/games/'+id+'/characters','POST',{characterId:selected,revision:gameRef.current?.revision});gameRef.current=next;setGame(next);setSelected('');setAvailable(current=>current.filter(character=>character.id!==selected));setError('')}catch(error){setError(message(error))}}
+    async function readNotification(changeId:string) {
+        const notifications=await playApi<NotificationSummary>('/games/'+id+'/notifications/'+changeId+'/read','POST')
+        const current=gameRef.current
+        if (current && notifications.revision>=current.notifications.revision) {const next={...current,notifications};gameRef.current=next;setGame(next)}
+    }
+    async function rejectNotification(changeId:string) {
+        if (draftRef.current || savingRef.current || blocked) throw new Error('Concludi il salvataggio della sessione prima di rifiutare una modifica.')
+        savingRef.current=true;setSaving(true)
+        try {
+            const next=await playApi<MasterGame>('/games/'+id+'/notifications/'+changeId+'/reject','POST',{revision:gameRef.current?.revision})
+            gameRef.current=next
+            if (draftRef.current) {setBlocked(true);setError('La modifica è stata rifiutata, ma nel frattempo hai iniziato altre modifiche. La bozza è conservata: ricarica i dati del server prima di continuare.')}
+            else setGame(next)
+        } finally {savingRef.current=false;setSaving(false)}
+    }
     if(!game)return <main className="play-home"><h1>Sessione</h1>{error?<p role="alert">{error}</p>:<p role="status">Caricamento della sessione…</p>}<Link to="/">Torna alla home</Link></main>
-    return <main className={game.role==='master'?'play-master-page':'play-player-page'}><header className="play-session-heading"><div><Link to="/">Le mie sessioni</Link><h1>{game.name}</h1><p>{game.role==='master'?'Sessione Master':'La tua avventura'}</p></div><button className="play-secondary" onClick={()=>void leave()}>{game.role==='master'?'Chiudi sessione':'Esci dalla sessione'}</button></header>
+    return <main className={game.role==='master'?'play-master-page':'play-player-page'}><header className="play-session-heading"><div><Link to="/">Le mie sessioni</Link><h1>{game.name}</h1><p>{game.role==='master'?'Sessione Master':'La tua avventura'}</p></div><div className="play-session-actions"><SheetChanges game={game} disabled={!!draft||saving||blocked} onRead={readNotification} onReject={rejectNotification}/><button className="play-secondary" onClick={()=>void leave()}>{game.role==='master'?'Chiudi sessione':'Esci dalla sessione'}</button></div></header>
         {error&&<p role="alert">{error}</p>}{blocked&&<div className="play-actions"><button onClick={()=>{setBlocked(false);setRetry(value=>value+1)}}>Riprova salvataggio</button><button className="play-secondary" onClick={()=>void reload()}>Ricarica dati del server</button></div>}
         {game.role==='master'?<><div className="play-master-tools"><label>Invito alla sessione<input aria-label="Link di invito" readOnly value={new URL('/join/'+game.inviteToken,window.location.origin).href}/></label><button type="button" onClick={()=>void navigator.clipboard.writeText(new URL('/join/'+game.inviteToken,window.location.origin).href).then(()=>setCopied(true)).catch(()=>setError('Copia non riuscita: seleziona e copia il link dal campo.'))}>{copied?'Link copiato':'Copia invito'}</button><label>Lingua<select aria-label="Lingua" value={language} onChange={event=>setLanguage(event.target.value as 'it'|'en')}><option value="it">Italiano</option><option value="en">English</option></select></label><p role="status">{saving?'Salvataggio della sessione…':draft?'Modifiche da salvare':'Sessione sincronizzata'}</p></div><details className="play-recovery" onToggle={event=>{if(event.currentTarget.open)void playApi<HomeData>('/home').then(home=>setAvailable(home.characters.filter(character=>!character.gameId))).catch(error=>setError(message(error)))}}><summary>Aggiungi una tua scheda esistente</summary><form className="play-create-game" onSubmit={event=>void addOwned(event)}><label>Scheda disponibile<select aria-label="Scheda disponibile" value={selected} onChange={event=>setSelected(event.target.value)}><option value="">Scegli una scheda…</option>{available.map(character=><option value={character.id} key={character.id}>{character.sheet.name}</option>)}</select></label><button disabled={!selected||!!draft||saving}>Aggiungi alla sessione</button></form></details><TurnsTracker language={language} workspace={workspace}/></>:<><nav className="play-player-navigation" aria-label="Sezioni della sessione"><a href="#player-character">Scheda</a><a href="#player-turns">Combattimento</a><a href="#player-effects">Effetti</a><a href="#player-notes">Appunti</a></nav><div className="play-player-layout">
-            <div className="play-player-sheet" id="player-character"><CharacterEditor record={game.character} settingsInDialog onCancel={()=>navigate('/')} onSave={async(sheet,revision)=>{
+            <div className="play-player-sheet" id="player-character"><CharacterEditor record={game.character} settingsInDialog historyControl={<SheetChanges game={game} history/>} onCancel={()=>navigate('/')} onSave={async(sheet,revision)=>{
                 const character=await playApi<OwnedCharacter>('/characters/'+game.character.id,'PUT',{sheet,revision})
                 const current=gameRef.current
                 if(current?.role==='player'){const next={...current,character};setGame(next);gameRef.current=next}setError('')

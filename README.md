@@ -9,12 +9,18 @@ registrazione comunicano con il server Node tramite `/api`; il server memorizza
 gli account in `server/data/users.json`, fuori dalla cartella pubblica `public/`.
 Nel JSON la password è salvata solo come hash scrypt. I cookie di sessione sono
 HttpOnly e le sessioni sono conservate in `server/data/sessions/`.
+In sviluppo la chiave dei cookie viene conservata in `server/data/session-secret`,
+escluso da Git: le sessioni restano valide anche dopo i riavvii del backend.
 
 Per lo sviluppo avvia entrambi i processi con:
 
 ```sh
 npm run dev
 ```
+
+Il proxy Vite conserva l'header `Host` del browser per il controllo dell'origine
+delle richieste. Dopo modifiche alla configurazione del proxy, riavvia
+`npm run dev` per applicarle.
 
 Il file utenti e la directory delle sessioni vengono creati al primo avvio e
 sono esclusi da Git. Gli account si registrano dalla pagina `/register` usando
@@ -69,6 +75,36 @@ generano un conflitto anziché sovrascrivere dati. Una bozza del tavolo non invi
 resta nel browser, separata per account e partita; l'interfaccia consente di
 riprovare o ricaricare il server scartando esplicitamente la bozza.
 
+La **campanella quadrata** nell'intestazione mostra il numero di notifiche non
+lette. Apre **Notifiche e storico delle schede** in un fumetto con lo sfondo
+sfocato e i confronti già aperti; si chiude con la croce, Escape o un clic fuori.
+Cronologia e notifiche partono dall'icona e crescono fino al fondo della pagina
+sottostante; con poche voci si fermano all'ultima. La pagina dietro resta
+scorrevole e il fumetto la segue. Se l'elenco supera lo spazio disponibile,
+scorre anche al suo interno; alla riapertura si riparte dalla voce più recente.
+Ogni salvataggio che cambia la scheda di
+un giocatore conserva autore, data e valori prima/dopo. Le modifiche del giocatore
+si applicano subito; il Master può rifiutarle ripristinando soltanto i campi
+coinvolti. Se uno di questi è stato modificato successivamente, il ripristino si
+ferma senza sovrascrivere dati: il Master deve correggere manualmente la scheda.
+I campi distinti, come slot o PF cambiati dopo un'altra modifica, restano conservati.
+Gli elenchi di abilità sono trattati insieme per proteggere anche i riordinamenti.
+Le modifiche del Master sono notificate al giocatore interessato, che può leggerle
+senza rifiutarle. Le modifiche effettuate dal giocatore stesso non compaiono nelle
+sue notifiche; restano visibili al Master. Gli eventuali rifiuti arrivano al
+giocatore come interventi del Master. Le notifiche sono separate da spazio, bordo
+e sfondo, con un accento colorato per quelle non lette.
+Lo storico esclude gli appunti privati, ha pagine di 20 voci e
+rimane salvato fino alla chiusura della sessione; sulle vecchie sessioni comincia
+dai nuovi salvataggi. Segnare una notifica come letta non modifica il combattimento.
+
+Nella pagina del giocatore, sotto l'ingranaggio delle impostazioni della scheda,
+il pulsante quadrato con l'**orologio all'indietro** apre **Cronologia della scheda**.
+Mostra tutti i salvataggi registrati nella sessione, sia del giocatore sia del
+Master, con autore, data, valori prima/dopo ed eventuali rifiuti. Le voci più
+recenti compaiono per prime; **Mostra precedenti** carica altre 20 modifiche.
+La cronologia è in sola lettura e non cambia il conteggio delle notifiche.
+
 **Da fare: migrare la sincronizzazione dal polling ai WebSocket**, per inviare
 gli aggiornamenti ai partecipanti appena avvengono. Conservare autenticazione,
 permessi per partita, selezione dei dati per ruolo e controlli sulle revisioni;
@@ -87,7 +123,8 @@ Il giocatore può uscire da una partita per rendere di nuovo disponibile il
 personaggio. Il Master può rimuovere le proprie schede dal tavolo oppure chiudere
 la partita; i personaggi rimangono sempre nei rispettivi account.
 
-Verifiche: `npm run test:play`, `npm run test:auth` e `node tests/play-ui.mjs`.
+Verifiche: `npm run test:play`, `npm run test:auth`, `node tests/sheet-notifications.mjs`
+e `node tests/play-ui.mjs`.
 Il test del browser avvia frontend e backend isolati, usa due account e un archivio
 temporanei e verifica il proxy HTTP reale, senza modificare i dati del server di sviluppo.
 

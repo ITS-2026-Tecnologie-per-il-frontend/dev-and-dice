@@ -75,9 +75,12 @@ export const catalogForSheet=(data:CreationData|undefined,catalog:Catalog|undefi
 export function activeCatalog(data: rules.CandidateCreationData, language:'it'|'en'): Catalog {
     const catalog = parseCatalog(data.rawCatalog,language)
     const spells = data.reviewedEntities.filter((entity) => entity.kind === 'spell')
-    const matchSpell = (entry: CatalogEntry) => spells.find((entity) => entry.data.ruleset !== 'dnd5e-2024' && entry.data.edition !== '2024'
-        && !String(entry.data.sourceUrl ?? '').includes('2024') && [entity.index,entity.name,entity.nameIt].some((name) => name &&
-            [entry.name,entry.data.englishName,object(entry.data.srdData) ? entry.data.srdData.name : undefined].some((candidate) => typeof candidate === 'string' && normalized(candidate) === normalized(name))))
+    const matchSpell = (entry: CatalogEntry) => {
+        if (entry.data.ruleset==='dnd5e-2024' || entry.data.edition==='2024' || String(entry.data.sourceUrl ?? '').includes('2024')) return undefined
+        const srd=object(entry.data.srdData) ? entry.data.srdData : {},names=[entry.name,entry.data.englishName,srd.name,...(Array.isArray(entry.data.aliases) ? entry.data.aliases : [])]
+        const previous=data.spells.find(spell=>spell.index===srd.index || names.some(name=>typeof name==='string' && normalized(name)===normalized(spell.name)))
+        return (previous ? referenceFor(data,'spells',previous.index) : undefined) ?? spells.find(entity=>[entity.index,entity.name,entity.nameIt].some(name=>name && names.some(candidate=>typeof candidate==='string' && normalized(candidate)===normalized(name))))
+    }
     const abilities:CatalogEntry[] = catalog.abilities.map((entry) => {
         const entity = typeof entry.data.level === 'number' ? matchSpell(entry) : undefined
         if (!entity) return {...entry,label:entry.label+' · fonte aggiuntiva / legacy',data:{...entry.data,ruleStatus:'legacy'}}
@@ -85,7 +88,8 @@ export function activeCatalog(data: rules.CandidateCreationData, language:'it'|'
         const expiresAt=['start-of-next-turn'].includes(expiry) && entity.mechanics.range==='Self' ? 'start'
             : ['end-of-own-next-turn','end-caster-next-turn'].includes(expiry) ? 'end' : undefined
         const duration=/^(?:Concentration,?\s*(?:up to\s*)?|Up to\s*)?(\d+)\s+(round|minute|hour|day)s?$/i.exec(String(entity.mechanics.duration))
-        const rounds=entity.verification.complete ? expiresAt ? 1 : entity.mechanics.duration==='Instantaneous' ? 0 : duration ? Number(duration[1])*({round:1,minute:10,hour:600,day:14400}[duration[2].toLowerCase()] ?? 0) : null : null
+        const durationVerified=entity.verification.mechanics==='verified-fields' && !entity.verification.missingFields.some(field=>field==='duration'||field.startsWith('duration.')||field==='concentration')
+        const rounds=durationVerified ? expiresAt ? 1 : entity.mechanics.duration==='Instantaneous' ? 0 : duration ? Number(duration[1])*({round:1,minute:10,hour:600,day:14400}[duration[2].toLowerCase()] ?? 0) : null : null
         return {...entry,name:language === 'it' ? ruleName(entity) : entity.name,description:ruleDescription(entity),
             rounds,
             label:entity.verification.complete ? 'Incantesimo · manuali 2014' : 'Incantesimo · 2014 · parziale, DM',
@@ -249,7 +253,7 @@ export function knownSpellIds(sheet:CharacterSheet,data:rules.CandidateCreationD
         if (!['class','always','secrets','lore','arcanum'].includes(source)) return []
         if (owner !== cls || preparedOnly && !spellRowState(sheet,Number(row[1]),Number(row[2])).available) return []
         const index=sheet.playerDetails?.[root+'.index']
-        const entity=data.reviewedEntities.find((e) => e.kind === 'spell' && (e.index === index || [e.name,e.nameIt].some((name) => name && normalized(name) === normalized(value))))
+        const entity=(index ? referenceFor(data,'spells',index) : undefined) ?? data.reviewedEntities.find((e) => e.kind === 'spell' && [e.name,e.nameIt].some((name) => name && normalized(name) === normalized(value)))
         return entity ? [entity.id] : []
     })
     return [...new Set([...selected,...verifiedSpellGrants(sheet,data).filter((grant) => grant.classIndex===cls).map((grant) => grant.spellId)])]
@@ -425,14 +429,14 @@ export function restSheet(sheet:CharacterSheet,data:rules.CandidateCreationData,
     return next
 }
 
-export function castSheetSpell(sheet:CharacterSheet,data:rules.CandidateCreationData,id:string,context:Pick<rules.SpellCastContext,'mode'|'slotLevel'|'components'|'armorProficient'|'castingAlternative'|'spellsThisTurn'> & {longCastingCompleted?:boolean}) {
+export function castSheetSpell(sheet:CharacterSheet,data:rules.CandidateCreationData,id:string,context:Pick<rules.SpellCastContext,'mode'|'slotLevel'|'components'|'armorProficient'|'castingAlternative'|'spellsThisTurn'|'manualEffectResolution'> & {longCastingCompleted?:boolean}) {
     const levels=sheetClassLevels(sheet),cls=sheet.playerDetails?.['rules2014.castingClass'] || classId(sheet)
     const pools=rules.multiclassSpellPools(data,levels,sheetSubclassIds(sheet,data))
     if (sheet.playerDetails?.['rules2014.raging']==='true') throw new Error('Durante l’ira non puoi lanciare incantesimi o mantenere concentrazione.')
     const created=Array.from({length:9},(_,i)=>integerValue(sheet.playerDetails?.[`rules2014.createdSlot.${i+1}`]) ?? 0)
     const rows=Object.entries(sheet.playerDetails ?? {}).flatMap(([key,name])=>{
         if (!/^spell\.\d+\.\d+\.name$/.test(key)) return []
-        const root=key.slice(0,-5),index=sheet.playerDetails?.[root+'.index'],entity=data.reviewedEntities.find(e=>e.kind==='spell'&&(e.index===index||[e.name,e.nameIt].some(n=>n&&normalized(n)===normalized(name))))
+        const root=key.slice(0,-5),index=sheet.playerDetails?.[root+'.index'],entity=(index ? referenceFor(data,'spells',index) : undefined) ?? data.reviewedEntities.find(e=>e.kind==='spell'&&[e.name,e.nameIt].some(n=>n&&normalized(n)===normalized(name)))
         return entity ? [{id:entity.id,root,source:sheet.playerDetails?.[root+'.source'],origin:sheet.playerDetails?.[root+'.origin']}] : []
     })
     const secret=cls==='bard' ? rows.find((row)=>row.id===id&&['secrets','lore'].includes(row.source ?? '')) : undefined

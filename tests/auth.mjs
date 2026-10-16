@@ -4,6 +4,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import os from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
+import { createServer } from 'vite'
 import { createApp } from '../server/index.mjs'
 
 test('registration stores password hashes and sessions protect trackers', async (t) => {
@@ -95,4 +96,51 @@ test('registration stores password hashes and sessions protect trackers', async 
   assert.equal(logout.status, 200)
   const loggedOut = await fetch(`${baseUrl}/api/me`, { headers: { Cookie: loginCookie } })
   assert.equal(loggedOut.status, 401)
+})
+
+test('development login survives reloads and backend restarts through the Vite proxy', async (t) => {
+  const dataDir = await mkdtemp(join(os.tmpdir(), 'dev-and-dice-auth-restart-'))
+  const options = { dataDir, production: false, sessionSecret: null }
+  let app = await createApp(options)
+  let server = app.listen(0, '127.0.0.1')
+  await once(server, 'listening')
+  const port = server.address().port
+  const frontend = await createServer({
+    logLevel: 'error',
+    server: { host: '127.0.0.1', port: 0, proxy: { '/api': { target: `http://127.0.0.1:${port}` } } },
+  })
+  t.after(async () => {
+    await frontend.close()
+    await new Promise(resolve => server.close(resolve))
+    await rm(dataDir, { recursive: true, force: true })
+  })
+  await frontend.listen()
+  const origin = `http://127.0.0.1:${frontend.httpServer.address().port}`
+  const headers = { Origin: origin, 'Sec-Fetch-Site': 'same-origin', 'Content-Type': 'application/json' }
+  const body = JSON.stringify({ username: 'Reload', password: 'test-password-reload' })
+  const registration = await fetch(`${origin}/api/register`, { method: 'POST', headers, body })
+  assert.equal(registration.status, 201, await registration.text())
+  const cookie = registration.headers.get('set-cookie')?.split(';', 1)[0]
+  assert.ok(cookie)
+  const me = () => fetch(`${origin}/api/me`, { headers: { Cookie: cookie } })
+  assert.equal((await me()).status, 200, 'Reload restores the authenticated user')
+
+  await new Promise(resolve => server.close(resolve))
+  app = await createApp(options)
+  server = app.listen(port, '127.0.0.1')
+  await once(server, 'listening')
+  assert.equal((await me()).status, 200, 'A backend restart keeps existing cookies valid')
+
+  const login = await fetch(`${origin}/api/login`, { method: 'POST', headers, body })
+  assert.equal(login.status, 200, await login.text())
+  for (const extra of [
+    { Origin: 'https://attacker.invalid' },
+    { Origin: 'null' },
+    { 'Sec-Fetch-Site': 'cross-site' },
+    { Origin: 'https://attacker.invalid', 'X-Forwarded-Host': 'attacker.invalid' },
+  ]) {
+    const rejected = await fetch(`${origin}/api/login`, { method: 'POST', headers: { ...headers, ...extra }, body })
+    assert.equal(rejected.status, 403, 'The proxy must still reject foreign origins')
+  }
+  await assert.rejects(createApp({ dataDir, production: true, sessionSecret: null }), /SESSION_SECRET/)
 })

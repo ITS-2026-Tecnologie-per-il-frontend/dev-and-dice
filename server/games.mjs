@@ -3,6 +3,7 @@ import { readFile, writeFile, rename, unlink } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import express from 'express'
 import { rateLimit } from 'express-rate-limit'
+import { isDeepStrictEqual } from 'node:util'
 
 const fields = 'name kind race characterClass level hitPoints armorClass initiative speed strength dexterity constitution intelligence wisdom charisma notes'.split(' ')
 const numeric = 'hitPoints armorClass initiative strength dexterity constitution intelligence wisdom charisma'.split(' ')
@@ -12,6 +13,24 @@ const idPattern = /^[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}$/i
 const fail = (status, message) => { const error = new Error(message); error.status = status; throw error }
 const integer = value => Number.isSafeInteger(value) && value >= 0
 const validNotes = value => object(value) && typeof value.text === 'string' && value.text.length <= 20_000 && integer(value.revision)
+const valueAt = (sheet,path) => path.reduce((value,key) => object(value) && Object.hasOwn(value,key) ? value[key] : null,sheet)
+function sheetChanges(before,after) {
+  // ponytail: ability lists are atomic; add stable row IDs before merging inverses across reordered entries.
+  const changes=[]
+  for (const key of new Set([...Object.keys(before),...Object.keys(after)])) {
+    if (key==='id') continue
+    const paths=key==='playerDetails' ? [...new Set([...Object.keys(before.playerDetails??{}),...Object.keys(after.playerDetails??{})])].map(field=>[key,field]) : [[key]]
+    for (const path of paths) {
+      const previous=valueAt(before,path),next=valueAt(after,path)
+      if (!isDeepStrictEqual(previous,next)) changes.push({path,before:previous,after:next})
+    }
+  }
+  return changes
+}
+const samePath = (a,b) => a.length===b.length && a.every((part,index)=>part===b[index])
+const validChange = change => object(change) && Array.isArray(change.path)
+  && (change.path.length===1 && [...fields,'abilities','catalogId'].includes(change.path[0]) || change.path.length===2 && change.path[0]==='playerDetails' && typeof change.path[1]==='string' && !['__proto__','constructor','prototype'].includes(change.path[1]))
+  && ['before','after'].every(key=>Object.hasOwn(change,key) && (change[key]===null || typeof change[key]==='string' || change.path[0]==='abilities' && Array.isArray(change[key])))
 
 export function validateSheet(sheet) {
   if (!object(sheet) || !idPattern.test(sheet.id) || !fields.every(key => typeof sheet[key] === 'string')
@@ -22,6 +41,8 @@ export function validateSheet(sheet) {
         && (ability.remainingTurns === undefined || integer(ability.remainingTurns))
         && ['catalogId','description','ruleId','repeatSave'].every(key=>ability[key]===undefined||typeof ability[key]==='string')
         && ['timed','concentration'].every(key=>ability[key]===undefined||typeof ability[key]==='boolean')
+        && (ability.section===undefined||['trait','action','bonus','reaction','legendary','lair'].includes(ability.section))
+        && (ability.spellLevel===undefined || integer(ability.spellLevel) && ability.spellLevel<=9)
         && (ability.expiresAt===undefined||['start','end'].includes(ability.expiresAt)))
       || sheet.catalogId!==undefined&&typeof sheet.catalogId!=='string'
       || sheet.playerDetails !== undefined && (!object(sheet.playerDetails) || !Object.entries(sheet.playerDetails).every(([key,value]) =>
@@ -32,7 +53,7 @@ export function validateSheet(sheet) {
   return structuredClone(sheet)
 }
 
-function validateState(state) {
+export function validateState(state) {
   if (!object(state) || !Array.isArray(state.turns) || !Array.isArray(state.abilities) || state.turns.length > 1000 || state.abilities.length > 2000) fail(400, 'Combattimento non valido.')
   const ids = state.turns.map(turn => turn.id)
   if (new Set(ids).size !== ids.length || !state.turns.every(turn => object(turn) && integer(turn.id)
@@ -42,7 +63,20 @@ function validateState(state) {
   if (state.combat !== null && (!object(state.combat) || !ids.includes(state.combat.activeId) || !Number.isSafeInteger(state.combat.round) || state.combat.round < 1)) fail(400, 'Turno attuale non valido.')
   if (new Set(state.abilities.map(ability => ability.id)).size !== state.abilities.length || !state.abilities.every(ability => object(ability) && integer(ability.id)
     && typeof ability.name === 'string' && durations.includes(ability.duration) && integer(ability.remainingTurns) && typeof ability.active === 'boolean'
-    && (ability.ownerId === null || ids.includes(ability.ownerId)))) fail(400, 'Abilità del combattimento non valide.')
+    && (ability.ownerId === null || ids.includes(ability.ownerId))
+    && ['damageEnabled','instantaneous','requirementsConfirmed','timed','concentration'].every(key=>ability[key]===undefined||typeof ability[key]==='boolean')
+    && (ability.useOption===undefined || typeof ability.useOption==='string' && ability.useOption.length<=250)
+    && (ability.resourceCost===undefined || integer(ability.resourceCost) && ability.resourceCost>=1)
+    && (ability.spellLevel===undefined || integer(ability.spellLevel) && ability.spellLevel<=9)
+    && (ability.castingSource===undefined || ['class','resource','free'].includes(ability.castingSource))
+    && (ability.castingAlternative===undefined || integer(ability.castingAlternative))
+    && (ability.targets===undefined || Array.isArray(ability.targets) && ability.targets.length<=ids.length
+      && new Set(ability.targets.map(target=>target?.id)).size===ability.targets.length
+      && ability.targets.every(target=>object(target) && ids.includes(target.id) && typeof target.damage==='string'
+        && (target.damage==='' || target.damage.trim() && integer(Number(target.damage))) && typeof target.resolved==='boolean'))
+    && (ability.execution===undefined || object(ability.execution) && idPattern.test(ability.execution.id)
+      && ['casting','resolving'].includes(ability.execution.phase) && typeof ability.execution.option==='string' && ability.execution.option.length<=250
+      && integer(ability.execution.cost) && ability.execution.cost>=1 && ability.ownerId!==null && !ability.active))) fail(400, 'Abilità del combattimento non valide.')
   return structuredClone(state)
 }
 
@@ -61,6 +95,10 @@ export async function gamesRouter({ dataDir, authenticate }) {
       if (!idPattern.test(game.id) || !idPattern.test(game.masterId) || typeof game.name !== 'string' || !/^[A-Za-z\d_-]{43}$/.test(game.inviteToken) || !Array.isArray(game.players) || !integer(game.revision)) throw new Error('Partita salvata non valida.')
       if (!game.players.every(player => object(player) && idPattern.test(player.userId) && idPattern.test(player.characterId) && (player.notes === undefined || validNotes(player.notes)))) throw new Error('Partecipazione salvata non valida.')
       validateState(game.state)
+      if (game.notificationRevision!==undefined && !integer(game.notificationRevision) || game.sheetChanges!==undefined && (!Array.isArray(game.sheetChanges) || !game.sheetChanges.every(entry=>object(entry)
+        && [entry.id,entry.characterId,entry.ownerId,entry.actorId].every(id=>idPattern.test(id)) && typeof entry.actorName==='string' && typeof entry.characterName==='string'
+        && ['master','player'].includes(entry.actorRole) && ['applied','rejected'].includes(entry.status) && typeof entry.createdAt==='string'
+        && Array.isArray(entry.readBy) && entry.readBy.every(id=>idPattern.test(id)) && Array.isArray(entry.changes) && entry.changes.length>0 && entry.changes.every(validChange)))) throw new Error('Storico delle modifiche non valido; originale conservato.')
     }
     return db
   }
@@ -96,8 +134,22 @@ export async function gamesRouter({ dataDir, authenticate }) {
   }
   const checkRevision = (record, revision) => { if (record.revision !== revision) fail(409, 'I dati sono cambiati in un’altra schermata. Ricarica prima di salvare; le modifiche aperte sono conservate.') }
   const summary = (game,user) => ({ id:game.id, name:game.name, role:game.masterId === user ? 'master' : 'player', revision:game.revision })
+  const visibleChanges = (game,user) => (game.sheetChanges??[]).filter(entry=>game.masterId===user || entry.ownerId===user && (entry.actorId!==user || entry.status==='rejected') && game.players.some(player=>player.userId===user && player.characterId===entry.characterId))
+  const notificationSummary = (game,user) => ({revision:game.notificationRevision??0,unreadCount:visibleChanges(game,user).filter(entry=>!entry.readBy.includes(user)).length})
+  const canReject = (game,entry) => entry.actorRole==='player' && entry.status==='applied' && game.players.some(player=>player.characterId===entry.characterId && player.userId===entry.ownerId)
+  function saveSheet(game,record,sheet,req) {
+    const changes=sheetChanges(record.sheet,sheet)
+    if (!changes.length) return
+    if (game?.players.some(player=>player.characterId===record.id && player.userId===record.ownerId)) {
+      // ponytail: store only changed fields; the JSON journal grows with the session. Move it to paginated DB storage with the existing single-file store.
+      ;(game.sheetChanges??=[]).push({id:randomUUID(),characterId:record.id,characterName:sheet.name,ownerId:record.ownerId,actorId:req.userId,actorName:req.username,
+        actorRole:game.masterId===req.userId?'master':'player',createdAt:new Date().toISOString(),status:'applied',readBy:[req.userId],changes})
+      game.notificationRevision=(game.notificationRevision??0)+1
+    }
+    record.sheet=sheet;record.revision++
+  }
   function view(db,game,user) {
-    const result = summary(game,user)
+    const result = {...summary(game,user),notifications:notificationSummary(game,user)}
     if (result.role === 'master') {
       const characters = db.characters.filter(character => character.gameId === game.id)
       const state = structuredClone(game.state)
@@ -140,8 +192,8 @@ export async function gamesRouter({ dataDir, authenticate }) {
     checkRevision(record,req.body?.revision)
     const sheet = validateSheet(req.body?.sheet)
     if (sheet.id !== record.id || record.gameId && record.sheet.kind === 'PG' && sheet.kind !== 'PG') fail(400, 'Identità e tipo del personaggio non modificabili nella sessione.')
-    record.sheet = sheet; record.revision++
     const game = db.games.find(game => game.id === record.gameId)
+    saveSheet(game,record,sheet,req)
     if (game) game.revision++
     return record
   })))
@@ -175,6 +227,46 @@ export async function gamesRouter({ dataDir, authenticate }) {
     const db = await read()
     res.json(view(db,gameFor(db,req.params.id,req.userId),req.userId))
   })
+  router.get(['/games/:id/notifications','/games/:id/history'], async (req,res) => {
+    const db=await read(),game=gameFor(db,req.params.id,req.userId),history=/\/history\/?$/i.test(req.path)
+    const participant=game.players.find(player=>player.userId===req.userId)
+    if (history&&!participant) fail(403,'La cronologia personale è riservata al giocatore della scheda.')
+    const character=history ? db.characters.find(record=>record.id===participant.characterId && record.ownerId===req.userId && record.gameId===game.id) : undefined
+    if (history&&!character) fail(404,'Scheda non disponibile.')
+    const entries=(history ? (game.sheetChanges??[]).filter(entry=>entry.ownerId===req.userId && entry.characterId===participant.characterId) : visibleChanges(game,req.userId)).toReversed()
+    const before=req.query.before
+    if (before!==undefined && (typeof before!=='string' || !entries.some(entry=>entry.id===before))) fail(400,'Pagina dello storico non valida. Riapri le notifiche.')
+    const start=before===undefined?0:entries.findIndex(entry=>entry.id===before)+1,items=entries.slice(start,start+20)
+    res.json({revision:history ? character.revision : game.notificationRevision??0,items:items.map(entry=>({...entry,read:entry.readBy.includes(req.userId),readBy:undefined,canReject:!history && game.masterId===req.userId && canReject(game,entry)})),next:start+items.length<entries.length?items.at(-1).id:null})
+  })
+  router.post('/games/:id/notifications/:changeId/read', async (req,res) => res.json(await write(db=>{
+    const game=gameFor(db,req.params.id,req.userId),entry=visibleChanges(game,req.userId).find(entry=>entry.id===req.params.changeId)
+    if (!entry) fail(404,'Notifica non disponibile.')
+    if (!entry.readBy.includes(req.userId)) {entry.readBy.push(req.userId);game.notificationRevision=(game.notificationRevision??0)+1}
+    return notificationSummary(game,req.userId)
+  })))
+  router.post('/games/:id/notifications/:changeId/reject', async (req,res) => res.json(await write(db=>{
+    const game=gameFor(db,req.params.id,req.userId)
+    if (game.masterId!==req.userId) fail(403,'Solo il Master può rifiutare le modifiche dei giocatori.')
+    const entry=(game.sheetChanges??[]).find(entry=>entry.id===req.params.changeId)
+    if (!entry || entry.actorRole!=='player') fail(404,'Modifica del giocatore non disponibile.')
+    if (entry.status==='rejected') return view(db,game,req.userId)
+    checkRevision(game,req.body?.revision)
+    const record=db.characters.find(record=>record.id===entry.characterId && record.gameId===game.id && record.ownerId===entry.ownerId)
+    if (!record || !canReject(game,entry)) fail(409,'Il personaggio non è più in questa sessione.')
+    const subsequent=game.sheetChanges.slice(game.sheetChanges.indexOf(entry)+1).filter(item=>item.characterId===entry.characterId)
+    if (entry.changes.some(change=>!isDeepStrictEqual(valueAt(record.sheet,change.path),change.after) || subsequent.some(item=>item.changes.some(later=>samePath(change.path,later.path))))) fail(409,'Ripristino non applicato: uno dei campi è stato modificato successivamente. Controlla lo storico e correggi la scheda manualmente; nessun dato è stato sovrascritto.')
+    const restored=structuredClone(record.sheet)
+    for (const change of entry.changes) {
+      const target=change.path.length===2 ? (restored.playerDetails??={}) : restored,key=change.path.at(-1)
+      if (change.before===null) delete target[key]
+      else target[key]=structuredClone(change.before)
+    }
+    record.sheet=validateSheet(restored);record.revision++
+    entry.status='rejected';entry.rejectedAt=new Date().toISOString();entry.readBy=[req.userId]
+    game.notificationRevision=(game.notificationRevision??0)+1;game.revision++
+    return view(db,game,req.userId)
+  })))
   router.put('/games/:id/notes', async (req,res) => res.json(await write(db => {
     const game = gameFor(db,req.params.id,req.userId)
     const player = game.players.find(player => player.userId === req.userId)
@@ -201,9 +293,11 @@ export async function gamesRouter({ dataDir, authenticate }) {
     checkRevision(game,req.body?.revision)
     const record=db.characters.find(character=>character.id===req.params.characterId&&character.gameId===game.id&&character.ownerId===req.userId)
     if(!record)fail(403,'Il Master può rimuovere soltanto le proprie schede. I personaggi dei giocatori restano ai loro proprietari.')
-    record.gameId=null;record.revision++
     const ids=game.state.turns.filter(turn=>turn.sheet?.id===record.id).map(turn=>turn.id)
+    if (game.state.abilities.some(ability=>ability.execution && (ids.includes(ability.ownerId) || ability.targets?.some(target=>ids.includes(target.id))))) fail(409,'Concludi o interrompi prima l’utilizzo che coinvolge questa creatura.')
+    record.gameId=null;record.revision++
     game.state.turns=game.state.turns.filter(turn=>!ids.includes(turn.id));game.state.abilities=game.state.abilities.filter(ability=>!ids.includes(ability.ownerId))
+    for (const ability of game.state.abilities) if (ability.targets) ability.targets=ability.targets.filter(target=>!ids.includes(target.id))
     if(ids.includes(game.state.combat?.activeId))game.state.combat=game.state.turns.length?{...game.state.combat,activeId:game.state.turns[0].id}:null
     game.revision++
     return view(db,game,req.userId)
@@ -220,7 +314,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
       else {
         if (record.gameId !== game.id) fail(403, 'Questo personaggio non appartiene alla sessione.')
         if (record.sheet.kind === 'PG' && record.ownerId !== req.userId && sheet.kind !== 'PG') fail(400, 'Il personaggio del giocatore deve restare un PG.')
-        if (JSON.stringify(record.sheet) !== JSON.stringify(sheet)) {record.sheet = sheet;record.revision++}
+        saveSheet(game,record,sheet,req)
       }
     }
     for (const turn of state.turns) if (turn.sheet) {
@@ -262,6 +356,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
     const ids = game.state.turns.filter(turn => turn.sheet?.id === record.id).map(turn => turn.id)
     game.state.turns=game.state.turns.filter(turn => !ids.includes(turn.id))
     game.state.abilities=game.state.abilities.filter(ability => !ids.includes(ability.ownerId))
+    for (const ability of game.state.abilities) if (ability.targets) ability.targets=ability.targets.filter(target=>!ids.includes(target.id))
     if (ids.includes(game.state.combat?.activeId)) game.state.combat=game.state.turns.length ? {...game.state.combat,activeId:game.state.turns[0].id} : null
     game.players=game.players.filter(player => player.userId !== req.userId);game.revision++
     return {ok:true}

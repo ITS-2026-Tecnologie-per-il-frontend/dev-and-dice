@@ -10,7 +10,8 @@ export const characterFields = {
 
 export const numericCharacterFields = ['hitPoints', 'armorClass', 'initiative', 'strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const
 
-export type SheetAbility = { name: string; duration: keyof typeof durationTurns; catalogId?: string; remainingTurns?: number; timed?: boolean; description?: string; expiresAt?:'start'|'end'; repeatSave?:string;ruleId?:string;concentration?:boolean }
+export const creatureAbilitySections = { trait:'Abilità', action:'Azioni', bonus:'Azioni bonus', reaction:'Reazioni', legendary:'Azioni leggendarie', lair:'Azioni di tana' } as const
+export type SheetAbility = { name: string; duration: keyof typeof durationTurns; catalogId?: string; remainingTurns?: number; timed?: boolean; description?: string; expiresAt?:'start'|'end'; repeatSave?:string;ruleId?:string;concentration?:boolean;section?:keyof typeof creatureAbilitySections;spellLevel?:number }
 
 export type CharacterSheet = { id: string; abilities: SheetAbility[]; catalogId?: string; playerDetails?: Record<string, string> } & Record<keyof typeof characterFields, string>
 
@@ -57,6 +58,8 @@ export function parseCharacterSheets(raw: string | null): CharacterSheet[] {
             && (!('repeatSave' in ability) || ability.repeatSave===undefined || typeof ability.repeatSave==='string')
             && (!('ruleId' in ability) || ability.ruleId===undefined || typeof ability.ruleId==='string')
             && (!('concentration' in ability) || ability.concentration===undefined || typeof ability.concentration==='boolean')
+            && (!('section' in ability) || ability.section===undefined || typeof ability.section==='string' && Object.hasOwn(creatureAbilitySections,ability.section))
+            && (!('spellLevel' in ability) || ability.spellLevel===undefined || Number.isSafeInteger(ability.spellLevel) && Number(ability.spellLevel)>=0 && Number(ability.spellLevel)<=9)
         )))
         && numericCharacterFields.every((key) => sheet[key] === '' || (sheet[key].trim() !== '' && Number.isSafeInteger(Number(sheet[key]))))
     ) || new Set(value.map((sheet) => sheet.id)).size !== value.length) {
@@ -102,6 +105,13 @@ export function normalizeHitPoints(value: string): string {
     return value.replace(/^0+(?=\d)/, '')
 }
 
+// ponytail: round only the display; saved weights and totals retain their precision.
+const weightFormat = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 2, useGrouping: false })
+export function formatWeight(value: string): string {
+    const weight = Number(value.replace(',', '.'))
+    return value.trim() && Number.isFinite(weight) ? weightFormat.format(weight) : value
+}
+
 export function inventoryTotalWeight(quantity: string, weight: string): string {
     if (!weight.trim()) return ''
     const count = Number(quantity.trim() || 1)
@@ -120,7 +130,7 @@ export function syncTurnStats<T extends SheetStats & { description: string; shee
 
 export function initiativeBonus(sheet?: CharacterSheet): string {
     if (!sheet) return ''
-    if (sheet.playerDetails?.['creation.enabled'] === 'true' && sheet.playerDetails.initiativeBonus !== undefined) return signedBonus(integerValue(sheet.playerDetails.initiativeBonus))
+    if (sheet.kind === 'PG' && sheet.playerDetails?.['creation.enabled'] === 'true' && sheet.playerDetails.initiativeBonus !== undefined) return signedBonus(integerValue(sheet.playerDetails.initiativeBonus))
     const dex = abilityModifier(sheet.dexterity)
     const extra = integerValue(sheet.playerDetails?.['wizard.initiativeExtra']) ?? 0
     return signedBonus(dex === undefined ? undefined : dex + extra)

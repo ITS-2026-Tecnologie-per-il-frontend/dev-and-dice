@@ -65,7 +65,7 @@ export const subclassOptions = (sheet: CharacterSheet, data: CreationData) => da
 export const labelOf = (item: Ref) => item.nameIt ?? item.name
 export const abilityFromShort = (short: string) => abilityKeys.find((key) => key.startsWith(short))
 export const modifier = abilityModifier
-export const creationEnabled = (sheet: CharacterSheet) => sheet.playerDetails?.['creation.enabled'] === 'true'
+export const creationEnabled = (sheet: CharacterSheet) => sheet.kind === 'PG' && sheet.playerDetails?.['creation.enabled'] === 'true'
 
 export function characterFieldValue(sheet: CharacterSheet, key: string): string {
     key = appearanceFieldKey(key)

@@ -1473,12 +1473,18 @@ export type SpellCastContext={
     landTerrain?:LandTerrain;dmApproved?:boolean;alignment?:string
     additionalAccess?:{originId:string;selectedSpellIds:string[]}
     castingAlternative?:number;spellsThisTurn?:{level:number;unit:string}[]
+    manualEffectResolution?:boolean
     components:{canSpeak:boolean;freeSomaticHand:boolean;materialHand:boolean;materialSource:'specific'|'pouch'|'focus'|'none';focusClassIndex?:string;specificMaterialsConfirmed:boolean}
     armorProficient:boolean
 }
 /** Validated cast plan; target/damage resolution and exceptional feature casting stay separate. */
 export function spellCastPlan(data:CandidateCreationData,id:string,context:SpellCastContext){
-    const pools=multiclassSpellPools(data,context.classLevels,context.subclassIds),spell=fighterFeature(data,id),m=spell.mechanics
+    const pools=multiclassSpellPools(data,context.classLevels,context.subclassIds),candidate=data.reviewedEntities.find(entity=>entity.id===id)
+    // Manual target/damage resolution never grants permission to skip unverified casting requirements.
+    const manualEffect=context.manualEffectResolution===true && candidate?.kind==='spell' && candidate.verification.identity==='verified'
+        && candidate.verification.mechanics==='verified-fields' && candidate.verification.missingFields.length>0
+        && candidate.verification.missingFields.every(field=>field.startsWith('effect.') || field.startsWith('upcast.'))
+    const spell=manualEffect ? candidate : fighterFeature(data,id),m=spell.mechanics
     if(context.edition!=='2014' || spell.kind!=='spell' || !context.armorProficient)throw new Error('Lancio 2014 o competenza nell’armatura non validi.')
     const cls=context.classIndex,level=m.level as number,ownLevel=context.classLevels[cls] ?? 0
     const classRow=data.reviewedEntities.find((e)=>e.id==='phb2014:class:'+cls)

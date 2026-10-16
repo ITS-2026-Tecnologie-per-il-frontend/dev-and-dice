@@ -7,7 +7,7 @@ import { parseCatalog, sheetWithCombatSpells } from '../src/utils/Catalog.ts'
 import { newCharacterSheet, parseCharacterSheets } from '../src/utils/CharacterSheets.ts'
 import { applyCreation, characterFieldValue, spellRules, spellSelection, translatedCreationData, updateCharacterField, withWizardCatalog } from '../src/utils/PlayerCreation.ts'
 import { randomCharacter } from '../src/utils/RandomCharacter.ts'
-import { hasOtherSpell, spellNameLookup, spellNameRoots } from '../src/utils/SpellPage.ts'
+import { favoriteSpellCapacity, favoriteSpellOptions, favoriteSpellSlots, setFavoriteSpell, hasOtherSpell, spellNameLookup, spellNameRoots } from '../src/utils/SpellPage.ts'
 import { spellRowState } from '../src/utils/Spellcasting.ts'
 
 const json = (name) => JSON.parse(readFileSync(new URL(`../public/data/${name}.json`,import.meta.url),'utf8'))
@@ -35,6 +35,40 @@ roots=spellNameRoots(manual,label)
 assert.ok(!hasOtherSpell(roots.get('class').get(label('Fireball')),'spell.1.0'),'Clearing a duplicate must immediately free its option')
 assert.ok(hasOtherSpell(roots.get('class').get(label('Fireball')),'spell.1.1'))
 
+const favoriteSeed={...newCharacterSheet(),name:'Preferiti',playerDetails:{
+    'spell.1.0.name':'Shield','spell.1.0.index':'shield','spell.1.0.prepared':'false',
+    'spell.1.1.name':label('Shield'),'spell.1.1.source':'item',
+    'spell.0.0.name':'Fire Bolt','spell.0.0.index':'fire-bolt',
+    'spell.1.7.name':'Magia personale','slots.1.used':'2','favoriteSpell.0.effect':'Appunti manuali da conservare',
+}}
+assert.equal(favoriteSpellOptions(favoriteSeed,catalog).length,3,'The picker lists owned spells and collapses duplicate sources and translated aliases')
+assert.equal(favoriteSpellOptions(favoriteSeed,catalog)[0].level,0)
+const favored=setFavoriteSpell(favoriteSeed,'spell.1.1',data,catalog)
+assert.equal(favored.playerDetails['favoriteSpell.1.name'],label('Shield'),'A partial manual favorite occupies its slot')
+assert.equal(favored.playerDetails['favoriteSpell.0.effect'],'Appunti manuali da conservare')
+assert.equal(favored.playerDetails['favoriteSpell.1.level'],'1')
+assert.ok(favored.playerDetails['favoriteSpell.1.castingTime'])
+assert.ok(favored.playerDetails['favoriteSpell.1.components'].includes('V'))
+assert.ok(favored.playerDetails['favoriteSpell.1.effect'])
+assert.deepEqual(Object.fromEntries(Object.entries(favored.playerDetails).filter(([key])=>!key.startsWith('favoriteSpell.1.'))),favoriteSeed.playerDetails,'Favorites do not change preparation, spell ownership, notes or spent slots')
+assert.equal(parseCharacterSheets(JSON.stringify([favored]))[0].playerDetails['favoriteSpell.1.name'],label('Shield'))
+assert.throws(()=>setFavoriteSpell(favored,'spell.1.0',data,catalog),/già/)
+assert.throws(()=>setFavoriteSpell(favored,'spell.9.99',data,catalog),/presente/)
+for (const index of [-1,7,1.5,NaN]) assert.throws(()=>setFavoriteSpell(favored,'spell.0.0',data,catalog,index),/non valido/)
+const full={...favoriteSeed,playerDetails:{...favoriteSeed.playerDetails,...Object.fromEntries(Array.from({length:favoriteSpellCapacity},(_,i)=>[`favoriteSpell.${i}.name`,`Preferito ${i}`]))}}
+const fullBefore=JSON.stringify(full)
+assert.throws(()=>setFavoriteSpell(full,'spell.0.0',data,catalog),/occupati/)
+assert.equal(JSON.stringify(full),fullBefore,'A full list is never overwritten by Add to favorites')
+const replaced=setFavoriteSpell(full,'spell.0.0',data,catalog,3)
+assert.equal(replaced.playerDetails['favoriteSpell.3.name'],label('Fire Bolt'),'Choosing a slot explicitly replaces only that favorite')
+assert.equal(replaced.playerDetails['favoriteSpell.2.name'],'Preferito 2')
+assert.equal(setFavoriteSpell(favoriteSeed,'spell.1.7').playerDetails['favoriteSpell.1.name'],'Magia personale','Custom spells remain selectable without a catalog')
+assert.equal(favoriteSpellSlots({...newCharacterSheet(),playerDetails:{'favoriteSpell.0.ritual':'false'}})[0].occupied,false)
+const granted={...favoriteSeed,playerDetails:{...favoriteSeed.playerDetails,spellGrants:JSON.stringify([{index:'light',name:'Light',level:0,source:'racial',note:'Trucchetto razziale'}])}}
+assert.equal(favoriteSpellOptions(granted,catalog).length,4,'Granted racial and subclass spells are also owned spells')
+assert.equal(setFavoriteSpell(granted,'grant:light',data,catalog).playerDetails['favoriteSpell.1.name'],label('Light'))
+assert.throws(()=>setFavoriteSpell(granted,'grant:unknown',data,catalog),/presente/)
+
 function seeded(seed) { return () => { seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/2**32 } }
 const server=await createServer({server:{middlewareMode:true},appType:'custom'})
 try {
@@ -45,6 +79,11 @@ try {
         const original=JSON.stringify(sheet)
         const render=(source)=>renderToStaticMarkup(createElement(PlayerSheet,{sheet:source,catalog,creationData:data,exportPage:2,onChange:()=>{}}))
         const html=render(sheet)
+        if (template!=='generic') {
+            assert.ok(html.includes('Aggiungi ai preferiti'),'The spell details menu offers favorites')
+            const fullMarkup=render({...sheet,playerDetails:{...sheet.playerDetails,...Object.fromEntries(Array.from({length:favoriteSpellCapacity},(_,i)=>[`favoriteSpell.${i}.name`,`Preferito ${i}`]))}})
+            assert.ok(fullMarkup.includes('Tutti i 7 posti sono occupati'),'Full favorites explain how to free a slot')
+        }
         assert.equal(JSON.stringify(sheet),original,'Rendering must not mutate saved character data')
         assert.equal((html.match(/class="player-spell-entry"/g) ?? []).length,72,'Retain every existing row and the page layout')
         const candidate=spellRules(sheet,data).spells.find((spell)=>spell.level===1)
@@ -58,4 +97,4 @@ try {
         assert.ok(Number.isFinite(spellSelection(reopened,data).prepared))
     }
 } finally { await server.close() }
-console.log('Spell page checks passed: translations, alias precedence, duplicate/source independence, clearing, layout, edits, preparation, slots, persistence and combat spells.')
+console.log('Spell page checks passed: translations, duplicates, favorites and seven-slot capacity, catalog details, manual notes, preparation, slots, layout, persistence and combat spells.')

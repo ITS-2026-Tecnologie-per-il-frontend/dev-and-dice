@@ -55,8 +55,12 @@ const { updateCharacterField } = await import('../src/utils/PlayerCreation.ts')
 const inventorySheet = updateCharacterField(addInventoryItem(legacy, data, 'Borsa delle stelle'), 'inventory.0.1', '1.23456')
 const linkedInventory = setWornInventoryReferences(inventorySheet, 'worn.Vita', [inventoryItems(inventorySheet)[0].id])
 const inventoryMarkup = renderToStaticMarkup(createElement(InventoryEditor, { sheet: linkedInventory, data, onChange() {}, target: { field: 'worn.Vita', label: 'Vita' } }))
-assert.ok(inventoryMarkup.includes('1,235 kg') && inventoryMarkup.includes('multiple=""') && inventoryMarkup.includes('selected=""'), 'Readable weights and multiple-item picker must retain the selected reference')
+assert.ok(inventoryMarkup.includes('1,23 kg') && inventoryMarkup.includes('value="1,23"') && inventoryMarkup.includes('multiple=""') && inventoryMarkup.includes('selected=""'), 'Two-decimal weights and multiple-item picker must retain the selected reference')
 assert.equal(linkedInventory.playerDetails['inventory.0.1'], '1.23456', 'Displayed rounding must preserve stored precision')
+for (const template of ['generic','wizard','wizard-pdf','barbarian']) {
+    const formatted = renderToStaticMarkup(createElement(PlayerSheet, { sheet: {...linkedInventory,playerDetails:{...linkedInventory.playerDetails,'sheet.template':template}}, creationData:data, exportPage:1, onChange() {} }))
+    assert.ok(formatted.includes('value="1,23"'), `${template} must show two-decimal inventory weights`)
+}
 console.log('Inventory UI checks passed: readable weights, stored precision and multiple-item linking.')
 
 const { WizardSpellcasting } = await import('../src/components/WizardSpellcasting.tsx')

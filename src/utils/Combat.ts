@@ -69,10 +69,20 @@ export type Ability = {
     repeatSave?:string
     ruleId?:string
     concentration?:boolean
+    spellLevel?:number
+    castingSource?:'class'|'resource'|'free'
+    castingAlternative?:number
+    useOption?:string
+    resourceCost?:number
+    damageEnabled?:boolean
+    instantaneous?:boolean
+    requirementsConfirmed?:boolean
+    targets?:{id:number;damage:string;resolved:boolean}[]
+    execution?:{id:string;phase:'casting'|'resolving';option:string;cost:number}
 }
 
 export function advanceAbilityDurations(abilities: Ability[]): Ability[] {
-    return abilities.map((ability) => ability.active && ability.timed !== false && !ability.expiresAt ? { ...ability, remainingTurns: Math.max(0, ability.remainingTurns - 1) } : ability)
+    return abilities.map((ability) => ability.active && !ability.execution && ability.timed !== false && !ability.expiresAt ? { ...ability, remainingTurns: Math.max(0, ability.remainingTurns - 1) } : ability)
 }
 
 export function activateAbility(ability: Ability, combat?:Combat|null, participants:Pick<Participant,'id'>[]=[]): Ability {

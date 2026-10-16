@@ -64,8 +64,11 @@ export function parseCatalog(raw: unknown, language: 'it' | 'en' = 'it'): Catalo
 }
 
 export function templateFromCatalog(entry: CatalogEntry): SheetAbility {
-    const duration = entry.rounds === 0 ? 'Senza conteggio' : (Object.keys(durationTurns) as SheetAbility['duration'][]).find((key) => durationTurns[key] === entry.rounds) ?? 'Personalizzata'
+    const mechanics=entry.data.mechanics as {duration?:unknown}|undefined
+    const untilDispelled=typeof mechanics?.duration==='string' && /^Until dispelled(?: or triggered)?$/i.test(mechanics.duration)
+    const duration = entry.rounds === 0 || untilDispelled ? 'Senza conteggio' : (Object.keys(durationTurns) as SheetAbility['duration'][]).find((key) => durationTurns[key] === entry.rounds) ?? 'Personalizzata'
     return { name: entry.name, catalogId: entry.id, duration, remainingTurns: entry.rounds ?? 0, timed: duration !== 'Senza conteggio',
+        ...(typeof entry.data.level==='number' ? {spellLevel:entry.data.level} : {}),
         ...(entry.data.expiresAt==='start'||entry.data.expiresAt==='end' ? {expiresAt:entry.data.expiresAt} : {}),
         ...(typeof entry.data.repeatSave==='string' ? {repeatSave:entry.data.repeatSave} : {}),
         ...(typeof entry.data.referenceId==='string' ? {ruleId:entry.data.referenceId} : {}),
@@ -83,14 +86,14 @@ export function sheetWithCombatSpells(sheet: CharacterSheet, catalog: Catalog, a
         const spell = catalog.abilities.find((entry) => typeof entry.data.level === 'number' &&
             (normalized(entry.name) === normalized(name) || (Array.isArray(entry.data.aliases) && entry.data.aliases.some((alias) => typeof alias === 'string' && normalized(alias) === normalized(name)))))
         if (abilities.some((ability) => normalized(ability.name) === normalized(name) || (spell && (ability.catalogId === spell.id || normalized(ability.name) === normalized(spell.name))))) continue
-        const template = spell ? templateFromCatalog(spell) : { name, duration: 'Personalizzata' as const, remainingTurns: 0 }
+        const template = spell ? templateFromCatalog(spell) : { name, spellLevel:Number(level), duration: 'Personalizzata' as const, remainingTurns: 0 }
         const note = sheet.playerDetails?.[`spell.${level}.${index}.note`]
         abilities.push(note ? { ...template, description: note } : template)
     }
     for (const grant of savedSpellGrants(sheet)) {
         const spell = catalog.abilities.find((entry) => typeof entry.data.level === 'number' && (normalized(entry.name) === normalized(grant.name)
             || (Array.isArray(entry.data.aliases) && entry.data.aliases.some((alias) => typeof alias === 'string' && normalized(alias) === normalized(grant.name)))))
-        const template = spell ? templateFromCatalog(spell) : { name: grant.name, duration: 'Personalizzata' as const, remainingTurns: 0 }
+        const template = spell ? templateFromCatalog(spell) : { name: grant.name, spellLevel:grant.level, duration: 'Personalizzata' as const, remainingTurns: 0 }
         if (!abilities.some((ability) => (template.catalogId && ability.catalogId === template.catalogId) || normalized(ability.name) === normalized(template.name))) abilities.push({ ...template, description: grant.note })
     }
     return { ...sheet, abilities }

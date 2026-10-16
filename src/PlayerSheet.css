@@ -81,8 +81,8 @@
 .player-score { padding: 10px 4px; border: 3px double var(--paper-line); border-radius: 12px 2px; text-align: center; background: #faf9f6; }
 .player-score-label { display: block; font-size: 9px; font-weight: 650; text-transform: uppercase; }
 .player-score input { display: block; box-sizing: border-box; width: 36px; height: 36px; margin: 8px auto -22px; padding: 3px 0; border: 2px solid var(--paper-line); border-radius: 50%; background: #fff; text-align: center; font-size: 14px; font-weight: 700; }
-.player-score > input[type='number'] { appearance: textfield; -moz-appearance: textfield; }
-.player-score > input[type='number']::-webkit-inner-spin-button, .player-score > input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.player-paper-statistics input[type='number'] { appearance: textfield; -moz-appearance: textfield; }
+.player-paper-statistics input[type='number']::-webkit-inner-spin-button, .player-paper-statistics input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .player-field-no-spinner > input[type='number'] { appearance: textfield; -moz-appearance: textfield; }
 .player-field-no-spinner > input[type='number']::-webkit-inner-spin-button, .player-field-no-spinner > input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .player-score > .player-score-modifier { display: block; margin: 0; padding: 2px 0; border: 0; border-radius: 0; background: transparent; font-size: 24px; font-weight: 700; }
@@ -258,6 +258,9 @@
 .player-wizard-magic-combat summary { font-size: 9px; cursor: pointer; }
 .player-wizard-magic-combat details[open] { grid-column: 1 / -1; }
 .player-wizard-favorites { flex: 1; }
+.favorite-spell-dialog .player-field { margin: 16px 0; }
+.favorite-spell-dialog select { width: 100%; }
+.favorite-spell-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .player-wizard-favorite { display: grid; gap: 4px; padding-bottom: 6px; border-bottom: 1px solid var(--paper-line); flex: 1; }
 .player-wizard-favorite:last-child { border-bottom: 0; }
 .player-wizard-favorite-top { display: grid; grid-template-columns: 30px minmax(0, 1fr) 52px 65px; gap: 4px; }

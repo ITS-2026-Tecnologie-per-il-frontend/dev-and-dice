@@ -1,4 +1,4 @@
-import { useId, useRef } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useDialogDismiss } from '../utils/Dialog.ts'
 import type { CatalogEntry } from '../utils/Catalog'
 
@@ -78,46 +78,49 @@ function InfoFields({ values, scores = false }: { values: Record<string, unknown
     ))}</dl>
 }
 
-type Props = { entry?: CatalogEntry; name: string; description?: string; fields?: Record<string, unknown> }
-export function InfoButton({ entry, name, description, fields = {} }: Props) {
+type Props = { entry?: CatalogEntry; name: string; description?: string; fields?: Record<string, unknown>; label?: string }
+export function InfoButton({ entry, name, description, fields = {}, label = 'Altro' }: Props) {
     const dismissDialog = useDialogDismiss()
     const dialog = useRef<HTMLDialogElement>(null)
     const heading = useId()
-    const details = { ...entry?.data, ...fields }
-    const grouped = ['abilityScores', 'stats', 'durationInfo', 'facts', 'sections']
-    const summary = Object.fromEntries(Object.entries(details).filter(([key]) => ![
-        'id', 'name', 'description', 'sourceUrl', 'srdData', 'slug', 'abilityIds', 'creatureId', 'catalogId', 'licenseId', ...grouped,
-    ].includes(key)))
-    const text = entry?.description || description
-    const sections = entry?.type === 'creature' ? creatureSections(entry) : []
-    const isLeftSection = (title: string) => title === 'Abilità' || title === 'Azioni leggendarie'
-    const columns = [sections.filter(([title]) => isLeftSection(title)), sections.filter(([title]) => !isLeftSection(title))].filter((column) => column.length)
-    return (
-        <>
-            <button type="button" className="more-info" aria-label={`Altro su ${name || 'questa card'}`} onClick={() => dialog.current?.showModal()}>Altro</button>
-            <dialog ref={dialog} className="character-dialog info-dialog" aria-labelledby={heading} {...dismissDialog}>
-                <div className="dialog-header"><h2 id={heading}>{name || 'Dettagli'}</h2><button autoFocus type="button" className="delete-turn" aria-label="Chiudi dettagli" onClick={() => dialog.current?.close()}>×</button></div>
-                {entry && <p className="library-help">{entry.label}</p>}
-                <section className="info-section" aria-label="Dati principali"><InfoFields values={summary} /></section>
-                {grouped.map((key) => {
-                    const values = details[key]
-                    if (!values || typeof values !== 'object' || Array.isArray(values)) return null
-                    return <section className={`info-section${key === 'sections' ? ' info-prose' : ''}`} key={key}>
-                        <h3>{labels[key]}</h3><InfoFields values={values as Record<string, unknown>} scores={key === 'abilityScores'} />
+    const [open,setOpen]=useState(false)
+    useEffect(()=>{if(open)dialog.current?.showModal()},[open])
+    function content() {
+        const details = { ...entry?.data, ...fields }
+        const grouped = ['abilityScores', 'stats', 'durationInfo', 'facts', 'sections']
+        const summary = Object.fromEntries(Object.entries(details).filter(([key]) => ![
+            'id', 'name', 'description', 'sourceUrl', 'srdData', 'slug', 'abilityIds', 'creatureId', 'catalogId', 'licenseId', ...grouped,
+        ].includes(key)))
+        const text = entry?.description || description
+        const sections = entry?.type === 'creature' ? creatureSections(entry) : []
+        const isLeftSection = (title: string) => title === 'Abilità' || title === 'Azioni leggendarie'
+        const columns = [sections.filter(([title]) => isLeftSection(title)), sections.filter(([title]) => !isLeftSection(title))].filter((column) => column.length)
+        return <>
+            <div className="dialog-header"><h2 id={heading}>{name || 'Dettagli'}</h2><button autoFocus type="button" className="delete-turn" aria-label="Chiudi dettagli" onClick={() => dialog.current?.close()}>×</button></div>
+            {entry && <p className="library-help">{entry.label}</p>}
+            <section className="info-section" aria-label="Dati principali"><InfoFields values={summary} /></section>
+            {grouped.map((key) => {
+                const values = details[key]
+                if (!values || typeof values !== 'object' || Array.isArray(values)) return null
+                return <section className={`info-section${key === 'sections' ? ' info-prose' : ''}`} key={key}>
+                    <h3>{labels[key]}</h3><InfoFields values={values as Record<string, unknown>} scores={key === 'abilityScores'} />
+                </section>
+            })}
+            {text && !details.sections && (entry?.type === 'creature' ? (
+                <div className="info-ability-sections">{columns.map((column, index) => (
+                    <div className="info-ability-column" key={index}>{column.map(([title, blocks]) => (
+                    <section className="info-section info-panel" key={title} aria-label={title}>
+                        <h3>{title}</h3><p className="info-description">{blocks.join('\n\n')}</p>
                     </section>
-                })}
-                {text && !details.sections && (entry?.type === 'creature' ? (
-                    <div className="info-ability-sections">{columns.map((column, index) => (
-                        <div className="info-ability-column" key={index}>{column.map(([title, blocks]) => (
-                        <section className="info-section info-panel" key={title} aria-label={title}>
-                            <h3>{title}</h3><p className="info-description">{blocks.join('\n\n')}</p>
-                        </section>
-                        ))}</div>
                     ))}</div>
-                ) : <section className="info-section"><h3>Descrizione</h3><p className="info-description">{text}</p></section>)}
-                {entry && !entry.description && <p>La descrizione completa non è disponibile per questa voce. Puoi consultare la fonte.</p>}
-                {entry && <a href={entry.sourceUrl} target="_blank" rel="noreferrer">Apri la fonte originale</a>}
-            </dialog>
+                ))}</div>
+            ) : <section className="info-section"><h3>Descrizione</h3><p className="info-description">{text}</p></section>)}
+            {entry && !entry.description && <p>La descrizione completa non è disponibile per questa voce. Puoi consultare la fonte.</p>}
+            {entry && <a href={entry.sourceUrl} target="_blank" rel="noreferrer">Apri la fonte originale</a>}
         </>
-    )
+    }
+    return <>
+        <button type="button" className="more-info" aria-label={label==='Scheda' ? `Apri scheda di ${name || 'questa creatura'}` : `${label} su ${name || 'questa card'}`} onClick={()=>setOpen(true)}>{label}</button>
+        <dialog ref={dialog} className="character-dialog info-dialog" aria-labelledby={heading} {...dismissDialog} onClose={()=>setOpen(false)}>{open&&content()}</dialog>
+    </>
 }

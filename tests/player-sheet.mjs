@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
-import { inventoryTotalWeight, newCharacterSheet, parseCharacterSheets, turnFromSheet } from '../src/utils/CharacterSheets.ts'
+import { creatureAbilitySections, formatWeight, inventoryTotalWeight, newCharacterSheet, parseCharacterSheets, turnFromSheet } from '../src/utils/CharacterSheets.ts'
+import { validateSheet } from '../server/games.mjs'
 
 const oldSheet = { ...newCharacterSheet(), name: 'Personaggio precedente', kind: 'PG' }
 assert.deepEqual(parseCharacterSheets(JSON.stringify([oldSheet])), [oldSheet], 'Existing sheets must load without player details')
@@ -24,4 +25,18 @@ for (const [quantity, weight, total] of [
     ['0', '1.25', '0'], ['3', '0', '0'], ['3', '0.1', '0.3'], ['3', '', ''],
     ['-1', '2', ''], ['1.5', '2', ''], ['3', '-2', ''], ['3', 'testo', ''], ['3', '1e308', ''],
 ]) assert.equal(inventoryTotalWeight(quantity, weight), total, `Inventory total for quantity ${quantity} and weight ${weight}`)
+for (const [weight, display] of [['0.45359237','0,45'], ['1,239','1,24'], ['1234.567','1234,57'], ['0.004','0'], ['0','0'], ['1.2','1,2'], ['',''], ['  ','  '], ['invalid','invalid'], ['Infinity','Infinity']]) {
+    assert.equal(formatWeight(weight), display)
+}
+assert.equal(formatWeight(inventoryTotalWeight('100', '0.004')), '0,4', 'Round after calculating totals, keeping small item weights')
+for (const section of Object.keys(creatureAbilitySections)) {
+    const monster={...oldSheet,kind:'Mostro',abilities:[{name:'Morso',duration:'Senza conteggio',description:'Attacco in mischia',section}],playerDetails:{'monster.size':'Grande','monster.languages':'Goblin'}}
+    assert.deepEqual(parseCharacterSheets(JSON.stringify([monster]))[0],monster)
+    assert.deepEqual(validateSheet(monster),monster,'The server retains creature sections and custom statistics')
+}
+for (const section of ['invalid',42,null]) {
+    const monster={...oldSheet,abilities:[{name:'Morso',duration:'Senza conteggio',section}]}
+    assert.throws(()=>parseCharacterSheets(JSON.stringify([monster])))
+    assert.throws(()=>validateSheet(monster))
+}
 console.log('Player sheet checks passed: persistence, combat HP, data validation and automatic inventory weights')

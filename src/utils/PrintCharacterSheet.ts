@@ -1,3 +1,5 @@
+import { formatWeight } from './CharacterSheets.ts'
+
 const printCss = `
 @page { size: A4 portrait; margin: 8mm; }
 :root { color-scheme: light; --text: #303236; --text-h: #202226; --bg: white; --border: #c4c4c4; }
@@ -136,9 +138,7 @@ export async function prepareCharacterPrint(source: HTMLElement, name: string): 
                 else text.textContent = control.value || (/^[+-]?\d+(?:[.,]\d+)?$/.test(control.getAttribute('placeholder') || '') ? control.getAttribute('placeholder') : '')
                 const field = control.closest('[data-field]')?.getAttribute('data-field') || ''
                 if (/^inventory\.\d+\.[13]$/.test(field) || ['carriedWeight', 'maximumWeight'].includes(field)) {
-                    const weight = Number(control.value.replace(',', '.'))
-                    // ponytail: quattro cifre significative nei box stretti; dati e inventario completo mantengono la precisione originale.
-                    if (control.value.trim() && Number.isFinite(weight)) text.textContent = weight.toLocaleString('it-IT', { maximumSignificantDigits: 4, useGrouping: false })
+                    text.textContent = formatWeight(control.value)
                 }
                 const label = control.getAttribute('aria-label') || control.closest('label')?.querySelector('span')?.textContent || 'Campo della scheda'
                 control.replaceWith(text)

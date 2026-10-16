@@ -790,7 +790,7 @@
     position: relative;
     flex: none;
     grid-template-columns: 22px minmax(0, 1fr) 40px 42px 42px;
-    grid-template-rows: 36px 32px;
+    grid-template-rows: 36px auto;
     gap: 8px 3px;
     padding: 6px 0;
     border-bottom: 0;

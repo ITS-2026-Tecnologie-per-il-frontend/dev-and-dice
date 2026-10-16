@@ -115,7 +115,12 @@ try {
     await new Promise(resolve=>server.close(resolve));app=await createApp(options);server=app.listen(0);await once(server,'listening');base=`http://127.0.0.1:${server.address().port}`
     assert.equal((await api(player,'/characters/'+original.id)).body.sheet.hitPoints,'7','State survives server restart')
     assert.deepEqual((await api(player,'/games/'+game.id)).body.notes,notes.body,'Private notes survive server restart')
+    current=(await api(master,'/games/'+game.id)).body
+    const pendingState={turns:[turn(1,current.characters.find(record=>record.id===original.id).sheet),turn(2,npc)],combat:null,
+        abilities:[effect(20,2,'Danno da risolvere',{active:false,execution:{id:crypto.randomUUID(),phase:'resolving',option:'free',cost:1},targets:[{id:1,damage:'',resolved:false}]})]}
+    assert.equal((await api(master,'/games/'+game.id+'/state','PUT',{revision:current.revision,sheets:current.characters.map(record=>record.sheet),state:pendingState})).status,200)
     assert.equal((await api(player,'/games/'+game.id+'/leave','POST')).status,200)
+    assert.deepEqual((await api(master,'/games/'+game.id)).body.state.abilities[0].targets,[],'Leaving removes dangling damage targets and the game remains readable')
     assert.equal((await api(player,'/characters/'+original.id)).body.gameId,null)
     assert.equal((await api(player,'/games/'+game.id)).status,404)
     assert.equal((await api(player,'/invites/'+game2.inviteToken+'/join','POST',{characterId:original.id})).status,200)
