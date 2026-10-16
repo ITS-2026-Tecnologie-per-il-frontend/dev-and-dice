@@ -118,6 +118,7 @@
 .master-active-effects li span { font-size:12px; color:var(--text); }
 .master-renewed .tracker-main .abilities-tracker { padding:0; border:0; background:transparent; }
 .master-renewed .abilities-tracker > h2 { font-size:17px; }
+.master-renewed .abilities-tracker > .ability-section-heading h2 { font-size:17px; line-height:1.3; }
 .master-renewed .ability-help { font-size:12px; line-height:1.5; }
 .master-renewed .ability-row { background:var(--bg); padding:12px; }
 .master-renewed .ability-row input,.master-renewed .ability-row select { font-size:13px; min-height:36px; }

@@ -57,6 +57,12 @@ partecipanti compatti e un dettaglio laterale. La selezione del partecipante è
 indipendente dal turno corrente. Cambiare vista conserva il combattimento e
 non modifica i dati della sessione. Su mobile il dettaglio segue la lista, con
 un pulsante per tornarvi e un comando persistente per il turno successivo.
+Le magie e abilità aperte dal personaggio mostrano durata e lanciatore in un
+riepilogo, senza richiedere di selezionare nuovamente chi le usa. Per le voci
+manuali resta disponibile la scelta del proprietario. Gli aiuti **?** si aprono
+al passaggio del mouse e si chiudono all'uscita; supportano anche focus da
+tastiera, Escape e tap su touch. Le spiegazioni del pannello Master si rivolgono
+direttamente a chi gestisce il tavolo.
 Verifica: `node tests/master-view-ui.mjs`; su Windows usa Edge se disponibile,
 oppure imposta `PLAYWRIGHT_CHANNEL` per scegliere il browser installato.
 

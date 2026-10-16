@@ -683,6 +683,32 @@ html { scroll-behavior: smooth; }
 .hitpoint-buttons .apply-healing { border-radius: 0 4px 4px 0; }
 .apply-healing { border-color: #147d72; }
 .ability-use-controls { grid-area: use; display: grid; gap: 10px; min-width: 0; }
+.ability-section-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
+.ability-section-heading > h2 { margin:0; }
+.ability-owner-controls > .ability-metadata { display:flex; flex:1; flex-wrap:wrap; gap:8px 20px; margin:0; min-width:0; }
+.ability-metadata > div { display:grid; gap:3px; min-width:0; }
+.ability-metadata dt { font-size:12px; color:var(--text); }
+.ability-metadata dd { margin:0; color:var(--text-h); font-size:13px; line-height:1.4; overflow-wrap:anywhere; }
+.ability-owner-controls:has(.ability-metadata) { align-items:center; }
+.ability-owner-controls:has(.ability-metadata) > .more-info { min-height:36px; padding:6px 8px; font-size:12px; }
+.tracker-main .ability-row[data-owner-fixed="true"] { grid-template-areas:"drag name name delete" "owner owner owner owner" "timing timing timing timing" "details details details details" "use use use use" ". activation activation ."; }
+.tracker-main .ability-row[data-owner-fixed="true"][data-instantaneous="true"] { grid-template-areas:"drag name name delete" "owner owner owner owner" "use use use use" ". activation activation ."; }
+.ability-timing-controls { grid-area:timing; min-width:0; color:var(--text); font-size:12px; }
+.ability-timing-controls > summary { min-height:28px; display:flex; align-items:center; cursor:pointer; }
+.ability-timing-controls > summary::before { content:'›'; margin-right:6px; }
+.ability-timing-controls[open] > summary::before { content:'⌄'; }
+.ability-timing-controls > div { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px; margin-top:6px; }
+.ability-timing-controls .ability-duration,.ability-timing-controls .ability-remaining { grid-area:auto; }
+.ability-field-help,.ability-confirmation { display:flex; align-items:center; gap:8px; min-width:0; }
+.ability-field-help { color:var(--text); font-size:12px; line-height:1.45; }
+.ability-confirmation { align-items:flex-start; }
+.ability-confirmation > .ability-check { flex:1; }
+.ability-targets > legend { display:flex; align-items:center; gap:4px; padding:0 2px; font-size:12px; }
+.ability-section-heading > .help-tooltip-trigger,.ability-field-help > .help-tooltip-trigger,.ability-confirmation > .help-tooltip-trigger,.ability-targets > legend > .help-tooltip-trigger { width:28px; height:28px; min-height:28px; padding:0; border:0; border-radius:50%; color:var(--text); background:transparent; }
+@media (pointer:coarse) {
+    .ability-section-heading > .help-tooltip-trigger,.ability-field-help > .help-tooltip-trigger,.ability-confirmation > .help-tooltip-trigger,.ability-targets > legend > .help-tooltip-trigger { width:44px; height:44px; min-height:44px; }
+    .ability-owner-controls:has(.ability-metadata) > .more-info,.ability-timing-controls > summary { min-height:44px; }
+}
 .ability-use-controls > p { margin: 0; }
 .ability-use-controls label { display: grid; gap: 4px; min-width: 0; }
 .ability-use-controls .ability-check { display: flex; align-items: start; gap: 8px; font-size: 13px; }
