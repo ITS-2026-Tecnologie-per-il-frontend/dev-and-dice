@@ -50,6 +50,17 @@ esistenti, aggiunge proprie schede e condivide il link `/join/:token`. Il
 giocatore sceglie un proprio PG libero oppure ne crea uno nell'invito; nella
 partita modifica la propria scheda e vede soltanto nomi e turno attuale.
 
+Il selettore **Stile → Minimal / Fantasy / Fantasy/draghi**, nell’intestazione e nella pagina di
+accesso, cambia l’aspetto dell’intera app. La stessa scelta è disponibile nelle
+impostazioni del Master e della scheda giocatore. Minimal è lo stile iniziale;
+Fantasy usa legno scuro, pergamena, ottone e titoli serif. Fantasy/draghi parte dal
+layout Minimal con superfici ossidiana, accenti rosso brace, scaglie e stemmi di drago.
+La preferenza è salvata
+nel browser e sincronizzata tra le sue schede, indipendentemente dal tipo di
+vista del Master. Il cambio si applica subito e conserva i dati e le bozze aperte.
+Verifica: `node tests/theme-ui.mjs` (screenshot in `reports/theme-ui/`).
+Per lo stile draghi imposta `THEME_TEST_THEME=dragons` prima dello stesso comando.
+
 Il Master può scegliere **Impostazioni → Tipo di vista → Originale / Rinnovata**.
 La vista iniziale è Originale; la preferenza è salvata per account nel browser.
 Rinnovata organizza gli strumenti in Tavolo, Schede e creature e Regole, con

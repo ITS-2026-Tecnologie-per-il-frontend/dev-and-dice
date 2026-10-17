@@ -3,6 +3,7 @@ import { Link, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthPage } from './auth/AuthPage'
 import { useAuth } from './auth/useAuth'
 import { MasterViewSettings } from './components/MasterViewSettings'
+import { ThemeSettings } from './components/ThemeSettings'
 import { useMasterView } from './utils/MasterView'
 import './App.css'
 import './auth.css'
@@ -65,6 +66,7 @@ function ProtectedTrackers() {
     <>
       <header className="user-bar">
         <Link to="/">Il mio tavolo</Link>
+        <ThemeSettings compact/>
         <span>Accesso effettuato come <strong>{user.username}</strong></span>
         <MasterViewSettings view={masterView.view} onChange={masterView.changeView} error={masterView.error}/>
         <Link to="/schede/barbaro">Scheda Barbaro</Link>

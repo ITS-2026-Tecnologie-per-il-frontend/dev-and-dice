@@ -9,6 +9,7 @@ import { loadActiveDatabase } from '../domain/dnd/ActiveRules'
 import { PlayerSheet } from './PlayerSheet'
 import { TurnsTracker, type TrackerState } from './TurnsTracker'
 import { MasterViewSettings } from './MasterViewSettings'
+import { ThemeSettings } from './ThemeSettings'
 import { useMasterView } from '../utils/MasterView'
 import { MasterCombatRequests, PlayerCombatActions } from './CombatRequests'
 import { NotificationPopover } from './NotificationPopover'
@@ -74,7 +75,7 @@ export function AccountLayout({children}:{children:ReactNode}) {
     if (status==='loading') return <p className="auth-status" role="status">Verifica dell’accesso…</p>
     if (status==='error') return <main className="auth-page"><section className="auth-card"><h1>Accesso non disponibile</h1><p role="alert">{error}</p><button onClick={()=>void refreshUser()}>Riprova</button></section></main>
     if (!user) return <Navigate to={`/login?next=${encodeURIComponent(location.pathname+location.search)}`} replace/>
-    return <><header className="play-account"><Link to="/" className="play-brand">Dev &amp; Dice</Link><span>{user.username}</span><button type="button" onClick={()=>void logout().catch(error=>setLogoutError(message(error)))}>Esci</button></header>{logoutError&&<p role="alert">{logoutError}</p>}{children}</>
+    return <><header className="play-account"><Link to="/" className="play-brand">Dev &amp; Dice</Link><span>{user.username}</span><ThemeSettings compact/><button type="button" onClick={()=>void logout().catch(error=>setLogoutError(message(error)))}>Esci</button></header>{logoutError&&<p role="alert">{logoutError}</p>}{children}</>
 }
 
 function useCreationData() {

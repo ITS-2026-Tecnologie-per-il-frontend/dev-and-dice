@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from './useAuth'
+import { ThemeSettings } from '../components/ThemeSettings'
 
 type Props = { mode: 'login' | 'register' }
 
@@ -92,6 +93,7 @@ export function AuthPage({ mode }: Props) {
             {registering ? 'Accedi' : 'Registrati'}
           </Link>
         </p>
+        <ThemeSettings compact/>
       </section>
     </main>
   )

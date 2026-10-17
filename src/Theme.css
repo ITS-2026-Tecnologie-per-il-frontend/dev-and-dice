@@ -1,0 +1,144 @@
+/* Shared controls. Theme changes never replace or remount the active page. */
+.theme-quick-control { max-width:100%; text-align:left; }
+.theme-quick-label { display:flex; align-items:center; gap:8px; color:inherit; font-size:14px; white-space:nowrap; }
+.theme-quick-label select { box-sizing:border-box; min-height:44px; max-width:100%; padding:8px 30px 8px 12px; border:1px solid var(--border); border-radius:5px; background:var(--bg); color:var(--text-h); font:inherit; cursor:pointer; }
+.theme-quick-control small { display:block; max-width:32ch; font-size:12px; white-space:normal; }
+.theme-quick-label select:focus-visible,.theme-settings :focus-visible { outline:3px solid var(--ui-accent, #147d72); outline-offset:3px; }
+.theme-settings { min-width:0; padding:0; margin:24px 0; border:0; color:var(--text-h); text-align:left; }
+.theme-settings legend { padding:0; margin-bottom:12px; font:600 16px/1.5 var(--sans); }
+.theme-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.theme-settings .theme-option { position:relative; display:grid; grid-template-columns:minmax(0,1fr) 20px; gap:8px; align-content:start; padding:14px; margin:0; border:1px solid var(--border); border-radius:7px; font:14px/1.5 var(--sans); cursor:pointer; }
+.theme-option:has(input:checked) { border-color:var(--ui-accent, #147d72); box-shadow:inset 0 0 0 1px var(--ui-accent, #147d72); background:color-mix(in srgb,var(--ui-accent, #147d72) 6%,var(--bg)); }
+.theme-settings .theme-option input { grid-column:2; grid-row:1; z-index:1; align-self:start; width:18px; height:18px; min-height:0; margin:6px 0; padding:0; accent-color:var(--ui-accent, #147d72); }
+.theme-option strong { grid-column:1/-1; grid-row:2; font-size:16px; overflow-wrap:anywhere; }
+.theme-option > span:last-child { grid-column:1/-1; color:var(--text); }
+.theme-swatch { grid-column:1/-1; grid-row:1; display:grid; grid-template-columns:1fr 1fr; gap:6px; height:50px; padding:8px; border:1px solid #bfc6ca; border-radius:4px; background:#f5f6f8; }
+.theme-swatch i { border:1px solid #ced3d8; border-radius:2px; background:#fff; }
+.theme-swatch i:first-child { grid-column:1/-1; background:#e2e9ec; }
+.theme-swatch-fantasy { border-color:#987044; background:repeating-linear-gradient(0deg,#302016 0 12px,#38261b 13px 25px); }
+.theme-swatch-fantasy i { border-color:#b59459; background:#eddbb5; border-radius:3px 0; }
+.theme-swatch-fantasy i:first-child { background:#805e30; }
+.theme-swatch-dragons { border-color:#685349; background:#151619; }
+.theme-swatch-dragons i { border-color:#665047; background:#222327; }
+.theme-swatch-dragons i:first-child { background:url('/themes/dragon-crest.svg') center/32px no-repeat,#3c2927; border-color:#a15845; }
+.theme-settings-note { margin:12px 0 0; color:var(--text); font:13px/1.6 var(--sans); }
+.master-settings-dialog .theme-settings { margin-top:24px; padding-top:20px; border-top:1px solid var(--border); }
+.auth-card > .theme-quick-control { margin-top:24px; padding-top:20px; border-top:1px solid #514538; color:#c1b4a3; }
+.auth-card .theme-quick-label { justify-content:center; }
+.auth-card .theme-quick-label select { background:#201b16; color:#fff8ed; border-color:#65513b; }
+.play-account { flex-wrap:wrap; }
+@media (max-width:600px) {
+    .play-account { gap:12px; padding:12px 16px; }
+    .play-account .play-brand { flex-basis:calc(100% - 100px); }
+}
+@media (max-width:600px) { .theme-options { grid-template-columns:minmax(0,1fr); } }
+@media print { .theme-quick-control,.theme-settings { display:none !important; } }
+
+@media screen {
+    :root[data-theme='fantasy'] {
+        color-scheme:light;
+        --text:#63503c;
+        --text-h:#302317;
+        --bg:#f3e6ca;
+        --border:#bfa77e;
+        --code-bg:#e8d6b1;
+        --accent:#765022;
+        --accent-bg:#76502214;
+        --accent-border:#997444;
+        --social-bg:#e5d2ac;
+        --ui-accent:#765022;
+        --ui-accent-hover:#583a19;
+        --ui-accent-tint:#76502216;
+        --fantasy-wood:#281c14;
+        --fantasy-brass:#d4b574;
+        --fantasy-paper:linear-gradient(115deg,#fff9e322,transparent 60%),repeating-linear-gradient(0deg,#65451504 0 1px,transparent 1px 4px),linear-gradient(#f5e9d0,#edddba);
+        --shadow:0 8px 24px #1c100e30,0 1px 2px #1c100e35;
+        --heading:'Palatino Linotype','Book Antiqua',Palatino,Georgia,serif;
+        background:var(--fantasy-wood);
+    }
+    :root[data-theme='fantasy'] body {
+        background:
+            radial-gradient(ellipse at 50% 0,#b8823630,transparent 65%),
+            repeating-linear-gradient(90deg,transparent 0 179px,#100b0880 180px 182px,#d4b57408 183px 184px),
+            repeating-linear-gradient(2deg,#ffffff02 0 1px,transparent 1px 8px),#281c14;
+    }
+    :root[data-theme='fantasy'] #root { color:var(--text); }
+    :root[data-theme='fantasy'] #root > :is(.master-original,.master-renewed,.barbarian-character-sheet) { box-sizing:border-box; background:var(--fantasy-paper); }
+    :root[data-theme='fantasy'] #root > .master-renewed { padding:24px; }
+    :root[data-theme='fantasy'] :is(h1,h2) { font-family:var(--heading); font-weight:700; letter-spacing:0; }
+    :root[data-theme='fantasy'] :is(.play-account,.user-bar) {
+        background:linear-gradient(#3b291d,#281c14);
+        color:#e5d2ac;
+        border-bottom:3px double #ac8550;
+        box-shadow:0 4px 20px #0004;
+    }
+    :root[data-theme='fantasy'] .play-brand { color:#f5e3b9; font:700 26px/1.3 var(--heading); }
+    :root[data-theme='fantasy'] .play-brand::before { content:'❖'; display:inline-block; margin-right:12px; color:var(--fantasy-brass); font-size:24px; }
+    :root[data-theme='fantasy'] :is(.play-account,.user-bar) :is(button,select) { background:#332318; color:#f5e3b9; border-color:#ac8550; }
+    :root[data-theme='fantasy'] .user-bar > a { color:#f5e3b9; }
+    :root[data-theme='fantasy'] .play-account :focus-visible { outline-color:#e8c582; }
+    :root[data-theme='fantasy'] :is(.play-home,.play-character-page,.play-master-page,.play-player-page,.tracker-layout) {
+        background:var(--fantasy-paper);
+        box-shadow:0 0 0 1px #9a794e,0 12px 48px #0004;
+        border-radius:12px;
+    }
+    :root[data-theme='fantasy'] .tracker-layout { box-sizing:border-box; }
+    :root[data-theme='fantasy'] .master-renewed .tracker-layout { padding:24px; }
+    :root[data-theme='fantasy'] :is(.play-home,.play-character-page) { width:calc(100% - 64px); margin:36px auto; border:1px solid #cdb283; padding:36px; }
+    :root[data-theme='fantasy'] :is(.play-master-page,.play-player-page) { width:calc(100% - 40px); margin:20px auto; border:1px solid #cdb283; }
+    :root[data-theme='fantasy'] .play-home-heading { position:relative; min-height:130px; padding:0 0 28px 132px; border-bottom:3px double #a88852; }
+    :root[data-theme='fantasy'] .play-home-heading::before {
+        content:''; position:absolute; width:106px; height:126px; left:0; top:0;
+        background:url('/themes/tavern-sign.svg') center/contain no-repeat;
+    }
+    :root[data-theme='fantasy'] .play-home h1 { font-size:clamp(34px,4vw,52px); }
+    :root[data-theme='fantasy'] .play-home-columns { gap:36px; }
+    :root[data-theme='fantasy'] .play-home-columns > section { min-width:0; padding:24px; border:1px solid #b99b65; border-radius:3px; background:#fff5dd55; box-shadow:inset 0 0 0 4px #f4e8cc,inset 0 0 0 5px #c9b084; }
+    :root[data-theme='fantasy'] .play-home-columns h2 { display:flex; align-items:center; gap:12px; border-bottom:3px double #bea271; font-size:26px; }
+    :root[data-theme='fantasy'] .play-home-columns h2::before { content:'◆'; color:#88622d; font-size:10px; }
+    :root[data-theme='fantasy'] .play-home-columns > section > p { margin-top:20px; font-size:16px; line-height:1.7; }
+    :root[data-theme='fantasy'] .play-status { background:#e8d5ad; border-color:#ae8e55; }
+    :root[data-theme='fantasy'] .play-recovery { border-top:3px double #b89c6c; }
+    :root[data-theme='fantasy'] .play-recovery summary { font-family:var(--heading); font-size:19px; }
+    :root[data-theme='fantasy'] .play-recovery[open] > p { margin:16px 0; }
+    :root[data-theme='fantasy'] :is(.play-primary,.sort-turns,.auth-submit) { box-shadow:inset 0 1px #ffffff26,0 2px 3px #33201220; }
+    :root[data-theme='fantasy'] :is(.play-primary,.play-home button,.play-session-actions button,.master-settings-button) { border-radius:3px; }
+    :root[data-theme='fantasy'] .play-primary:hover { background:var(--ui-accent-hover); }
+    :root[data-theme='fantasy'] :is(.play-session-heading,.play-recovery,.play-editor) a:not(.play-primary) { color:var(--ui-accent-hover); text-underline-offset:3px; }
+    :root[data-theme='fantasy'] :is(.character-library,.master-inspector,.master-detail-panel,.play-player-notes,.play-player-effects,.play-player-actions,.play-player-turns,.play-create-game,.play-join) { background:#fff4d947; border-color:#b99b65; box-shadow:inset 0 0 0 3px #f5e8cc88; }
+    :root[data-theme='fantasy'] .master-renewed { --master-accent:var(--ui-accent); }
+    :root[data-theme='fantasy'] .player-sheet-controls { --controls-accent:var(--ui-accent); }
+    :root[data-theme='fantasy'] :is(.turn-row,.ability-row,.master-participant,.character-card) { background:#fff6de80; border-color:#baa176; }
+    :root[data-theme='fantasy'] .turn-row.active-turn { background:#e6d0a0; border-color:#765022; }
+    :root[data-theme='fantasy'] :is(.character-dialog,.master-settings-dialog,.play-notification-dialog) { background:var(--fantasy-paper); border:3px double #a78650; border-radius:4px; box-shadow:0 20px 80px #130c0980; }
+    :root[data-theme='fantasy'] :is(.character-dialog,.master-settings-dialog,.play-notification-dialog)::backdrop { background:#160e09a6; }
+    :root[data-theme='fantasy'] .player-settings-dialog .theme-settings { margin-bottom:28px; }
+    :root[data-theme='fantasy'] .theme-option:has(input:checked) { background:#dfc58e44; }
+    :root[data-theme='fantasy'] .auth-page { background:transparent; }
+    :root[data-theme='fantasy'] .auth-card { box-sizing:border-box; min-width:0; width:min(100%,502px); color:var(--text); background:var(--fantasy-paper); border:3px double #ae8c51; border-radius:4px; box-shadow:0 20px 80px #0006; }
+    :root[data-theme='fantasy'] .auth-card::before { content:''; display:block; width:100px; height:120px; margin:0 auto 20px; background:url('/themes/tavern-sign.svg') center/contain no-repeat; }
+    :root[data-theme='fantasy'] .auth-card :is(h1,.auth-form label) { color:var(--text-h); }
+    :root[data-theme='fantasy'] .auth-card :is(.auth-intro,.auth-switch,.auth-form small,.theme-quick-control) { color:var(--text); }
+    :root[data-theme='fantasy'] .auth-eyebrow { color:#765022; text-align:center; }
+    :root[data-theme='fantasy'] .auth-card :is(input,select) { color:var(--text-h); background:#fff8e5; border-color:#ac8c5c; }
+    :root[data-theme='fantasy'] .auth-card input:focus-visible { outline:2px solid var(--ui-accent); outline-offset:2px; box-shadow:none; }
+    :root[data-theme='fantasy'] .auth-submit { background:#765022; color:#fff8e6; border-color:#765022; }
+    :root[data-theme='fantasy'] .auth-submit:hover:not(:disabled) { background:#583a19; }
+    :root[data-theme='fantasy'] .auth-switch a { color:#69451b; }
+    :root[data-theme='fantasy'] .auth-card > .theme-quick-control { border-color:var(--border); }
+    :root[data-theme='fantasy'] .auth-status { color:#f5e3b9; }
+}
+@media screen and (max-width:1000px) {
+    :root[data-theme='fantasy'] .play-home-heading { flex-wrap:wrap; }
+    :root[data-theme='fantasy'] .play-home-heading .play-actions { flex-basis:100%; }
+    :root[data-theme='fantasy'] .play-home-columns { gap:24px; }
+}
+@media screen and (max-width:700px) {
+    :root[data-theme='fantasy'] .master-renewed .tracker-layout { padding:16px; }
+    :root[data-theme='fantasy'] :is(.play-home,.play-character-page,.play-master-page,.play-player-page) { width:calc(100% - 24px); margin:16px auto; padding:20px 16px; }
+    :root[data-theme='fantasy'] .play-home-heading { padding-left:0; padding-top:112px; text-align:center; justify-content:center; gap:20px; }
+    :root[data-theme='fantasy'] .play-home-heading::before { width:80px; height:100px; left:calc(50% - 40px); }
+    :root[data-theme='fantasy'] .play-home-heading .play-actions { justify-content:center; }
+    :root[data-theme='fantasy'] .play-home-columns { grid-template-columns:minmax(0,1fr); margin:28px 0; }
+    :root[data-theme='fantasy'] .play-home-columns > section { padding:20px; }
+}

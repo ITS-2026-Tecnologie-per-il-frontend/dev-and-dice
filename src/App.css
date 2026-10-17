@@ -56,8 +56,8 @@
 }
 
 .turn-row.active-turn {
-    border: 2px solid #147d72;
-    background: rgba(20, 125, 114, 0.12);
+    border: 2px solid var(--ui-accent, #147d72);
+    background: var(--ui-accent-tint, rgba(20, 125, 114, 0.12));
 }
 
 .active-turn-label {
@@ -163,9 +163,9 @@
     width: 100%;
     min-height: 58px;
     place-items: center;
-    border: 1px dashed #147d72;
+    border: 1px dashed var(--ui-accent, #147d72);
     border-radius: 6px;
-    color: #147d72;
+    color: var(--ui-accent, #147d72);
     background: transparent;
     cursor: pointer;
 }
@@ -202,12 +202,12 @@
 }
 
 .sort-turns {
-    border-color: #147d72;
+    border-color: var(--ui-accent, #147d72);
     color: #fff;
-    background: #147d72;
+    background: var(--ui-action, var(--ui-accent, #147d72));
 }
 
-.sort-turns:hover { background: #10675f; }
+.sort-turns:hover { background: var(--ui-action-hover, var(--ui-accent-hover, #10675f)); }
 
 .end-combat {
     border-color: var(--border);
@@ -236,7 +236,7 @@
 
 .combat-tracker :focus-visible,
 .abilities-tracker :focus-visible {
-    outline: 2px solid #147d72;
+    outline: 2px solid var(--ui-accent, #147d72);
     outline-offset: 2px;
 }
 
@@ -342,10 +342,10 @@ html { scroll-behavior: smooth; }
 .column-separator:hover,
 .column-separator:focus-visible,
 .column-separator.is-dragging { background: rgba(20, 125, 114, 0.1); }
-.column-separator:focus-visible { outline: 2px solid #147d72; outline-offset: -2px; }
+.column-separator:focus-visible { outline: 2px solid var(--ui-accent, #147d72); outline-offset: -2px; }
 .column-separator:hover::before,
 .column-separator:focus-visible::before,
-.column-separator.is-dragging::before { background: #147d72; }
+.column-separator.is-dragging::before { background: var(--ui-action, var(--ui-accent, #147d72)); }
 .tracker-layout:has(.is-dragging) { user-select: none; cursor: col-resize; }
 
 .tracker-main .abilities-tracker {
@@ -458,7 +458,7 @@ html { scroll-behavior: smooth; }
     font: inherit;
 }
 .character-fields textarea { resize: vertical; }
-.character-library :focus-visible { outline: 2px solid #147d72; outline-offset: 2px; }
+.character-library :focus-visible { outline: 2px solid var(--ui-accent, #147d72); outline-offset: 2px; }
 .combat-sheet-details { grid-area: details; font-size: 14px; }
 .combat-sheet-details summary { cursor: pointer; text-decoration: underline; }
 .combat-sheet-details dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
@@ -500,10 +500,10 @@ html { scroll-behavior: smooth; }
     grid-area: activation;
     justify-self: start;
     padding: 8px 16px;
-    border: 1px solid #147d72;
+    border: 1px solid var(--ui-accent, #147d72);
     border-radius: 4px;
     color: #fff;
-    background: #147d72;
+    background: var(--ui-action, var(--ui-accent, #147d72));
     font: inherit;
     cursor: pointer;
 }
@@ -519,7 +519,7 @@ html { scroll-behavior: smooth; }
 .sheet-combat-help p { max-width: 75ch; margin: 8px 0; }
 .sheet-ability-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; margin: 16px 0 24px; }
 .sheet-abilities {
-    --sheet-section-accent: #147d72;
+    --sheet-section-accent: var(--ui-accent, #147d72);
     --sheet-section-tint: color-mix(in srgb, var(--sheet-section-accent) 8%, var(--bg));
     min-width: 0;
     margin: 16px 0 24px;
@@ -607,7 +607,7 @@ html { scroll-behavior: smooth; }
 }
 
 .character-dialog :focus-visible {
-    outline: 2px solid #147d72;
+    outline: 2px solid var(--ui-accent, #147d72);
     outline-offset: 2px;
 }
 
@@ -681,7 +681,7 @@ html { scroll-behavior: smooth; }
 .hitpoint-buttons { display: flex; flex-shrink: 0; }
 .hitpoint-buttons .apply-damage { width: 25px; font-size: 18px; border-radius: 4px 0 0 4px; }
 .hitpoint-buttons .apply-healing { border-radius: 0 4px 4px 0; }
-.apply-healing { border-color: #147d72; }
+.apply-healing { border-color: var(--ui-accent, #147d72); }
 .ability-use-controls { grid-area: use; display: grid; gap: 10px; min-width: 0; }
 .ability-section-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
 .ability-section-heading > h2 { margin:0; }

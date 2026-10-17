@@ -2,6 +2,7 @@ import { useId, useRef, type ReactNode } from 'react'
 import { useDialogDismiss } from '../utils/Dialog'
 import type { MasterView } from '../utils/MasterView'
 import '../MasterView.css'
+import { ThemeSettings } from './ThemeSettings'
 
 export function MasterViewSettings({ view, onChange, error, children }: {
     view: MasterView; onChange: (view: MasterView) => void; error: string; children?: ReactNode
@@ -22,6 +23,7 @@ export function MasterViewSettings({ view, onChange, error, children }: {
             </fieldset>
             <p className="master-settings-note">La scelta si applica subito ed è ricordata per questo account in questo browser.</p>
             {error && <p role="status">{error}</p>}
+            <ThemeSettings/>
             {children && <div className="master-settings-extra">{children}</div>}
             <footer><button type="button" className="sort-turns" onClick={() => dialog.current?.close()}>Torna al tavolo</button></footer>
         </dialog>

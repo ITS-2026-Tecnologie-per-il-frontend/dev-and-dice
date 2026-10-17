@@ -1,0 +1,79 @@
+/* The dragon theme starts from Minimal's layout, spacing and system type. */
+@media screen {
+    :root[data-theme='dragons'] {
+        color-scheme:dark;
+        --text:#bfc0c5;
+        --text-h:#f3eee3;
+        --bg:#191a1e;
+        --border:#505055;
+        --code-bg:#25262c;
+        --accent:#edaf92;
+        --accent-bg:#edaf9214;
+        --accent-border:#a96852;
+        --social-bg:#27272c;
+        --ui-accent:#edaf92;
+        --ui-accent-hover:#f4cbb5;
+        --ui-accent-tint:#edaf9212;
+        --ui-action:#a74335;
+        --ui-action-hover:#c0523e;
+        --dragon-surface:#202125;
+        --dragon-edge:#785342;
+        --shadow:0 8px 24px #0005;
+        background:#151619;
+    }
+    :root[data-theme='dragons'] body { background:url('/themes/dragon-scales.svg') repeat,#151619; }
+    :root[data-theme='dragons'] :is(.play-account,.user-bar) { color:var(--text); background:#191a1e; border-bottom:1px solid var(--dragon-edge); }
+    :root[data-theme='dragons'] .play-brand { display:flex; align-items:center; gap:12px; color:var(--text-h); }
+    :root[data-theme='dragons'] .play-brand::before { content:''; flex-shrink:0; width:36px; height:36px; background:url('/themes/dragon-crest.svg') center/contain no-repeat; }
+    :root[data-theme='dragons'] :is(.user-bar > a,.play-session-heading > div > a,.play-recovery a,.player-barbarian-navigation a) { color:var(--accent); text-underline-offset:3px; }
+    :root[data-theme='dragons'] :is(.play-home,.play-character-page,.play-master-page,.play-player-page) { background:var(--bg); }
+    :root[data-theme='dragons'] .play-home { border-inline:1px solid #edaf9214; }
+    :root[data-theme='dragons'] .play-home-heading { position:relative; isolation:isolate; padding-bottom:28px; border-bottom:1px solid var(--dragon-edge); }
+    :root[data-theme='dragons'] .play-home-heading::after { content:''; position:absolute; z-index:-1; pointer-events:none; top:-22px; right:32%; width:190px; height:158px; opacity:.16; background:url('/themes/dragon-crest.svg') center/contain no-repeat; }
+    :root[data-theme='dragons'] .play-home h1 { font-weight:650; }
+    :root[data-theme='dragons'] .play-home-columns h2 { border-color:var(--dragon-edge); }
+    :root[data-theme='dragons'] :is(.play-status,.play-create-game,.play-join,.character-library,.master-inspector,.play-player-notes,.play-player-turns,.play-player-effects,.play-player-actions) { background:var(--dragon-surface); }
+    :root[data-theme='dragons'] .play-status { color:var(--accent); border-color:var(--dragon-edge); }
+    :root[data-theme='dragons'] :is(.master-renewed,.player-sheet-controls,.rules-panel,.inventory-editor,.inventory-link-dialog) { --master-accent:var(--ui-accent); --controls-accent:var(--ui-accent); --inventory-accent:var(--ui-accent); }
+    :root[data-theme='dragons'] :is(.turn-row,.ability-row) { background:var(--dragon-surface); }
+    :root[data-theme='dragons'] .turn-row.active-turn { border-color:var(--ui-accent); background:#342522; }
+    :root[data-theme='dragons'] .master-renewed .tracker-main .turn-row.active-turn { background:#342522; }
+    :root[data-theme='dragons'] :is(.play-primary,.sort-turns,.master-settings-dialog footer button,.player-sheet-export-controls > button,.inventory-add-button) { border-color:var(--ui-action); }
+    :root[data-theme='dragons'] .play-primary:hover { background:var(--ui-action-hover); }
+    :root[data-theme='dragons'] :is(.clear-turns,.clear-abilities,.delete-turn,.delete-ability) { color:#f1a09a; }
+    :root[data-theme='dragons'] :is(.clear-turns,.clear-abilities):hover:not(:disabled) { color:#fff; }
+    :root[data-theme='dragons'] :is(.character-dialog,.master-settings-dialog,.play-notification-dialog) { border-color:var(--dragon-edge); box-shadow:0 20px 64px #0008; }
+    :root[data-theme='dragons'] .master-settings-dialog h2 { padding-right:40px; background:url('/themes/dragon-crest.svg') right center/32px no-repeat; }
+    :root[data-theme='dragons'] .theme-option:has(input:checked) { background:#edaf920b; }
+    :root[data-theme='dragons'] .player-settings-dialog .theme-settings { margin-bottom:28px; }
+    :root[data-theme='dragons'] .auth-page { background:transparent; color:var(--text-h); }
+    :root[data-theme='dragons'] .auth-card { box-sizing:border-box; min-width:0; width:min(100%,502px); background:var(--bg); border-color:var(--dragon-edge); border-top:3px solid var(--ui-action); }
+    :root[data-theme='dragons'] .auth-eyebrow { display:flex; align-items:center; gap:12px; color:var(--accent); }
+    :root[data-theme='dragons'] .auth-eyebrow::before { content:''; width:40px; height:40px; background:url('/themes/dragon-crest.svg') center/contain no-repeat; }
+    :root[data-theme='dragons'] .auth-card :is(h1,.auth-form label) { color:var(--text-h); }
+    :root[data-theme='dragons'] .auth-card :is(.auth-intro,.auth-switch,.auth-form small,.theme-quick-control) { color:var(--text); }
+    :root[data-theme='dragons'] .auth-card :is(input,select) { color:var(--text-h); background:#141519; border-color:var(--border); }
+    :root[data-theme='dragons'] .auth-card input:focus-visible { outline:2px solid var(--accent); outline-offset:2px; box-shadow:none; }
+    :root[data-theme='dragons'] .auth-submit { background:var(--ui-action); color:#fff; border-color:var(--ui-action); }
+    :root[data-theme='dragons'] .auth-submit:hover:not(:disabled) { background:var(--ui-action-hover); }
+    :root[data-theme='dragons'] .auth-switch a { color:var(--accent); }
+    :root[data-theme='dragons'] .auth-card > .theme-quick-control { border-color:var(--border); }
+    :root[data-theme='dragons'] .sheet-abilities:not(.sheet-spells) { --sheet-section-accent:var(--ui-accent); }
+    :root[data-theme='dragons'] .character-tutorial { --tutorial-accent:var(--ui-accent); --tutorial-error:#f2a8a8; --tutorial-control-border:#85858e; }
+    :root[data-theme='dragons'] :is(.character-tutorial button.tutorial-primary,.tutorial-navigation [aria-current='step'] .tutorial-step-number,.player-barbarian-navigation button) { background:var(--ui-action); border-color:var(--ui-action); color:#fff; }
+    :root[data-theme='dragons'] .character-tutorial button.tutorial-primary:hover:enabled { background:var(--ui-action-hover); }
+    :root[data-theme='dragons'] .character-tutorial input[type='checkbox'] { accent-color:var(--ui-accent); }
+    :root[data-theme='dragons'] .inventory-editor .inventory-remove { color:#f1a09a; border-color:#b3645d; }
+    /* Keep the light character sheet and its export independent of the dark UI. */
+    :root[data-theme='dragons'] :is(.player-paper,.barbarian-page) { --ui-accent:#a74335; --ui-accent-hover:#843329; }
+}
+@media screen and (max-width:800px) {
+    :root[data-theme='dragons'] .play-home-heading::after { top:0; right:0; width:150px; height:150px; opacity:.1; }
+}
+@media screen and (max-width:600px) {
+    :root[data-theme='dragons'] .play-account { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; }
+    :root[data-theme='dragons'] .play-account .play-brand { grid-column:1/-1; grid-row:1; justify-self:start; width:max-content; max-width:calc(100% - 80px); font-size:20px; white-space:nowrap; }
+    :root[data-theme='dragons'] .play-account > span { grid-column:1; grid-row:2; overflow-wrap:anywhere; font-size:14px; text-align:left; }
+    :root[data-theme='dragons'] .play-account .theme-quick-control { grid-column:2; grid-row:2; }
+    :root[data-theme='dragons'] .play-account > button { grid-column:2; grid-row:1; justify-self:end; }
+}

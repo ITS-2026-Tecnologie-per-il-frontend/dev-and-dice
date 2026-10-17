@@ -2,6 +2,7 @@ import { createContext, lazy, memo, Suspense, useCallback, useContext, useEffect
 import { characterFields, clampCurrentHitPointsToMaximum, formatWeight, normalizeHitPoints, numericCharacterFields, characterLevel, initiativeBonus, type CharacterSheet } from '../utils/CharacterSheets'
 import { applyCreation, translatedCreationData, characterFieldValue, updateCharacterField, creationEnabled, enableCreation, labelOf, loadCreationData, resetCreationOverrides, selectedOrigins, spellRules, spellSelection, spellSelectionBlock, subclassOptions, subclassMinimumLevel, type CreationData, type Origin } from '../utils/PlayerCreation'
 import { CreationChoices, CreationStatus } from './PlayerCreation'
+import { ThemeSettings } from './ThemeSettings'
 import { CharacterTutorial } from './CharacterTutorial'
 import { classId, spellEdition, spellCounts, spellRowState, spellSources, savedSpellGrants, landNames2014, landNames2024, type SpellSource } from '../utils/Spellcasting'
 import { creationDataForEdition, catalogForSheet } from '../domain/dnd/ActiveRules'
@@ -389,6 +390,7 @@ function PlayerSheetLayout({ sheet:layoutSheet, catalog:baseCatalog, creationDat
             {historyControl&&<div className="player-history-control">{historyControl}</div>}
             <dialog ref={settingsDialog} className="character-dialog player-settings-dialog" aria-labelledby={`${prefix}-settings-heading`} {...dismissSettings}>
                 <header className="dialog-header"><h2 id={`${prefix}-settings-heading`}>Impostazioni della scheda</h2><button type="button" aria-label="Chiudi impostazioni" onClick={() => settingsDialog.current?.close()}>×</button></header>
+                <ThemeSettings/>
                 {configuration}
             </dialog>
         </> : configuration}
