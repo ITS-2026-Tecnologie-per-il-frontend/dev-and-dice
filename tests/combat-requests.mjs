@@ -53,6 +53,7 @@ try {
     async function decide(body,decision='approve',extra={}) {const now=await current();return api(master,path+'/requests/'+body.id+'/'+decision,'POST',{revision:now.revision,confirmed:true,targets:body.targets.map(({id,damage})=>({id,damage})),...extra})}
     const names={ray:template('scorching-ray').name,missile:template('magic-missile').name,bolt:template('fire-bolt').name,fireball:template('fireball').name}
     const choices=ok(await api(player,path+'/actions'))
+    assert.deepEqual(choices.actions.find(action=>action.name===names.ray).entry,JSON.parse(JSON.stringify(catalog.abilities.find(entry=>entry.data.referenceId==='phb2014:spell:scorching-ray'))),'Player actions retain the complete catalog entry used by the Master detail')
     assert.deepEqual(Object.keys(choices.targets[2]).sort(),['id','name'])
     assert(!JSON.stringify(choices).includes('PRIVATE MONSTER'))
     assert.equal((await api(outsider,path+'/actions')).status,404)

@@ -1,3 +1,4 @@
+import type { CatalogEntry } from './Catalog'
 import type { CharacterSheet } from './CharacterSheets'
 import type { TrackerState } from '../components/TurnsTracker'
 
@@ -9,7 +10,7 @@ export type GameSummary = { id:string; name:string; role:'master'|'player'; revi
 export type CombatTarget = {id:number;name:string;roll:string;hit:boolean;damageRoll:string;damage:string}
 export type CombatRequest = {id:string;characterName:string;actorName:string;actionName:string;createdAt:string;status:'pending'|'approved'|'rejected'|'stale';optionLabel:string;cost:number;spendsResources:boolean;mode:'attack'|'save'|'automatic'|'none';damageEnabled:boolean;prolonged:boolean;targets:CombatTarget[];resolvedAt?:string}
 type Requests = {requestsRevision:number;combatRequests:CombatRequest[]}
-export type ActionChoices = {revision:number;targets:{id:number;name:string}[];actions:{key:string;name:string;description:string;options:{id:string;label:string;remaining:number|null;cost?:number}[];error:string;cost:number;damageEnabled:boolean;mode:CombatRequest['mode'];prolonged:boolean;ritual:boolean}[]}
+export type ActionChoices = {revision:number;targets:{id:number;name:string}[];actions:{key:string;name:string;entry?:CatalogEntry;duration:string;remainingTurns:number;active:boolean;description:string;options:{id:string;label:string;remaining:number|null;cost?:number}[];error:string;cost:number;damageEnabled:boolean;mode:CombatRequest['mode'];prolonged:boolean;ritual:boolean}[]}
 export type MasterGame = GameSummary & Requests & { role:'master'; notifications:NotificationSummary;inviteToken:string; characters:OwnedCharacter[]; state:TrackerState }
 export type PrivateNotes = {text:string;revision:number}
 export type PlayerEffect = {name:string;duration:string;remainingTurns:number;timed:boolean;concentration:boolean;description?:string;expiresAt?:'start'|'end';repeatSave?:string}

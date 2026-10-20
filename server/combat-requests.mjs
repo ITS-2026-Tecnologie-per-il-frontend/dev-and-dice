@@ -64,7 +64,8 @@ export function actionContext(db,game,user,rules) {
 }
 
 export function actionChoices(context,game,db) {
-  return {revision:game.revision,actions:context.actions.map(({key,ability,options,error,info,mode})=>({key,name:ability.name,description:ability.description ?? info.entry?.description ?? '',options,error,
+  return {revision:game.revision,actions:context.actions.map(({key,ability,options,error,info,mode})=>({key,name:ability.name,entry:info.entry,description:ability.description ?? info.entry?.description ?? '',options,error,
+    duration:info.instantaneous ? 'Istantanea' : ability.duration==='Personalizzata' ? `${ability.remainingTurns} turni` : ability.duration,remainingTurns:ability.remainingTurns,active:!!ability.execution || ability.active && (ability.timed===false || ability.remainingTurns>0),
     cost:ability.resourceCost ?? 1,damageEnabled:info.damage,mode,prolonged:info.prolonged,ritual:info.ritual})),
     targets:game.state.turns.map(turn=>({id:turn.id,name:db.characters.find(record=>record.id===turn.sheet?.id)?.sheet.name ?? turn.description}))}
 }

@@ -1,3 +1,4 @@
+import { InfoButton } from './InfoButton'
 import { memo, useEffect, useRef, useState, type FormEvent } from 'react'
 import { playApi, type ActionChoices, type CombatRequest, type CombatTarget, type Game, type PlayerGame } from '../utils/PlayApi'
 import { NotificationPopover } from './NotificationPopover'
@@ -80,6 +81,7 @@ export function PlayerCombatActions({game,onUpdate}:{game:PlayerGame;onUpdate:(g
                 <label>Azione<select aria-label="Azione" value={key} required onChange={event=>select(event.target.value)}><option value="">Scegli un’azione…</option>{choices.actions.map(action=><option key={action.key} value={action.key} disabled={!!action.error}>{action.name}{action.error?' · '+action.error:''}</option>)}</select></label>
                 {!choices.actions.length&&<p>Nessuna azione disponibile: controlla attacchi, abilità e incantesimi salvati nella scheda.</p>}
                 {action&&<><details><summary>Descrizione dell’azione</summary><p className="combat-request-description">{action.description||'Risoluzione da confermare con il Master.'}</p></details>
+                    <InfoButton label="Descrizione" entry={action.entry} name={action.name} description={action.description} fields={{duration:action.duration,remainingTurns:action.remainingTurns,active:action.active,owner:game.character.sheet.name}}/>
                     <label>Risorsa<select aria-label="Risorsa" required value={optionId} onChange={event=>{const option=action.options.find(option=>option.id===event.target.value);setOptionId(event.target.value);setCost(option?.cost??action.cost)}}>{action.options.map(option=><option key={option.id} value={option.id} disabled={option.remaining!==null&&option.remaining<(option.cost??cost)}>{option.label}{option.remaining!==null?` · ${option.remaining} rimasti`:''}</option>)}</select></label>
                     {option&&!['free','cantrip','ritual'].includes(option.id)&&<label>Costo<input type="number" min="1" step="1" required readOnly={option.cost!==undefined} value={option.cost??cost} onChange={event=>setCost(Number(event.target.value))}/></label>}
                     <label>Risoluzione<select aria-label="Risoluzione" value={mode} onChange={event=>changeMode(event.target.value as CombatRequest['mode'])}>{Object.entries(modeLabels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
