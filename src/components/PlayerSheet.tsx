@@ -19,6 +19,7 @@ import { sheetTemplates, playerTemplate, proseField, playerSheetLayoutKey, wizar
 import { printCharacterSheet } from '../utils/PrintCharacterSheet'
 import { favoriteSpellCapacity, favoriteSpellOptions, favoriteSpellSlots, setFavoriteSpell, hasOtherSpell, spellNameLookup, spellNameRoots } from '../utils/SpellPage'
 import { useDialogDismiss } from '../utils/Dialog'
+import { useSheetMagnifier } from './SheetMagnifier'
 import '../PlayerSheet.css'
 import '../WizardPdf.css'
 import '../Barbarian.css'
@@ -176,6 +177,7 @@ function PlayerSheetLayout({ sheet:layoutSheet, catalog:baseCatalog, creationDat
     const inventoryRows=[...occupiedRows,...freeRows].slice(shownInventoryPage*inventoryRowsPerPage,shownInventoryPage*inventoryRowsPerPage+inventoryRowsPerPage)
     const pages = sheetTemplates[template].pages
     const visiblePage = exportPage ?? (page < pages.length ? page : 0)
+    useSheetMagnifier(paperViewport, exportPage === undefined && !tutorialActive, `${sheet.id}:${template}:${visiblePage}:${shownInventoryPage}`)
     useEffect(() => {
         if (!exporting || !exportHost.current) return
         let active = true

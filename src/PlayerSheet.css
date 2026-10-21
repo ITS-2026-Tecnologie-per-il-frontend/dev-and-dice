@@ -145,6 +145,33 @@
     overflow-x: auto;
     padding-bottom: 6px;
 }
+.sheet-magnifier {
+    position: fixed;
+    inset: auto;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 2px solid var(--ui-accent, #147d72);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 8px 32px #0005;
+    pointer-events: none;
+    user-select: none;
+    contain: strict;
+}
+.sheet-magnifier::after {
+    content: '2×';
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #fff;
+    background: #202226d9;
+    font: 600 12px/1.5 system-ui, sans-serif;
+}
+.sheet-magnifier-content { transform-origin: top left; }
+@media print { .sheet-magnifier { display: none !important; } }
 .player-paper {
     box-sizing: border-box;
     min-width: 1120px;
