@@ -107,13 +107,17 @@
 .combat-request-description { white-space:pre-wrap; overflow-wrap:anywhere; }
 .combat-request-history { max-height:650px; overflow:auto; }
 .play-notification-list.combat-request-feed > li { padding:0; }
-.play-notification-list .combat-request--review {
+.play-notification-list .combat-request--review,.master-spell-review {
     --request-muted:color-mix(in srgb,var(--text-h) 72%,var(--bg));
     --request-good:light-dark(#12695f,#86dacb);
     --request-warn:light-dark(#85520e,#efc27d);
     --request-bad:light-dark(#9d3535,#efaaaa);
     min-width:0; padding:20px; color:var(--text-h); font-size:15px; line-height:1.5;
 }
+.master-spell-review.combat-request { display:grid; gap:16px; margin:0; padding:0; border:0; }
+.master-spell-origin > label { margin:0; }
+.master-spell-review .combat-request-decision .play-actions { display:flex; flex-wrap:wrap; }
+.master-spell-review .combat-request-decision .play-actions > button { flex:1 1 140px; }
 .combat-request--review .combat-request-heading { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:10px 16px; }
 .combat-request-title { display:flex; flex:1; min-width:0; align-items:center; gap:8px; }
 .combat-request-title > .more-info { position:relative; flex-shrink:0; min-height:30px; height:30px; padding:4px 9px; font-size:12px; line-height:20px; color:var(--text-h); background:var(--bg); border-color:var(--border); }
@@ -141,20 +145,20 @@
 .combat-request--review .combat-result-attack .combat-result-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:12px 0 2px; }
 .combat-result-attack .combat-result-stats > div:last-child { box-sizing:border-box; padding-left:12px; }
 .combat-request--review .combat-result-attack dd[data-pending="true"] { color:var(--request-warn); font-size:14px; line-height:1.4; font-weight:500; }
-.combat-request--review .combat-critical-form { min-width:0; margin:12px 0 0; padding:12px; border:1px solid color-mix(in srgb,var(--request-warn) 35%,var(--border)); border-radius:5px; background:color-mix(in srgb,var(--request-warn) 5%,var(--bg)); }
-.combat-request--review .combat-critical-form fieldset { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:6px 12px; margin:0; padding:0; border:0; }
-.combat-request--review .combat-critical-form label { display:grid; gap:8px; margin:0; font-size:13px; color:var(--text-h); }
-.combat-critical-form label > span { grid-column:1/-1; font-weight:600; }
-.combat-request--review .combat-critical-form input { width:100%; min-height:44px; }
-.combat-request--review .combat-critical-form .library-help { grid-column:1/-1; grid-row:2; margin:0; color:var(--request-muted); font-size:12px; line-height:1.5; }
-.combat-request--review .combat-critical-form button { grid-column:2; grid-row:1; min-height:44px; padding:8px 12px; font-size:13px; }
+.combat-request--review .combat-inline-roll-form { min-width:0; margin:12px 0 0; padding:12px; border:1px solid color-mix(in srgb,var(--request-warn) 35%,var(--border)); border-radius:5px; background:color-mix(in srgb,var(--request-warn) 5%,var(--bg)); }
+.combat-request--review .combat-inline-roll-form fieldset { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:6px 12px; margin:0; padding:0; border:0; }
+.combat-request--review .combat-inline-roll-form label { display:grid; gap:8px; margin:0; font-size:13px; color:var(--text-h); }
+.combat-inline-roll-form label > span { grid-column:1/-1; font-weight:600; }
+.combat-request--review .combat-inline-roll-form input { width:100%; min-height:44px; }
+.combat-request--review .combat-inline-roll-form .library-help { grid-column:1/-1; grid-row:2; margin:0; color:var(--request-muted); font-size:12px; line-height:1.5; }
+.combat-request--review .combat-inline-roll-form button { grid-column:2; grid-row:1; min-height:44px; padding:8px 12px; font-size:13px; }
 .combat-request--review .combat-result-final { display:grid; grid-template-columns:minmax(0,1fr) 96px; align-items:center; gap:12px; margin:12px 0 0; color:var(--text-h); font-size:14px; }
-.combat-request--review .combat-result-final input { min-height:48px; padding:8px 10px; font-size:18px; font-weight:600; }
+.combat-request--review .combat-result-final input { min-height:44px; padding:6px 10px; font-size:18px; font-weight:600; }
 .combat-request--review .combat-result-final > label { display:block; margin:0; color:inherit; font:inherit; }
 .combat-damage-controls { position:relative; min-width:0; }
 .combat-request--review .combat-damage-reset { position:absolute; top:50%; right:calc(100% + 8px); display:grid; place-items:center; width:44px; height:44px; min-height:44px; padding:0; transform:translateY(-50%); }
 .combat-result-final:has(.combat-damage-reset) > label { padding-right:52px; }
-.combat-request--review .combat-result-final { margin-top:16px; padding-top:12px; border-top:1px solid var(--border); }
+.combat-request--review .combat-result-final { margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
 .combat-request--review .combat-result-incomplete { margin:8px 0 0; color:var(--request-warn); font-size:12px; line-height:1.5; }
 .combat-result-roll-heading { justify-content:flex-start; color:var(--request-muted); font-size:13px; }
 .combat-request--review .combat-result-outcome { display:inline-flex; width:fit-content; margin:0; gap:6px; padding:3px 8px; border:1px solid color-mix(in srgb,var(--request-tone,var(--request-muted)) 32%,var(--bg)); border-radius:4px; background:color-mix(in srgb,var(--request-tone,var(--request-muted)) 9%,var(--bg)); color:var(--request-tone,var(--request-muted)); font-size:13px; line-height:1.5; font-weight:650; }
@@ -173,14 +177,14 @@
 .combat-result:has(> .combat-result-attack) > .combat-result-final > .combat-damage-controls { grid-column:3; }
 .combat-result:has(> .combat-result-attack) > .combat-result-damage > strong { grid-column:3; padding-left:12px; }
 .combat-request--review .combat-result:has(> .combat-result-attack) > .combat-result-final input { grid-column:3; padding-left:11px; }
-.combat-request--review :is(.combat-result-details,.combat-result-notes) { margin-top:12px; color:var(--request-muted); font-size:13px; }
-.combat-request--review :is(.combat-result-details,.combat-result-notes) > summary { width:fit-content; min-height:44px; box-sizing:border-box; padding:7px 0; color:var(--request-muted); cursor:pointer; font-size:13px; line-height:1.5; }
+.combat-request--review :is(.combat-result-details,.combat-result-notes) { margin-top:4px; color:var(--request-muted); font-size:13px; }
+.combat-request--review :is(.combat-result-details,.combat-result-notes) > summary { width:fit-content; min-height:28px; box-sizing:border-box; padding:3px 0; color:var(--request-muted); cursor:pointer; font-size:13px; line-height:1.5; }
 .combat-request--review .combat-result-attack > .combat-result-details { margin-top:0; }
 .combat-request--review .combat-result-attack > .combat-result-details > summary { display:flex; align-items:center; min-height:28px; padding:2px 0; }
 .combat-result-attack > .combat-result-details > summary::before { content:'▸'; margin-right:5px; }
 .combat-result-attack > .combat-result-details[open] > summary::before { content:'▾'; }
 .combat-result-attack > .combat-result-details > summary::-webkit-details-marker { display:none; }
-@media (pointer:coarse) { .combat-request--review .combat-result-attack > .combat-result-details > summary { min-height:44px; } }
+@media (pointer:coarse) { .combat-request--review :is(.combat-result-details,.combat-result-notes) > summary { min-height:44px; } }
 .combat-request--review .combat-result-notes > summary { color:var(--request-warn); }
 .combat-request--review :is(.combat-result-details,.combat-result-notes) p { margin:8px 0; color:var(--request-muted); font-size:13px; line-height:1.6; }
 .combat-result-details p > span { margin-right:8px; }
@@ -262,7 +266,9 @@
 .action-roll-form .player-attack-total { display:grid; grid-template-rows:minmax(28px,1fr) auto; gap:6px; color:var(--text); font-size:12px; overflow-wrap:anywhere; }
 .action-roll-form .player-attack-total > span { display:flex; align-items:center; font-size:11px; white-space:nowrap; }
 .action-roll-form .player-attack-total > strong { display:flex; align-items:center; min-height:44px; color:var(--text-h); font-size:18px; line-height:26px; }
-.action-roll-form .player-roll-packet .player-damage-compact { display:grid; grid-template-columns:minmax(0,1fr) var(--roll-mod-width); align-items:center; gap:2px var(--roll-gap); margin:0; }
+.action-roll-form .player-shared-damage { --roll-mod-width:100px; --roll-gap:8px; gap:8px; padding:8px; }
+.action-roll-form .player-shared-damage > p { margin:0; font-size:12px; line-height:1.4; }
+.action-roll-form :is(.player-roll-packet,.player-shared-damage) .player-damage-compact { display:grid; grid-template-columns:minmax(0,1fr) var(--roll-mod-width); align-items:center; gap:2px var(--roll-gap); margin:0; }
 .action-roll-form .player-roll-packet:has(.player-attack-compact) .player-damage-compact { grid-template-columns:minmax(0,1fr) var(--roll-mod-width) var(--roll-total-width); }
 .action-roll-form .player-damage-caption { grid-column:1; grid-row:1; min-width:0; font-size:13px; line-height:1.35; overflow-wrap:anywhere; }
 .action-roll-form .player-damage-compact > .library-help { grid-column:1; grid-row:2; line-height:1.4; margin:0; }

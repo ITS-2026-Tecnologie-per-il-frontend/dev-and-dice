@@ -59,6 +59,13 @@ assert.equal(resolveTarget(gust,[{targetId:2,damage:[]}],defenseProfile(defender
 const acid=resolutionPlan(magicSheet,template('acid-splash'),rules.catalog)
 assert.equal(acid.save.onSuccess,'none','Acid Splash deals no damage on a successful save')
 assert.equal(acid.damageHint,'2d6','Cantrip dice follow character level')
+const missilePlan=resolutionPlan({...magicSheet,strength:'14'},template('magic-missile'),rules.catalog,'slot:1')
+assert.deepEqual(missilePlan.damageBonuses,{force:1});assert.deepEqual(missilePlan.damageDice,{force:'1d4'})
+const darts=[1,2,3].map(()=>({targetId:2,damage:[{type:'force',amount:4}]}))
+assert.equal(resolveTarget(missilePlan,darts,defenseProfile(defender,undefined,[],2)).damage,15,'Three d4 results of 4 each deal 5 damage each, regardless of Strength')
+assert.equal(resolveTarget(missilePlan,darts,{...defenseProfile(defender,undefined,[],2),spellImmunities:['phb2014:spell:magic-missile']}).damage,0,'Shield still blocks the entire dart, including its fixed bonus')
+assert.equal(resolutionPlan(magicSheet,template('fireball'),rules.catalog,'slot:4').damageHint,'8d6 + 1d6')
+assert.equal(resolutionPlan(magicSheet,template('fireball'),rules.catalog,'slot:5').damageHint,'8d6 + 2d6')
 const bless=resolutionPlan(magicSheet,template('bless'),rules.catalog),bane=resolutionPlan(magicSheet,template('bane'),rules.catalog)
 assert.equal(bless.effects[0].sign,1);assert.equal(bane.effects[0].sign,-1)
 const profile=defenseProfile(defender,'dexterity',[],2),savePlan={...base,kind:'save',save:{ability:'dexterity',dc:13,onSuccess:'half'},maximumPackets:null,sharedDamage:true}

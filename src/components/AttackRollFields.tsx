@@ -6,15 +6,28 @@ import { HelpTooltip } from './HelpTooltip'
 const validRollNumber=(value:string)=>/^\d*$/.test(value)&&Number.isSafeInteger(Number(value))
 
 const dieShapes:Record<number,string>={
-    4:'M14 2 27 27H1Z M14 2v17L1 27m13-8 13 8',
-    6:'m14 1 13 7v14l-13 7L1 22V8Z M1 8l13 7 13-7 M14 15v14',
-    8:'M14 1 27 15 14 29 1 15Z M14 1 5 20h18Z M14 29 5 20m18 0-9 9',
-    10:'M14 1 27 12l-4 12-9 5-9-5-4-12Z M14 1 8 18l6 11 6-11Z M1 12l7 6m12 0 7-6',
-    12:'m14 1 11 7 2 14-13 7L1 22 2 8Z M14 6l8 6-3 10H9L6 12Z M14 1v5M2 8l4 4m19-4-3 4m5 10-8 0m-18 0h8m5 7v-7',
-    20:'M14 1 27 8v14l-13 7L1 22V8Z M14 1 7 10l7 13 7-13Z M1 8l6 2-6 12 13 1 13-1-6-12 6-2 M14 23v6',
+    4:'M14 2 27 27H1Z',
+    6:'M5 2h18a4 4 0 0 1 4 4v18a4 4 0 0 1-4 4H5a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4Z',
+    8:'M14 1 27 21 14 29 1 21Z',
+    10:'M14 1 27 16 14 29 1 16Z',
+    12:'M14 1 23 5 27 14 24 23 18 28H10L4 23 1 14 5 5Z',
+    20:'M14 1 27 8V22L14 29 1 22V8Z',
+}
+const dieEdges:Record<number,string>={
+    4:'M14 2 20 22 27 27 M20 22 1 27',
+    8:'M14 1 7 21H21Z M1 21H27',
+    10:'M14 1 7 14 14 19 21 14Z M1 16 7 14 M21 14 27 16 M14 19V29',
+    12:'M14 6 23 12 19 23H9L5 12Z M14 1V6 M23 5V12 M27 14 23 12 M24 23H19 M18 28 14 23 M10 28 14 23 M4 23H9 M1 14 5 12 M5 5V12',
+    20:'M14 1 6 9H22Z M1 8 6 9 1 22 14 23 27 22 22 9 27 8 M6 9 14 23 22 9 M14 23V29',
 }
 export function DieIcon({sides}:{sides:number}) {
-    return <svg className="combat-die-icon" viewBox="0 0 28 30" role="img" aria-label={`d${sides}`}><path d={dieShapes[sides]??dieShapes[10]} fill="none" stroke="currentColor" strokeWidth="1.3"/><text x="14" y={sides===6?23:17} textAnchor="middle" fill="currentColor" fontSize={sides===100?6:8} fontWeight="700">{sides}</text></svg>
+    return <svg className="combat-die-icon" viewBox="0 0 28 30" role="img" aria-label={`d${sides}`}>
+        <path d={dieShapes[sides]??dieShapes[10]} fill="currentColor" stroke="currentColor" strokeWidth=".8" strokeLinejoin="round"/>
+        {sides===6 ? [8,15,22].flatMap(cy=>[8,20].map(cx=><circle key={`${cx}:${cy}`} cx={cx} cy={cy} r="2.8" fill="var(--bg, white)"/>)) : <>
+            <path d={dieEdges[sides]??dieEdges[10]} fill="none" stroke="var(--bg, white)" strokeWidth=".9" strokeLinejoin="round"/>
+            <text x={sides===4?12:14} y={sides===10||sides===100?12:17} textAnchor="middle" fill="var(--bg, white)" fontSize={sides===100?6:sides===10?8:9} fontWeight="700">{sides}</text>
+        </>}
+    </svg>
 }
 export function DiceResult({notation,value}:{notation:string;value?:number}) {
     // ponytail: render simple dice expressions; richer notation needs structured
@@ -43,5 +56,5 @@ export function AttackRollFields({plan,value,onChange,weapon=true,compact=false}
 }
 
 export function DamageRollFields({plan,values,onChange,compact=false}:{plan:ResolutionPlan;values:Partial<Record<DamageType,string>>;onChange:(type:DamageType,value:string)=>void;compact?:boolean}) {
-    return plan.damageTypes.map(type=><label key={type} className={compact?'player-damage-compact':undefined}><span className="player-damage-caption">Danni tirati{plan.damageTypes.length>1?` · ${damageNames[type]}`:''}</span><span className="library-help">{damageNames[type]}{(plan.damageDice||plan.damageHint)&&<> · {compact?<DiceResult notation={plan.damageDice?plan.damageDice[type]||'dadi da verificare':plan.damageHint}/>:plan.damageDice?plan.damageDice[type]||'dadi da verificare':plan.damageHint}{plan.damageDice&&<> · solo dadi{plan.damageBonuses?.[type]?` (${signedBonus(plan.damageBonuses[type])} automatico)`:''}</>}</>}</span><input aria-label={plan.damageTypes.length>1?`Danni tirati · ${damageNames[type]}`:'Danni tirati'} type="text" inputMode="numeric" pattern="[0-9]+" required maxLength={16} placeholder="Totale, es. 7" value={values[type]??''} onChange={event=>{if(validRollNumber(event.target.value))onChange(type,event.target.value)}}/></label>)
+    return plan.damageTypes.map(type=><label key={type} className={compact?'player-damage-compact':undefined}><span className="player-damage-caption">Danni tirati{plan.damageTypes.length>1?` · ${damageNames[type]}`:''}</span><span className="library-help">{damageNames[type]}{(plan.damageDice||plan.damageHint)&&<> · {compact?<DiceResult notation={plan.damageDice?plan.damageDice[type]||'dadi da verificare':plan.damageHint}/>:plan.damageDice?plan.damageDice[type]||'dadi da verificare':plan.damageHint}{plan.damageDice&&<> · solo dadi{plan.damageBonuses?.[type]?` (${signedBonus(plan.damageBonuses[type])} automatico)`:''}</>}</>}</span><input aria-label={plan.damageTypes.length>1?`Danni tirati · ${damageNames[type]}`:'Danni tirati'} type="text" inputMode="numeric" pattern="[0-9]+" required maxLength={16} placeholder={plan.damageDice?'Solo dadi':'Totale, es. 7'} value={values[type]??''} onChange={event=>{if(validRollNumber(event.target.value))onChange(type,event.target.value)}}/></label>)
 }

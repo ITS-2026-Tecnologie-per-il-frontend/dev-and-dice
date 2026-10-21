@@ -759,7 +759,7 @@ html { scroll-behavior: smooth; }
 .action-roll-form .player-action-description > summary::-webkit-details-marker { display:none; }
 .action-roll-form .player-action-description > summary::after { content:'▸'; }
 .action-roll-form .player-action-description[open] > summary::after { transform:rotate(90deg); }
-.master-attack-form .ability-target-list { max-height:none; overflow:visible; }
+.master-attack-form .ability-target-list,.master-spell-form .ability-target-list { max-height:none; overflow:visible; }
 .master-action-form > fieldset { border:0; padding:0; }
 .master-action-form > fieldset > legend { padding:0; margin-bottom:12px; }
 .master-attack-form .player-weapon-roll { grid-template-columns:minmax(0,280px) minmax(80px,1fr); gap:8px; }

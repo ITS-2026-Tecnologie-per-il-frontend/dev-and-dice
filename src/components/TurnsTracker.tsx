@@ -6,6 +6,7 @@ import { useDialogDismiss } from '../utils/Dialog'
 import { CharacterSheets, type CharacterSheetsHandle } from './CharacterSheets'
 import { characterFields, clampHitPointsToMaximum, newCharacterSheet, normalizeHitPoints, turnFromSheet, importSheetAbility, initiativeBonus, syncTurnStats, type CharacterSheet } from '../utils/CharacterSheets'
 import { AbilitiesTracker } from './AbilitiesTracker'
+import type { ResolvedDamagePackets } from './MasterSpellRolls'
 import { nextCombatTurn, sortByInitiative, advanceCombatAbilities, removeParticipantAbilities, hitPointsAfterDamageWithTemporary, hitPointsAfterHealing, type Ability, type Combat } from '../utils/Combat'
 import { getDropIndex, getDropTargetId, reorderByDrop, reorderById } from '../utils/Reorder'
 import { catalogAbilityKind, refreshCombatSheetAbilities, sheetFromCatalog, sheetWithCombatAbilities, type Catalog, type CatalogEntry } from '../utils/Catalog'
@@ -321,21 +322,32 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
             : [(rage || info.concentration || ability.concentration) && item.ownerId===ability.ownerId && (item.concentration || item.execution?.phase==='casting') ? {...item,active:false,execution:undefined,remainingTurns:0} : item]))
     }
 
-    function finishCombatAbility(ability:Ability) {
+    function finishCombatAbility(ability:Ability,damagePackets?:ResolvedDamagePackets) {
         setAbilityError(null)
         try {
             if (!ability.execution || handledExecutions.current.has('finish:'+ability.execution.id)) return false
             if (ability.execution.phase==='casting') {completeCombatCast(ability);setCombatRuleError('');return}
             const owner=turns.find(turn=>turn.id===ability.ownerId)?.sheet,ownerCatalog=owner ? catalogForSheet(creationData,catalog,owner) ?? catalog : catalog
             const info=combatAbilityInfo(ability,ownerCatalog),instantaneous=info.instantaneous
-            if(owner&&/^sheet-attack:[0-5]$/.test(ability.ruleId??''))spendCombatUse(owner,ability,ownerCatalog,creationData,'free',1)
+            const alreadyCast=abilities.some(item=>item.id===ability.id&&item.execution?.id===ability.execution?.id)
+            let resolvingTurns=turns
+            if(owner&&!alreadyCast) {
+                const turn=turns.find(turn=>turn.id===ability.ownerId)!
+                if(turn.availableAbilityIndexes&&ability.sheetAbilityIndex!==undefined&&!turn.availableAbilityIndexes.includes(ability.sheetAbilityIndex))throw new Error('Questa abilità non è più disponibile nella scheda.')
+                if(spellEdition(owner)==='2024'&&ability.ruleId?.includes('2014:'))throw new Error('Questa voce usa regole 2014: scegli la voce dell’edizione corretta.')
+                const castingOwner=combat?owner:{...owner,playerDetails:{...owner.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]'}}
+                const spent=spendCombatUse(castingOwner,ability,ownerCatalog,creationData,ability.execution.option,ability.execution.cost)
+                resolvingTurns=turns.map(turn=>turn.id===ability.ownerId?{...turn,sheet:spent}:turn)
+            }
             const resolving=info.repairsObject ? {...ability,targets:[]} : ability
-            const updated=resolveCombatDamage(resolving,turns,ownerCatalog).map(turn=>{
+            const updated=resolveCombatDamage(resolving,resolvingTurns,ownerCatalog).map(turn=>{
                 const target=resolving.targets?.find(target=>target.id===turn.id),damage=Number(target?.damage ?? 0)
                 if (!damage) return turn
                 const sheet:CharacterSheet|undefined=turn.sheet ? {...turn.sheet,hitPoints:turn.hitPoints,playerDetails:{...turn.sheet.playerDetails,temporaryHitPoints:turn.temporaryHitPoints}} : undefined
-                const dc=sheet && spellEdition(sheet)==='2014' && sheet.playerDetails?.['rules2014.concentration'] && creationData?.verified ? concentrationSave(creationData.verified,damage).dc : undefined
-                return {...turn,sheet,...(dc ? {concentrationChecks:[...(turn.concentrationChecks ?? []),dc]} : {})}
+                // PHB 2014, D&D_5_Player_Original_Handbook.pdf, PDF 204, Concentration: one save per damage source.
+                const hits=damagePackets?.find(target=>target.id===turn.id)?.damage??[damage]
+                const dcs=sheet&&spellEdition(sheet)==='2014'&&sheet.playerDetails?.['rules2014.concentration']&&creationData?.verified?hits.filter(damage=>damage>0).map(damage=>concentrationSave(creationData.verified!,damage).dc):[]
+                return {...turn,sheet,...(dcs.length?{concentrationChecks:[...(turn.concentrationChecks??[]),...dcs]}:{})}
             })
             const sheets=updated.flatMap(turn=>turn.sheet && turn.sheet!==turns.find(previous=>previous.id===turn.id)?.sheet ? [turn.sheet] : [])
             if (sheets.length && sheetEditor.current?.patchMany(sheets)===false) throw new Error('Salvataggio dei danni non riuscito. Nessun danno applicato.')

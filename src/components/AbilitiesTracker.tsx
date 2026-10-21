@@ -12,6 +12,7 @@ import { combatAbilityInfo, combatAbilityStatus, combatUseOptions, selectedUseOp
 import { combatTargeting } from '../domain/dnd/CombatTargets'
 import { resolutionPlan } from '../domain/dnd/CombatResolution'
 import { MasterAttackRolls } from './MasterAttackRolls'
+import { MasterSpellRolls, type ResolvedDamagePackets } from './MasterSpellRolls'
 import { SpellSaveNotice } from './AttackRollFields'
 
 type Props = {
@@ -26,7 +27,7 @@ type Props = {
     combat?:Combat|null
     onActivate?:(ability:Ability)=>void
     onEnd?:(ability:Ability)=>boolean
-    onResolve?:(ability:Ability)=>boolean|void
+    onResolve?:(ability:Ability,damagePackets?:ResolvedDamagePackets)=>boolean|void
     onCancelCast?:(ability:Ability)=>void
     creationData?:CreationData
     actionError?:{abilityId:number;message:string}|null
@@ -106,6 +107,8 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                     const targeting=combatTargeting(ability,catalog,owner,option?.id),tooManyTargets=targeting.maximum!==null && targets.length>targeting.maximum
                     const attackPlan=owner&&creationData&&/^sheet-attack:[0-5]$/.test(ability.ruleId??'')&&option?.id==='free'?resolutionPlan(owner,ability,catalog,'free',{data:creationData,active:abilities}):undefined
                     const simpleAttack=!!onResolve&&attackPlan?.kind==='attack'&&!!owner&&!!creationData
+                    const spellPlan=owner&&info.level!==undefined&&info.instantaneous&&!info.prolonged?resolutionPlan(owner,ability,catalog,option?.id):undefined
+                    const spellRolls=!!onResolve&&(spellPlan?.kind==='attack'||spellPlan?.kind==='save')&&info.damage&&!!creationData
                     const deferredPlan=owner&&ability.ruleId==='phb2014:spell:gust-of-wind'?resolutionPlan(owner,ability,catalog,option?.id):undefined
                     const timingControls=<>
                         <label className="ability-duration">
@@ -207,7 +210,9 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                             fields={{ duration: ability.duration, remainingTurns: ability.remainingTurns, active: ability.active, owner: participants.find((participant) => participant.id === ability.ownerId)?.description ?? 'Nessuno' }} />
                         </div>
                         {fixedOwner && !info.instantaneous && <details className="ability-timing-controls"><summary>Gestisci durata</summary><div>{timingControls}</div></details>}
-                        {simpleAttack ? <div className="ability-use-controls"><MasterAttackRolls ability={ability} owner={owner!} plan={attackPlan!} participants={participants} abilities={abilities} catalog={catalog} catalogForOwner={catalogForOwner} data={creationData!} onApply={targets=>onResolve!({...ability,instantaneous:true,damageEnabled:true,requirementsConfirmed:true,targets,execution:{id:ability.execution?.id??crypto.randomUUID(),phase:'resolving',option:'free',cost:1}})}/>{actionError?.abilityId===ability.id&&<p role="alert">{actionError.message}</p>}</div> : deferredPlan?.deferredSave&&onActivate ? <div className="ability-use-controls"><form className="action-roll-form master-action-form" aria-label={`Lancio: ${ability.name}`} onSubmit={event=>{event.preventDefault();onActivate({...ability,requirementsConfirmed:true,damageEnabled:false,instantaneous:false})}}><fieldset aria-label={`Parametri di ${ability.name}`}>
+                        {spellRolls ? <div className="ability-use-controls"><MasterSpellRolls key={`${ability.id}:${ability.castingSource??'class'}`} ability={ability} owner={owner!} participants={participants} abilities={abilities} catalog={catalog} catalogForOwner={catalogForOwner} data={creationData!} options={options} optionId={option?.id} error={error} onApply={onResolve!}>
+                            {!simpleCantrip&&<label><span>Origine del lancio</span><select aria-label={`Origine del lancio di ${ability.name}`} disabled={running} value={ability.castingSource??'class'} onChange={event=>patch(ability.id,{castingSource:event.target.value as Ability['castingSource'],useOption:undefined,resourceCost:1,requirementsConfirmed:false})}><option value="class">Slot, trucchetto o rituale</option><option value="resource">Privilegio con risorsa propria</option><option value="free">Privilegio senza costo</option></select></label>}
+                        </MasterSpellRolls>{actionError?.abilityId===ability.id&&<p role="alert">{actionError.message}</p>}</div> : simpleAttack ? <div className="ability-use-controls"><MasterAttackRolls ability={ability} owner={owner!} plan={attackPlan!} participants={participants} abilities={abilities} catalog={catalog} catalogForOwner={catalogForOwner} data={creationData!} onApply={targets=>onResolve!({...ability,instantaneous:true,damageEnabled:true,requirementsConfirmed:true,targets,execution:{id:ability.execution?.id??crypto.randomUUID(),phase:'resolving',option:'free',cost:1}})}/>{actionError?.abilityId===ability.id&&<p role="alert">{actionError.message}</p>}</div> : deferredPlan?.deferredSave&&onActivate ? <div className="ability-use-controls"><form className="action-roll-form master-action-form" aria-label={`Lancio: ${ability.name}`} onSubmit={event=>{event.preventDefault();onActivate({...ability,requirementsConfirmed:true,damageEnabled:false,instantaneous:false})}}><fieldset aria-label={`Parametri di ${ability.name}`}>
                             <details className="player-action-description" open><summary>Descrizione dell’azione</summary><p className="combat-request-description">{ability.description??info.entry?.description}</p></details>
                             <label>Risorsa<select aria-label="Risorsa" required disabled={running} value={option?.id??''} onChange={event=>patch(ability.id,{useOption:event.target.value})}>{options.map(o=><option value={o.id} key={o.id} disabled={o.remaining!==null&&o.remaining<(o.cost??ability.resourceCost??1)}>{o.label}{o.remaining===null?'':` · ${o.remaining} rimasti`}</option>)}</select></label>
                             <SpellSaveNotice plan={deferredPlan}/>
@@ -250,7 +255,7 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                             </>}
                             {actionError?.abilityId===ability.id && <p role="alert" id={`ability-error-${ability.id}`}>{actionError.message}</p>}
                         </div>}
-                        {!simpleAttack&&(!deferredPlan?.deferredSave||running)&&(onEnd && ability.active && (ability.timed===false || ability.remainingTurns>0) ? <button className="end-combat end-ability" type="button" onClick={()=>onEnd(ability)}>Termina effetto</button> : <button
+                        {!spellRolls&&!simpleAttack&&(!deferredPlan?.deferredSave||running)&&(onEnd && ability.active && (ability.timed===false || ability.remainingTurns>0) ? <button className="end-combat end-ability" type="button" onClick={()=>onEnd(ability)}>Termina effetto</button> : <button
                             className="activate-ability"
                             aria-describedby={actionError?.abilityId===ability.id ? `ability-error-${ability.id}` : undefined}
                             type="button"

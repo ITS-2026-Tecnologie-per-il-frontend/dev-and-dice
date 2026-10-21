@@ -1,6 +1,6 @@
-import { useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useId, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { playApi, type ActionChoices, type CombatRequest, type CombatTarget, type Game, type PlayerGame } from '../utils/PlayApi'
-import { damageNames, saveNames, validPackets, type DamageType, type DamageRoll, type ResolutionPlan, type RollPacket } from '../domain/dnd/CombatResolution'
+import { damageNames, saveNames, validPackets, type DamageType, type DamageRoll, type ResolutionPlan, type RollPacket, type TargetResolution } from '../domain/dnd/CombatResolution'
 import { signedBonus } from '../utils/CharacterSheets'
 import { AbilityTargets } from './AbilityCard'
 import { AttackRollFields, DamageRollFields, SpellSaveNotice, DiceResult } from './AttackRollFields'
@@ -9,14 +9,28 @@ const message=(error:unknown)=>error instanceof Error?error.message:'Operazione 
 type Draft={targetId:number;die:string;damage:Partial<Record<DamageType,string>>}
 const safeNumber=(value:string)=>/^\d*$/.test(value)&&Number.isSafeInteger(Number(value))
 
+export type RollSubmission={option:string;cost:number;mode:ResolutionPlan['kind'];damageEnabled:boolean;packets:RollPacket[];effectChoice?:string}
+type RollAction=Pick<ActionChoices['actions'][number],'name'|'description'|'group'|'cost'|'error'|'options'|'resolution'>
+
 export function PlayerActionRolls({game,choices,action,onUpdate,onSubmitted,formRef}:{game:PlayerGame;choices:ActionChoices;action:ActionChoices['actions'][number];onUpdate:(game:Game)=>void;onSubmitted:()=>void;formRef:RefObject<HTMLFormElement|null>}) {
-    const [optionId,setOptionId]=useState(()=>action.options.find(o=>o.remaining===null||o.remaining>=(o.cost??action.cost))?.id??action.options[0]?.id??'')
-    const [rows,setRows]=useState<Draft[]>([]),[shared,setShared]=useState<Partial<Record<DamageType,string>>>({}),[choice,setChoice]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('')
+    const attempt=useRef<{signature:string;body:unknown}>(undefined)
+    return <ActionRollForm action={action} targets={choices.targets} ownerId={choices.ownerId} canSubmit={choices.canPropose} disabled={game.combatRequests.some(r=>r.status==='pending')||game.revision!==choices.revision} formRef={formRef} id="player-action-proposal" label={`Proposta: ${action.name}`} submitLabel="Invia al Master" onSubmit={async draft=>{
+        const body={revision:choices.revision,key:action.key,...draft},signature=JSON.stringify(body)
+        if(attempt.current?.signature!==signature)attempt.current={signature,body:{...body,id:crypto.randomUUID()}}
+        onUpdate(await playApi<Game>('/games/'+game.id+'/requests','POST',attempt.current.body));attempt.current=undefined;onSubmitted()
+    }}/>
+}
+
+export function ActionRollForm({action,targets,ownerId,canSubmit,disabled,formRef,id,label,className='',initialOption,initialDraft,children,submitLabel,onSubmit}:{
+    action:RollAction;targets:ActionChoices['targets'];ownerId:number|null;canSubmit:boolean;disabled:boolean;formRef?:RefObject<HTMLFormElement|null>;id?:string;label:string;className?:string;initialOption?:string;initialDraft?:RollSubmission;children?:ReactNode;submitLabel:string;onSubmit:(draft:RollSubmission)=>void|Promise<void>
+}) {
+    const [optionId,setOptionId]=useState(()=>initialDraft?.option??initialOption??action.options.find(o=>o.remaining===null||o.remaining>=(o.cost??action.cost))?.id??action.options[0]?.id??'')
+    const [rows,setRows]=useState<Draft[]>(()=>initialDraft?.packets.map(packet=>({targetId:packet.targetId,die:packet.die===undefined?'':String(packet.die),damage:Object.fromEntries(packet.damage.map(damage=>[damage.type,String(damage.amount)]))}))??[]),[shared,setShared]=useState<Partial<Record<DamageType,string>>>(()=>Object.fromEntries((initialDraft?.packets[0]?.damage??[]).map(damage=>[damage.type,String(damage.amount)]))),[choice,setChoice]=useState(initialDraft?.effectChoice??''),[busy,setBusy]=useState(false),[error,setError]=useState('')
     const option=action.options.find(o=>o.id===optionId),plan=option?.resolution??action.resolution!,targeting=option?.targeting
-    const pending=game.combatRequests.some(r=>r.status==='pending'),stale=game.revision!==choices.revision
+    const optionAvailable=!!option&&(option.remaining===null||option.remaining>=(option.cost??action.cost))
     const invalidAttack=plan.kind==='attack'&&rows.some(row=>!/^([1-9]|1[0-9]|20)$/.test(row.die))
     const hitLimitReached=plan.maximumPackets!==null&&rows.length>=plan.maximumPackets
-    const working=useRef(false),attempt=useRef<{signature:string;body:unknown}>(undefined)
+    const working=useRef(false)
     function patch(index:number,values:Partial<Draft>) {setRows(current=>current.map((row,i)=>i===index?{...row,...values}:row))}
     function addHit(targetId:number) {setRows(current=>plan.maximumPackets!==null&&current.length>=plan.maximumPackets?current:[...current,{targetId,die:'',damage:{}}])}
     function changeOption(id:string) {
@@ -28,25 +42,24 @@ export function PlayerActionRolls({game,choices,action,onUpdate,onSubmitted,form
         }
     }
     async function submit() {
-        if(working.current||!choices.canPropose||stale||pending||!option)return
+        if(working.current||!canSubmit||disabled||!optionAvailable)return
         const packets:RollPacket[]=rows.map(row=>({targetId:row.targetId,...(plan.kind==='attack'?{die:Number(row.die)}:{}),damage:plan.damageTypes.map(type=>({type,amount:Number((plan.sharedDamage?shared:row.damage)[type])}))}))
         if(!validPackets(packets)){setError('Verifica i risultati dei dadi.');return}
-        const body={revision:choices.revision,key:action.key,option:optionId,cost:option.cost??action.cost,mode:plan.kind,damageEnabled:plan.damageTypes.length>0,packets,...(plan.effectChoices?.length?{effectChoice:choice}:{})}
-        const signature=JSON.stringify(body)
-        if(attempt.current?.signature!==signature)attempt.current={signature,body:{...body,id:crypto.randomUUID()}}
+        const body={option:optionId,cost:option.cost??action.cost,mode:plan.kind,damageEnabled:plan.damageTypes.length>0,packets,...(plan.effectChoices?.length?{effectChoice:choice}:{})}
         working.current=true;setBusy(true);setError('')
-        try {onUpdate(await playApi<Game>('/games/'+game.id+'/requests','POST',attempt.current.body));attempt.current=undefined;onSubmitted()}catch(error){setError(message(error))}finally{working.current=false;setBusy(false)}
+        try {await onSubmit(body)}catch(error){setError(message(error))}finally{working.current=false;setBusy(false)}
     }
-    return <form className="action-roll-form" id="player-action-proposal" ref={formRef} tabIndex={-1} aria-label={`Proposta: ${action.name}`} onSubmit={event=>{event.preventDefault();void submit()}}>
-        <fieldset aria-label={`Parametri di ${action.name}`} disabled={busy||pending||stale||!!action.error}>
+    return <form className={`action-roll-form ${className}`} id={id} ref={formRef} tabIndex={-1} aria-label={label} onSubmit={event=>{event.preventDefault();void submit()}}>
+        <fieldset aria-label={`Parametri di ${action.name}`} disabled={busy||disabled||!!action.error}>
             <details className="player-action-description" open><summary>Descrizione dell’azione</summary><p className="combat-request-description">{action.description}</p></details>
+            {children}
             {!(action.options.length===1&&optionId==='free')&&<label>Risorsa<select aria-label="Risorsa" value={optionId} required onChange={event=>changeOption(event.target.value)}>{action.options.map(o=><option value={o.id} key={o.id} disabled={o.remaining!==null&&o.remaining<(o.cost??action.cost)}>{o.label}{o.remaining===null?'':` · ${o.remaining} rimasti`}</option>)}</select></label>}
             {plan.kind==='save'&&<p>Il bersaglio deve effettuare un <strong>tiro salvezza su {saveNames[plan.save!.ability]}</strong>. Lo inserirà il suo giocatore, oppure il Master per una creatura.</p>}
             {plan.kind==='automatic'&&<p>Questa azione non richiede un tiro per colpire. Inserisci soltanto i danni indicati.</p>}
             {plan.deferredSave?<SpellSaveNotice plan={plan}/>:plan.kind==='none'&&<p>Questa azione non richiede un tiro per colpire né un tiro dei danni.</p>}
             {plan.effectChoices?.length&&<label>Tipo di protezione<select value={choice} required onChange={event=>setChoice(event.target.value)}><option value="">Scegli il tipo previsto dall’incantesimo…</option>{plan.effectChoices.map(type=><option value={type} key={type}>{damageNames[type]}</option>)}</select></label>}
             {plan.weaponEffect&&<p>Scegli il personaggio che possiede l’arma. Il Master selezionerà l’oggetto preciso quando approva l’incantesimo.</p>}
-            {targeting&&<AbilityTargets candidates={choices.targets} ownerId={choices.ownerId} selectedIds={[...new Set(rows.map(row=>row.targetId))]} maximum={plan.weaponEffect?1:targeting.maximum} disableNewTargets={hitLimitReached} summary={plan.weaponEffect?'Un solo personaggio per questo incantesimo.':targeting.summary} label={plan.damageTypes.length?'Bersagli del danno':'Bersagli'}
+            {targeting&&<AbilityTargets candidates={targets} ownerId={ownerId} selectedIds={[...new Set(rows.map(row=>row.targetId))]} maximum={plan.weaponEffect?1:targeting.maximum} disableNewTargets={hitLimitReached} summary={plan.weaponEffect?'Un solo personaggio per questo incantesimo.':targeting.summary} label={plan.damageTypes.length?'Bersagli del danno':'Bersagli'}
                 onChange={(targetId,checked)=>checked?addHit(targetId):setRows(current=>current.filter(row=>row.targetId!==targetId))}
                 renderSelected={candidate=>plan.sharedDamage||plan.kind==='none'?null:plan.kind==='save'&&!plan.damageTypes.length?<SpellSaveNotice plan={plan}/>:<div className="player-packet-rolls">{rows.map((row,index)=>row.targetId!==candidate.id?null:<fieldset key={index} className="player-roll-packet"><legend>{plan.maximumPackets!==1&&plan.maximumPackets!==null?`Colpo ${index+1}`:'Dadi richiesti'}{rows.filter(r=>r.targetId===candidate.id).length>1&&<button className="player-remove-packet" type="button" aria-label={`Rimuovi colpo ${index+1}`} title={`Rimuovi colpo ${index+1}`} onClick={()=>setRows(current=>current.filter((_,i)=>i!==index))}>×</button>}</legend>
                     {plan.kind==='attack'&&<AttackRollFields compact plan={plan} value={row.die} weapon={action.group==='Attacchi fisici'} onChange={die=>patch(index,{die,damage:{}})}/>}
@@ -54,9 +67,9 @@ export function PlayerActionRolls({game,choices,action,onUpdate,onSubmitted,form
                 </fieldset>)}
                     {plan.maximumPackets!==null&&plan.maximumPackets>1&&<button type="button" disabled={hitLimitReached} onClick={()=>addHit(candidate.id)}>Aggiungi colpo a {candidate.name}</button>}
                 </div>}/>}
-            {rows.length>0&&plan.sharedDamage&&<fieldset className="player-shared-damage"><legend>Danno dell’area</legend><p>Un unico tiro dei danni per tutti i bersagli selezionati.</p><DamageRollFields plan={plan} values={shared} onChange={(type,value)=>setShared(current=>({...current,[type]:value}))}/></fieldset>}
+            {rows.length>0&&plan.sharedDamage&&<fieldset className="player-shared-damage"><legend>Danno dell’area</legend><p>Un tiro per tutti i bersagli selezionati.</p><DamageRollFields compact plan={plan} values={shared} onChange={(type,value)=>setShared(current=>({...current,[type]:value}))}/></fieldset>}
             {plan.maximumPackets!==null&&plan.maximumPackets>1&&<p>Colpi assegnati: {rows.length}/{plan.maximumPackets}. Ogni colpo conserva il proprio tiro e i propri danni.</p>}
-            <button className="play-primary" disabled={!choices.canPropose||!option||invalidAttack||rows.length===0&&(plan.kind==='attack'||plan.kind==='save'||!!plan.damageTypes.length||!!plan.effects.length||!!plan.weaponEffect)||plan.maximumPackets!==null&&rows.length>plan.maximumPackets||!!plan.requiredPackets&&rows.length!==plan.requiredPackets}>Invia al Master</button>
+            <button className="play-primary" disabled={!canSubmit||!optionAvailable||invalidAttack||rows.length===0&&(plan.kind==='attack'||plan.kind==='save'||!!plan.damageTypes.length||!!plan.effects.length||!!plan.weaponEffect)||plan.maximumPackets!==null&&rows.length>plan.maximumPackets||!!plan.requiredPackets&&rows.length!==plan.requiredPackets}>{submitLabel}</button>
         </fieldset>{error&&<p role="alert">{error}</p>}
     </form>
 }
@@ -85,11 +98,13 @@ function D20Roll({value}:{value:number}) {return <DiceResult notation="1d20" val
 function DamageDice({rolls,plan}:{rolls:DamageRoll[];plan?:ResolutionPlan}) {
     return rolls.map((roll,i)=>{
         const type=roll.type==='untyped'?plan?.damageTypeOverride??roll.type:roll.type
-        return <span className="combat-damage-dice" key={i}><DiceResult notation={plan?.damageDice?.[type]??plan?.damageDice?.[roll.type]??(plan?.damageTypes.length===1?plan.damageHint:'')} value={roll.amount}/> <span>{damageNames[type]}</span></span>
+        return <span className="combat-damage-dice" key={i}><DiceResult notation={plan?.damageDice?.[type]??plan?.damageDice?.[roll.type]??(plan?.damageTypes.length===1?plan.damageHint:'')} value={roll.amount}/> <span>Danni ({damageNames[type]})</span></span>
     })
 }
 
-export function ResolutionDetails({request,review=false,renderTarget,renderPacket}:{request:CombatRequest;review?:boolean;renderTarget?:(target:CombatTarget)=>ReactNode;renderPacket?:(target:CombatTarget,index:number)=>ReactNode}) {
+export type ResolutionReview=Pick<CombatRequest,'id'|'resolution'|'targets'|'packets'|'mode'|'damageEnabled'|'status'|'wind'>
+
+export function ResolutionDetails({request,review=false,renderTarget,renderPacket,renderSave}:{request:ResolutionReview;review?:boolean;renderSave?:(target:CombatTarget)=>ReactNode;renderTarget?:(target:CombatTarget)=>ReactNode;renderPacket?:(target:CombatTarget,index:number)=>ReactNode}) {
     if(!request.resolution&&!review)return null
     return <div className="combat-resolution-details">{request.resolution?.deferredSave&&<SpellSaveNotice plan={request.resolution}/>} {(request.wind?[]:request.targets).map(target=>{
         const result=target.resolution,attack=target.attack
@@ -106,6 +121,7 @@ export function ResolutionDetails({request,review=false,renderTarget,renderPacke
             {result?.save&&<dl className="combat-result-stats">
                 <div><dt>Tiro salvezza</dt><dd>{saveNames[result.save.ability]}</dd></div><div><dt>Totale</dt><dd>{result.save.total??(result.save.automaticFailure?'Fallimento automatico':'In attesa')}</dd></div><div><dt>CD</dt><dd>{result.save.dc??'Da verificare'}</dd></div>
             </dl>}
+            {renderSave?.(target)}
             {packets.map((packet,index)=>{
                 if(request.mode!=='attack')return null
                 const sent=targetPackets?.[index],die=sent?.die??(index===0?attack?.die:undefined)
@@ -137,12 +153,26 @@ export function ResolutionDetails({request,review=false,renderTarget,renderPacke
     })}</div>
 }
 
+export function FinalDamageField({target,result,value,calculated,disabled,formId,onChange}:{target:Pick<CombatTarget,'id'|'name'>;result?:TargetResolution;value:string;calculated:string;disabled:boolean;formId?:string;onChange:(value:string)=>void}) {
+    const id=useId(),input=useRef<HTMLInputElement>(null)
+    const changed=calculated!==''&&(value===''||Number(value)!==Number(calculated))
+    return <><div className="combat-result-final"><label htmlFor={id}>Danni finali a {target.name}</label><span className="combat-damage-controls">
+        {changed&&<button className="play-secondary combat-damage-reset" type="button" aria-label={`Ripristina danni calcolati a ${target.name}`} title={`Ripristina il valore calcolato (${calculated})`} disabled={disabled} onClick={()=>{onChange(calculated);input.current?.focus()}}><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2.6 8M3 4v6h6"/></svg></button>}
+        <input ref={input} id={id} type="number" form={formId} name={`damage-${target.id}`} autoComplete="off" inputMode="numeric" min="0" step="1" required disabled={disabled} value={value} onChange={event=>onChange(event.target.value)}/>
+    </span></div>{result?.damage===null&&<p className="combat-result-incomplete" role="status">{result.packets.some(packet=>packet.needsCritical.length)?'Completa i dadi aggiuntivi del critico per calcolare il totale.':'Calcolo incompleto: completa i dati richiesti o inserisci la decisione del Master.'}</p>}</>
+}
+
 export type RequestDecision='approve'|'reject'|'roll'
-export function MasterCriticalRolls({request,target,index,disabled,onDecide}:{request:CombatRequest;target:CombatTarget;index:number;disabled:boolean;onDecide:(id:string,decision:RequestDecision,body:unknown)=>Promise<void>}) {
+export function MasterCriticalRolls({request,target,index,disabled,onDecide}:{request:Pick<ResolutionReview,'id'|'status'>;target:CombatTarget;index:number;disabled:boolean;onDecide:(id:string,decision:RequestDecision,body:unknown)=>Promise<void>}) {
     if(request.status!=='pending')return null
     return target.resolution?.packets[index]?.needsCritical.map(type=><MasterDie key={`${target.id}:${index}:${type}`} label={`Dadi aggiuntivi del critico · ${target.name} · colpo ${index+1} · ${damageNames[type]}`} compactLabel={`Dadi aggiuntivi del critico · ${damageNames[type]}`} disabled={disabled} onSubmit={value=>onDecide(request.id,'roll',{targetId:target.id,kind:'critical',packet:index,type,value})}/>)
 }
-export function MasterResolutionRolls({request,disabled,onDecide}:{request:CombatRequest;disabled:boolean;onDecide:(id:string,decision:RequestDecision,body:unknown)=>Promise<void>}) {
+export function MasterSavingRolls({request,target,disabled,onDecide}:{request:ResolutionReview;target:CombatTarget;disabled:boolean;onDecide:(id:string,decision:RequestDecision,body:unknown)=>Promise<void>}) {
+    const result=target.resolution
+    if(!result||!request.resolution||request.status!=='pending'||request.wind)return null
+    return <>{(result.save?.needsBonusDice??[]).map(d=><MasterDie key={`bonus-save:${target.id}:${d.id}`} compactLabel={`${d.label} · TS di ${target.name}`} hint="Inserisci il risultato del dado bonus." label={`${d.label} · TS di ${target.name} · 1d${d.sides}`} bonus allowZero={d.sign===1} disabled={disabled} onSubmit={value=>onDecide(request.id,'roll',{targetId:target.id,kind:'bonus-save',effectId:d.id,value})}/>)} {result.save&&!result.save.automaticFailure&&(result.save.die===undefined||result.save.needsSecondDie)?<MasterDie key={'save:'+target.id+':'+(result.save.die===undefined?'first':'second')} compactLabel={`Tiro salvezza · ${saveNames[result.save.ability]}${result.save.die!==undefined?' · secondo d20':''}`} hint="Inserisci solo il d20: il bonus del bersaglio viene aggiunto automaticamente." label={`Tiro salvezza ${saveNames[result.save.ability]} di ${target.name}${result.save.die!==undefined?' · secondo d20':''}`} die="d20" disabled={disabled} onSubmit={value=>onDecide(request.id,'roll',{targetId:target.id,kind:result.save!.die===undefined?'save':'save-second',value})}/>:null}</>
+}
+export function MasterResolutionRolls({request,disabled,onDecide}:{request:ResolutionReview;disabled:boolean;onDecide:(id:string,decision:RequestDecision,body:unknown)=>Promise<void>}) {
     if(!request.resolution||request.status!=='pending'||request.wind)return null
     const missed=request.resolution.kind==='attack'&&request.targets.every(t=>t.resolution?.packets.every(p=>p.hit===false))
     return <div className="combat-resolution-rolls">
@@ -151,7 +181,7 @@ export function MasterResolutionRolls({request,disabled,onDecide}:{request:Comba
         {request.targets.flatMap(target=>{
         const result=target.resolution
         if(!result)return []
-        return [...(result.save?.needsBonusDice??[]).map(d=><MasterDie key={`bonus-save:${target.id}:${d.id}`} label={`${d.label} · TS di ${target.name} · 1d${d.sides}`} bonus allowZero={d.sign===1} disabled={disabled} onSubmit={value=>onDecide(request.id,'roll',{targetId:target.id,kind:'bonus-save',effectId:d.id,value})}/>),result.save&&!result.save.automaticFailure&&(result.save.die===undefined||result.save.needsSecondDie)?<MasterDie key={'save:'+target.id+':'+(result.save.die===undefined?'first':'second')} label={`Tiro salvezza ${saveNames[result.save.ability]} di ${target.name}${result.save.die!==undefined?' · secondo d20':''}`} die="d20" disabled={disabled} onSubmit={value=>onDecide(request.id,'roll',{targetId:target.id,kind:result.save!.die===undefined?'save':'save-second',value})}/>:null,
+        return [
             ...result.packets.flatMap((packet,index)=>(packet.needsBonusDice??[]).map(d=><MasterDie key={`bonus-attack:${target.id}:${index}:${d.id}`} label={`${d.label} · colpo ${index+1} a ${target.name} · 1d${d.sides}`} bonus allowZero={d.sign===1} disabled={disabled} onSubmit={value=>onDecide(request.id,'roll',{targetId:target.id,kind:'bonus-attack',packet:index,effectId:d.id,value})}/>)),
             ...result.packets.flatMap((packet,index)=>packet.needsSecondDie?[<MasterDie key={`attack:${target.id}:${index}`} label={`Secondo d20 per colpire ${target.name} · colpo ${index+1}`} die="d20" disabled={disabled} onSubmit={value=>onDecide(request.id,'roll',{targetId:target.id,kind:'attack',packet:index,value})}/>]:[])]
     })}</div>
@@ -160,7 +190,7 @@ function MasterChoice({label,options,disabled,onSubmit}:{label:string;options:[s
     const [value,setValue]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),working=useRef(false)
     return <form aria-label={label} onSubmit={event=>{event.preventDefault();if(working.current)return;working.current=true;setBusy(true);setError('');void onSubmit(value).catch(e=>setError(message(e))).finally(()=>{working.current=false;setBusy(false)})}}><fieldset disabled={disabled||busy}><label>{label}<select required value={value} onChange={event=>setValue(event.target.value)}><option value="">Da verificare…</option>{options.map(([key,name])=><option key={key} value={key}>{name}</option>)}</select></label><button type="submit">Conferma proprietà</button></fieldset>{error&&<p role="alert">{error}</p>}</form>
 }
-function MasterDie({label,die,bonus=false,allowZero=false,compactLabel,disabled,onSubmit}:{label:string;die?:'d20';bonus?:boolean;allowZero?:boolean;compactLabel?:string;disabled:boolean;onSubmit:(value:number)=>Promise<void>}) {
+function MasterDie({label,die,bonus=false,allowZero=false,compactLabel,hint,disabled,onSubmit}:{label:string;hint?:string;die?:'d20';bonus?:boolean;allowZero?:boolean;compactLabel?:string;disabled:boolean;onSubmit:(value:number)=>Promise<void>}) {
     const [value,setValue]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),working=useRef(false)
-    return <form className={compactLabel?'combat-critical-form':undefined} onSubmit={event=>{event.preventDefault();if(working.current)return;working.current=true;setBusy(true);setError('');void onSubmit(Number(value)).catch(e=>setError(message(e))).finally(()=>{working.current=false;setBusy(false)})}}><fieldset disabled={disabled||busy}><label><span>{compactLabel??label}</span><input aria-label={label} type="text" inputMode="numeric" pattern={die?'([1-9]|1[0-9]|20)':bonus?allowZero?'[0-4]':'[1-4]':'[0-9]+'} required value={value} onChange={event=>{if(safeNumber(event.target.value))setValue(event.target.value)}}/></label>{compactLabel&&<p className="library-help">Solo i dadi aggiuntivi: il danno iniziale è già conteggiato.</p>}<button type="submit">Registra tiro</button></fieldset>{error&&<p role="alert">{error}</p>}</form>
+    return <form className={compactLabel?'combat-inline-roll-form':undefined} onSubmit={event=>{event.preventDefault();if(working.current)return;working.current=true;setBusy(true);setError('');void onSubmit(Number(value)).catch(e=>setError(message(e))).finally(()=>{working.current=false;setBusy(false)})}}><fieldset disabled={disabled||busy}><label><span>{compactLabel??label}</span><input aria-label={label} type="text" inputMode="numeric" pattern={die?'([1-9]|1[0-9]|20)':bonus?allowZero?'[0-4]':'[1-4]':'[0-9]+'} required value={value} onChange={event=>{if(safeNumber(event.target.value))setValue(event.target.value)}}/></label>{compactLabel&&<p className="library-help">{hint??'Solo i dadi aggiuntivi: il danno iniziale è già conteggiato.'}</p>}<button type="submit">Registra tiro</button></fieldset>{error&&<p role="alert">{error}</p>}</form>
 }

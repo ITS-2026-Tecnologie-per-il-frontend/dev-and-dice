@@ -1,4 +1,4 @@
-import { PlayerActionRolls, ResolutionDetails, MasterResolutionRolls, MasterCriticalRolls, type RequestDecision } from './CombatRolls'
+import { PlayerActionRolls, ResolutionDetails, FinalDamageField, MasterResolutionRolls, MasterCriticalRolls, MasterSavingRolls, type RequestDecision } from './CombatRolls'
 import { memo, useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { playApi, type ActionChoices, type CombatRequest, type CombatTarget, type Game, type PlayerGame, type WindReview as WindData } from '../utils/PlayApi'
 import { NotificationPopover } from './NotificationPopover'
@@ -58,15 +58,13 @@ function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDecide}:{
     }
     const pending=request.status==='pending',stale=request.status==='stale'
     return <article className="combat-request combat-request--review" aria-busy={busy}><header className="combat-request-heading"><div className="combat-request-title"><h3>{request.actionName}</h3><InfoButton label="Dettagli" name={request.actionName} entry={entry} description={ability?.description||catalogStatus||request.resolution?.notes.join('\n')||'Descrizione non disponibile. Consulta la scheda del personaggio.'} fields={ability?{duration:ability.duration}:{}}/></div><p className="combat-request-state" data-state={request.status} role="status">{statusLabels[request.status]}</p></header><RequestDescription request={request} review/>
-        <ResolutionDetails request={request} review renderPacket={(target,index)=><MasterCriticalRolls request={request} target={target} index={index} disabled={disabled||busy} onDecide={onDecide}/>} renderTarget={target=>{
+        <ResolutionDetails request={request} review renderSave={target=><MasterSavingRolls request={request} target={target} disabled={disabled||busy} onDecide={onDecide}/>} renderPacket={(target,index)=><MasterCriticalRolls request={request} target={target} index={index} disabled={disabled||busy} onDecide={onDecide}/>} renderTarget={target=>{
             if(!pending||!request.damageEnabled)return null
-            const original=calculatedDamageFor(target),value=damageFor(target),inputId=`${decisionId}-damage-${target.id}`
-            const changed=original!==''&&(value===''||Number(value)!==Number(original))
+            const original=calculatedDamageFor(target),value=damageFor(target)
             const locked=disabled||busy||!request.resolution&&request.attackDie===undefined&&request.mode==='attack'&&!target.hit
-            return <><div className="combat-result-final"><label htmlFor={inputId}>Danni finali a {target.name}</label><span className="combat-damage-controls">
-                {changed&&<button className="play-secondary combat-damage-reset" type="button" aria-label={`Ripristina danni calcolati a ${target.name}`} title={`Ripristina il valore calcolato (${original})`} disabled={locked} onClick={event=>{const input=event.currentTarget.nextElementSibling;setDamages(current=>{const next={...current};delete next[target.id];return next});if(input instanceof HTMLInputElement)input.focus()}}><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2.6 8M3 4v6h6"/></svg></button>}
-                <input id={inputId} type="number" form={decisionId} name={`damage-${target.id}`} autoComplete="off" inputMode="numeric" min="0" step="1" required disabled={locked} value={value} onChange={event=>{const nextValue=event.target.value;setDamages(current=>{const next={...current};if(original!==''&&nextValue!==''&&Number(nextValue)===Number(original))delete next[target.id];else next[target.id]=nextValue;return next})}}/>
-            </span></div>{target.resolution?.damage===null&&<p className="combat-result-incomplete" role="status">{target.resolution.packets.some(p=>p.needsCritical.length)?'Completa i dadi aggiuntivi del critico per calcolare il totale.':'Calcolo incompleto: completa i dati richiesti o inserisci la decisione del Master.'}</p>}</>
+            return <FinalDamageField target={target} result={target.resolution} value={value} calculated={original} disabled={locked} formId={decisionId} onChange={nextValue=>setDamages(current=>{
+                const next={...current};if(original!==''&&nextValue!==''&&Number(nextValue)===Number(original))delete next[target.id];else next[target.id]=nextValue;return next
+            })}/>
         }}/>
         <MasterResolutionRolls request={request} disabled={disabled} onDecide={onDecide}/>
         {(pending||stale||!!request.wind)&&<form id={decisionId} className="combat-request-decision" onSubmit={event=>{event.preventDefault();if(pending)void decide('approve');else if(request.wind?.editable)void saveWind()}}>

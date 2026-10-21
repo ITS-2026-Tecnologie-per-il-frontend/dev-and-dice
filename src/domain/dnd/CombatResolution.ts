@@ -93,7 +93,10 @@ export function resolutionPlan(sheet:CharacterSheet,ability:Ability,catalog:Cata
     }
     if (typeof object(m.upcast).damageDiceByLevel==='object'||typeof e.damageDiceByCharacterLevel==='object') {
         hint=String(Object.entries(object(upcast.damageDiceByLevel??e.damageDiceByCharacterLevel)).filter(([n])=>Number(n)<=level).sort((a,b)=>Number(b[0])-Number(a[0]))[0]?.[1]??hint)
-    } else if(extra&&typeof (upcast.damageAdditionalDice??upcast.additionalDamageDice)==='string')hint+=` + ${extra} × ${upcast.damageAdditionalDice??upcast.additionalDamageDice}`
+    } else if(extra&&typeof (upcast.damageAdditionalDice??upcast.additionalDamageDice)==='string') {
+        const additional=String(upcast.damageAdditionalDice??upcast.additionalDamageDice),dice=/^(\d+)d(\d+)$/i.exec(additional)
+        hint+=` + ${dice?`${extra*Number(dice[1])}d${dice[2]}`:`${extra} × ${additional}`}`
+    }
     // Verified 2014 examples: D&D_5_Player_Original_Handbook.pdf, PDF 217 (Bane),
     // 220 (Bless), 252 (Hold Person), 271 (Protection from Energy), 272 (Ray of Frost),
     // 273 (Resistance), 276 (Shield / Shield of Faith), 279–280 (Stoneskin).
@@ -117,7 +120,10 @@ export function resolutionPlan(sheet:CharacterSheet,ability:Ability,catalog:Cata
     const onSuccess=e.successfulSave==='half'||e.successDamage==='half'?'half':['no-damage','none'].includes(String(e.successfulSave))||e.successDamage===0||e.successDamage==='none'||!types.length?'none':'review'
     if(kind==='none'&&!effects.length&&!choices?.length&&!weaponEffect&&!deferredSave)return undefined
     const attackBonus=weapon?.attackBonus??(row?integerValue(d[`attacks.${row[1]}.1`]):integerValue(d.spellAttackBonus))
-    return {edition,attackAbility:row?weapon?.attackAbility:spellAttackAbility(sheet,weaponContext?.data),deferredSave,weaponEffect,...(weapon?{damageBonuses:weapon.bonuses,damageDice:weapon.dice,weaponName:weapon.name}:{}),ruleId:ability.ruleId,kind,damageTypes:types,damageHint:hint,attackBonus,save:immediateSave?{ability:immediateSave,dc:integerValue(d.spellDC),onSuccess}:undefined,maximumPackets,requiredPackets:Number.isSafeInteger(split)&&split>0?maximumPackets??undefined:undefined,sharedDamage:kind==='save'&&types.length>0,magical:weapon?weapon.magical:true,effects,effectChoices:choices,notes}
+    // PHB 2014, D&D_5_Player_Original_Handbook.pdf, PDF 258, Magic Missile:
+    // each dart adds a fixed +1 to its d4; the Strength modifier does not apply.
+    const missile=edition==='2014'&&ability.ruleId==='phb2014:spell:magic-missile'
+    return {edition,attackAbility:row?weapon?.attackAbility:spellAttackAbility(sheet,weaponContext?.data),deferredSave,weaponEffect,...(weapon?{damageBonuses:weapon.bonuses,damageDice:weapon.dice,weaponName:weapon.name}:missile?{damageBonuses:{force:1},damageDice:{force:'1d4'}}:{}),ruleId:ability.ruleId,kind,damageTypes:types,damageHint:hint,attackBonus,save:immediateSave?{ability:immediateSave,dc:integerValue(d.spellDC),onSuccess}:undefined,maximumPackets,requiredPackets:Number.isSafeInteger(split)&&split>0?maximumPackets??undefined:undefined,sharedDamage:kind==='save'&&types.length>0,magical:weapon?weapon.magical:true,effects,effectChoices:choices,notes}
 }
 
 export function activeEffects(abilities:Ability[]):Ability[] {
@@ -347,7 +353,7 @@ export function resolveTarget(plan:ResolutionPlan,packets:RollPacket[],profile:D
             const before=amount
             if(immune||spellImmune)amount=0
             else {if(resist)amount=Math.floor(amount/2);if(vulnerable)amount*=2}
-            steps.push(`${damageNames[component.type]}: ${component.amount}${modifier?' '+(modifier>=0?'+':'−')+' '+Math.abs(modifier):''}${attack?.critical?criticalDice===undefined?' + dadi critici da inserire':` + ${criticalDice} (critico)`:''}${attack?.critical&&criticalDice===undefined?'':`${plan.save&&success?' → TS riuscito: '+before:''}${spellImmune?' → protezione dall’incantesimo':immune?' → immunità':resist?' → resistenza':''}${vulnerable&&!immune&&!spellImmune?' → vulnerabilità':''} → ${amount}`}`)
+            steps.push(`Danni (${damageNames[component.type]}): ${component.amount}${modifier?' '+(modifier>=0?'+':'−')+' '+Math.abs(modifier):''}${attack?.critical?criticalDice===undefined?' + dadi critici da inserire':` + ${criticalDice} (critico)`:''}${attack?.critical&&criticalDice===undefined?'':`${plan.save&&success?' → TS riuscito: '+before:''}${spellImmune?' → protezione dall’incantesimo':immune?' → immunità':resist?' → resistenza':''}${vulnerable&&!immune&&!spellImmune?' → vulnerabilità':''} → ${amount}`}`)
             if(component.type==='untyped'||profile.reviewDamage||plan.kind==='attack'&&profile.reviewAttack)ready=false
             damage+=amount
         }
