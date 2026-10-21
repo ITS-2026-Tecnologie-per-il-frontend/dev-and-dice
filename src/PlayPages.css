@@ -212,10 +212,10 @@
 }
 .play-sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
 .player-sheet-controls:has(> .player-settings-button) { display:grid; grid-template-columns:minmax(0,1fr) 44px; gap:12px; align-items:start; }
+.player-sheet-controls:has(> .player-history-control) { grid-template-columns:minmax(0,1fr) 44px 44px; }
 .player-sheet-controls > .player-settings-button { grid-column:2; grid-row:1; display:grid; place-items:center; width:44px; height:44px; padding:8px; }
 .player-sheet-controls:has(> .player-settings-button) > .player-sheet-tabs { grid-column:1; grid-row:1; margin:0; }
-.player-sheet-controls > .player-history-control { grid-column:2; grid-row:2; width:44px; }
-.player-sheet-controls:has(> .player-history-control) > .player-sheet-tabs { grid-row:1 / span 2; align-self:start; }
+.player-sheet-controls > .player-history-control { grid-column:3; grid-row:1; width:44px; }
 .player-sheet-controls:has(> .player-settings-button) > p { grid-column:1/-1; }
 .character-dialog.player-settings-dialog { width:min(1120px,calc(100% - 32px)); max-width:calc(100% - 32px); }
 .player-settings-dialog .dialog-header { margin-bottom:24px; align-items:center; }

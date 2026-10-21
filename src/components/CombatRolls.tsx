@@ -15,8 +15,18 @@ export function PlayerActionRolls({game,choices,action,onUpdate,onSubmitted,form
     const option=action.options.find(o=>o.id===optionId),plan=option?.resolution??action.resolution!,targeting=option?.targeting
     const pending=game.combatRequests.some(r=>r.status==='pending'),stale=game.revision!==choices.revision
     const invalidAttack=plan.kind==='attack'&&rows.some(row=>!/^([1-9]|1[0-9]|20)$/.test(row.die))
+    const hitLimitReached=plan.maximumPackets!==null&&rows.length>=plan.maximumPackets
     const working=useRef(false),attempt=useRef<{signature:string;body:unknown}>(undefined)
     function patch(index:number,values:Partial<Draft>) {setRows(current=>current.map((row,i)=>i===index?{...row,...values}:row))}
+    function addHit(targetId:number) {setRows(current=>plan.maximumPackets!==null&&current.length>=plan.maximumPackets?current:[...current,{targetId,die:'',damage:{}}])}
+    function changeOption(id:string) {
+        const nextPlan=action.options.find(option=>option.id===id)?.resolution??action.resolution
+        setOptionId(id)
+        if(nextPlan&&nextPlan.maximumPackets!==null) {
+            const maximum=nextPlan.maximumPackets
+            setRows(current=>current.length>maximum?current.slice(0,maximum):current)
+        }
+    }
     async function submit() {
         if(working.current||!choices.canPropose||stale||pending||!option)return
         const packets:RollPacket[]=rows.map(row=>({targetId:row.targetId,...(plan.kind==='attack'?{die:Number(row.die)}:{}),damage:plan.damageTypes.map(type=>({type,amount:Number((plan.sharedDamage?shared:row.damage)[type])}))}))
@@ -30,19 +40,19 @@ export function PlayerActionRolls({game,choices,action,onUpdate,onSubmitted,form
     return <form className="action-roll-form" id="player-action-proposal" ref={formRef} tabIndex={-1} aria-label={`Proposta: ${action.name}`} onSubmit={event=>{event.preventDefault();void submit()}}>
         <fieldset aria-label={`Parametri di ${action.name}`} disabled={busy||pending||stale||!!action.error}>
             <details className="player-action-description" open><summary>Descrizione dell’azione</summary><p className="combat-request-description">{action.description}</p></details>
-            {!(action.options.length===1&&optionId==='free')&&<label>Risorsa<select aria-label="Risorsa" value={optionId} required onChange={event=>setOptionId(event.target.value)}>{action.options.map(o=><option value={o.id} key={o.id} disabled={o.remaining!==null&&o.remaining<(o.cost??action.cost)}>{o.label}{o.remaining===null?'':` · ${o.remaining} rimasti`}</option>)}</select></label>}
+            {!(action.options.length===1&&optionId==='free')&&<label>Risorsa<select aria-label="Risorsa" value={optionId} required onChange={event=>changeOption(event.target.value)}>{action.options.map(o=><option value={o.id} key={o.id} disabled={o.remaining!==null&&o.remaining<(o.cost??action.cost)}>{o.label}{o.remaining===null?'':` · ${o.remaining} rimasti`}</option>)}</select></label>}
             {plan.kind==='save'&&<p>Il bersaglio deve effettuare un <strong>tiro salvezza su {saveNames[plan.save!.ability]}</strong>. Lo inserirà il suo giocatore, oppure il Master per una creatura.</p>}
             {plan.kind==='automatic'&&<p>Questa azione non richiede un tiro per colpire. Inserisci soltanto i danni indicati.</p>}
             {plan.deferredSave?<SpellSaveNotice plan={plan}/>:plan.kind==='none'&&<p>Questa azione non richiede un tiro per colpire né un tiro dei danni.</p>}
             {plan.effectChoices?.length&&<label>Tipo di protezione<select value={choice} required onChange={event=>setChoice(event.target.value)}><option value="">Scegli il tipo previsto dall’incantesimo…</option>{plan.effectChoices.map(type=><option value={type} key={type}>{damageNames[type]}</option>)}</select></label>}
             {plan.weaponEffect&&<p>Scegli il personaggio che possiede l’arma. Il Master selezionerà l’oggetto preciso quando approva l’incantesimo.</p>}
-            {targeting&&<AbilityTargets candidates={choices.targets} ownerId={choices.ownerId} selectedIds={[...new Set(rows.map(row=>row.targetId))]} maximum={plan.weaponEffect?1:targeting.maximum} summary={plan.weaponEffect?'Un solo personaggio per questo incantesimo.':targeting.summary} label={plan.damageTypes.length?'Bersagli del danno':'Bersagli'}
-                onChange={(targetId,checked)=>setRows(current=>checked?[...current,{targetId,die:'',damage:{}}]:current.filter(row=>row.targetId!==targetId))}
+            {targeting&&<AbilityTargets candidates={choices.targets} ownerId={choices.ownerId} selectedIds={[...new Set(rows.map(row=>row.targetId))]} maximum={plan.weaponEffect?1:targeting.maximum} disableNewTargets={hitLimitReached} summary={plan.weaponEffect?'Un solo personaggio per questo incantesimo.':targeting.summary} label={plan.damageTypes.length?'Bersagli del danno':'Bersagli'}
+                onChange={(targetId,checked)=>checked?addHit(targetId):setRows(current=>current.filter(row=>row.targetId!==targetId))}
                 renderSelected={candidate=>plan.sharedDamage||plan.kind==='none'?null:plan.kind==='save'&&!plan.damageTypes.length?<SpellSaveNotice plan={plan}/>:<div className="player-packet-rolls">{rows.map((row,index)=>row.targetId!==candidate.id?null:<fieldset key={index} className="player-roll-packet"><legend>{plan.maximumPackets!==1&&plan.maximumPackets!==null?`Colpo ${index+1}`:'Dadi richiesti'}{rows.filter(r=>r.targetId===candidate.id).length>1&&<button className="player-remove-packet" type="button" aria-label={`Rimuovi colpo ${index+1}`} title={`Rimuovi colpo ${index+1}`} onClick={()=>setRows(current=>current.filter((_,i)=>i!==index))}>×</button>}</legend>
                     {plan.kind==='attack'&&<AttackRollFields compact plan={plan} value={row.die} weapon={action.group==='Attacchi fisici'} onChange={die=>patch(index,{die,damage:{}})}/>}
                     {!plan.sharedDamage&&(plan.kind!=='attack'||row.die&&Number(row.die)>=1&&Number(row.die)<=20)&&<DamageRollFields compact plan={plan} values={row.damage} onChange={(type,value)=>patch(index,{damage:{...row.damage,[type]:value}})}/>}
                 </fieldset>)}
-                    {plan.maximumPackets!==null&&plan.maximumPackets>1&&<button type="button" disabled={rows.length>=plan.maximumPackets} onClick={()=>setRows(current=>[...current,{targetId:candidate.id,die:'',damage:{}}])}>Aggiungi colpo a {candidate.name}</button>}
+                    {plan.maximumPackets!==null&&plan.maximumPackets>1&&<button type="button" disabled={hitLimitReached} onClick={()=>addHit(candidate.id)}>Aggiungi colpo a {candidate.name}</button>}
                 </div>}/>}
             {rows.length>0&&plan.sharedDamage&&<fieldset className="player-shared-damage"><legend>Danno dell’area</legend><p>Un unico tiro dei danni per tutti i bersagli selezionati.</p><DamageRollFields plan={plan} values={shared} onChange={(type,value)=>setShared(current=>({...current,[type]:value}))}/></fieldset>}
             {plan.maximumPackets!==null&&plan.maximumPackets>1&&<p>Colpi assegnati: {rows.length}/{plan.maximumPackets}. Ogni colpo conserva il proprio tiro e i propri danni.</p>}
