@@ -118,7 +118,11 @@ try {
     await playerPage.emulateMedia({media:'print'})
     assert.notEqual(await playerPage.locator('html').evaluate(el=>getComputedStyle(el).getPropertyValue('--text-h').trim()),themeInk)
     const denied=await context.newPage()
-    await denied.addInitScript(()=>{Storage.prototype.setItem=()=>{throw new DOMException('Storage unavailable','QuotaExceededError')}})
+    await denied.addInitScript(()=>{
+        const write=Storage.prototype.setItem
+        // ponytail: deny app writes only; blocking Vite storage prevents the test page from loading.
+        Storage.prototype.setItem=function(key,value){if(key.startsWith('dev-and-dice.'))throw new DOMException('Storage unavailable','QuotaExceededError');return write.call(this,key,value)}
+    })
     await denied.goto(base)
     await theme(denied,'minimal')
     await denied.getByRole('status').filter({hasText:'Lo stile è cambiato'}).waitFor()

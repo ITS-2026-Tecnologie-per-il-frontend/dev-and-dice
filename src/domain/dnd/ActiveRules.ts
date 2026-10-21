@@ -120,7 +120,7 @@ export function activeCatalog(data: rules.CandidateCreationData, language:'it'|'
                 const oldAction = oldActions.find((ability) => normalized(ability.name) === normalized(String(action.name)))
                 abilities.push({id:oldAction?.id ?? `${entry.id}:${group}:${index}`,name:String(action.nameIt ?? action.name ?? action.index),type:'ability',
                     label:'Creatura · '+(group === 'legendaryActions' ? 'azione leggendaria' : group),description:entity.verification.complete ? String(action.summaryIt ?? entity.summaryIt ?? '') : ruleDescription(entity),
-                    sourceUrl:entry.sourceUrl,rounds:null,data:{creatureId:entry.id,edition:'2014',...metadata(entity),mechanics:action}})
+                    sourceUrl:entry.sourceUrl,rounds:null,data:{creatureId:entry.id,category:({traits:'trait',actions:'action',reactions:'reaction',legendaryActions:'legendary'} as const)[group],edition:'2014',...metadata(entity),mechanics:action}})
             })
         }
     }

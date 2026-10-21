@@ -7,8 +7,8 @@ function savedView(key: string): MasterView {
     catch { return 'original' }
 }
 
-export function useMasterView(accountId = 'local') {
-    const storageKey = `dev-and-dice.master-view.v1.${accountId}`
+export function useSessionView(accountId = 'local', role: 'master' | 'player' = 'master') {
+    const storageKey = `dev-and-dice.${role}-view.v1.${accountId}`
     const [preference, setPreference] = useState(() => ({ key: storageKey, view: savedView(storageKey) }))
     const [error, setError] = useState('')
     // Auth can finish loading after the tracker mounts. Read the correct account's choice.
@@ -20,3 +20,5 @@ export function useMasterView(accountId = 'local') {
     }
     return { view: preference.key === storageKey ? preference.view : savedView(storageKey), changeView, error }
 }
+
+export const useMasterView = useSessionView

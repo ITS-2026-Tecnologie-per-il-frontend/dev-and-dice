@@ -1,6 +1,8 @@
 .play-account { display:flex; align-items:center; gap:24px; padding:16px 28px; border-bottom:1px solid var(--border); color:var(--text-h); }
 .play-brand { margin-right:auto; color:var(--text-h); font-size:22px; font-weight:750; text-decoration:none; }
-:is(.play-home,.play-character-page,.play-master-page,.play-player-page,.play-account) button:not(:where(.player-sheet button,.tracker-layout button)),
+:is(.play-home,.play-character-page,.play-master-page,.play-player-page,.play-account) button:not(:where(.player-sheet button,.tracker-layout button,.master-inspector-navigation button,.participant-abilities button,.ability-row button,.help-tooltip-trigger)),
+.play-notifications > .play-notification-button,
+.play-notification-dialog button:not(:where(.play-secondary,.more-info,.help-tooltip-trigger)),
 .play-primary { box-sizing:border-box; min-height:44px; padding:10px 18px; border:1px solid var(--ui-accent, #147d72); border-radius:5px; color:white; background:var(--ui-action, var(--ui-accent, #147d72)); font:inherit; font-size:15px; line-height:1.4; cursor:pointer; text-decoration:none; }
 :is(.play-home,.play-character-page,.play-master-page,.play-player-page,.play-account) button:disabled { opacity:.55; cursor:default; }
 :is(.play-home,.play-character-page,.play-master-page,.play-player-page,.play-account) :focus-visible { outline:3px solid var(--ui-accent, #147d72); outline-offset:3px; }
@@ -24,8 +26,10 @@
 .play-recovery { border-top:1px solid var(--border); padding:24px 0; }
 .play-recovery summary { cursor:pointer; color:var(--text-h); }
 .play-recovery p { max-width:80ch; }
-.play-session-actions { display:flex; align-items:center; gap:16px; }
+.play-session-actions { display:flex; flex-wrap:wrap; max-width:100%; align-items:center; gap:16px; }
 .play-notifications .play-notification-button { position:relative; display:grid; place-items:center; width:44px; height:44px; padding:0; border-radius:5px; }
+.play-notifications .play-notification-button[data-new="true"] { color:#302308; background:#d8af45; border-color:#ad7f1c; }
+.play-notifications .play-notification-button[data-new="true"]:hover { background:#e6bf5d; }
 .play-notification-count { position:absolute; top:-8px; right:-8px; display:grid; place-items:center; box-sizing:border-box; min-width:21px; height:21px; padding:0 5px; border:2px solid var(--bg); border-radius:12px; background:var(--border); color:var(--text-h); font-size:12px; line-height:1; font-weight:700; }
 .play-notification-count[data-unread="true"] { background:var(--ui-action, var(--ui-accent, #147d72)); color:white; }
 .play-notification-dialog { position:absolute; inset:auto; top:var(--notification-top,100px); left:var(--notification-left,16px); box-sizing:border-box; width:min(680px,calc(100vw - 32px)); max-width:none; max-height:var(--notification-height); margin:0; padding:0; overflow:visible; color:var(--text); background:var(--bg); border:1px solid var(--border); border-radius:12px; box-shadow:0 16px 48px #0004; }
@@ -102,6 +106,110 @@
 .combat-request-check input { flex-shrink:0; margin-top:4px; }
 .combat-request-description { white-space:pre-wrap; overflow-wrap:anywhere; }
 .combat-request-history { max-height:650px; overflow:auto; }
+.play-notification-list.combat-request-feed > li { padding:0; }
+.play-notification-list .combat-request--review {
+    --request-muted:color-mix(in srgb,var(--text-h) 72%,var(--bg));
+    --request-good:light-dark(#12695f,#86dacb);
+    --request-warn:light-dark(#85520e,#efc27d);
+    --request-bad:light-dark(#9d3535,#efaaaa);
+    min-width:0; padding:20px; color:var(--text-h); font-size:15px; line-height:1.5;
+}
+.combat-request--review .combat-request-heading { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:10px 16px; }
+.combat-request-title { display:flex; flex:1; min-width:0; align-items:center; gap:8px; }
+.combat-request-title > .more-info { position:relative; flex-shrink:0; min-height:30px; height:30px; padding:4px 9px; font-size:12px; line-height:20px; color:var(--text-h); background:var(--bg); border-color:var(--border); }
+.combat-request-title > .more-info::after { content:""; position:absolute; inset:-7px 0; }
+.combat-request--review .combat-request-heading h3 { min-width:0; flex:0 1 auto; margin:0; font-size:21px; font-weight:700; line-height:1.3; text-wrap:balance; }
+.combat-request--review .combat-request-state { box-sizing:border-box; min-height:30px; flex-shrink:0; max-width:100%; margin:0 0 0 auto; padding:4px 9px; border:1px solid var(--border); border-radius:5px; color:var(--request-muted); font-size:12px; line-height:20px; font-weight:600; }
+.play-notification-list .combat-request--review .combat-request-heading > .combat-request-state { margin-top:0; font-size:12px; }
+.combat-request--review .combat-request-state[data-state="pending"],.combat-request--review .combat-request-state[data-state="approved"] { color:var(--request-good); background:color-mix(in srgb,#147d72 12%,var(--bg)); border-color:color-mix(in srgb,#147d72 35%,var(--border)); }
+.combat-request--review .combat-request-author { display:flex; flex-wrap:wrap; gap:2px 12px; max-width:none; margin:8px 0 0; color:var(--request-muted); font-size:13px; }
+.combat-request-author strong { color:var(--text-h); font-weight:600; }
+.combat-request-author time { margin-left:auto; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.combat-request--review .combat-request-mode { display:flex; flex-wrap:wrap; gap:4px 12px; margin:16px 0; color:var(--request-muted); font-size:13px; }
+.combat-request-mode > :first-child { color:var(--text-h); font-weight:600; }
+.combat-request--review .combat-resolution-details { display:grid; gap:14px; }
+.combat-request--review .combat-result { min-width:0; padding:16px; border:1px solid var(--border); border-radius:6px; background:var(--bg); }
+.combat-result-heading,.combat-result-roll-heading { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 12px; }
+.combat-request--review .combat-result-heading h4 { margin:0; font-size:17px; font-weight:650; line-height:1.4; }
+.combat-request--review .combat-result-attack { margin-top:12px; }
+.combat-request--review .combat-result-attack + .combat-result-attack { margin-top:6px; padding-top:10px; border-top:1px solid var(--border); }
+.combat-critical-icon,.combat-miss-icon { width:15px; height:15px; flex-shrink:0; }
+.combat-dice-result,.combat-dice-term,.combat-damage-dice { display:inline-flex; align-items:center; gap:3px; white-space:nowrap; }
+.combat-damage-dice { flex-wrap:wrap; margin-right:10px; }
+.combat-die-icon { width:24px; height:26px; flex-shrink:0; vertical-align:middle; }
+.combat-request--review .combat-result-attack .combat-result-stats dd { font-size:20px; }
+.combat-request--review .combat-result-attack .combat-result-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:12px 0 2px; }
+.combat-result-attack .combat-result-stats > div:last-child { box-sizing:border-box; padding-left:12px; }
+.combat-request--review .combat-result-attack dd[data-pending="true"] { color:var(--request-warn); font-size:14px; line-height:1.4; font-weight:500; }
+.combat-request--review .combat-critical-form { min-width:0; margin:12px 0 0; padding:12px; border:1px solid color-mix(in srgb,var(--request-warn) 35%,var(--border)); border-radius:5px; background:color-mix(in srgb,var(--request-warn) 5%,var(--bg)); }
+.combat-request--review .combat-critical-form fieldset { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:6px 12px; margin:0; padding:0; border:0; }
+.combat-request--review .combat-critical-form label { display:grid; gap:8px; margin:0; font-size:13px; color:var(--text-h); }
+.combat-critical-form label > span { grid-column:1/-1; font-weight:600; }
+.combat-request--review .combat-critical-form input { width:100%; min-height:44px; }
+.combat-request--review .combat-critical-form .library-help { grid-column:1/-1; grid-row:2; margin:0; color:var(--request-muted); font-size:12px; line-height:1.5; }
+.combat-request--review .combat-critical-form button { grid-column:2; grid-row:1; min-height:44px; padding:8px 12px; font-size:13px; }
+.combat-request--review .combat-result-final { display:grid; grid-template-columns:minmax(0,1fr) 96px; align-items:center; gap:12px; margin:12px 0 0; color:var(--text-h); font-size:14px; }
+.combat-request--review .combat-result-final input { min-height:48px; padding:8px 10px; font-size:18px; font-weight:600; }
+.combat-request--review .combat-result-final > label { display:block; margin:0; color:inherit; font:inherit; }
+.combat-damage-controls { position:relative; min-width:0; }
+.combat-request--review .combat-damage-reset { position:absolute; top:50%; right:calc(100% + 8px); display:grid; place-items:center; width:44px; height:44px; min-height:44px; padding:0; transform:translateY(-50%); }
+.combat-result-final:has(.combat-damage-reset) > label { padding-right:52px; }
+.combat-request--review .combat-result-final { margin-top:16px; padding-top:12px; border-top:1px solid var(--border); }
+.combat-request--review .combat-result-incomplete { margin:8px 0 0; color:var(--request-warn); font-size:12px; line-height:1.5; }
+.combat-result-roll-heading { justify-content:flex-start; color:var(--request-muted); font-size:13px; }
+.combat-request--review .combat-result-outcome { display:inline-flex; width:fit-content; margin:0; gap:6px; padding:3px 8px; border:1px solid color-mix(in srgb,var(--request-tone,var(--request-muted)) 32%,var(--bg)); border-radius:4px; background:color-mix(in srgb,var(--request-tone,var(--request-muted)) 9%,var(--bg)); color:var(--request-tone,var(--request-muted)); font-size:13px; line-height:1.5; font-weight:650; }
+.combat-result-outcome:is([data-outcome="hit"],[data-outcome="success"]) { --request-tone:var(--request-good); }
+.combat-result-outcome:is([data-outcome="critical"],[data-outcome="waiting"]) { --request-tone:var(--request-warn); }
+.combat-result-outcome[data-outcome="failure"] { --request-tone:var(--request-bad); }
+.combat-request--review .combat-result-stats { display:flex; flex-wrap:wrap; gap:14px 28px; margin:14px 0; font-variant-numeric:tabular-nums; }
+.combat-result-stats > div { min-width:0; flex:1; }
+.combat-result-stats dt { color:var(--request-muted); font-size:12px; line-height:1.5; }
+.combat-result-stats dd { margin:4px 0 0; color:var(--text-h); font-size:22px; line-height:1.2; font-weight:650; overflow-wrap:anywhere; }
+.combat-request--review .combat-result-damage { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:4px 16px; max-width:none; margin:16px 0 0; padding:12px 0 0; border-top:1px solid var(--border); color:var(--text-h); font-size:15px; }
+.combat-result-damage strong { font-size:25px; line-height:1.2; font-weight:700; font-variant-numeric:tabular-nums; }
+.combat-result-damage strong[data-pending="true"] { max-width:100%; font-size:14px; line-height:1.5; color:var(--request-warn); }
+.combat-request--review .combat-result:has(> .combat-result-attack) > :is(.combat-result-damage,.combat-result-final) { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.combat-result:has(> .combat-result-attack) > .combat-result-damage > span,.combat-result:has(> .combat-result-attack) > .combat-result-final > label { grid-column:1/3; }
+.combat-result:has(> .combat-result-attack) > .combat-result-final > .combat-damage-controls { grid-column:3; }
+.combat-result:has(> .combat-result-attack) > .combat-result-damage > strong { grid-column:3; padding-left:12px; }
+.combat-request--review .combat-result:has(> .combat-result-attack) > .combat-result-final input { grid-column:3; padding-left:11px; }
+.combat-request--review :is(.combat-result-details,.combat-result-notes) { margin-top:12px; color:var(--request-muted); font-size:13px; }
+.combat-request--review :is(.combat-result-details,.combat-result-notes) > summary { width:fit-content; min-height:44px; box-sizing:border-box; padding:7px 0; color:var(--request-muted); cursor:pointer; font-size:13px; line-height:1.5; }
+.combat-request--review .combat-result-attack > .combat-result-details { margin-top:0; }
+.combat-request--review .combat-result-attack > .combat-result-details > summary { display:flex; align-items:center; min-height:28px; padding:2px 0; }
+.combat-result-attack > .combat-result-details > summary::before { content:'▸'; margin-right:5px; }
+.combat-result-attack > .combat-result-details[open] > summary::before { content:'▾'; }
+.combat-result-attack > .combat-result-details > summary::-webkit-details-marker { display:none; }
+@media (pointer:coarse) { .combat-request--review .combat-result-attack > .combat-result-details > summary { min-height:44px; } }
+.combat-request--review .combat-result-notes > summary { color:var(--request-warn); }
+.combat-request--review :is(.combat-result-details,.combat-result-notes) p { margin:8px 0; color:var(--request-muted); font-size:13px; line-height:1.6; }
+.combat-result-details p > span { margin-right:8px; }
+.combat-result-details strong { color:var(--text-h); font-weight:600; }
+.combat-request--review .combat-result-details ul { margin:8px 0; padding-left:20px; }
+.combat-request--review .combat-result-details li { padding:3px 0; color:var(--request-muted); font-size:13px; }
+.combat-request--review .combat-request-decision { margin-top:20px; padding-top:16px; border-top:1px solid var(--border); }
+.combat-request--review .combat-request-decision > fieldset { display:grid; gap:12px; margin:0; padding:0; border:0; }
+.combat-request-decision legend { margin-bottom:12px; padding:0; color:var(--text-h); font-size:14px; font-weight:650; }
+.combat-request--review .combat-request-decision label { margin:0; font-size:15px; line-height:1.5; }
+.combat-request--review .combat-request-decision label:not(.combat-request-check) { display:grid; grid-template-columns:minmax(0,1fr) 104px; align-items:center; gap:12px; }
+.combat-request--review .combat-request-decision input:not([type="checkbox"]) { min-height:48px; padding:10px 12px; font-size:18px; font-weight:600; font-variant-numeric:tabular-nums; }
+.combat-request--review .combat-request-decision .play-actions { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; margin:4px 0 0; }
+.combat-request-decision .play-actions button { min-height:48px; }
+.combat-request--review .combat-resolution-rolls:empty { display:none; }
+.combat-request--review .combat-resolution-rolls:not(:empty) { display:grid; gap:12px; margin-top:16px; padding:16px; border:1px solid color-mix(in srgb,var(--request-warn) 35%,var(--border)); border-radius:6px; }
+.combat-request--review .combat-resolution-rolls fieldset { margin:0; padding:0; border:0; }
+.combat-request--review .combat-resolution-rolls label { margin:0 0 10px; color:var(--text-h); font-size:14px; line-height:1.5; }
+.combat-request--review .combat-request-notice { padding:12px; color:var(--request-warn); font-size:14px; border-left:3px solid currentColor; }
+@media (max-width:480px) {
+    .play-notification-list .combat-request--review { padding:16px 12px; }
+    .combat-request-title { flex-basis:100%; }
+    .combat-request--review .combat-request-heading h3 { font-size:20px; }
+    .combat-request--review .combat-request-decision .play-actions { grid-template-columns:1fr; }
+    .combat-request--review .combat-result { padding:14px 12px; }
+    .combat-request--review .combat-result-stats { gap:14px; }
+    .combat-result-stats dd { font-size:20px; }
+    .combat-request--review .combat-request-decision label:not(.combat-request-check) { grid-template-columns:minmax(0,1fr) 86px; }
+}
 .play-sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
 .player-sheet-controls:has(> .player-settings-button) { display:grid; grid-template-columns:minmax(0,1fr) 44px; gap:12px; align-items:start; }
 .player-sheet-controls > .player-settings-button { grid-column:2; grid-row:1; display:grid; place-items:center; width:44px; height:44px; padding:8px; }
@@ -115,6 +223,100 @@
 .player-settings-dialog .dialog-header button { min-width:44px; min-height:44px; }
 .player-settings-dialog .player-field,.player-settings-dialog .player-check { color:var(--text-h); }
 .player-sheet-session > .player-paper-viewport { position:relative; }
+.player-page-renewed .play-session-heading { margin-bottom:16px; }
+.player-page-renewed .play-session-heading h1 { font-size:28px; }
+.player-page-renewed .play-session-heading p { margin-top:4px; font-size:13px; }
+.player-page-renewed .play-session-heading a { font-size:13px; }
+.player-page-renewed .play-player-navigation { display:flex; flex-wrap:wrap; gap:6px; padding-bottom:12px; margin-bottom:24px; border-bottom:1px solid var(--border); }
+.player-page-renewed .play-player-navigation a { display:flex; align-items:center; min-height:44px; box-sizing:border-box; padding:10px 14px; border-radius:6px; color:var(--text-h); font-size:14px; text-decoration:none; }
+.player-page-renewed .play-player-navigation a:hover { background:var(--master-tint); }
+.player-page-renewed .play-player-layout { grid-template-columns:minmax(0,1fr) minmax(320px,390px); grid-template-areas:"sheet sidebar" "turns sidebar" "notes sidebar"; gap:24px; padding:0; }
+.player-page-renewed .play-player-layout > .play-player-turns { grid-area:turns; margin:0; }
+.player-page-renewed .play-player-sidebar { display:block; }
+.player-page-renewed .master-inspector-header { margin-bottom:0; }
+.player-page-renewed .master-open-sheet { display:flex; justify-content:center; box-sizing:border-box; padding:10px; border:1px solid var(--border); border-radius:5px; background:var(--bg); color:var(--text-h); font-size:14px; text-decoration:none; }
+.player-page-renewed .play-player-actions { padding:0; margin-top:20px; border:0; }
+.player-page-renewed .play-player-actions h2 { font-size:17px; line-height:1.3; margin-bottom:12px; }
+.player-page-renewed .play-player-actions > p { font-size:13px; margin-bottom:12px; }
+.player-page-renewed .play-player-actions > button { width:100%; margin:12px 0; }
+.player-page-renewed .ability-row > .ability-name { grid-column:1/-1; }
+.player-page-renewed #player-action-proposal > fieldset { display:grid; gap:16px; border:0; padding:0; }
+.player-page-renewed #player-action-proposal > fieldset > :is(p,label,fieldset) { margin:0; }
+.player-page-renewed .player-action-description > summary { display:flex; justify-content:flex-start; align-items:center; gap:8px; list-style:none; cursor:pointer; }
+.player-page-renewed .player-action-description > summary::-webkit-details-marker { display:none; }
+.player-page-renewed .player-action-description > summary::after { content:'▸'; }
+.player-page-renewed .player-action-description[open] > summary::after { transform:rotate(90deg); }
+.player-page-renewed .ability-target-list:has(.player-weapon-attack) { max-height:none; overflow:visible; }
+.player-page-renewed .ability-target:has(.player-weapon-attack) { gap:12px; }
+.player-page-renewed .ability-target-list:has(.player-packet-rolls) { max-height:none; overflow:visible; }
+.action-roll-form .player-packet-rolls { gap:8px; }
+.action-roll-form .player-roll-packet { --roll-mod-width:84px; --roll-total-width:44px; --roll-gap:8px; gap:8px; margin:0; padding:8px; }
+.action-roll-form .player-roll-packet > legend { display:flex; align-items:center; gap:8px; }
+.action-roll-form .player-remove-packet { width:28px; height:28px; min-height:28px; padding:0; border:0; background:transparent; color:var(--text); font-size:22px; line-height:1; }
+.action-roll-form .player-attack-compact { grid-template-columns:minmax(0,1fr) var(--roll-total-width); gap:var(--roll-gap); align-items:stretch; }
+.action-roll-form .player-attack-compact .player-weapon-roll { grid-template-columns:minmax(0,1fr) var(--roll-mod-width); gap:var(--roll-gap); }
+.action-roll-form .player-attack-compact .player-weapon-roll label { margin:0; }
+.action-roll-form .player-attack-compact .player-weapon-label { min-height:28px; gap:0; }
+.action-roll-form .player-attack-compact :is(input,output) { height:44px; line-height:26px; }
+.action-roll-form .player-attack-compact output { height:auto; min-height:44px; overflow-wrap:anywhere; }
+.action-roll-form .player-attack-total { display:grid; grid-template-rows:minmax(28px,1fr) auto; gap:6px; color:var(--text); font-size:12px; overflow-wrap:anywhere; }
+.action-roll-form .player-attack-total > span { display:flex; align-items:center; font-size:11px; white-space:nowrap; }
+.action-roll-form .player-attack-total > strong { display:flex; align-items:center; min-height:44px; color:var(--text-h); font-size:18px; line-height:26px; }
+.action-roll-form .player-roll-packet .player-damage-compact { display:grid; grid-template-columns:minmax(0,1fr) var(--roll-mod-width); align-items:center; gap:2px var(--roll-gap); margin:0; }
+.action-roll-form .player-roll-packet:has(.player-attack-compact) .player-damage-compact { grid-template-columns:minmax(0,1fr) var(--roll-mod-width) var(--roll-total-width); }
+.action-roll-form .player-damage-caption { grid-column:1; grid-row:1; min-width:0; font-size:13px; line-height:1.35; overflow-wrap:anywhere; }
+.action-roll-form .player-damage-compact > .library-help { grid-column:1; grid-row:2; line-height:1.4; margin:0; }
+.action-roll-form .player-damage-compact .combat-die-icon { width:20px; height:22px; }
+.action-roll-form .player-damage-compact > input { grid-column:2; grid-row:1 / 3; min-width:0; }
+@media (max-width:360px) { .action-roll-form .player-roll-packet { --roll-mod-width:76px; --roll-total-width:36px; --roll-gap:2px; } }
+@media (pointer:coarse) { .action-roll-form .player-remove-packet { width:44px; height:44px; min-height:44px; } }
+.play-saving-throws { margin:16px 0; padding:12px; border:1px solid var(--border); border-radius:6px; }
+.play-saving-throws h2 { margin:0 0 12px; font-size:17px; }
+.play-saving-throws fieldset { min-width:0; }
+.play-saving-throws label { display:grid; gap:6px; }
+.play-saving-throws input { box-sizing:border-box; width:100%; min-height:44px; font:inherit; color:var(--text-h); background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:8px; }
+.combat-resolution-rolls fieldset { min-width:0; }
+.combat-request--review:has(.wind-review) .combat-request-mode { margin:8px 0; }
+.combat-request--review:has(.wind-review) .combat-request-decision { margin-top:12px; padding-top:12px; }
+.combat-request--review:has(.wind-review) .combat-request-decision > fieldset > legend { margin-bottom:8px; }
+.combat-request--review .wind-review { display:grid; gap:8px; border:0; padding:0; margin:0; }
+.combat-request--review .wind-save-dc { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 6px; margin:0; font-size:14px; }
+.wind-save-dc strong { font-size:18px; }
+.wind-save-dc > span { margin-left:auto; color:var(--request-muted); font-size:12px; }
+.combat-request--review .wind-review-locked { margin:0; color:var(--request-warn); font-size:13px; line-height:1.5; }
+.combat-request--review .wind-review > .library-help { margin:0 0 4px; color:var(--request-muted); font-size:13px; line-height:1.5; }
+.wind-target { min-width:0; padding:0 12px; border:1px solid var(--border); border-radius:6px; background:var(--bg); }
+.wind-target-heading { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:0 12px; }
+.combat-request--review .wind-target .combat-request-check { align-items:center; min-height:44px; font-size:14px; }
+.wind-target .combat-request-check input { margin:0; }
+.wind-target-heading > .combat-request-check:first-child { flex:1; font-weight:600; }
+.combat-request--review .wind-target-heading > .wind-manual { color:var(--request-muted); font-size:13px; }
+.wind-target-save { display:grid; gap:6px; padding:4px 0 12px; border-top:1px solid var(--border); }
+.combat-request--review .wind-target-save p { margin:0; font-size:13px; line-height:1.5; }
+.combat-request--review .wind-target-save label:not(.combat-request-check) { grid-template-columns:minmax(0,1fr) 86px; gap:8px; font-size:14px; }
+.combat-request--review .wind-target-save input { min-height:44px; padding:8px; font-size:16px; }
+.wind-target-save .library-help { color:var(--request-muted); }
+.wind-target-result { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; }
+.wind-target-result > [role="status"] { color:var(--request-muted); }
+.wind-target-result > [data-outcome="success"] { color:var(--request-good); font-weight:600; }
+.wind-target-result > [data-outcome="failure"] { color:var(--request-warn); font-weight:600; }
+.combat-request--review .wind-target-save label:has(select) { grid-template-columns:minmax(0,1fr) minmax(0,180px); }
+.wind-target-save select { width:100%; min-width:0; min-height:44px; padding:8px; border:1px solid var(--border); border-radius:4px; background:var(--bg); color:var(--text-h); font:inherit; }
+@media (max-width:480px) {
+    .wind-target { padding:0 10px; }
+    .combat-request--review .wind-target-save label:has(select) { grid-template-columns:minmax(0,1fr) minmax(0,132px); }
+}
+.player-page-renewed .play-player-effects { padding:20px 0 0; margin-bottom:0; border:0; border-top:1px solid var(--border); border-radius:0; }
+.player-page-renewed .play-player-effects h2 { font-size:17px; }
+.player-page-renewed :is(#player-character,#player-inspector,#player-turns,#player-effects,#player-notes) { scroll-margin-top:16px; }
+@media (min-width:1800px) {
+    .player-page-renewed .play-player-layout { grid-template-columns:minmax(0,1fr) minmax(390px,440px); gap:32px; }
+}
+@media (max-width:1100px) {
+    .player-page-renewed .play-player-layout { grid-template-columns:minmax(0,1fr); grid-template-areas:"sheet" "sidebar" "turns" "notes"; }
+    .player-page-renewed .master-inspector { position:static; max-height:none; overflow:visible; scrollbar-gutter:auto; }
+    .player-page-renewed .master-inspector-header { position:static; }
+}
 @media (min-width:1101px) {
     .player-sheet-session > .player-paper-viewport:has(> .player-paper) { height:var(--player-sheet-height); overflow:hidden; }
     .player-sheet-session > .player-paper-viewport > .player-paper { position:absolute; top:0; left:0; width:1120px; transform:scale(var(--player-sheet-scale,1)); transform-origin:top left; }
@@ -141,3 +343,7 @@
     .character-dialog.player-settings-dialog { padding:16px; max-height:calc(100dvh - 32px); }
     .player-settings-dialog .dialog-header h2 { font-size:21px; }
 }
+
+.combat-request--review .combat-weapon-configuration { display:grid; gap:16px; }
+.combat-request--review .combat-weapon-configuration label:not(.combat-request-check) { grid-template-columns:1fr; }
+.combat-request--review .combat-weapon-configuration p { margin:8px 0; font-size:14px; }

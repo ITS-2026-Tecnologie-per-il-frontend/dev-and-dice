@@ -3,11 +3,16 @@ import { durationTurns, activateAbility, type Ability, type Combat } from '../ut
 import { getDropIndex, getDropTargetId, reorderByDrop, reorderById } from '../utils/Reorder'
 import { templateFromCatalog, type Catalog } from '../utils/Catalog'
 import { CatalogSearch } from './CatalogSearch'
+import { AbilityCard, AbilityMetadata, AbilityTargets } from './AbilityCard'
 import { InfoButton } from './InfoButton'
 import { HelpTooltip } from './HelpTooltip'
 import type { CharacterSheet } from '../utils/CharacterSheets'
 import type { CreationData } from '../utils/PlayerCreation'
 import { combatAbilityInfo, combatAbilityStatus, combatUseOptions, selectedUseOption, type UseOption } from '../domain/dnd/CombatActions'
+import { combatTargeting } from '../domain/dnd/CombatTargets'
+import { resolutionPlan } from '../domain/dnd/CombatResolution'
+import { MasterAttackRolls } from './MasterAttackRolls'
+import { SpellSaveNotice } from './AttackRollFields'
 
 type Props = {
     ownerFilter?: number | null
@@ -21,7 +26,7 @@ type Props = {
     combat?:Combat|null
     onActivate?:(ability:Ability)=>void
     onEnd?:(ability:Ability)=>boolean
-    onResolve?:(ability:Ability)=>void
+    onResolve?:(ability:Ability)=>boolean|void
     onCancelCast?:(ability:Ability)=>void
     creationData?:CreationData
     actionError?:{abilityId:number;message:string}|null
@@ -32,7 +37,7 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
     function updateAbilityName(id: number, name: string) {
         setAbilities((currentAbilities) =>
             currentAbilities.map((ability) =>
-                ability.id === id ? { ...ability, name, catalogId: undefined,ruleId:undefined,concentration:undefined,useOption:undefined,requirementsConfirmed:false,targets:[] } : ability,
+                ability.id === id ? { ...ability, name, catalogId: undefined,weaponEffects:undefined,ruleId:undefined,concentration:undefined,useOption:undefined,requirementsConfirmed:false,targets:[] } : ability,
             ),
         )
     }
@@ -74,7 +79,8 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
         )
     }
 
-    const visibleAbilities = ownerFilter === undefined ? abilities : abilities.filter(ability => ability.ownerId === ownerFilter)
+    const visibleAbilities = abilities.filter(ability => (ownerFilter === undefined || ability.ownerId === ownerFilter)
+        && !combatAbilityInfo(ability,catalogForOwner?.(ability.ownerId) ?? baseCatalog).passive)
 
     function clearAbilities() {
         if (visibleAbilities.some(ability=>ability.execution)) return
@@ -92,10 +98,15 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                     const catalog=catalogForOwner?.(ability.ownerId) ?? baseCatalog,participant=participants.find(participant=>participant.id===ability.ownerId),owner=participant?.sheet
                     const fixedOwner=!!participant && (ability.sheetAbilityIndex!==undefined || ownerFilter===ability.ownerId)
                     const info=combatAbilityInfo(ability,catalog),running=!!ability.execution || ability.active && (ability.timed===false || ability.remainingTurns>0)
+                    if (info.passive) return null
                     let options:UseOption[]=[],option:UseOption|undefined,status='Usa',error=''
                     try {options=combatUseOptions(owner,ability,catalog,creationData);option=selectedUseOption(owner,ability,catalog,creationData);status=combatAbilityStatus(owner,ability,catalog,creationData)} catch(cause) {error=cause instanceof Error ? cause.message : 'Verifica le risorse nella scheda.'}
                     const simpleCantrip=info.level===0 && options.length===1 && option?.id==='cantrip'
                     const targets=ability.targets ?? []
+                    const targeting=combatTargeting(ability,catalog,owner,option?.id),tooManyTargets=targeting.maximum!==null && targets.length>targeting.maximum
+                    const attackPlan=owner&&creationData&&/^sheet-attack:[0-5]$/.test(ability.ruleId??'')&&option?.id==='free'?resolutionPlan(owner,ability,catalog,'free',{data:creationData,active:abilities}):undefined
+                    const simpleAttack=!!onResolve&&attackPlan?.kind==='attack'&&!!owner&&!!creationData
+                    const deferredPlan=owner&&ability.ruleId==='phb2014:spell:gust-of-wind'?resolutionPlan(owner,ability,catalog,option?.id):undefined
                     const timingControls=<>
                         <label className="ability-duration">
                             <span>Durata</span>
@@ -130,8 +141,7 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                         </label>}
                     </>
                     return (
-                    <div
-                        className="ability-row"
+                    <AbilityCard
                         id={`ability-${ability.id}`}
                         tabIndex={-1}
                         data-reorder-item
@@ -166,15 +176,12 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                             disabled={running}
                             entries={catalog.abilities}
                             onChange={(value) => updateAbilityName(ability.id, value)}
-                            onSelect={(entry) => setAbilities((current) => current.map((item) => item.id === ability.id && !running ? { ...item,ruleId:undefined,concentration:undefined,spellLevel:undefined, ...templateFromCatalog(entry), remainingTurns: entry.rounds ?? 0, description: undefined,useOption:undefined,castingSource:undefined,resourceCost:1,damageEnabled:undefined,instantaneous:undefined,requirementsConfirmed:false,targets:[] } : item))}
+                            onSelect={(entry) => setAbilities((current) => current.map((item) => item.id === ability.id && !running ? { ...item,ruleId:undefined,concentration:undefined,spellLevel:undefined, ...templateFromCatalog(entry),weaponEffects:undefined, remainingTurns: entry.rounds ?? 0, description: undefined,useOption:undefined,castingSource:undefined,resourceCost:1,damageEnabled:undefined,instantaneous:undefined,requirementsConfirmed:false,targets:[] } : item))}
                         />
                         {ability.duration === 'Personalizzata' && !info.instantaneous && <div className="card-info"><span className="library-help">{ability.remainingTurns === 0 ? 'Durata non definita: imposta i turni per avviare il conteggio.' : 'Durata personalizzata in turni.'}</span></div>}
                         {!fixedOwner && timingControls}
                         <div className="ability-owner-controls">
-                        {fixedOwner ? <dl className="ability-metadata">
-                            <div><dt>Durata</dt><dd>{info.instantaneous ? 'Istantanea' : ability.duration==='Personalizzata' ? `${ability.remainingTurns} turni` : ability.duration}</dd></div>
-                            <div><dt>{info.level!==undefined ? 'Lanciatore' : 'Utilizzatore'}</dt><dd>{participant.description || `Creatura ${participant.id+1}`}</dd></div>
-                        </dl> : <label className="ability-owner">
+                        {fixedOwner ? <AbilityMetadata duration={info.instantaneous ? 'Istantanea' : ability.duration==='Personalizzata' ? `${ability.remainingTurns} turni` : ability.duration} owner={participant.description || `Creatura ${participant.id+1}`} ownerLabel={info.level!==undefined ? 'Lanciatore' : 'Utilizzatore'}/> : <label className="ability-owner">
                             <span>{info.repairsObject ? 'Chi lancia' : 'PG / mostro'}</span>
                             <select
                                 disabled={running}
@@ -183,7 +190,7 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                                 onChange={(event) => {
                                     const ownerId = event.target.value === '' ? null : Number(event.target.value)
                                     if (ownerId !== null && !participants.some((participant) => participant.id === ownerId)) return
-                                    setAbilities((current) => current.map((item) => item.id === ability.id ? { ...item, ownerId,useOption:undefined,requirementsConfirmed:false,targets:[] } : item))
+                                    setAbilities((current) => current.map((item) => item.id === ability.id ? { ...item, ownerId,weaponEffects:undefined,useOption:undefined,requirementsConfirmed:false,targets:[] } : item))
                                 }}
                             >
                                 <option value="">Seleziona PG / mostro</option>
@@ -200,7 +207,14 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                             fields={{ duration: ability.duration, remainingTurns: ability.remainingTurns, active: ability.active, owner: participants.find((participant) => participant.id === ability.ownerId)?.description ?? 'Nessuno' }} />
                         </div>
                         {fixedOwner && !info.instantaneous && <details className="ability-timing-controls"><summary>Gestisci durata</summary><div>{timingControls}</div></details>}
-                        {onResolve && <div className="ability-use-controls">
+                        {simpleAttack ? <div className="ability-use-controls"><MasterAttackRolls ability={ability} owner={owner!} plan={attackPlan!} participants={participants} abilities={abilities} catalog={catalog} catalogForOwner={catalogForOwner} data={creationData!} onApply={targets=>onResolve!({...ability,instantaneous:true,damageEnabled:true,requirementsConfirmed:true,targets,execution:{id:ability.execution?.id??crypto.randomUUID(),phase:'resolving',option:'free',cost:1}})}/>{actionError?.abilityId===ability.id&&<p role="alert">{actionError.message}</p>}</div> : deferredPlan?.deferredSave&&onActivate ? <div className="ability-use-controls"><form className="action-roll-form master-action-form" aria-label={`Lancio: ${ability.name}`} onSubmit={event=>{event.preventDefault();onActivate({...ability,requirementsConfirmed:true,damageEnabled:false,instantaneous:false})}}><fieldset aria-label={`Parametri di ${ability.name}`}>
+                            <details className="player-action-description" open><summary>Descrizione dell’azione</summary><p className="combat-request-description">{ability.description??info.entry?.description}</p></details>
+                            <label>Risorsa<select aria-label="Risorsa" required disabled={running} value={option?.id??''} onChange={event=>patch(ability.id,{useOption:event.target.value})}>{options.map(o=><option value={o.id} key={o.id} disabled={o.remaining!==null&&o.remaining<(o.cost??ability.resourceCost??1)}>{o.label}{o.remaining===null?'':` · ${o.remaining} rimasti`}</option>)}</select></label>
+                            <SpellSaveNotice plan={deferredPlan}/>
+                            <AbilityTargets candidates={participants.map(candidate=>({id:candidate.id,name:candidate.description||`Creatura ${candidate.id+1}`}))} ownerId={ability.ownerId} selectedIds={targets.map(target=>target.id)} maximum={targeting.maximum} summary={targeting.summary} label="Bersagli" disabled={!!ability.execution}
+                                onChange={(id,checked)=>patch(ability.id,{targets:checked?[...targets,{id,damage:'0',resolved:false}]:targets.filter(target=>target.id!==id)})}/>
+                            {!running&&<button className="sort-turns" type="submit" disabled={!option||!!error}>Lancia incantesimo</button>}
+                        </fieldset></form>{error&&<p role="alert">{error}</p>}{actionError?.abilityId===ability.id&&<p role="alert">{actionError.message}</p>}</div> : onResolve && <div className="ability-use-controls">
                             {status!=='Usa' && <p role="status">{status}{ability.active && !ability.execution && ability.timed!==false && ability.remainingTurns>0 ? ` · ${ability.remainingTurns} turni` : ''}</p>}
                             {error && <p role="alert">{error}</p>}
                             {info.entry?.data.ruleStatus==='partial' && <div className="ability-field-help"><span>Effetti da risolvere</span><HelpTooltip label="Informazioni sugli effetti da risolvere">Questa magia ha effetti non completamente automatizzati. Verifica la descrizione e applica gli esiti prima di concludere il lancio.</HelpTooltip></div>}
@@ -215,43 +229,36 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                                 {!options.length && <option value="">Nessuna risorsa disponibile nella scheda</option>}
                                 {options.map(option=><option key={option.id} value={option.id} disabled={option.remaining!==null && option.remaining<(option.cost ?? ability.resourceCost ?? 1)}>{option.label.replace(' · conferma DM','')}{option.remaining===null ? '' : ` · ${option.remaining} rimanenti`}</option>)}
                             </select></label>}
-                            {(info.level===undefined || ability.castingSource==='resource') && <label><span>Costo per utilizzo</span><input aria-label={`Costo di ${ability.name}`} type="number" min="1" step="1" value={option?.cost ?? ability.resourceCost ?? 1} disabled={running || option?.cost!==undefined} onChange={event=>{const cost=event.target.valueAsNumber;if(Number.isSafeInteger(cost)&&cost>0)patch(ability.id,{resourceCost:cost,requirementsConfirmed:false})}} /></label>}
+                            {option && option.remaining!==null && (info.level===undefined || ability.castingSource==='resource') && <label><span>Costo per utilizzo</span><input aria-label={`Costo di ${ability.name}`} type="number" min="1" step="1" value={option.cost ?? ability.resourceCost ?? 1} disabled={running || option.cost!==undefined} onChange={event=>{const cost=event.target.valueAsNumber;if(Number.isSafeInteger(cost)&&cost>0)patch(ability.id,{resourceCost:cost,requirementsConfirmed:false})}} /></label>}
                             {info.repairsObject ? <p className="ability-target-note">Ripara un oggetto toccato, senza infliggere danni. Tempo di lancio: 1 minuto.</p> : <>
                                 <label className="ability-check"><input type="checkbox" checked={info.instantaneous} disabled={running} onChange={event=>patch(ability.id,{instantaneous:event.target.checked})}/>Effetto istantaneo</label>
                                 <label className="ability-check"><input type="checkbox" checked={info.damage} disabled={running} onChange={event=>patch(ability.id,{damageEnabled:event.target.checked,targets:[],requirementsConfirmed:false})}/>Prevede danni</label>
                             </>}
-                            {info.damage && <fieldset className="ability-targets" aria-label="Bersagli del danno"><legend><span>Bersagli del danno</span><HelpTooltip label="Aiuto sui bersagli del danno">Scegli le creature coinvolte. Risolvi attacchi, tiri salvezza e difese, poi inserisci il danno finale per ogni bersaglio: 0 se non subisce danni.</HelpTooltip></legend>
-                                <div className="ability-target-list">
-                                {participants.map(participant=>{
-                                    const target=targets.find(target=>target.id===participant.id),name=participant.description || `Creatura ${participant.id+1}`
-                                    return <div className="ability-target" key={participant.id}>
-                                        <label className="ability-check"><input type="checkbox" aria-label={`Bersaglio ${name} di ${ability.name}`} checked={!!target} disabled={running} onChange={event=>patch(ability.id,{targets:event.target.checked ? [...targets,{id:participant.id,damage:'',resolved:false}] : targets.filter(target=>target.id!==participant.id),requirementsConfirmed:false})}/>{name}</label>
-                                        {target && ability.execution?.phase==='resolving' && <>
-                                            <label><span>Danno finale dopo TS e difese</span><input aria-label={`Danno finale a ${name} da ${ability.name}`} type="number" min="0" step="1" value={target.damage} onChange={event=>patch(ability.id,{targets:targets.map(item=>item.id===target.id ? {...item,damage:event.target.value,resolved:false} : item)})} /></label>
-                                            <label className="ability-check"><input type="checkbox" aria-label={`Conferma esito di ${ability.name} su ${name}`} checked={target.resolved} onChange={event=>patch(ability.id,{targets:targets.map(item=>item.id===target.id ? {...item,resolved:event.target.checked} : item)})}/>Esito e danno confermati</label>
-                                        </>}
-                                    </div>
-                                })}
-                                </div>
-                            </fieldset>}
+                            {info.damage&&<AbilityTargets candidates={participants.map(candidate=>({id:candidate.id,name:candidate.description||`Creatura ${candidate.id+1}`}))} ownerId={ability.ownerId} selectedIds={targets.map(target=>target.id)} maximum={targeting.maximum} summary={targeting.summary} disabled={running}
+                                checkboxLabel={candidate=>`Bersaglio ${candidate.name} di ${ability.name}`}
+                                onChange={(id,checked)=>patch(ability.id,{targets:checked?[...targets,{id,damage:'',resolved:false}]:targets.filter(target=>target.id!==id),requirementsConfirmed:false})}
+                                renderSelected={candidate=>{const target=targets.find(target=>target.id===candidate.id)!;return ability.execution?.phase==='resolving'&&<>
+                                    <label><span>Danno finale dopo TS e difese</span><input aria-label={`Danno finale a ${candidate.name} da ${ability.name}`} type="number" min="0" step="1" value={target.damage} onChange={event=>patch(ability.id,{targets:targets.map(item=>item.id===candidate.id?{...item,damage:event.target.value,resolved:false}:item)})}/></label>
+                                    <label className="ability-check"><input type="checkbox" aria-label={`Conferma esito di ${ability.name} su ${candidate.name}`} checked={target.resolved} onChange={event=>patch(ability.id,{targets:targets.map(item=>item.id===candidate.id?{...item,resolved:event.target.checked}:item)})}/>Esito e danno confermati</label>
+                                </>}}/>}
+
                             {!running && (info.level!==undefined || info.damage) && <div className="ability-confirmation"><label className="ability-check"><input type="checkbox" checked={ability.requirementsConfirmed===true} onChange={event=>patch(ability.id,{requirementsConfirmed:event.target.checked})}/>{info.repairsObject ? 'Confermo oggetto a contatto, componenti disponibili e requisiti del lancio.' : 'Confermo requisiti e bersagli'}</label>{!info.repairsObject && <HelpTooltip label="Quali requisiti confermare">Controlla azione o reazione, gittata, bersagli e componenti disponibili, inclusi quelli costosi o consumabili, secondo l’edizione della scheda.</HelpTooltip>}</div>}
                             {ability.execution && <>
                                 <div className="ability-field-help"><span>{ability.execution.phase==='casting' ? 'Lancio in corso' : 'Risoluzione dell’uso'}</span><HelpTooltip label="Aiuto sulla risoluzione dell’uso">{ability.execution.phase==='casting' ? 'Mantieni la concentrazione e completa il tempo richiesto. La risorsa sarà consumata al completamento del lancio.' : 'Concludi dopo aver applicato gli esiti. Un attacco mancato o un tiro salvezza superato non restituisce eventuali risorse già consumate.'}</HelpTooltip></div>
-                                <button className="sort-turns" type="button" onClick={()=>onResolve(ability)}>{ability.execution.phase==='casting' ? 'Completa lancio' : info.damage ? 'Concludi uso e applica danni' : 'Concludi uso'}</button>
+                                <button className="sort-turns" type="button" disabled={tooManyTargets} onClick={()=>onResolve(ability)}>{ability.execution.phase==='casting' ? 'Completa lancio' : info.damage ? 'Concludi uso e applica danni' : 'Concludi uso'}</button>
                                 {ability.execution.phase==='casting' && <button className="end-combat" type="button" onClick={()=>onCancelCast?.(ability)}>Interrompi lancio senza consumo</button>}
                             </>}
                             {actionError?.abilityId===ability.id && <p role="alert" id={`ability-error-${ability.id}`}>{actionError.message}</p>}
                         </div>}
-                        <button
+                        {!simpleAttack&&(!deferredPlan?.deferredSave||running)&&(onEnd && ability.active && (ability.timed===false || ability.remainingTurns>0) ? <button className="end-combat end-ability" type="button" onClick={()=>onEnd(ability)}>Termina effetto</button> : <button
                             className="activate-ability"
                             aria-describedby={actionError?.abilityId===ability.id ? `ability-error-${ability.id}` : undefined}
                             type="button"
-                            disabled={onResolve ? running || status==='Esauriti utilizzi' || !!error || !option || !ability.name.trim() || ability.ownerId===null : ability.active || (ability.remainingTurns===0 && ability.timed!==false) || !ability.name.trim() || ability.ownerId===null}
+                            disabled={onResolve ? running || tooManyTargets || status==='Esauriti utilizzi' || !!error || !option || !ability.name.trim() || ability.ownerId===null : ability.active || (ability.remainingTurns===0 && ability.timed!==false) || !ability.name.trim() || ability.ownerId===null}
                             onClick={() => onActivate ? onActivate(ability) : setAbilities((current) => current.map((item) => item.id === ability.id ? activateAbility(item,combat,participants) : item))}
                         >
                             {onResolve ? status : ability.active ? (ability.timed !== false && ability.remainingTurns === 0 ? 'Scaduta' : 'Attivata') : 'Attiva'}
-                        </button>
-                        {onEnd && ability.active && (ability.timed===false || ability.remainingTurns>0) && <button type="button" onClick={()=>onEnd(ability)}>Termina effetto</button>}
+                        </button>)}
                         <button
                             aria-label={`Elimina ${ability.name || `abilità ${index + 1}`}`}
                             className="delete-ability"
@@ -262,7 +269,7 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                         >
                             <span aria-hidden="true">×</span>
                         </button>
-                    </div>
+                    </AbilityCard>
                 )})}
                 <button
                     className="add-ability"

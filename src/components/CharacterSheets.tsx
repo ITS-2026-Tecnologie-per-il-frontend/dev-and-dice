@@ -1,7 +1,7 @@
 import { durationTurns } from '../utils/Combat'
 import { createContext, memo, useCallback, useContext, useDeferredValue, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type Dispatch, type Ref, type SetStateAction } from 'react'
 import { abilityModifier, signedBonus, creatureAbilitySections, characterFields, clampCurrentHitPointsToMaximum, characterLevel, numericCharacterFields, newCharacterSheet, parseCharacterSheets, initiativeBonus, type SheetStats, type CharacterSheet, type SheetAbility } from '../utils/CharacterSheets'
-import { sheetFromCatalog, sheetWithCombatSpells, templateFromCatalog, type Catalog } from '../utils/Catalog'
+import { catalogAbilityKind, sheetFromCatalog, sheetWithCombatSpells, templateFromCatalog, type Catalog } from '../utils/Catalog'
 import { CatalogSearch } from './CatalogSearch'
 import { InfoButton } from './InfoButton'
 import { useDialogDismiss } from '../utils/Dialog'
@@ -397,6 +397,7 @@ const MemoCharacterSheetsLayout=memo(CharacterSheetsLayout)
 
 const CharacterCombatPanels=memo(function CharacterCombatPanels({draft,catalog,setDraft}:{draft:CharacterSheet;catalog:Catalog;setDraft:Dispatch<SetStateAction<CharacterSheet|null>>}) {
     function abilityRow(ability: SheetAbility, index: number, spell = false) {
+        const entry=catalog.abilities.find(entry=>entry.id===ability.catalogId),kind=catalogAbilityKind(entry,ability.section,ability.description ?? entry?.description)
         return (<div className="sheet-ability-row" key={index}>
                                     <label>
                                         <span>{spell ? 'Nome magia' : 'Nome abilità'}</span>
@@ -407,30 +408,31 @@ const CharacterCombatPanels=memo(function CharacterCombatPanels({draft,catalog,s
                                             aria-label={`Nome ${spell ? 'magia' : 'abilità'} ${index + 1} della scheda`}
                                             entries={catalog.abilities}
                                             onChange={(name) => setDraft(current=>current&&({ ...current, abilities: current.abilities.map((item, i) => i === index ? { ...item, name, catalogId: undefined } : item) }))}
-                                            onSelect={(entry) => setDraft(current=>current&&({ ...current, abilities: current.abilities.map((item, i) => i === index ? {...templateFromCatalog(entry),...(item.section ? {section:item.section} : {})} : item) }))}
+                                            onSelect={(entry) => {const template=templateFromCatalog(entry);setDraft(current=>current&&({ ...current, abilities: current.abilities.map((item, i) => i === index ? {...template,section:template.section ?? item.section} : item) }))}}
                                         />
                                     </label>
-                                    <label>
+                                    {!kind.passive && <label>
                                         <span>Durata</span>
-                                        <select
+                                        {kind.attack ? <output>Istantanea</output> : <select
                                             value={ability.duration}
                                             onChange={(event) => {const duration=event.target.value as keyof typeof durationTurns;setDraft(current=>current&&({ ...current, abilities: current.abilities.map((item, i) => i === index ? { ...item, duration, remainingTurns: undefined, timed: duration !== 'Senza conteggio' } : item) }))}}
                                         >
                                             {Object.keys(durationTurns).map((duration) => <option key={duration}>{duration}</option>)}
-                                        </select>
-                                    </label>
-                                    {ability.duration === 'Personalizzata' && <label className="sheet-ability-turns"><span>Turni (0: senza conteggio)</span><input type="number" min="0" step="1" value={ability.remainingTurns ?? 0} onChange={(event) => {
+                                        </select>}
+                                    </label>}
+                                    {!kind.passive && !kind.attack && ability.duration === 'Personalizzata' && <label className="sheet-ability-turns"><span>Turni (0: senza conteggio)</span><input type="number" min="0" step="1" value={ability.remainingTurns ?? 0} onChange={(event) => {
                                         const remainingTurns = event.target.valueAsNumber
                                         if (Number.isSafeInteger(remainingTurns) && remainingTurns >= 0) setDraft(current=>current&&({ ...current, abilities: current.abilities.map((item, i) => i === index ? { ...item, remainingTurns } : item) }))
                                     }} /></label>}
                                     <InfoButton name={catalog.abilities.find((entry) => entry.id === ability.catalogId)?.name ?? ability.name} description={ability.description} entry={catalog.abilities.find((entry) => entry.id === ability.catalogId)} fields={{ duration: ability.duration, remainingTurns: ability.remainingTurns ?? durationTurns[ability.duration] }} />
                                     <button className="delete-turn" type="button" aria-label={`Elimina ${ability.name || `abilità ${index + 1}`} dalla scheda`} onClick={() => setDraft(current=>current&&({ ...current, abilities: current.abilities.filter((_, i) => i !== index) }))}>×</button>
-                                    {draft.kind!=='PG' && <label className="sheet-ability-section"><span>Sezione</span><select aria-label={`Sezione abilità o azione ${index+1}`} value={ability.section ?? 'trait'} onChange={event => setDraft({...draft,abilities:draft.abilities.map((item,i) => i===index ? {...item,section:event.target.value as SheetAbility['section']} : item)})}>{Object.entries(creatureAbilitySections).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>}
+                                    {kind.passive && <p className="sheet-ability-description info-description">{ability.description ?? entry?.description ?? 'Si applica nelle circostanze descritte, senza attivazione.'}</p>}
+                                    {draft.kind!=='PG' && <label className="sheet-ability-section"><span>Sezione</span><select aria-label={`Sezione abilità o azione ${index+1}`} value={kind.section ?? 'trait'} onChange={event => setDraft({...draft,abilities:draft.abilities.map((item,i) => i===index ? {...item,section:event.target.value as SheetAbility['section']} : item)})}>{Object.entries(creatureAbilitySections).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>}
                                     {draft.kind!=='PG' && !draft.catalogId && <label className="sheet-ability-description"><span>Descrizione dell’abilità o azione</span><textarea aria-label={`Descrizione abilità o azione ${index+1}`} rows={3} value={ability.description ?? ''} onChange={event => setDraft({...draft,abilities:draft.abilities.map((item,i) => i===index ? {...item,description:event.target.value,catalogId:undefined} : item)})} /></label>}
                                 </div>)
     }
 
-    const rows = draft?.abilities.map((ability, index) => ({ ability, index, spell: typeof catalog.abilities.find((entry) => entry.id === ability.catalogId)?.data.level === 'number' })) ?? []
+    const rows = draft?.abilities.map((ability, index) => {const entry=catalog.abilities.find(entry=>entry.id===ability.catalogId);return { ability, index, section:catalogAbilityKind(entry,ability.section,ability.description ?? entry?.description).section ?? 'trait', spell: typeof entry?.data.level === 'number' }}) ?? []
     const selectedSpells = draft?.kind === 'PG' ? sheetWithCombatSpells({ ...draft, abilities: [] }, catalog).abilities.filter((spell) => !rows.some((row) => row.spell && (row.ability.name === spell.name || (spell.catalogId && row.ability.catalogId === spell.catalogId)))) : []
     const detected = draft ? pdfAbilities(draft) : []
     const activePdf = detected.filter((item) => item.activation === 'active' && !rows.some((row) => row.ability.name.trim().toLowerCase() === item.name.trim().toLowerCase()))
@@ -447,10 +449,10 @@ const CharacterCombatPanels=memo(function CharacterCombatPanels({draft,catalog,s
     </details>
     <div className={draft.kind === 'PG' ? 'sheet-ability-columns' : 'info-ability-sections'}>
     {draft.kind!=='PG' ? ([['trait','legendary'],['action','bonus','reaction','lair']] as const).map((sections,column) => <div className="info-ability-column" key={column}>
-        {sections.filter(section => section==='trait' || section==='action' || rows.some(row => row.ability.section===section)).map(section => <section className="info-section info-panel sheet-abilities" aria-label={creatureAbilitySections[section]} key={section}>
+        {sections.filter(section => section==='trait' || section==='action' || rows.some(row => row.section===section)).map(section => <section className="info-section info-panel sheet-abilities" aria-label={creatureAbilitySections[section]} key={section}>
             <h3>{creatureAbilitySections[section]}</h3>
-            {!rows.some(row => (row.ability.section ?? 'trait')===section) && <p className="library-help">Nessuna voce. Aggiungine una qui sotto.</p>}
-            {rows.filter(row => (row.ability.section ?? 'trait')===section).map(({ability,index}) => abilityRow(ability,index))}
+            {!rows.some(row => row.section===section) && <p className="library-help">Nessuna voce. Aggiungine una qui sotto.</p>}
+            {rows.filter(row => row.section===section).map(({ability,index}) => abilityRow(ability,index))}
             <button className="end-combat sheet-add-ability" type="button" onClick={() => setDraft({...draft,abilities:[...draft.abilities,{name:'',duration:'Senza conteggio',section}]})}>{section==='trait' ? '+ Aggiungi abilità' : section==='action' ? '+ Aggiungi azione' : '+ Aggiungi voce'}</button>
         </section>)}
     </div>) : <section className="sheet-abilities" aria-labelledby="sheet-abilities-heading">

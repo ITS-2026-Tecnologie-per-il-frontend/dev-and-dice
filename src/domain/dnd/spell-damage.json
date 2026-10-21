@@ -1,0 +1,3775 @@
+{
+  "schemaVersion": 1,
+  "inputs": {
+    "rules2014/verified-reference.json": "851f63389168ffa9caa84b32650beaa996ac19b7a823fb2c63b55aa96143b88d",
+    "database.json": "5a15825d7c99480cda9b2a30bb78c211d586674063b76c1e6eb3edbb7210e1db"
+  },
+  "method": "Sintesi editoriali dei record 2014 verificati e confronto con le descrizioni del catalogo. Nessuna formula dedotta dai soli dadi citati nel testo. Edizioni esplicite isolate; fonti senza descrizione segnalate.",
+  "records": {
+    "2014:phb2014:spell:acid-splash": {
+      "status": "known",
+      "summary": "1d6 acido per bersaglio; TS Destrezza: nessun danno con successo.\nLivello del personaggio: 5°: 2d6; 11°: 3d6; 17°: 4d6.",
+      "name": "Spruzzo Acido"
+    },
+    "2014:phb2014:spell:aid": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Aiuto"
+    },
+    "2014:phb2014:spell:alarm": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Allarme"
+    },
+    "2014:phb2014:spell:alter-self": {
+      "status": "known",
+      "summary": "Solo armi naturali: dado base 1d6 e bonus +1 ai danni; aggiungi il normale modificatore del colpo.",
+      "name": "Alterare Se Stesso"
+    },
+    "2014:phb2014:spell:animal-friendship": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Amicizia con gli Animali"
+    },
+    "2014:phb2014:spell:animal-messenger": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Messaggero Animale"
+    },
+    "2014:phb2014:spell:animal-shapes": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Forme Animali"
+    },
+    "2014:phb2014:spell:animate-dead": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Animare Morti"
+    },
+    "2014:phb2014:spell:animate-objects": {
+      "status": "known",
+      "summary": "Per colpo di un oggetto: Minuscolo 1d4 + 4; Piccolo 1d8 + 2; Medio 2d6 + 1; Grande 2d10 + 2; Enorme 2d12 + 4. Contundente, oppure tipo stabilito dal DM per la forma dell’oggetto.\nAumenti: +2 unità di oggetti per livello di slot oltre il 5°; i danni del singolo oggetto non aumentano.",
+      "name": "Animare Oggetti"
+    },
+    "2014:phb2014:spell:antilife-shell": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Guscio Anti-Vita"
+    },
+    "2014:phb2014:spell:antimagic-field": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Campo Anti-Magia"
+    },
+    "2014:phb2014:spell:antipathy-sympathy": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Antipatia/Simpatia"
+    },
+    "2014:phb2014:spell:arcane-eye": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Occhio Arcano"
+    },
+    "2014:phb2014:spell:arcane-gate": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Portale Arcano"
+    },
+    "2014:phb2014:spell:arcane-lock": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Serratura Arcana"
+    },
+    "2014:phb2014:spell:armor-of-agathys": {
+      "status": "known",
+      "summary": "5 freddo a chi ti colpisce con un attacco in mischia, finché conservi i PF temporanei di questa magia; nessun TS.\nAumenti: +5 danni di rappresaglia per livello di slot oltre il 1°; i PF temporanei aumentano separatamente.",
+      "name": "Armatura di Agathys"
+    },
+    "2014:phb2014:spell:arms-of-hadar": {
+      "status": "known",
+      "summary": "2d6 necrotico per creatura nell’area; TS Forza: metà con successo.\nSlot superiori: +1d6 per livello di slot oltre il 1°.",
+      "name": "Braccia di Hadar"
+    },
+    "2014:phb2014:spell:astral-projection": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Proiezione Astrale"
+    },
+    "2014:phb2014:spell:augury": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Presagio"
+    },
+    "2014:phb2014:spell:aura-of-life": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Aura di Vita"
+    },
+    "2014:phb2014:spell:aura-of-purity": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Aura di Purezza"
+    },
+    "2014:phb2014:spell:aura-of-vitality": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Aura di Vitalità"
+    },
+    "2014:phb2014:spell:awaken": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Risveglio"
+    },
+    "2014:phb2014:spell:bane": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Anatema"
+    },
+    "2014:phb2014:spell:banishing-smite": {
+      "status": "known",
+      "summary": "+5d10 forza al prossimo colpo con arma contro una creatura, prima che termini la magia.",
+      "name": "Punizione Esiliante"
+    },
+    "2014:phb2014:spell:banishment": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Esilio"
+    },
+    "2014:phb2014:spell:barkskin": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Pelle Coriacea"
+    },
+    "2014:phb2014:spell:beacon-of-hope": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Faro di Speranza"
+    },
+    "2014:phb2014:spell:beast-sense": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Senso della Bestia"
+    },
+    "2014:phb2014:spell:bestow-curse": {
+      "status": "known",
+      "summary": "Solo opzione danno della maledizione: +1d8 necrotico quando un tuo attacco o incantesimo infligge danni al bersaglio maledetto; la maledizione richiede prima un TS Saggezza fallito.",
+      "name": "Scagliare Maledizione"
+    },
+    "2014:phb2014:spell:bigby-s-hand": {
+      "status": "known",
+      "summary": "Pugno: 4d8 forza per colpo, al lancio o con successive azioni bonus. Stritolamento: 2d6 + modificatore da incantatore contundente alla creatura afferrata, usando un’azione bonus.\nAumenti: Per livello di slot oltre il 5°: pugno +2d8; stritolamento +2d6.",
+      "name": "Mano di Bigby"
+    },
+    "2014:phb2014:spell:blade-barrier": {
+      "status": "known",
+      "summary": "6d10 tagliente per creatura al primo ingresso in un turno o all’inizio del proprio turno nel muro; TS Destrezza: metà con successo.",
+      "name": "Barriera di Lame"
+    },
+    "2014:phb2014:spell:blade-ward": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Interdizione alle Lame"
+    },
+    "2014:phb2014:spell:bless": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Benedizione"
+    },
+    "2014:phb2014:spell:blight": {
+      "status": "known",
+      "summary": "8d8 necrotico per bersaglio; TS Costituzione: metà con successo. Nessun effetto su non morti e costrutti; piante magiche e creature vegetali subiscono il massimo dei dadi e hanno svantaggio al TS.\nSlot superiori: +1d8 per livello di slot oltre il 4°.",
+      "name": "Inaridire"
+    },
+    "2014:phb2014:spell:blinding-smite": {
+      "status": "known",
+      "summary": "+3d8 radioso al prossimo colpo con arma in mischia; il TS Costituzione riguarda la cecità, non riduce questi danni.",
+      "name": "Punizione Accecante"
+    },
+    "2014:phb2014:spell:blindness-deafness": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Cecità/Sordità"
+    },
+    "2014:phb2014:spell:blink": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Intermittenza"
+    },
+    "2014:phb2014:spell:blur": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Sfocatura"
+    },
+    "2014:phb2014:spell:branding-smite": {
+      "status": "known",
+      "summary": "+2d6 radioso al prossimo colpo con arma contro una creatura, prima che termini la magia.\nSlot superiori: +1d6 per livello di slot oltre il 2°.",
+      "name": "Punizione Marchiante"
+    },
+    "2014:phb2014:spell:burning-hands": {
+      "status": "known",
+      "summary": "3d6 fuoco per creatura nel cono; TS Destrezza: metà con successo.\nSlot superiori: +1d6 per livello di slot oltre il 1°.",
+      "name": "Mani Brucianti"
+    },
+    "2014:phb2014:spell:call-lightning": {
+      "status": "known",
+      "summary": "3d10 fulmine per creatura entro 1,5 m dal punto colpito; TS Destrezza: metà con successo. Un fulmine al lancio e altri con la tua azione nei turni successivi. +1d10 se controlli una tempesta già presente all’aperto.\nSlot superiori: +1d10 per livello di slot oltre il 3°.",
+      "name": "Invocare il Fulmine"
+    },
+    "2014:phb2014:spell:calm-emotions": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Calmare Emozioni"
+    },
+    "2014:phb2014:spell:chain-lightning": {
+      "status": "known",
+      "summary": "10d8 fulmine per bersaglio, fino a 4 bersagli distinti; TS Destrezza: metà con successo. Ogni bersaglio è colpito una sola volta.\nAumenti: +1 bersaglio secondario per livello di slot oltre il 6°; il danno per bersaglio resta 10d8.",
+      "name": "Catena di Fulmini"
+    },
+    "2014:phb2014:spell:charm-person": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Charme su Persone"
+    },
+    "2014:phb2014:spell:chill-touch": {
+      "status": "known",
+      "summary": "1d8 necrotico per colpo con attacco magico a distanza.\nLivello del personaggio: 5°: 2d8; 11°: 3d8; 17°: 4d8.",
+      "name": "Tocco Gelido"
+    },
+    "2014:phb2014:spell:chromatic-orb": {
+      "status": "known",
+      "summary": "3d8 per colpo con attacco magico a distanza; scegli acido, freddo, fuoco, fulmine, veleno o tuono.\nSlot superiori: +1d8 per livello di slot oltre il 1°.",
+      "name": "Sfera Cromatica"
+    },
+    "2014:phb2014:spell:circle-of-death": {
+      "status": "known",
+      "summary": "8d6 necrotico per creatura nell’area; TS Costituzione: metà con successo.\nSlot superiori: +2d6 per livello di slot oltre il 6°.",
+      "name": "Cerchio di Morte"
+    },
+    "2014:phb2014:spell:circle-of-power": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Cerchio di Potere"
+    },
+    "2014:phb2014:spell:clairvoyance": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Chiaroveggenza"
+    },
+    "2014:phb2014:spell:clone": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Clone"
+    },
+    "2014:phb2014:spell:cloud-of-daggers": {
+      "status": "known",
+      "summary": "4d4 tagliente per creatura al primo ingresso in un turno o all’inizio del proprio turno nell’area; nessun TS.\nSlot superiori: +2d4 per livello di slot oltre il 2°.",
+      "name": "Nube di Pugnali"
+    },
+    "2014:phb2014:spell:cloudkill": {
+      "status": "known",
+      "summary": "5d8 veleno per creatura al primo ingresso in un turno o all’inizio del proprio turno nella nube; TS Costituzione: metà con successo, anche se non respira.\nSlot superiori: +1d8 per livello di slot oltre il 5°.",
+      "name": "Nube Mortale"
+    },
+    "2014:phb2014:spell:color-spray": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Spruzzo Colorato"
+    },
+    "2014:phb2014:spell:command": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Comando"
+    },
+    "2014:phb2014:spell:commune": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Comunione"
+    },
+    "2014:phb2014:spell:commune-with-nature": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Comunione con la Natura"
+    },
+    "2014:phb2014:spell:compelled-duel": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Duello Obbligato"
+    },
+    "2014:phb2014:spell:comprehend-languages": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Comprensione dei Linguaggi"
+    },
+    "2014:phb2014:spell:compulsion": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Compulsione"
+    },
+    "2014:phb2014:spell:cone-of-cold": {
+      "status": "known",
+      "summary": "8d8 freddo per creatura nel cono; TS Costituzione: metà con successo.\nSlot superiori: +1d8 per livello di slot oltre il 5°.",
+      "name": "Cono di Freddo"
+    },
+    "2014:phb2014:spell:confusion": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Confusione"
+    },
+    "2014:phb2014:spell:conjure-animals": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Evoca Animali"
+    },
+    "2014:phb2014:spell:conjure-barrage": {
+      "status": "known",
+      "summary": "3d8 per creatura nel cono, dello stesso tipo dell’arma o munizione usata; TS Destrezza: metà con successo.",
+      "name": "Evoca Raffica"
+    },
+    "2014:phb2014:spell:conjure-celestial": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Evoca Celestiale"
+    },
+    "2014:phb2014:spell:conjure-elemental": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Evoca Elementale"
+    },
+    "2014:phb2014:spell:conjure-fey": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Evoca Folletto"
+    },
+    "2014:phb2014:spell:conjure-minor-elementals": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Evoca Elementali Minori"
+    },
+    "2014:phb2014:spell:conjure-volley": {
+      "status": "known",
+      "summary": "8d8 per creatura nell’area, dello stesso tipo dell’arma o munizione usata; TS Destrezza: metà con successo.",
+      "name": "Evoca Pioggia di Armi"
+    },
+    "2014:phb2014:spell:conjure-woodland-beings": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Evoca Creature Boschive"
+    },
+    "2014:phb2014:spell:contact-other-plane": {
+      "status": "known",
+      "summary": "6d6 psichico all’incantatore soltanto se fallisce il TS Intelligenza CD 15 del contatto.",
+      "name": "Contattare Altri Piani"
+    },
+    "2014:phb2014:spell:contagion": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Contagio"
+    },
+    "2014:phb2014:spell:contingency": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Contingenza"
+    },
+    "2014:phb2014:spell:continual-flame": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Fiamma Perenne"
+    },
+    "2014:phb2014:spell:control-water": {
+      "status": "known",
+      "summary": "Solo Vortice: 2d8 contundente al primo ingresso di una creatura nel vortice in un turno e all’inizio dei suoi turni al suo interno; TS Forza: metà con successo. Gli oggetti subiscono 2d8 al primo ingresso nel turno e a ogni round nel vortice.",
+      "name": "Controllare Acqua"
+    },
+    "2014:phb2014:spell:control-weather": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Controllare Tempo Atmosferico"
+    },
+    "2014:phb2014:spell:cordon-of-arrows": {
+      "status": "known",
+      "summary": "1d6 perforante per proiettile attivato dal primo ingresso di una creatura in un turno o dal suo fine turno nell’area; TS Destrezza: nessun danno con successo. 4 proiettili al livello base.\nAumenti: +2 proiettili per livello di slot oltre il 2°; il danno per proiettile resta 1d6.",
+      "name": "Cordone di Frecce"
+    },
+    "2014:phb2014:spell:counterspell": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Controincantesimo"
+    },
+    "2014:phb2014:spell:create-food-and-water": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Creare Cibo e Acqua"
+    },
+    "2014:phb2014:spell:create-or-destroy-water": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Creare o Distruggere Acqua"
+    },
+    "2014:phb2014:spell:create-undead": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Creare Non Morti"
+    },
+    "2014:phb2014:spell:creation": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Creazione"
+    },
+    "2014:phb2014:spell:crown-of-madness": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Corona di Follia"
+    },
+    "2014:phb2014:spell:crusader-s-mantle": {
+      "status": "known",
+      "summary": "+1d4 radioso per colpo con arma delle creature non ostili nell’aura, incluso l’incantatore.",
+      "name": "Mantello del Crociato"
+    },
+    "2014:phb2014:spell:cure-wounds": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Cura Ferite"
+    },
+    "2014:phb2014:spell:dancing-lights": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Luci Danzanti"
+    },
+    "2014:phb2014:spell:darkness": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Oscurità"
+    },
+    "2014:phb2014:spell:darkvision": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Scurovisione"
+    },
+    "2014:phb2014:spell:daylight": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Luce Diurna"
+    },
+    "2014:phb2014:spell:death-ward": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Interdizione alla Morte"
+    },
+    "2014:phb2014:spell:delayed-blast-fireball": {
+      "status": "known",
+      "summary": "Esplosione: 12d6 fuoco per creatura; TS Destrezza: metà con successo. Accumulo: +1d6 a ogni fine del tuo turno prima dell’esplosione.\nAumenti: +1d6 al danno base per livello di slot oltre il 7°; l’accumulo per turno resta +1d6.",
+      "name": "Palla di Fuoco Ritardata"
+    },
+    "2014:phb2014:spell:demiplane": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Semipiano"
+    },
+    "2014:phb2014:spell:destructive-wave": {
+      "status": "known",
+      "summary": "5d6 tuono + 5d6 radioso oppure necrotico per creatura scelta nell’area; TS Costituzione: metà con successo.",
+      "name": "Onda Distruttiva"
+    },
+    "2014:phb2014:spell:detect-evil-and-good": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Individuazione del Bene e del Male"
+    },
+    "2014:phb2014:spell:detect-magic": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Individuazione del Magico"
+    },
+    "2014:phb2014:spell:detect-poison-and-disease": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Individuazione dei Veleni e delle Malattie"
+    },
+    "2014:phb2014:spell:detect-thoughts": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Individuazione dei Pensieri"
+    },
+    "2014:phb2014:spell:dimension-door": {
+      "status": "known",
+      "summary": "4d6 forza a ciascun viaggiatore solo se la destinazione è occupata; in quel caso il teletrasporto fallisce.",
+      "name": "Porta Dimensionale"
+    },
+    "2014:phb2014:spell:disguise-self": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Camuffare Se Stesso"
+    },
+    "2014:phb2014:spell:disintegrate": {
+      "status": "known",
+      "summary": "10d6 + 40 forza al bersaglio creatura; TS Destrezza: nessun danno con successo. La distruzione di oggetti e forza magica segue l’effetto descritto, senza usare questa formula.\nSlot superiori: +3d6 per livello di slot oltre il 6°.",
+      "name": "Disintegrazione"
+    },
+    "2014:phb2014:spell:dispel-evil-and-good": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Dissolvi il Bene e il Male"
+    },
+    "2014:phb2014:spell:dispel-magic": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Dissolvi Magie"
+    },
+    "2014:phb2014:spell:dissonant-whispers": {
+      "status": "known",
+      "summary": "3d6 psichico per bersaglio; TS Saggezza: metà con successo.\nSlot superiori: +1d6 per livello di slot oltre il 1°.",
+      "name": "Sussurri Dissonanti"
+    },
+    "2014:phb2014:spell:divination": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Divinazione"
+    },
+    "2014:phb2014:spell:divine-favor": {
+      "status": "known",
+      "summary": "+1d4 radioso per ogni tuo colpo con arma durante la durata.",
+      "name": "Favore Divino"
+    },
+    "2014:phb2014:spell:divine-word": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Parola Divina"
+    },
+    "2014:phb2014:spell:dominate-beast": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Dominare Bestie"
+    },
+    "2014:phb2014:spell:dominate-monster": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Dominare Mostri"
+    },
+    "2014:phb2014:spell:dominate-person": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Dominare Persone"
+    },
+    "2014:phb2014:spell:drawmij-s-instant-summons": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Evocazioni Istantanee di Drawmij"
+    },
+    "2014:phb2014:spell:dream": {
+      "status": "known",
+      "summary": "Solo variante incubo: 3d6 psichico al risveglio se il bersaglio fallisce il TS Saggezza. Nessun danno nella comunicazione normale.",
+      "name": "Sogno"
+    },
+    "2014:phb2014:spell:druidcraft": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Artificio Druidico"
+    },
+    "2014:phb2014:spell:earthquake": {
+      "status": "known",
+      "summary": "Strutture: 50 contundente al lancio e a fine di ogni tuo turno. Crolli: 5d6 contundente alle creature vicine; TS Destrezza: metà con successo. Eventuali cadute nelle fenditure dipendono dalla profondità.",
+      "name": "Terremoto"
+    },
+    "2014:phb2014:spell:eldritch-blast": {
+      "status": "known",
+      "summary": "1d10 forza per raggio che colpisce, con un attacco magico a distanza separato per ciascun raggio.\nAumenti: Livello del personaggio: 1 raggio al 1°, 2 al 5°, 3 all’11°, 4 al 17°; ogni raggio resta 1d10.",
+      "name": "Deflagrazione Occulta"
+    },
+    "2014:phb2014:spell:elemental-weapon": {
+      "status": "known",
+      "summary": "+1d4 elementale e bonus +1 ai danni dell’arma per colpo; scegli acido, freddo, fuoco, fulmine o tuono.\nAumenti: Slot 5°–6°: +2d4 e bonus +2 ai danni; slot dal 7°: +3d4 e bonus +3.",
+      "name": "Arma Elementale"
+    },
+    "2014:phb2014:spell:enhance-ability": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Potenziare Caratteristica"
+    },
+    "2014:phb2014:spell:enlarge-reduce": {
+      "status": "known",
+      "summary": "Ingrandire: +1d4 ai danni dell’arma per colpo. Ridurre: −1d4 ai danni dell’arma per colpo, senza scendere sotto 1 danno totale.",
+      "name": "Ingrandire/Ridurre"
+    },
+    "2014:phb2014:spell:ensnaring-strike": {
+      "status": "known",
+      "summary": "Continuato: 1d6 perforante all’inizio di ogni turno del bersaglio trattenuto. Per essere trattenuto deve prima subire il colpo con arma e fallire il TS Forza.\nSlot superiori: +1d6 per livello di slot oltre il 1°.",
+      "name": "Colpo Intrappolante"
+    },
+    "2014:phb2014:spell:entangle": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Intralciare"
+    },
+    "2014:phb2014:spell:enthrall": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Ammaliare"
+    },
+    "2014:phb2014:spell:etherealness": {
+      "status": "known",
+      "summary": "Al ritorno nel piano di origine, solo se lo spazio è occupato: 2 danni da forza per ogni piede di spostamento forzato fino al più vicino spazio libero. Nessun danno durante il normale transito.",
+      "name": "Forma Eterea"
+    },
+    "2014:phb2014:spell:evard-s-black-tentacles": {
+      "status": "known",
+      "summary": "3d6 contundente al primo ingresso nel turno o all’inizio del proprio turno, se fallisce il TS Destrezza. Se già trattenuto dai tentacoli: 3d6 a inizio turno senza nuovo TS.",
+      "name": "Tentacoli Neri di Evard"
+    },
+    "2014:phb2014:spell:expeditious-retreat": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Ritirata Rapida"
+    },
+    "2014:phb2014:spell:eyebite": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Sguardo Penetrante"
+    },
+    "2014:phb2014:spell:fabricate": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Fabbricare"
+    },
+    "2014:phb2014:spell:faerie-fire": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Luminescenza"
+    },
+    "2014:phb2014:spell:false-life": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Vita Falsata"
+    },
+    "2014:phb2014:spell:fear": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Paura"
+    },
+    "2014:phb2014:spell:feather-fall": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Caduta Morbida"
+    },
+    "2014:phb2014:spell:feeblemind": {
+      "status": "known",
+      "summary": "4d6 psichico al bersaglio; il TS Intelligenza riguarda gli altri effetti e non evita o dimezza questi danni.",
+      "name": "Regressione Mentale"
+    },
+    "2014:phb2014:spell:feign-death": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Morte Apparente"
+    },
+    "2014:phb2014:spell:find-familiar": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Trova Famiglio"
+    },
+    "2014:phb2014:spell:find-steed": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Trova Cavalcatura"
+    },
+    "2014:phb2014:spell:find-the-path": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Trova il Cammino"
+    },
+    "2014:phb2014:spell:find-traps": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Individuazione delle Trappole"
+    },
+    "2014:phb2014:spell:finger-of-death": {
+      "status": "known",
+      "summary": "7d8 + 30 necrotico per bersaglio; TS Costituzione: metà con successo.",
+      "name": "Dito della Morte"
+    },
+    "2014:phb2014:spell:fire-bolt": {
+      "status": "known",
+      "summary": "1d10 fuoco per colpo con attacco magico a distanza.\nLivello del personaggio: 5°: 2d10; 11°: 3d10; 17°: 4d10.",
+      "name": "Dardo di Fuoco"
+    },
+    "2014:phb2014:spell:fire-shield": {
+      "status": "known",
+      "summary": "2d8 fuoco (scudo caldo) oppure freddo (scudo freddo) a chi ti colpisce in mischia entro 1,5 m; nessun TS e nessuna reazione richiesta.",
+      "name": "Scudo di Fuoco"
+    },
+    "2014:phb2014:spell:fire-storm": {
+      "status": "known",
+      "summary": "7d10 fuoco per creatura nell’area; TS Destrezza: metà con successo.",
+      "name": "Tempesta di Fuoco"
+    },
+    "2014:phb2014:spell:fireball": {
+      "status": "known",
+      "summary": "8d6 fuoco per creatura nell’area; TS Destrezza: metà con successo.\nSlot superiori: +1d6 per livello di slot oltre il 3°.",
+      "name": "Palla di Fuoco"
+    },
+    "2014:phb2014:spell:flame-blade": {
+      "status": "known",
+      "summary": "3d6 fuoco per colpo con attacco magico in mischia, usando la tua azione mentre la lama è attiva.\nAumenti: +1d6 ogni 2 livelli di slot oltre il 2°: 4d6 con slot 4°, 5d6 con slot 6°, 6d6 con slot 8°.",
+      "name": "Lama Infuocata"
+    },
+    "2014:phb2014:spell:flame-strike": {
+      "status": "known",
+      "summary": "4d6 fuoco + 4d6 radioso per creatura nell’area; TS Destrezza: metà con successo.\nAumenti: +1d6 a uno dei due tipi di danno, a scelta, per livello di slot oltre il 5°.",
+      "name": "Colpo Infuocato"
+    },
+    "2014:phb2014:spell:flaming-sphere": {
+      "status": "known",
+      "summary": "2d6 fuoco quando la sfera urta una creatura oppure quando una creatura termina il turno entro 1,5 m; TS Destrezza: metà con successo. L’urto usa l’azione bonus di movimento della sfera.\nSlot superiori: +1d6 per livello di slot oltre il 2°.",
+      "name": "Sfera Infuocata"
+    },
+    "2014:phb2014:spell:flesh-to-stone": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Carne in Pietra"
+    },
+    "2014:phb2014:spell:fly": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Volare"
+    },
+    "2014:phb2014:spell:fog-cloud": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Nube di Nebbia"
+    },
+    "2014:phb2014:spell:forbiddance": {
+      "status": "known",
+      "summary": "5d10 radioso o necrotico, a scelta al lancio, alle creature dei tipi designati al primo ingresso in un turno o a inizio turno nell’area; nessun TS. La parola d’ordine evita il danno.",
+      "name": "Proibizione"
+    },
+    "2014:phb2014:spell:forcecage": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Gabbia di Forza"
+    },
+    "2014:phb2014:spell:foresight": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Preveggenza"
+    },
+    "2014:phb2014:spell:freedom-of-movement": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Libertà di Movimento"
+    },
+    "2014:phb2014:spell:friends": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Amicizia"
+    },
+    "2014:phb2014:spell:gaseous-form": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Forma Gassosa"
+    },
+    "2014:phb2014:spell:gate": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Portale"
+    },
+    "2014:phb2014:spell:geas": {
+      "status": "known",
+      "summary": "5d10 psichico quando il bersaglio agisce direttamente contro l’ordine, al massimo una volta al giorno. Il TS Saggezza iniziale determina se la magia si applica.",
+      "name": "Costrizione"
+    },
+    "2014:phb2014:spell:gentle-repose": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Riposo Inviolato"
+    },
+    "2014:phb2014:spell:giant-insect": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Insetto Gigante"
+    },
+    "2014:phb2014:spell:glibness": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Loquacità"
+    },
+    "2014:phb2014:spell:globe-of-invulnerability": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Globo di Invulnerabilità"
+    },
+    "2014:phb2014:spell:glyph-of-warding": {
+      "status": "known",
+      "summary": "Rune esplosive: 5d8 acido, freddo, fuoco, fulmine o tuono per creatura all’attivazione; TS Destrezza: metà con successo. Glifo con incantesimo: usa invece i danni della magia immagazzinata.\nAumenti: Rune esplosive: +1d8 per livello di slot oltre il 3°. Il livello massimo della magia immagazzinata è quello dello slot usato per il glifo.",
+      "name": "Glifo di Interdizione"
+    },
+    "2014:phb2014:spell:goodberry": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Bacche Benefiche"
+    },
+    "2014:phb2014:spell:grasping-vine": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Rampicante Afferrante"
+    },
+    "2014:phb2014:spell:grease": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Unto"
+    },
+    "2014:phb2014:spell:greater-invisibility": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Invisibilità Superiore"
+    },
+    "2014:phb2014:spell:greater-restoration": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Ristorare Superiore"
+    },
+    "2014:phb2014:spell:guardian-of-faith": {
+      "status": "known",
+      "summary": "20 radioso alla creatura ostile che per la prima volta in un turno si muove entro 3 m dal guardiano; TS Destrezza: 10 con successo. Il guardiano svanisce dopo 60 danni complessivi.",
+      "name": "Guardiano della Fede"
+    },
+    "2014:phb2014:spell:guards-and-wards": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Vigilanza e Interdizione"
+    },
+    "2014:phb2014:spell:guidance": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Guida"
+    },
+    "2014:phb2014:spell:guiding-bolt": {
+      "status": "known",
+      "summary": "4d6 radioso per colpo con attacco magico a distanza.\nSlot superiori: +1d6 per livello di slot oltre il 1°.",
+      "name": "Dardo Tracciante"
+    },
+    "2014:phb2014:spell:gust-of-wind": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Folata di Vento"
+    },
+    "2014:phb2014:spell:hail-of-thorns": {
+      "status": "known",
+      "summary": "1d10 perforante aggiuntivo al bersaglio colpito con arma a distanza e alle creature entro 1,5 m; TS Destrezza: metà con successo.\nAumenti: +1d10 per livello di slot oltre il 1°, fino al massimo di 6d10.",
+      "name": "Raffica di Spine"
+    },
+    "2014:phb2014:spell:hallow": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Santificare"
+    },
+    "2014:phb2014:spell:hallucinatory-terrain": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Terreno Illusorio"
+    },
+    "2014:phb2014:spell:harm": {
+      "status": "known",
+      "summary": "14d6 necrotico per bersaglio; TS Costituzione: metà con successo. Non può ridurre il bersaglio sotto 1 PF.",
+      "name": "Ferire"
+    },
+    "2014:phb2014:spell:haste": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Velocità"
+    },
+    "2014:phb2014:spell:heal": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Guarigione"
+    },
+    "2014:phb2014:spell:healing-word": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Parola Guaritrice"
+    },
+    "2014:phb2014:spell:heat-metal": {
+      "status": "known",
+      "summary": "2d8 fuoco a chi è a contatto fisico con l’oggetto al lancio; ripetibile con azione bonus nei tuoi turni. Il TS Costituzione per lasciare l’oggetto non riduce i danni.\nSlot superiori: +1d8 per livello di slot oltre il 2°.",
+      "name": "Riscaldare il Metallo"
+    },
+    "2014:phb2014:spell:hellish-rebuke": {
+      "status": "known",
+      "summary": "2d10 fuoco alla creatura bersaglio, reagendo al danno che ti ha inflitto; TS Destrezza: metà con successo.\nSlot superiori: +1d10 per livello di slot oltre il 1°.",
+      "name": "Rimprovero Infernale"
+    },
+    "2014:phb2014:spell:heroes-feast": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Banchetto degli Eroi"
+    },
+    "2014:phb2014:spell:heroism": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Eroismo"
+    },
+    "2014:phb2014:spell:hex": {
+      "status": "known",
+      "summary": "+1d6 necrotico per ogni tuo attacco che colpisce il bersaglio maledetto.",
+      "name": "Sortilegio"
+    },
+    "2014:phb2014:spell:hold-monster": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Blocca Mostri"
+    },
+    "2014:phb2014:spell:hold-person": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Blocca Persone"
+    },
+    "2014:phb2014:spell:holy-aura": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Aura Sacra"
+    },
+    "2014:phb2014:spell:hunger-of-hadar": {
+      "status": "known",
+      "summary": "Inizio turno nella sfera: 2d6 freddo senza TS. Fine turno nella sfera: 2d6 acido se fallisce il TS Destrezza, nessuno con successo.",
+      "name": "Fame di Hadar"
+    },
+    "2014:phb2014:spell:hunter-s-mark": {
+      "status": "known",
+      "summary": "+1d6 per ogni tuo colpo con arma contro il bersaglio marchiato.",
+      "name": "Marchio del Cacciatore"
+    },
+    "2014:phb2014:spell:hypnotic-pattern": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Trama Ipnotica"
+    },
+    "2014:phb2014:spell:ice-storm": {
+      "status": "known",
+      "summary": "2d8 contundente + 4d6 freddo per creatura nell’area; TS Destrezza: metà con successo.\nAumenti: +1d8 al solo danno contundente per livello di slot oltre il 4°; il freddo resta 4d6.",
+      "name": "Tempesta di Ghiaccio"
+    },
+    "2014:phb2014:spell:identify": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Identificare"
+    },
+    "2014:phb2014:spell:illusory-script": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Scritto Illusorio"
+    },
+    "2014:phb2014:spell:imprisonment": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Imprigionare"
+    },
+    "2014:phb2014:spell:incendiary-cloud": {
+      "status": "known",
+      "summary": "10d8 fuoco per creatura alla comparsa della nube, al primo ingresso in un turno o a fine turno al suo interno; TS Destrezza: metà con successo.",
+      "name": "Nube Incendiaria"
+    },
+    "2014:phb2014:spell:inflict-wounds": {
+      "status": "known",
+      "summary": "3d10 necrotico per colpo con attacco magico in mischia.\nSlot superiori: +1d10 per livello di slot oltre il 1°.",
+      "name": "Infliggi Ferite"
+    },
+    "2014:phb2014:spell:insect-plague": {
+      "status": "known",
+      "summary": "4d10 perforante per creatura alla comparsa dell’area, al primo ingresso in un turno o a fine turno al suo interno; TS Costituzione: metà con successo.\nSlot superiori: +1d10 per livello di slot oltre il 5°.",
+      "name": "Piaga degli Insetti"
+    },
+    "2014:phb2014:spell:invisibility": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Invisibilità"
+    },
+    "2014:phb2014:spell:jump": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Salto"
+    },
+    "2014:phb2014:spell:knock": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Scassinare"
+    },
+    "2014:phb2014:spell:legend-lore": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Conoscenza delle Leggende"
+    },
+    "2014:phb2014:spell:leomund-s-secret-chest": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Scrigno Segreto di Leomund"
+    },
+    "2014:phb2014:spell:leomund-s-tiny-hut": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Capanna di Leomund"
+    },
+    "2014:phb2014:spell:lesser-restoration": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Ristorare Inferiore"
+    },
+    "2014:phb2014:spell:levitate": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Levitazione"
+    },
+    "2014:phb2014:spell:light": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Luce"
+    },
+    "2014:phb2014:spell:lightning-arrow": {
+      "status": "known",
+      "summary": "Prossimo attacco con arma a distanza: 4d8 fulmine al posto dei normali danni, metà se manca. Esplosione entro 3 m dal bersaglio: 2d8 fulmine per creatura, TS Destrezza: metà con successo, anche se l’attacco manca.\nAumenti: Per livello di slot oltre il 3°: +1d8 al danno primario e +1d8 all’esplosione.",
+      "name": "Freccia Folgorante"
+    },
+    "2014:phb2014:spell:lightning-bolt": {
+      "status": "known",
+      "summary": "8d6 fulmine per creatura nella linea; TS Destrezza: metà con successo.\nSlot superiori: +1d6 per livello di slot oltre il 3°.",
+      "name": "Fulmine"
+    },
+    "2014:phb2014:spell:locate-animals-or-plants": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Localizza Animali o Vegetali"
+    },
+    "2014:phb2014:spell:locate-creature": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Localizza Creatura"
+    },
+    "2014:phb2014:spell:locate-object": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Localizza Oggetto"
+    },
+    "2014:phb2014:spell:longstrider": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Passo Lungo"
+    },
+    "2014:phb2014:spell:mage-armor": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Armatura Magica"
+    },
+    "2014:phb2014:spell:mage-hand": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Mano Magica"
+    },
+    "2014:phb2014:spell:magic-circle": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Cerchio Magico"
+    },
+    "2014:phb2014:spell:magic-jar": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Giara Magica"
+    },
+    "2014:phb2014:spell:magic-missile": {
+      "status": "review",
+      "summary": "1d4 + 1 forza per dardo, 3 dardi al livello base; colpiscono automaticamente. Da verificare con il DM: tiro del danno comune o separato per i dardi.\nAumenti: +1 dardo per livello di slot oltre il 1°; ogni dardo resta 1d4 + 1.",
+      "name": "Dardo Incantato"
+    },
+    "2014:phb2014:spell:magic-mouth": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Bocca Magica"
+    },
+    "2014:phb2014:spell:magic-weapon": {
+      "status": "known",
+      "summary": "+1 ai danni dell’arma per colpo, oltre ai suoi normali danni.\nAumenti: Slot 4°–5°: bonus +2 ai danni; slot dal 6°: bonus +3.",
+      "name": "Arma Magica"
+    },
+    "2014:phb2014:spell:major-image": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Immagine Maggiore"
+    },
+    "2014:phb2014:spell:mass-cure-wounds": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Cura Ferite di Massa"
+    },
+    "2014:phb2014:spell:mass-heal": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Guarigione di Massa"
+    },
+    "2014:phb2014:spell:mass-healing-word": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Parola Guaritrice di Massa"
+    },
+    "2014:phb2014:spell:mass-suggestion": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Suggestione di Massa"
+    },
+    "2014:phb2014:spell:maze": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Labirinto"
+    },
+    "2014:phb2014:spell:meld-into-stone": {
+      "status": "known",
+      "summary": "All’incantatore espulso: 6d6 contundente se la pietra è parzialmente distrutta o non lo contiene più; 50 contundente se è totalmente distrutta o trasformata.",
+      "name": "Fondersi nella Pietra"
+    },
+    "2014:phb2014:spell:melf-s-acid-arrow": {
+      "status": "known",
+      "summary": "Colpo: 4d4 acido iniziali e 2d4 alla fine del prossimo turno del bersaglio. Attacco mancato: metà del danno iniziale, senza danno successivo.\nAumenti: Per livello di slot oltre il 2°: +1d4 iniziale e +1d4 successivo.",
+      "name": "Freccia Acida di Melf"
+    },
+    "2014:phb2014:spell:mending": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Riparare"
+    },
+    "2014:phb2014:spell:message": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Messaggio"
+    },
+    "2014:phb2014:spell:meteor-swarm": {
+      "status": "known",
+      "summary": "20d6 fuoco + 20d6 contundente per creatura; TS Destrezza: metà con successo. Aree sovrapposte non colpiscono più volte la stessa creatura.",
+      "name": "Sciame di Meteore"
+    },
+    "2014:phb2014:spell:mind-blank": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Vuoto Mentale"
+    },
+    "2014:phb2014:spell:minor-illusion": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Illusione Minore"
+    },
+    "2014:phb2014:spell:mirage-arcane": {
+      "status": "review",
+      "summary": "Da verificare: eventuali danni dipendono dal terreno e dall’interazione con l’illusione; nessuna formula fissa nel record.",
+      "name": "Miraggio Arcano"
+    },
+    "2014:phb2014:spell:mirror-image": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Immagine Speculare"
+    },
+    "2014:phb2014:spell:mislead": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Fuorviare"
+    },
+    "2014:phb2014:spell:misty-step": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Passo Velato"
+    },
+    "2014:phb2014:spell:modify-memory": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Modificare Memoria"
+    },
+    "2014:phb2014:spell:moonbeam": {
+      "status": "known",
+      "summary": "2d10 radioso per creatura al primo ingresso in un turno o all’inizio del proprio turno nell’area; TS Costituzione: metà con successo. I mutaforma hanno svantaggio.\nSlot superiori: +1d10 per livello di slot oltre il 2°.",
+      "name": "Raggio Lunare"
+    },
+    "2014:phb2014:spell:mordenkainen-s-faithful-hound": {
+      "status": "known",
+      "summary": "4d8 perforante per morso che colpisce una creatura ostile entro 1,5 m dal segugio; tenta il morso all’inizio di ogni tuo turno.",
+      "name": "Segugio Fedele di Mordenkainen"
+    },
+    "2014:phb2014:spell:mordenkainen-s-magnificent-mansion": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Reggia Meravigliosa di Mordenkainen"
+    },
+    "2014:phb2014:spell:mordenkainen-s-private-sanctum": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Santuario Privato di Mordenkainen"
+    },
+    "2014:phb2014:spell:mordenkainen-s-sword": {
+      "status": "known",
+      "summary": "3d10 forza per colpo con attacco magico in mischia; un attacco alla comparsa della spada e altri con azione bonus nei tuoi turni.",
+      "name": "Spada di Mordenkainen"
+    },
+    "2014:phb2014:spell:move-earth": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Muovere il Terreno"
+    },
+    "2014:phb2014:spell:nondetection": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Non Individuazione"
+    },
+    "2014:phb2014:spell:nystul-s-magic-aura": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Aura Magica di Nystul"
+    },
+    "2014:phb2014:spell:otiluke-s-freezing-sphere": {
+      "status": "known",
+      "summary": "10d6 freddo per creatura nell’area all’esplosione; TS Costituzione: metà con successo. Puoi rimandare l’esplosione secondo la descrizione.\nSlot superiori: +1d6 per livello di slot oltre il 6°.",
+      "name": "Sfera Congelante di Otiluke"
+    },
+    "2014:phb2014:spell:otiluke-s-resilient-sphere": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Sfera Resiliente di Otiluke"
+    },
+    "2014:phb2014:spell:otto-s-irresistible-dance": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Danza Irresistibile di Otto"
+    },
+    "2014:phb2014:spell:pass-without-trace": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Passare senza Tracce"
+    },
+    "2014:phb2014:spell:passwall": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Passapareti"
+    },
+    "2014:phb2014:spell:phantasmal-force": {
+      "status": "known",
+      "summary": "Fino a 1d6 psichico per round nel tuo turno, solo se il fantasma è plausibilmente dannoso e il bersaglio è nella sua area o entro 1,5 m. Il TS Intelligenza iniziale permette di evitare l’illusione.",
+      "name": "Forza Fantasmagorica"
+    },
+    "2014:phb2014:spell:phantasmal-killer": {
+      "status": "known",
+      "summary": "Nessun danno iniziale. Continuato: 4d10 psichico a fine turno del bersaglio se fallisce il nuovo TS Saggezza; un successo termina la magia.\nSlot superiori: +1d10 per livello di slot oltre il 4°.",
+      "name": "Allucinazione Mortale"
+    },
+    "2014:phb2014:spell:phantom-steed": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Destriero Fantomatico"
+    },
+    "2014:phb2014:spell:planar-ally": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Alleato Planare"
+    },
+    "2014:phb2014:spell:planar-binding": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Legame Planare"
+    },
+    "2014:phb2014:spell:plane-shift": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Spostamento Planare"
+    },
+    "2014:phb2014:spell:plant-growth": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Crescita Vegetale"
+    },
+    "2014:phb2014:spell:poison-spray": {
+      "status": "known",
+      "summary": "1d12 veleno per bersaglio; TS Costituzione: nessun danno con successo.\nLivello del personaggio: 5°: 2d12; 11°: 3d12; 17°: 4d12.",
+      "name": "Spruzzo Velenoso"
+    },
+    "2014:phb2014:spell:polymorph": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Metamorfosi"
+    },
+    "2014:phb2014:spell:power-word-heal": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Parola del Potere Guarire"
+    },
+    "2014:phb2014:spell:power-word-kill": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Parola del Potere Uccidere"
+    },
+    "2014:phb2014:spell:power-word-stun": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Parola del Potere Stordire"
+    },
+    "2014:phb2014:spell:prayer-of-healing": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Preghiera di Guarigione"
+    },
+    "2014:phb2014:spell:prestidigitation": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Prestidigitazione"
+    },
+    "2014:phb2014:spell:prismatic-spray": {
+      "status": "known",
+      "summary": "Raggi 1–5: 10d6 per raggio, di tipo fuoco, acido, fulmine, veleno o freddo secondo il colore; TS Destrezza: metà con successo. I raggi 6–7 non infliggono danni diretti; il risultato 8 applica due raggi.",
+      "name": "Spruzzo Prismatico"
+    },
+    "2014:phb2014:spell:prismatic-wall": {
+      "status": "known",
+      "summary": "10d6 per ciascuno dei primi cinque strati attraversati: fuoco, acido, fulmine, veleno e freddo; un TS Destrezza per strato dimezza il relativo danno. Gli ultimi due strati hanno effetti diversi dai danni.",
+      "name": "Muro Prismatico"
+    },
+    "2014:phb2014:spell:produce-flame": {
+      "status": "known",
+      "summary": "1d8 fuoco per colpo con attacco magico a distanza, scagliando la fiamma.\nLivello del personaggio: 5°: 2d8; 11°: 3d8; 17°: 4d8.",
+      "name": "Produrre Fiamma"
+    },
+    "2014:phb2014:spell:programmed-illusion": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Illusione Programmata"
+    },
+    "2014:phb2014:spell:project-image": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Immagine Proiettata"
+    },
+    "2014:phb2014:spell:protection-from-energy": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Protezione dall’Energia"
+    },
+    "2014:phb2014:spell:protection-from-evil-and-good": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Protezione dal Bene e dal Male"
+    },
+    "2014:phb2014:spell:protection-from-poison": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Protezione dai Veleni"
+    },
+    "2014:phb2014:spell:purify-food-and-drink": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Purificare Cibo e Bevande"
+    },
+    "2014:phb2014:spell:raise-dead": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Rianimare Morti"
+    },
+    "2014:phb2014:spell:rary-s-telepathic-bond": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Legame Telepatico di Rary"
+    },
+    "2014:phb2014:spell:ray-of-enfeeblement": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Raggio di Indebolimento"
+    },
+    "2014:phb2014:spell:ray-of-frost": {
+      "status": "known",
+      "summary": "1d8 freddo per colpo con attacco magico a distanza.\nLivello del personaggio: 5°: 2d8; 11°: 3d8; 17°: 4d8.",
+      "name": "Raggio di Gelo"
+    },
+    "2014:phb2014:spell:ray-of-sickness": {
+      "status": "known",
+      "summary": "2d8 veleno per colpo con attacco magico a distanza; il TS Costituzione riguarda la condizione avvelenato, non i danni.\nSlot superiori: +1d8 per livello di slot oltre il 1°.",
+      "name": "Raggio di Infermità"
+    },
+    "2014:phb2014:spell:regenerate": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Rigenerazione"
+    },
+    "2014:phb2014:spell:reincarnate": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Reincarnazione"
+    },
+    "2014:phb2014:spell:remove-curse": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Rimuovi Maledizione"
+    },
+    "2014:phb2014:spell:resistance": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Resistenza"
+    },
+    "2014:phb2014:spell:resurrection": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Resurrezione"
+    },
+    "2014:phb2014:spell:reverse-gravity": {
+      "status": "review",
+      "summary": "Da verificare: possibili danni da caduta dipendono da altezza e ostacoli; nessuna formula di danno specifica nel record.",
+      "name": "Inversione della Gravità"
+    },
+    "2014:phb2014:spell:revivify": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Rinascita"
+    },
+    "2014:phb2014:spell:rope-trick": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Trucco della Corda"
+    },
+    "2014:phb2014:spell:sacred-flame": {
+      "status": "known",
+      "summary": "1d8 radioso per bersaglio; TS Destrezza: nessun danno con successo.\nLivello del personaggio: 5°: 2d8; 11°: 3d8; 17°: 4d8.",
+      "name": "Fiamma Sacra"
+    },
+    "2014:phb2014:spell:sanctuary": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Santuario"
+    },
+    "2014:phb2014:spell:scorching-ray": {
+      "status": "known",
+      "summary": "2d6 fuoco per raggio che colpisce; 3 raggi al livello base, ciascuno con un attacco magico a distanza separato.\nAumenti: +1 raggio per livello di slot oltre il 2°; ogni raggio resta 2d6.",
+      "name": "Raggio Rovente"
+    },
+    "2014:phb2014:spell:scrying": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Scrutare"
+    },
+    "2014:phb2014:spell:searing-smite": {
+      "status": "known",
+      "summary": "Iniziale: +1d6 fuoco al prossimo colpo con arma in mischia. Continuato: 1d6 fuoco a inizio turno del bersaglio se fallisce il TS Costituzione; un successo o lo spegnimento delle fiamme terminano la magia.\nAumenti: +1d6 al solo danno iniziale per livello di slot oltre il 1°; il danno continuato resta 1d6.",
+      "name": "Punizione Incandescente"
+    },
+    "2014:phb2014:spell:see-invisibility": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Vedere Invisibilità"
+    },
+    "2014:phb2014:spell:seeming": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Sembrare"
+    },
+    "2014:phb2014:spell:sending": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Inviare"
+    },
+    "2014:phb2014:spell:sequester": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Segregazione"
+    },
+    "2014:phb2014:spell:shapechange": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Trasformazione"
+    },
+    "2014:phb2014:spell:shatter": {
+      "status": "known",
+      "summary": "3d8 tuono per creatura nell’area; TS Costituzione: metà con successo. Danneggia anche gli oggetti non magici non indossati o trasportati nell’area.\nSlot superiori: +1d8 per livello di slot oltre il 2°.",
+      "name": "Frantumare"
+    },
+    "2014:phb2014:spell:shield": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Scudo"
+    },
+    "2014:phb2014:spell:shield-of-faith": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Scudo della Fede"
+    },
+    "2014:phb2014:spell:shillelagh": {
+      "status": "known",
+      "summary": "1d8 + modificatore da incantatore per colpo con l’arma; puoi mantenere il normale modificatore dell’arma. Il d8 sostituisce il suo dado, non è un danno aggiuntivo.",
+      "name": "Randello Incantato"
+    },
+    "2014:phb2014:spell:shocking-grasp": {
+      "status": "known",
+      "summary": "1d8 fulmine per colpo con attacco magico in mischia.\nLivello del personaggio: 5°: 2d8; 11°: 3d8; 17°: 4d8.",
+      "name": "Stretta Folgorante"
+    },
+    "2014:phb2014:spell:silence": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Silenzio"
+    },
+    "2014:phb2014:spell:silent-image": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Immagine Silenziosa"
+    },
+    "2014:phb2014:spell:simulacrum": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Simulacro"
+    },
+    "2014:phb2014:spell:sleep": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Sonno"
+    },
+    "2014:phb2014:spell:sleet-storm": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Tempesta di Nevischio"
+    },
+    "2014:phb2014:spell:slow": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Lentezza"
+    },
+    "2014:phb2014:spell:spare-the-dying": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Salvare i Morenti"
+    },
+    "2014:phb2014:spell:speak-with-animals": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Parlare con gli Animali"
+    },
+    "2014:phb2014:spell:speak-with-dead": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Parlare con i Morti"
+    },
+    "2014:phb2014:spell:speak-with-plants": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Parlare con le Piante"
+    },
+    "2014:phb2014:spell:spider-climb": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Movimenti del Ragno"
+    },
+    "2014:phb2014:spell:spike-growth": {
+      "status": "known",
+      "summary": "2d4 perforante ogni 1,5 m percorsi entrando o muovendosi nell’area; nessun TS contro questi danni.",
+      "name": "Crescita di Spine"
+    },
+    "2014:phb2014:spell:spirit-guardians": {
+      "status": "known",
+      "summary": "3d8 per creatura al primo ingresso in un turno o all’inizio del proprio turno nell’area; TS Saggezza: metà con successo. Radioso per incantatore buono/neutrale, necrotico per malvagio; escluse le creature designate al lancio.\nSlot superiori: +1d8 per livello di slot oltre il 3°.",
+      "name": "Guardiani Spirituali"
+    },
+    "2014:phb2014:spell:spiritual-weapon": {
+      "status": "known",
+      "summary": "1d8 + modificatore da incantatore forza per colpo con attacco magico in mischia; un attacco al lancio e altri con azione bonus nei tuoi turni.\nAumenti: +1d8 ogni 2 livelli di slot oltre il 2°: 2d8 con slot 4°, 3d8 con slot 6°, 4d8 con slot 8°, sempre più il modificatore da incantatore.",
+      "name": "Arma Spirituale"
+    },
+    "2014:phb2014:spell:staggering-smite": {
+      "status": "known",
+      "summary": "+4d6 psichico al prossimo colpo con arma in mischia; il TS Saggezza riguarda gli altri effetti, non riduce i danni.",
+      "name": "Punizione Vacillante"
+    },
+    "2014:phb2014:spell:stinking-cloud": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Nube Maleodorante"
+    },
+    "2014:phb2014:spell:stone-shape": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Modellare Pietra"
+    },
+    "2014:phb2014:spell:stoneskin": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Pelle di Pietra"
+    },
+    "2014:phb2014:spell:storm-of-vengeance": {
+      "status": "known",
+      "summary": "Comparsa: 2d6 tuono per creatura, TS Costituzione: nessun danno con successo. Nel tuo turno: round 2, 1d6 acido; round 3, 10d6 fulmine a ciascuno di 6 bersagli distinti (TS Destrezza: metà); round 4, 2d6 contundente; round 5–10, 1d6 freddo per round.",
+      "name": "Tempesta di Vendetta"
+    },
+    "2014:phb2014:spell:suggestion": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Suggestione"
+    },
+    "2014:phb2014:spell:sunbeam": {
+      "status": "known",
+      "summary": "6d8 radioso per creatura nella linea; TS Costituzione: metà con successo. Un raggio al lancio e altri usando la tua azione nei turni successivi.",
+      "name": "Raggio di Sole"
+    },
+    "2014:phb2014:spell:sunburst": {
+      "status": "known",
+      "summary": "12d6 radioso per creatura nell’area; TS Costituzione: metà con successo.",
+      "name": "Esplosione Solare"
+    },
+    "2014:phb2014:spell:swift-quiver": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Faretra Rapida"
+    },
+    "2014:phb2014:spell:symbol": {
+      "status": "known",
+      "summary": "Solo simbolo di Morte: 10d10 necrotico per creatura, TS Costituzione: metà con successo. Quando attivo, colpisce all’attivazione, al primo ingresso in un turno o a fine turno nell’area; gli altri simboli hanno effetti diversi dai danni.",
+      "name": "Simbolo"
+    },
+    "2014:phb2014:spell:tasha-s-hideous-laughter": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Risata Incontenibile di Tasha"
+    },
+    "2014:phb2014:spell:telekinesis": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Telecinesi"
+    },
+    "2014:phb2014:spell:telepathy": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Telepatia"
+    },
+    "2014:phb2014:spell:teleport": {
+      "status": "known",
+      "summary": "3d10 forza a ciascuna creatura od oggetto trasportato solo con risultato Imprevisto; un nuovo Imprevisto può infliggerli di nuovo.",
+      "name": "Teletrasporto"
+    },
+    "2014:phb2014:spell:teleportation-circle": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Cerchio di Teletrasporto"
+    },
+    "2014:phb2014:spell:tenser-s-floating-disk": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Disco Fluttuante di Tenser"
+    },
+    "2014:phb2014:spell:thaumaturgy": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Taumaturgia"
+    },
+    "2014:phb2014:spell:thorn-whip": {
+      "status": "known",
+      "summary": "1d6 perforante per colpo con attacco magico in mischia.\nLivello del personaggio: 5°: 2d6; 11°: 3d6; 17°: 4d6.",
+      "name": "Frusta di Spine"
+    },
+    "2014:phb2014:spell:thunderous-smite": {
+      "status": "known",
+      "summary": "+2d6 tuono al primo colpo con arma in mischia durante la durata; il TS Forza riguarda la spinta e la caduta, non i danni.",
+      "name": "Punizione Tonante"
+    },
+    "2014:phb2014:spell:thunderwave": {
+      "status": "known",
+      "summary": "2d8 tuono per creatura nell’area; TS Costituzione: metà con successo.\nSlot superiori: +1d8 per livello di slot oltre il 1°.",
+      "name": "Onda Tonante"
+    },
+    "2014:phb2014:spell:time-stop": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Fermare il Tempo"
+    },
+    "2014:phb2014:spell:tongues": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Linguaggi"
+    },
+    "2014:phb2014:spell:transport-via-plants": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Trasporto Vegetale"
+    },
+    "2014:phb2014:spell:tree-stride": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Passo Arboreo"
+    },
+    "2014:phb2014:spell:true-polymorph": {
+      "status": "known",
+      "summary": "Variabile: usa i normali danni dell’azione o dell’attacco dell’arma o della creatura coinvolta, secondo la scelta e le sue statistiche. Non è un danno automatico al lancio.",
+      "name": "Metamorfosi Pura"
+    },
+    "2014:phb2014:spell:true-resurrection": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Resurrezione Pura"
+    },
+    "2014:phb2014:spell:true-seeing": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Visione del Vero"
+    },
+    "2014:phb2014:spell:true-strike": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Colpo Accurato"
+    },
+    "2014:phb2014:spell:tsunami": {
+      "status": "known",
+      "summary": "Comparsa: 6d10 contundente, TS Forza: metà con successo. Turni successivi: 5d10 contundente alle creature Enormi o minori investite dal muro, TS Forza: nessun danno con successo, massimo una volta per round; il danno successivo cala di 1d10 a ogni fine del tuo turno.",
+      "name": "Tsunami"
+    },
+    "2014:phb2014:spell:unseen-servant": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Servitore Inosservato"
+    },
+    "2014:phb2014:spell:vampiric-touch": {
+      "status": "known",
+      "summary": "3d6 necrotico per colpo con attacco magico in mischia; ripetibile con la tua azione nei tuoi turni. La guarigione è un effetto separato, non un danno aggiuntivo.\nSlot superiori: +1d6 per livello di slot oltre il 3°.",
+      "name": "Tocco del Vampiro"
+    },
+    "2014:phb2014:spell:vicious-mockery": {
+      "status": "known",
+      "summary": "1d4 psichico per bersaglio; TS Saggezza: nessun danno con successo.\nLivello del personaggio: 5°: 2d4; 11°: 3d4; 17°: 4d4.",
+      "name": "Beffa Crudele"
+    },
+    "2014:phb2014:spell:wall-of-fire": {
+      "status": "known",
+      "summary": "Comparsa del muro: 5d8 fuoco, TS Destrezza: metà con successo. Continuato: 5d8 senza TS al primo ingresso in un turno o a fine turno nel muro, oppure a fine turno entro 3 m dal lato caldo.\nSlot superiori: +1d8 per livello di slot oltre il 4°.",
+      "name": "Muro di Fuoco"
+    },
+    "2014:phb2014:spell:wall-of-force": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Muro di Forza"
+    },
+    "2014:phb2014:spell:wall-of-ice": {
+      "status": "known",
+      "summary": "Comparsa: 10d6 freddo, TS Destrezza: metà con successo. Aria gelida lasciata da una sezione distrutta: 5d6 freddo al primo attraversamento in un turno, TS Costituzione: metà con successo.\nAumenti: Per livello di slot oltre il 6°: +2d6 alla comparsa e +1d6 all’aria gelida.",
+      "name": "Muro di Ghiaccio"
+    },
+    "2014:phb2014:spell:wall-of-stone": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Muro di Pietra"
+    },
+    "2014:phb2014:spell:wall-of-thorns": {
+      "status": "known",
+      "summary": "Comparsa: 7d8 perforante. Primo ingresso in un turno o fine turno nell’area: 7d8 tagliente. TS Destrezza: metà con successo in entrambi i casi.\nAumenti: +1d8 a entrambi i danni per livello di slot oltre il 6°.",
+      "name": "Muro di Spine"
+    },
+    "2014:phb2014:spell:warding-bond": {
+      "status": "known",
+      "summary": "L’incantatore subisce la stessa quantità di danni effettivamente subita dal bersaglio collegato, ogni volta che il bersaglio subisce danni; nessuna formula fissa.",
+      "name": "Legame Protettivo"
+    },
+    "2014:phb2014:spell:water-breathing": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Respirare Sott’Acqua"
+    },
+    "2014:phb2014:spell:water-walk": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Camminare sull’Acqua"
+    },
+    "2014:phb2014:spell:web": {
+      "status": "known",
+      "summary": "Solo ragnatela incendiata: 2d4 fuoco a chi inizia il turno nel fuoco. La ragnatela non incendiata non infligge danni.",
+      "name": "Ragnatela"
+    },
+    "2014:phb2014:spell:weird": {
+      "status": "known",
+      "summary": "Nessun danno iniziale. Continuato: 4d10 psichico a fine turno di ciascun bersaglio ancora soggetto, se fallisce il nuovo TS Saggezza; un successo termina l’effetto per quella creatura.",
+      "name": "Fatale"
+    },
+    "2014:phb2014:spell:wind-walk": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Camminare nel Vento"
+    },
+    "2014:phb2014:spell:wind-wall": {
+      "status": "known",
+      "summary": "3d8 contundente alle creature nello spazio del muro quando compare; TS Forza: metà con successo. Non applicare nuovamente questo danno a ogni turno.",
+      "name": "Muro di Vento"
+    },
+    "2014:phb2014:spell:wish": {
+      "status": "known",
+      "summary": "Variabile: danni dell’incantesimo duplicato o dell’effetto concesso dal DM. Stress per usi diversi dalla duplicazione: nei lanci successivi fino al riposo lungo, l’incantatore subisce 1d10 necrotico per livello della magia lanciata, non prevenibile né riducibile.",
+      "name": "Desiderio"
+    },
+    "2014:phb2014:spell:witch-bolt": {
+      "status": "known",
+      "summary": "Iniziale: 1d12 fulmine per colpo con attacco magico a distanza. Continuato: 1d12 fulmine automatico usando la tua azione nei turni successivi, finché restano validi collegamento, gittata e copertura.\nAumenti: +1d12 al solo danno iniziale per livello di slot oltre il 1°; il danno continuato resta 1d12.",
+      "name": "Dardo Stregato"
+    },
+    "2014:phb2014:spell:word-of-recall": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Parola del Ritorno"
+    },
+    "2014:phb2014:spell:wrathful-smite": {
+      "status": "known",
+      "summary": "+1d6 psichico al prossimo colpo con arma in mischia; il TS Saggezza riguarda la paura, non riduce i danni.",
+      "name": "Punizione Collerica"
+    },
+    "2014:phb2014:spell:zone-of-truth": {
+      "status": "none",
+      "summary": "Nessuno",
+      "name": "Zona di Verità"
+    },
+    "unclassified:abi-dalzims-horrid-wilting": {
+      "name": "Abi-Dalzim's Horrid Wilting",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:absorb-elements": {
+      "name": "Absorb Elements",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:acid-stream": {
+      "name": "Acid Stream (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:aganazzars-scorcher": {
+      "name": "Aganazzar's Scorcher",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:air-bubble": {
+      "name": "Air Bubble",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:antagonize": {
+      "name": "Antagonize",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:antagonize-ua": {
+      "name": "Antagonize (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:arcane-hacking": {
+      "name": "Arcane Hacking (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:arcane-weapon": {
+      "name": "Arcane Weapon (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:ashardalons-stride": {
+      "name": "Ashardalon's Stride",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:beast-bond": {
+      "name": "Beast Bond",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:blade-of-disaster": {
+      "name": "Blade of Disaster",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:bones-of-the-earth": {
+      "name": "Bones of the Earth",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:booming-blade": {
+      "name": "Booming Blade",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:borrowed-knowledge": {
+      "name": "Borrowed Knowledge",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:catapult": {
+      "name": "Catapult",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:catnap": {
+      "name": "Catnap",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:cause-fear": {
+      "name": "Cause Fear",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:ceremony": {
+      "name": "Ceremony",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:chaos-bolt": {
+      "name": "Chaos Bolt",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:charm-monster": {
+      "name": "Charm Monster",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:commune-with-city": {
+      "name": "Commune with City (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:conjure-barlgura": {
+      "name": "Conjure Barlgura (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:conjure-hezrou": {
+      "name": "Conjure Hezrou (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:conjure-knowbot": {
+      "name": "Conjure Knowbot (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:conjure-lesser-demon": {
+      "name": "Conjure Lesser Demon (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:conjure-shadow-demon": {
+      "name": "Conjure Shadow Demon (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:conjure-vrock": {
+      "name": "Conjure Vrock (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:control-flames": {
+      "name": "Control Flames",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:control-winds": {
+      "name": "Control Winds",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:create-bonfire": {
+      "name": "Create Bonfire",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:create-homunculus": {
+      "name": "Create Homunculus",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:create-magen": {
+      "name": "Create Magen",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:create-spelljamming-helm": {
+      "name": "Create Spelljamming Helm",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:crown-of-stars": {
+      "name": "Crown of Stars",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:danse-macabre": {
+      "name": "Danse Macabre",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:dark-star": {
+      "name": "Dark Star",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:dawn": {
+      "name": "Dawn",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:digital-phantom": {
+      "name": "Digital Phantom (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:distort-value": {
+      "name": "Distort Value",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:draconic-transformation": {
+      "name": "Draconic Transformation",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:draconic-transformation-ua": {
+      "name": "Draconic Transformation (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:dragons-breath": {
+      "name": "Dragon's Breath",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:dream-of-the-blue-veil": {
+      "name": "Dream of the Blue Veil",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:druid-grove": {
+      "name": "Druid Grove",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:dust-devil": {
+      "name": "Dust Devil",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:earth-tremor": {
+      "name": "Earth Tremor",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:earthbind": {
+      "name": "Earthbind",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:ego-whip": {
+      "name": "Ego Whip (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:elemental-bane": {
+      "name": "Elemental Bane",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:encode-thoughts": {
+      "name": "Encode Thoughts",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:enemies-abound": {
+      "name": "Enemies Abound",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:enervation": {
+      "name": "Enervation",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:erupting-earth": {
+      "name": "Erupting Earth",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:far-step": {
+      "name": "Far Step",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:fast-friends": {
+      "name": "Fast Friends",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:find-greater-steed": {
+      "name": "Find Greater Steed",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:find-vehicle": {
+      "name": "Find Vehicle (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:fizban-s-platinum-shield-ua": {
+      "name": "Fizban's Platinum Shield (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:fizbans-platinum-shield": {
+      "name": "Fizban's Platinum Shield",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:flame-arrows": {
+      "name": "Flame Arrows",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:flame-stride": {
+      "name": "Flame Stride (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:flock-of-familiars": {
+      "name": "Flock of Familiars",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:fortunes-favor": {
+      "name": "Fortune's Favor",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:frost-fingers": {
+      "name": "Frost Fingers",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:frostbite": {
+      "name": "Frostbite",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:galders-speedy-courier": {
+      "name": "Galder's Speedy Courier",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:galders-tower": {
+      "name": "Galder's Tower",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:gate-seal": {
+      "name": "Gate Seal",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:gift-of-alacrity": {
+      "name": "Gift of Alacrity",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:gift-of-gab": {
+      "name": "Gift of Gab",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:gravity-fissure": {
+      "name": "Gravity Fissure",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:gravity-sinkhole": {
+      "name": "Gravity Sinkhole",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:green-flame-blade": {
+      "name": "Green-Flame Blade",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:guardian-of-nature": {
+      "name": "Guardian of Nature",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:guiding-hand-ua": {
+      "name": "Guiding Hand (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:gust": {
+      "name": "Gust",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:hand-of-radiance": {
+      "name": "Hand of Radiance (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:haywire": {
+      "name": "Haywire (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:healing-elixir-ua": {
+      "name": "Healing Elixir (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:healing-spirit": {
+      "name": "Healing Spirit",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:holy-weapon": {
+      "name": "Holy Weapon",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:house-of-cards-ua": {
+      "name": "House of Cards (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:ice-knife": {
+      "name": "Ice Knife",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:icingdeath-s-frost": {
+      "name": "Icingdeath's Frost (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:id-insinuation": {
+      "name": "Id Insinuation (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:illusory-dragon": {
+      "name": "Illusory Dragon",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:immolation": {
+      "name": "Immolation",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:immovable-object": {
+      "name": "Immovable Object",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:incite-greed": {
+      "name": "Incite Greed",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:infallible-relay": {
+      "name": "Infallible Relay (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:infernal-calling": {
+      "name": "Infernal Calling",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:infestation": {
+      "name": "Infestation",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:intellect-fortress": {
+      "name": "Intellect Fortress",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:investiture-of-flame": {
+      "name": "Investiture of Flame",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:investiture-of-ice": {
+      "name": "Investiture of Ice",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:investiture-of-stone": {
+      "name": "Investiture of Stone",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:investiture-of-wind": {
+      "name": "Investiture of Wind",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:invisibility-to-cameras": {
+      "name": "Invisibility To Cameras (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:invulnerability": {
+      "name": "Invulnerability",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:jims-glowing-coin": {
+      "name": "Jim's Glowing Coin",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:jims-magic-missile": {
+      "name": "Jim's Magic Missile",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:kinetic-jaunt": {
+      "name": "Kinetic Jaunt",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:life-transference": {
+      "name": "Life Transference",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:lightning-lure": {
+      "name": "Lightning Lure",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:maddening-darkness": {
+      "name": "Maddening Darkness",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:maelstrom": {
+      "name": "Maelstrom",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:magic-stone": {
+      "name": "Magic Stone",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:magnify-gravity": {
+      "name": "Magnify Gravity",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:mass-polymorph": {
+      "name": "Mass Polymorph",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:maximillians-earthen-grasp": {
+      "name": "Maximillian's Earthen Grasp",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:melfs-minute-meteors": {
+      "name": "Melf's Minute Meteors",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:mental-barrier": {
+      "name": "Mental Barrier (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:mental-prison": {
+      "name": "Mental Prison",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:mighty-fortress": {
+      "name": "Mighty Fortress",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:mind-sliver": {
+      "name": "Mind Sliver",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:mind-spike": {
+      "name": "Mind Spike",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:mind-thrust": {
+      "name": "Mind Thrust (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:mold-earth": {
+      "name": "Mold Earth",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:motivational-speech": {
+      "name": "Motivational Speech",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:nathairs-mischief": {
+      "name": "Nathair's Mischief",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:nathairs-mischief-ua": {
+      "name": "Nathair's Mischief (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:negative-energy-flood": {
+      "name": "Negative Energy Flood",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:on-off": {
+      "name": "On/Off (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:otherworldly-form": {
+      "name": "Otherworldly Form (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:power-word-pain": {
+      "name": "Power Word: Pain",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:primal-savagery": {
+      "name": "Primal Savagery",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:primordial-ward": {
+      "name": "Primordial Ward",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:protection-from-ballistics": {
+      "name": "Protection from Ballistics (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:psionic-blast": {
+      "name": "Psionic Blast (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:psychic-crush": {
+      "name": "Psychic Crush (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:psychic-scream": {
+      "name": "Psychic Scream",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:pulse-wave": {
+      "name": "Pulse Wave",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:puppet": {
+      "name": "Puppet (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:pyrotechnics": {
+      "name": "Pyrotechnics",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:raulothims-psychic-lance": {
+      "name": "Raulothim's Psychic Lance",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:raulothims-psychic-lance-ua": {
+      "name": "Raulothim's Psychic Lance (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:ravenous-void": {
+      "name": "Ravenous Void",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:reality-break": {
+      "name": "Reality Break",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:remote-access": {
+      "name": "Remote Access (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:rimes-binding-ice": {
+      "name": "Rime's Binding Ice",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:sapping-sting": {
+      "name": "Sapping Sting",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:scatter": {
+      "name": "Scatter",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:sense-emotion": {
+      "name": "Sense Emotion (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:shadow-blade": {
+      "name": "Shadow Blade",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:shadow-of-moil": {
+      "name": "Shadow Of Moil",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:shape-water": {
+      "name": "Shape Water",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:shutdown": {
+      "name": "Shutdown (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:sickening-radiance": {
+      "name": "Sickening Radiance",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:silvery-barbs": {
+      "name": "Silvery Barbs",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:skill-empowerment": {
+      "name": "Skill Empowerment",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:skywrite": {
+      "name": "Skywrite",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:snare": {
+      "name": "Snare",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:snillocs-snowball-swarm": {
+      "name": "Snilloc's Snowball Swarm",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:soul-cage": {
+      "name": "Soul Cage",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:spirit-of-death": {
+      "name": "Spirit Of Death",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:spirit-of-death-ua": {
+      "name": "Spirit of Death (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:spirit-shroud": {
+      "name": "Spirit Shroud",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:spray-of-cards": {
+      "name": "Spray Of Cards",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:spray-of-cards-ua": {
+      "name": "Spray of Cards (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:steel-wind-strike": {
+      "name": "Steel Wind Strike",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:storm-sphere": {
+      "name": "Storm Sphere",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:sudden-awakening": {
+      "name": "Sudden Awakening (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:summon-aberration": {
+      "name": "Summon Aberration",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:summon-beast": {
+      "name": "Summon Beast",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:summon-celestial": {
+      "name": "Summon Celestial",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:summon-construct": {
+      "name": "Summon Construct",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:summon-draconic-spirit": {
+      "name": "Summon Draconic Spirit",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:summon-draconic-spirit-ua": {
+      "name": "Summon Draconic Spirit (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:summon-elemental": {
+      "name": "Summon Elemental",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:summon-fey": {
+      "name": "Summon Fey",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:summon-fiend": {
+      "name": "Summon Fiend",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:summon-greater-demon": {
+      "name": "Summon Greater Demon",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:summon-lesser-demons": {
+      "name": "Summon Lesser Demons",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:summon-shadowspawn": {
+      "name": "Summon Shadowspawn",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:summon-undead": {
+      "name": "Summon Undead",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:summon-warrior-spirit": {
+      "name": "Summon Warrior Spirit (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:sword-burst": {
+      "name": "Sword Burst",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:synaptic-static": {
+      "name": "Synaptic Static",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:synchronicity": {
+      "name": "Synchronicity (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:system-backdoor": {
+      "name": "System Backdoor (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:tashas-caustic-brew": {
+      "name": "Tasha's Caustic Brew",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:tashas-mind-whip": {
+      "name": "Tasha's Mind Whip",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:tashas-otherworldly-guise": {
+      "name": "Tasha's Otherworldly Guise",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:temple-of-the-gods": {
+      "name": "Temple of the Gods",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:temporal-shunt": {
+      "name": "Temporal Shunt",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:tensers-transformation": {
+      "name": "Tenser's Transformation",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:tether-essence": {
+      "name": "Tether Essence",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:thought-shield": {
+      "name": "Thought Shield (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:thunder-step": {
+      "name": "Thunder Step",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:thunderclap": {
+      "name": "Thunderclap",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:tidal-wave": {
+      "name": "Tidal Wave",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:time-ravage": {
+      "name": "Time Ravage",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:tiny-servant": {
+      "name": "Tiny Servant",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:toll-the-dead": {
+      "name": "Toll the Dead",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:transmute-rock": {
+      "name": "Transmute Rock",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:unearthly-chorus": {
+      "name": "Unearthly Chorus (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:virtue": {
+      "name": "Virtue (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:vitriolic-sphere": {
+      "name": "Vitriolic Sphere",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:vortex-warp": {
+      "name": "Vortex Warp",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:wall-of-light": {
+      "name": "Wall of Light",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:wall-of-sand": {
+      "name": "Wall of Sand",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:wall-of-water": {
+      "name": "Wall of Water",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:warding-wind": {
+      "name": "Warding Wind",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:warp-sense": {
+      "name": "Warp Sense",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:watery-sphere": {
+      "name": "Watery Sphere",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:whirlwind": {
+      "name": "Whirlwind",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:wild-cunning": {
+      "name": "Wild Cunning (UA)",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:wither-and-bloom": {
+      "name": "Wither and Bloom",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:word-of-radiance": {
+      "name": "Word of Radiance",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:wrath-of-nature": {
+      "name": "Wrath Of Nature",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:wristpocket": {
+      "name": "Wristpocket",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    },
+    "unclassified:zephyr-strike": {
+      "name": "Zephyr Strike",
+      "status": "review",
+      "summary": "Da verificare: descrizione completa e dati del danno non disponibili nel database per questa edizione."
+    }
+  },
+  "bindings": {
+    "abi-dalzims-horrid-wilting": "unclassified:abi-dalzims-horrid-wilting",
+    "absorb-elements": "unclassified:absorb-elements",
+    "acid-splash": "2014:phb2014:spell:acid-splash",
+    "acid-stream": "unclassified:acid-stream",
+    "aganazzars-scorcher": "unclassified:aganazzars-scorcher",
+    "aid": "2014:phb2014:spell:aid",
+    "air-bubble": "unclassified:air-bubble",
+    "alarm": "2014:phb2014:spell:alarm",
+    "alter-self": "2014:phb2014:spell:alter-self",
+    "animal-friendship": "2014:phb2014:spell:animal-friendship",
+    "animal-messenger": "2014:phb2014:spell:animal-messenger",
+    "animal-shapes": "2014:phb2014:spell:animal-shapes",
+    "animate-dead": "2014:phb2014:spell:animate-dead",
+    "animate-objects": "2014:phb2014:spell:animate-objects",
+    "antagonize": "unclassified:antagonize",
+    "antagonize-ua": "unclassified:antagonize-ua",
+    "antilife-shell": "2014:phb2014:spell:antilife-shell",
+    "antimagic-field": "2014:phb2014:spell:antimagic-field",
+    "antipathy-sympathy": "2014:phb2014:spell:antipathy-sympathy",
+    "arcane-eye": "2014:phb2014:spell:arcane-eye",
+    "arcane-gate": "2014:phb2014:spell:arcane-gate",
+    "arcane-hacking": "unclassified:arcane-hacking",
+    "arcane-lock": "2014:phb2014:spell:arcane-lock",
+    "arcane-weapon": "unclassified:arcane-weapon",
+    "armor-of-agathys": "2014:phb2014:spell:armor-of-agathys",
+    "arms-of-hadar": "2014:phb2014:spell:arms-of-hadar",
+    "ashardalons-stride": "unclassified:ashardalons-stride",
+    "astral-projection": "2014:phb2014:spell:astral-projection",
+    "augury": "2014:phb2014:spell:augury",
+    "aura-of-life": "2014:phb2014:spell:aura-of-life",
+    "aura-of-purity": "2014:phb2014:spell:aura-of-purity",
+    "aura-of-vitality": "2014:phb2014:spell:aura-of-vitality",
+    "awaken": "2014:phb2014:spell:awaken",
+    "bane": "2014:phb2014:spell:bane",
+    "banishing-smite": "2014:phb2014:spell:banishing-smite",
+    "banishment": "2014:phb2014:spell:banishment",
+    "barkskin": "2014:phb2014:spell:barkskin",
+    "beacon-of-hope": "2014:phb2014:spell:beacon-of-hope",
+    "beast-bond": "unclassified:beast-bond",
+    "beast-sense": "2014:phb2014:spell:beast-sense",
+    "bestow-curse": "2014:phb2014:spell:bestow-curse",
+    "bigbys-hand": "2014:phb2014:spell:bigby-s-hand",
+    "blade-barrier": "2014:phb2014:spell:blade-barrier",
+    "blade-of-disaster": "unclassified:blade-of-disaster",
+    "blade-ward": "2014:phb2014:spell:blade-ward",
+    "bless": "2014:phb2014:spell:bless",
+    "blight": "2014:phb2014:spell:blight",
+    "blinding-smite": "2014:phb2014:spell:blinding-smite",
+    "blindness-deafness": "2014:phb2014:spell:blindness-deafness",
+    "blink": "2014:phb2014:spell:blink",
+    "blur": "2014:phb2014:spell:blur",
+    "bones-of-the-earth": "unclassified:bones-of-the-earth",
+    "booming-blade": "unclassified:booming-blade",
+    "borrowed-knowledge": "unclassified:borrowed-knowledge",
+    "branding-smite": "2014:phb2014:spell:branding-smite",
+    "burning-hands": "2014:phb2014:spell:burning-hands",
+    "call-lightning": "2014:phb2014:spell:call-lightning",
+    "calm-emotions": "2014:phb2014:spell:calm-emotions",
+    "catapult": "unclassified:catapult",
+    "catnap": "unclassified:catnap",
+    "cause-fear": "unclassified:cause-fear",
+    "ceremony": "unclassified:ceremony",
+    "chain-lightning": "2014:phb2014:spell:chain-lightning",
+    "chaos-bolt": "unclassified:chaos-bolt",
+    "charm-monster": "unclassified:charm-monster",
+    "charm-person": "2014:phb2014:spell:charm-person",
+    "chill-touch": "2014:phb2014:spell:chill-touch",
+    "chromatic-orb": "2014:phb2014:spell:chromatic-orb",
+    "circle-of-death": "2014:phb2014:spell:circle-of-death",
+    "circle-of-power": "2014:phb2014:spell:circle-of-power",
+    "clairvoyance": "2014:phb2014:spell:clairvoyance",
+    "clone": "2014:phb2014:spell:clone",
+    "cloud-of-daggers": "2014:phb2014:spell:cloud-of-daggers",
+    "cloudkill": "2014:phb2014:spell:cloudkill",
+    "color-spray": "2014:phb2014:spell:color-spray",
+    "command": "2014:phb2014:spell:command",
+    "commune": "2014:phb2014:spell:commune",
+    "commune-with-city": "unclassified:commune-with-city",
+    "commune-with-nature": "2014:phb2014:spell:commune-with-nature",
+    "compelled-duel": "2014:phb2014:spell:compelled-duel",
+    "comprehend-languages": "2014:phb2014:spell:comprehend-languages",
+    "compulsion": "2014:phb2014:spell:compulsion",
+    "cone-of-cold": "2014:phb2014:spell:cone-of-cold",
+    "confusion": "2014:phb2014:spell:confusion",
+    "conjure-animals": "2014:phb2014:spell:conjure-animals",
+    "conjure-barlgura": "unclassified:conjure-barlgura",
+    "conjure-barrage": "2014:phb2014:spell:conjure-barrage",
+    "conjure-celestial": "2014:phb2014:spell:conjure-celestial",
+    "conjure-elemental": "2014:phb2014:spell:conjure-elemental",
+    "conjure-fey": "2014:phb2014:spell:conjure-fey",
+    "conjure-hezrou": "unclassified:conjure-hezrou",
+    "conjure-knowbot": "unclassified:conjure-knowbot",
+    "conjure-lesser-demon": "unclassified:conjure-lesser-demon",
+    "conjure-minor-elementals": "2014:phb2014:spell:conjure-minor-elementals",
+    "conjure-shadow-demon": "unclassified:conjure-shadow-demon",
+    "conjure-volley": "2014:phb2014:spell:conjure-volley",
+    "conjure-vrock": "unclassified:conjure-vrock",
+    "conjure-woodland-beings": "2014:phb2014:spell:conjure-woodland-beings",
+    "contact-other-plane": "2014:phb2014:spell:contact-other-plane",
+    "contagion": "2014:phb2014:spell:contagion",
+    "contingency": "2014:phb2014:spell:contingency",
+    "continual-flame": "2014:phb2014:spell:continual-flame",
+    "control-flames": "unclassified:control-flames",
+    "control-water": "2014:phb2014:spell:control-water",
+    "control-weather": "2014:phb2014:spell:control-weather",
+    "control-winds": "unclassified:control-winds",
+    "cordon-of-arrows": "2014:phb2014:spell:cordon-of-arrows",
+    "counterspell": "2014:phb2014:spell:counterspell",
+    "create-bonfire": "unclassified:create-bonfire",
+    "create-food-and-water": "2014:phb2014:spell:create-food-and-water",
+    "create-homunculus": "unclassified:create-homunculus",
+    "create-magen": "unclassified:create-magen",
+    "create-or-destroy-water": "2014:phb2014:spell:create-or-destroy-water",
+    "create-spelljamming-helm": "unclassified:create-spelljamming-helm",
+    "create-undead": "2014:phb2014:spell:create-undead",
+    "creation": "2014:phb2014:spell:creation",
+    "crown-of-madness": "2014:phb2014:spell:crown-of-madness",
+    "crown-of-stars": "unclassified:crown-of-stars",
+    "crusaders-mantle": "2014:phb2014:spell:crusader-s-mantle",
+    "cure-wounds": "2014:phb2014:spell:cure-wounds",
+    "dancing-lights": "2014:phb2014:spell:dancing-lights",
+    "danse-macabre": "unclassified:danse-macabre",
+    "dark-star": "unclassified:dark-star",
+    "darkness": "2014:phb2014:spell:darkness",
+    "darkvision": "2014:phb2014:spell:darkvision",
+    "dawn": "unclassified:dawn",
+    "daylight": "2014:phb2014:spell:daylight",
+    "death-ward": "2014:phb2014:spell:death-ward",
+    "delayed-blast-fireball": "2014:phb2014:spell:delayed-blast-fireball",
+    "demiplane": "2014:phb2014:spell:demiplane",
+    "destructive-wave": "2014:phb2014:spell:destructive-wave",
+    "detect-evil-and-good": "2014:phb2014:spell:detect-evil-and-good",
+    "detect-magic": "2014:phb2014:spell:detect-magic",
+    "detect-poison-and-disease": "2014:phb2014:spell:detect-poison-and-disease",
+    "detect-thoughts": "2014:phb2014:spell:detect-thoughts",
+    "digital-phantom": "unclassified:digital-phantom",
+    "dimension-door": "2014:phb2014:spell:dimension-door",
+    "disguise-self": "2014:phb2014:spell:disguise-self",
+    "disintegrate": "2014:phb2014:spell:disintegrate",
+    "dispel-evil-and-good": "2014:phb2014:spell:dispel-evil-and-good",
+    "dispel-magic": "2014:phb2014:spell:dispel-magic",
+    "dissonant-whispers": "2014:phb2014:spell:dissonant-whispers",
+    "distort-value": "unclassified:distort-value",
+    "divination": "2014:phb2014:spell:divination",
+    "divine-favor": "2014:phb2014:spell:divine-favor",
+    "divine-word": "2014:phb2014:spell:divine-word",
+    "dominate-beast": "2014:phb2014:spell:dominate-beast",
+    "dominate-monster": "2014:phb2014:spell:dominate-monster",
+    "dominate-person": "2014:phb2014:spell:dominate-person",
+    "draconic-transformation": "unclassified:draconic-transformation",
+    "draconic-transformation-ua": "unclassified:draconic-transformation-ua",
+    "dragons-breath": "unclassified:dragons-breath",
+    "drawmijs-instant-summons": "2014:phb2014:spell:drawmij-s-instant-summons",
+    "dream": "2014:phb2014:spell:dream",
+    "dream-of-the-blue-veil": "unclassified:dream-of-the-blue-veil",
+    "druid-grove": "unclassified:druid-grove",
+    "druidcraft": "2014:phb2014:spell:druidcraft",
+    "dungeonedraghi:spell:6615": "2014:phb2014:spell:aid",
+    "dungeonedraghi:spell:6633": "2014:phb2014:spell:alarm",
+    "dungeonedraghi:spell:6668": "2014:phb2014:spell:planar-ally",
+    "dungeonedraghi:spell:6669": "2014:phb2014:spell:phantasmal-killer",
+    "dungeonedraghi:spell:6670": "2014:phb2014:spell:alter-self",
+    "dungeonedraghi:spell:6673": "2014:phb2014:spell:animal-friendship",
+    "dungeonedraghi:spell:6676": "2014:phb2014:spell:bane",
+    "dungeonedraghi:spell:6677": "2014:phb2014:spell:animal-messenger",
+    "dungeonedraghi:spell:6678": "2014:phb2014:spell:animate-dead",
+    "dungeonedraghi:spell:6679": "2014:phb2014:spell:animate-objects",
+    "dungeonedraghi:spell:6680": "2014:phb2014:spell:nondetection",
+    "dungeonedraghi:spell:6681": "2014:phb2014:spell:antipathy-sympathy",
+    "dungeonedraghi:spell:6682": "2014:phb2014:spell:magic-weapon",
+    "dungeonedraghi:spell:6683": "2014:phb2014:spell:spiritual-weapon",
+    "dungeonedraghi:spell:6684": "2014:phb2014:spell:mage-armor",
+    "dungeonedraghi:spell:6685": "2014:phb2014:spell:druidcraft",
+    "dungeonedraghi:spell:6686": "2014:phb2014:spell:nystul-s-magic-aura",
+    "dungeonedraghi:spell:6688": "2014:phb2014:spell:holy-aura",
+    "dungeonedraghi:spell:6689": "2014:phb2014:spell:goodberry",
+    "dungeonedraghi:spell:6690": "2014:phb2014:spell:moonbeam",
+    "dungeonedraghi:spell:6692": "2014:phb2014:spell:sunbeam",
+    "dungeonedraghi:spell:6693": "2014:phb2014:spell:heroes-feast",
+    "dungeonedraghi:spell:6694": "2014:phb2014:spell:blade-barrier",
+    "dungeonedraghi:spell:6695": "2014:phb2014:spell:vicious-mockery",
+    "dungeonedraghi:spell:6696": "2014:phb2014:spell:bless",
+    "dungeonedraghi:spell:6697": "2014:phb2014:spell:hold-monster",
+    "dungeonedraghi:spell:6698": "2014:phb2014:spell:hold-person",
+    "dungeonedraghi:spell:6699": "2014:phb2014:spell:magic-mouth",
+    "dungeonedraghi:spell:6700": "2014:phb2014:spell:feather-fall",
+    "dungeonedraghi:spell:6701": "2014:phb2014:spell:calm-emotions",
+    "dungeonedraghi:spell:6703": "2014:phb2014:spell:water-walk",
+    "dungeonedraghi:spell:6704": "2014:phb2014:spell:wind-walk",
+    "dungeonedraghi:spell:6705": "2014:phb2014:spell:charm-person",
+    "dungeonedraghi:spell:6706": "2014:phb2014:spell:antimagic-field",
+    "dungeonedraghi:spell:6707": "2014:phb2014:spell:disguise-self",
+    "dungeonedraghi:spell:6708": "2014:phb2014:spell:leomund-s-tiny-hut",
+    "dungeonedraghi:spell:6709": "2014:phb2014:spell:enhance-ability",
+    "dungeonedraghi:spell:6710": "2014:phb2014:spell:flesh-to-stone",
+    "dungeonedraghi:spell:6711": "2014:phb2014:spell:chain-lightning",
+    "dungeonedraghi:spell:6712": "2014:phb2014:spell:blindness-deafness",
+    "dungeonedraghi:spell:6715": "2014:phb2014:spell:sequester",
+    "dungeonedraghi:spell:6716": "2014:phb2014:spell:magic-circle",
+    "dungeonedraghi:spell:6717": "2014:phb2014:spell:circle-of-death",
+    "dungeonedraghi:spell:6722": "2014:phb2014:spell:teleportation-circle",
+    "dungeonedraghi:spell:6723": "2014:phb2014:spell:clairvoyance",
+    "dungeonedraghi:spell:6724": "2014:phb2014:spell:clone",
+    "dungeonedraghi:spell:6726": "2014:phb2014:spell:true-strike",
+    "dungeonedraghi:spell:6727": "2014:phb2014:spell:flame-strike",
+    "dungeonedraghi:spell:6728": "2014:phb2014:spell:command",
+    "dungeonedraghi:spell:6729": "2014:phb2014:spell:comprehend-languages",
+    "dungeonedraghi:spell:6730": "2014:phb2014:spell:compulsion",
+    "dungeonedraghi:spell:6731": "2014:phb2014:spell:commune",
+    "dungeonedraghi:spell:6732": "2014:phb2014:spell:commune-with-nature",
+    "dungeonedraghi:spell:6733": "2014:phb2014:spell:confusion",
+    "dungeonedraghi:spell:6734": "2014:phb2014:spell:cone-of-cold",
+    "dungeonedraghi:spell:6735": "2014:phb2014:spell:legend-lore",
+    "dungeonedraghi:spell:6736": "2014:phb2014:spell:contagion",
+    "dungeonedraghi:spell:6737": "2014:phb2014:spell:contact-other-plane",
+    "dungeonedraghi:spell:6738": "2014:phb2014:spell:contingency",
+    "dungeonedraghi:spell:6739": "2014:phb2014:spell:counterspell",
+    "dungeonedraghi:spell:6740": "2014:phb2014:spell:control-water",
+    "dungeonedraghi:spell:6741": "2014:phb2014:spell:control-weather",
+    "dungeonedraghi:spell:6742": "2014:phb2014:spell:geas",
+    "dungeonedraghi:spell:6743": "2014:phb2014:spell:create-food-and-water",
+    "dungeonedraghi:spell:6744": "2014:phb2014:spell:create-or-destroy-water",
+    "dungeonedraghi:spell:6745": "2014:phb2014:spell:create-undead",
+    "dungeonedraghi:spell:6747": "2014:phb2014:spell:creation",
+    "dungeonedraghi:spell:6748": "2014:phb2014:spell:spike-growth",
+    "dungeonedraghi:spell:6749": "2014:phb2014:spell:plant-growth",
+    "dungeonedraghi:spell:6750": "2014:phb2014:spell:cure-wounds",
+    "dungeonedraghi:spell:6751": "2014:phb2014:spell:mass-cure-wounds",
+    "dungeonedraghi:spell:6752": "2014:phb2014:spell:otto-s-irresistible-dance",
+    "dungeonedraghi:spell:6754": "2014:phb2014:spell:fire-bolt",
+    "dungeonedraghi:spell:6755": "2014:phb2014:spell:magic-missile",
+    "dungeonedraghi:spell:6756": "2014:phb2014:spell:guiding-bolt",
+    "dungeonedraghi:spell:6757": "2014:phb2014:spell:eldritch-blast",
+    "dungeonedraghi:spell:6758": "2014:phb2014:spell:wish",
+    "dungeonedraghi:spell:6759": "2014:phb2014:spell:phantom-steed",
+    "dungeonedraghi:spell:6760": "2014:phb2014:spell:tenser-s-floating-disk",
+    "dungeonedraghi:spell:6761": "2014:phb2014:spell:disintegrate",
+    "dungeonedraghi:spell:6762": "2014:phb2014:spell:dispel-evil-and-good",
+    "dungeonedraghi:spell:6763": "2014:phb2014:spell:dispel-magic",
+    "dungeonedraghi:spell:6765": "2014:phb2014:spell:finger-of-death",
+    "dungeonedraghi:spell:6767": "2014:phb2014:spell:divination",
+    "dungeonedraghi:spell:6768": "2014:phb2014:spell:dominate-beast",
+    "dungeonedraghi:spell:6769": "2014:phb2014:spell:dominate-monster",
+    "dungeonedraghi:spell:6771": "2014:phb2014:spell:dominate-person",
+    "dungeonedraghi:spell:6772": "2014:phb2014:spell:heroism",
+    "dungeonedraghi:spell:6773": "2014:phb2014:spell:banishment",
+    "dungeonedraghi:spell:6774": "2014:phb2014:spell:sunburst",
+    "dungeonedraghi:spell:6775": "2014:phb2014:spell:enthrall",
+    "dungeonedraghi:spell:6776": "2014:phb2014:spell:conjure-animals",
+    "dungeonedraghi:spell:6777": "2014:phb2014:spell:conjure-celestial",
+    "dungeonedraghi:spell:6778": "2014:phb2014:spell:conjure-woodland-beings",
+    "dungeonedraghi:spell:6779": "2014:phb2014:spell:conjure-elemental",
+    "dungeonedraghi:spell:6780": "2014:phb2014:spell:conjure-minor-elementals",
+    "dungeonedraghi:spell:6781": "2014:phb2014:spell:conjure-fey",
+    "dungeonedraghi:spell:6782": "2014:phb2014:spell:drawmij-s-instant-summons",
+    "dungeonedraghi:spell:6783": "2014:phb2014:spell:fabricate",
+    "dungeonedraghi:spell:6784": "2014:phb2014:spell:beacon-of-hope",
+    "dungeonedraghi:spell:6785": "2014:phb2014:spell:weird",
+    "dungeonedraghi:spell:6786": "2014:phb2014:spell:divine-favor",
+    "dungeonedraghi:spell:6788": "2014:phb2014:spell:harm",
+    "dungeonedraghi:spell:6790": "2014:phb2014:spell:time-stop",
+    "dungeonedraghi:spell:6791": "2014:phb2014:spell:continual-flame",
+    "dungeonedraghi:spell:6792": "2014:phb2014:spell:sacred-flame",
+    "dungeonedraghi:spell:6793": "2014:phb2014:spell:acid-splash",
+    "dungeonedraghi:spell:6794": "2014:phb2014:spell:gust-of-wind",
+    "dungeonedraghi:spell:6797": "2014:phb2014:spell:meld-into-stone",
+    "dungeonedraghi:spell:6798": "2014:phb2014:spell:etherealness",
+    "dungeonedraghi:spell:6799": "2014:phb2014:spell:gaseous-form",
+    "dungeonedraghi:spell:6800": "2014:phb2014:spell:animal-shapes",
+    "dungeonedraghi:spell:6801": "2014:phb2014:spell:shatter",
+    "dungeonedraghi:spell:6802": "2014:phb2014:spell:melf-s-acid-arrow",
+    "dungeonedraghi:spell:6803": "2014:phb2014:spell:lightning-bolt",
+    "dungeonedraghi:spell:6804": "2014:phb2014:spell:mislead",
+    "dungeonedraghi:spell:6806": "2014:phb2014:spell:forcecage",
+    "dungeonedraghi:spell:6807": "2014:phb2014:spell:magic-jar",
+    "dungeonedraghi:spell:6809": "2014:phb2014:spell:glyph-of-warding",
+    "dungeonedraghi:spell:6810": "2014:phb2014:spell:globe-of-invulnerability",
+    "dungeonedraghi:spell:6811": "2014:phb2014:spell:spirit-guardians",
+    "dungeonedraghi:spell:6813": "2014:phb2014:spell:guardian-of-faith",
+    "dungeonedraghi:spell:6814": "2014:phb2014:spell:heal",
+    "dungeonedraghi:spell:6815": "2014:phb2014:spell:mass-heal",
+    "dungeonedraghi:spell:6816": "2014:phb2014:spell:guidance",
+    "dungeonedraghi:spell:6817": "2014:phb2014:spell:antilife-shell",
+    "dungeonedraghi:spell:6818": "2014:phb2014:spell:identify",
+    "dungeonedraghi:spell:6820": "2014:phb2014:spell:minor-illusion",
+    "dungeonedraghi:spell:6821": "2014:phb2014:spell:programmed-illusion",
+    "dungeonedraghi:spell:6822": "2014:phb2014:spell:major-image",
+    "dungeonedraghi:spell:6823": "2014:phb2014:spell:project-image",
+    "dungeonedraghi:spell:6824": "2014:phb2014:spell:silent-image",
+    "dungeonedraghi:spell:6825": "2014:phb2014:spell:mirror-image",
+    "dungeonedraghi:spell:6826": "2014:phb2014:spell:imprisonment",
+    "dungeonedraghi:spell:6827": "2014:phb2014:spell:blight",
+    "dungeonedraghi:spell:6829": "2014:phb2014:spell:detect-evil-and-good",
+    "dungeonedraghi:spell:6830": "2014:phb2014:spell:detect-magic",
+    "dungeonedraghi:spell:6832": "2014:phb2014:spell:detect-poison-and-disease",
+    "dungeonedraghi:spell:6834": "2014:phb2014:spell:detect-thoughts",
+    "dungeonedraghi:spell:6838": "2014:phb2014:spell:inflict-wounds",
+    "dungeonedraghi:spell:6847": "2014:phb2014:spell:enlarge-reduce",
+    "dungeonedraghi:spell:6849": "2014:phb2014:spell:giant-insect",
+    "dungeonedraghi:spell:6851": "2014:phb2014:spell:death-ward",
+    "dungeonedraghi:spell:6853": "2014:phb2014:spell:blink",
+    "dungeonedraghi:spell:6855": "2014:phb2014:spell:hellish-rebuke",
+    "dungeonedraghi:spell:6856": "2014:phb2014:spell:entangle",
+    "dungeonedraghi:spell:6857": "2014:phb2014:spell:reverse-gravity",
+    "dungeonedraghi:spell:6858": "2014:phb2014:spell:sending",
+    "dungeonedraghi:spell:6860": "2014:phb2014:spell:invisibility",
+    "dungeonedraghi:spell:6863": "2014:phb2014:spell:greater-invisibility",
+    "dungeonedraghi:spell:6865": "2014:phb2014:spell:call-lightning",
+    "dungeonedraghi:spell:6866": "2014:phb2014:spell:maze",
+    "dungeonedraghi:spell:6867": "2014:phb2014:spell:flame-blade",
+    "dungeonedraghi:spell:6868": "2014:phb2014:spell:planar-binding",
+    "dungeonedraghi:spell:6869": "2014:phb2014:spell:rary-s-telepathic-bond",
+    "dungeonedraghi:spell:6870": "2014:phb2014:spell:slow",
+    "dungeonedraghi:spell:6871": "2014:phb2014:spell:levitate",
+    "dungeonedraghi:spell:6872": "2014:phb2014:spell:freedom-of-movement",
+    "dungeonedraghi:spell:6873": "2014:phb2014:spell:tongues",
+    "dungeonedraghi:spell:6874": "2014:phb2014:spell:locate-animals-or-plants",
+    "dungeonedraghi:spell:6875": "2014:phb2014:spell:locate-creature",
+    "dungeonedraghi:spell:6876": "2014:phb2014:spell:locate-object",
+    "dungeonedraghi:spell:6877": "2014:phb2014:spell:glibness",
+    "dungeonedraghi:spell:6878": "2014:phb2014:spell:light",
+    "dungeonedraghi:spell:6879": "2014:phb2014:spell:daylight",
+    "dungeonedraghi:spell:6880": "2014:phb2014:spell:dancing-lights",
+    "dungeonedraghi:spell:6883": "2014:phb2014:spell:faerie-fire",
+    "dungeonedraghi:spell:6885": "2014:phb2014:spell:burning-hands",
+    "dungeonedraghi:spell:6886": "2014:phb2014:spell:bigby-s-hand",
+    "dungeonedraghi:spell:6887": "2014:phb2014:spell:mage-hand",
+    "dungeonedraghi:spell:6888": "2014:phb2014:spell:hunter-s-mark",
+    "dungeonedraghi:spell:6889": "2014:phb2014:spell:message",
+    "dungeonedraghi:spell:6890": "2014:phb2014:spell:polymorph",
+    "dungeonedraghi:spell:6891": "2014:phb2014:spell:true-polymorph",
+    "dungeonedraghi:spell:6892": "2014:phb2014:spell:mirage-arcane",
+    "dungeonedraghi:spell:6893": "2014:phb2014:spell:modify-memory",
+    "dungeonedraghi:spell:6894": "2014:phb2014:spell:spider-climb",
+    "dungeonedraghi:spell:6895": "2014:phb2014:spell:move-earth",
+    "dungeonedraghi:spell:6896": "2014:phb2014:spell:wall-of-force",
+    "dungeonedraghi:spell:6898": "2014:phb2014:spell:wall-of-fire",
+    "dungeonedraghi:spell:6900": "2014:phb2014:spell:wall-of-ice",
+    "dungeonedraghi:spell:6901": "2014:phb2014:spell:wall-of-stone",
+    "dungeonedraghi:spell:6902": "2014:phb2014:spell:prismatic-wall",
+    "dungeonedraghi:spell:6903": "2014:phb2014:spell:wall-of-thorns",
+    "dungeonedraghi:spell:6904": "2014:phb2014:spell:wind-wall",
+    "dungeonedraghi:spell:6906": "2014:phb2014:spell:incendiary-cloud",
+    "dungeonedraghi:spell:6907": "2014:phb2014:spell:stinking-cloud",
+    "dungeonedraghi:spell:6908": "2014:phb2014:spell:cloudkill",
+    "dungeonedraghi:spell:6909": "2014:phb2014:spell:fog-cloud",
+    "dungeonedraghi:spell:6910": "2014:phb2014:spell:arcane-eye",
+    "dungeonedraghi:spell:6911": "2014:phb2014:spell:thunderwave",
+    "dungeonedraghi:spell:6913": "2014:phb2014:spell:darkness",
+    "dungeonedraghi:spell:6914": "2014:phb2014:spell:fireball",
+    "dungeonedraghi:spell:6915": "2014:phb2014:spell:delayed-blast-fireball",
+    "dungeonedraghi:spell:6916": "2014:phb2014:spell:speak-with-animals",
+    "dungeonedraghi:spell:6917": "2014:phb2014:spell:speak-with-dead",
+    "dungeonedraghi:spell:6919": "2014:phb2014:spell:speak-with-plants",
+    "dungeonedraghi:spell:6920": "2014:phb2014:spell:divine-word",
+    "dungeonedraghi:spell:6921": "2014:phb2014:spell:healing-word",
+    "dungeonedraghi:spell:6922": "2014:phb2014:spell:mass-healing-word",
+    "dungeonedraghi:spell:6923": "2014:phb2014:spell:power-word-stun",
+    "dungeonedraghi:spell:6924": "2014:phb2014:spell:power-word-kill",
+    "dungeonedraghi:spell:6925": "2014:phb2014:spell:word-of-recall",
+    "dungeonedraghi:spell:6926": "2014:phb2014:spell:passwall",
+    "dungeonedraghi:spell:6927": "2014:phb2014:spell:pass-without-trace",
+    "dungeonedraghi:spell:6928": "2014:phb2014:spell:misty-step",
+    "dungeonedraghi:spell:6929": "2014:phb2014:spell:longstrider",
+    "dungeonedraghi:spell:6931": "2014:phb2014:spell:fear",
+    "dungeonedraghi:spell:6932": "2014:phb2014:spell:barkskin",
+    "dungeonedraghi:spell:6933": "2014:phb2014:spell:stoneskin",
+    "dungeonedraghi:spell:6934": "2014:phb2014:spell:insect-plague",
+    "dungeonedraghi:spell:6935": "2014:phb2014:spell:dimension-door",
+    "dungeonedraghi:spell:6936": "2014:phb2014:spell:gate",
+    "dungeonedraghi:spell:6937": "2014:phb2014:spell:prayer-of-healing",
+    "dungeonedraghi:spell:6938": "2014:phb2014:spell:augury",
+    "dungeonedraghi:spell:6939": "2014:phb2014:spell:prestidigitation",
+    "dungeonedraghi:spell:6940": "2014:phb2014:spell:foresight",
+    "dungeonedraghi:spell:6941": "2014:phb2014:spell:produce-flame",
+    "dungeonedraghi:spell:6942": "2014:phb2014:spell:forbiddance",
+    "dungeonedraghi:spell:6943": "2014:phb2014:spell:astral-projection",
+    "dungeonedraghi:spell:6945": "2014:phb2014:spell:protection-from-evil-and-good",
+    "dungeonedraghi:spell:6946": "2014:phb2014:spell:protection-from-energy",
+    "dungeonedraghi:spell:6947": "2014:phb2014:spell:protection-from-poison",
+    "dungeonedraghi:spell:6948": "2014:phb2014:spell:branding-smite",
+    "dungeonedraghi:spell:6949": "2014:phb2014:spell:purify-food-and-drink",
+    "dungeonedraghi:spell:6950": "2014:phb2014:spell:ray-of-frost",
+    "dungeonedraghi:spell:6952": "2014:phb2014:spell:ray-of-enfeeblement",
+    "dungeonedraghi:spell:6954": "2014:phb2014:spell:scorching-ray",
+    "dungeonedraghi:spell:6955": "2014:phb2014:spell:web",
+    "dungeonedraghi:spell:6956": "2014:phb2014:spell:shillelagh",
+    "dungeonedraghi:spell:6957": "2014:phb2014:spell:mordenkainen-s-magnificent-mansion",
+    "dungeonedraghi:spell:6958": "2014:phb2014:spell:feeblemind",
+    "dungeonedraghi:spell:6959": "2014:phb2014:spell:reincarnate",
+    "dungeonedraghi:spell:6960": "2014:phb2014:spell:resistance",
+    "dungeonedraghi:spell:6961": "2014:phb2014:spell:water-breathing",
+    "dungeonedraghi:spell:6962": "2014:phb2014:spell:resurrection",
+    "dungeonedraghi:spell:6964": "2014:phb2014:spell:true-resurrection",
+    "dungeonedraghi:spell:6965": "2014:phb2014:spell:raise-dead",
+    "dungeonedraghi:spell:6967": "2014:phb2014:spell:regenerate",
+    "dungeonedraghi:spell:6968": "2014:phb2014:spell:remove-curse",
+    "dungeonedraghi:spell:6969": "2014:phb2014:spell:revivify",
+    "dungeonedraghi:spell:6971": "2014:phb2014:spell:mending",
+    "dungeonedraghi:spell:6972": "2014:phb2014:spell:gentle-repose",
+    "dungeonedraghi:spell:6974": "2014:phb2014:spell:tasha-s-hideous-laughter",
+    "dungeonedraghi:spell:6975": "2014:phb2014:spell:heat-metal",
+    "dungeonedraghi:spell:6976": "2014:phb2014:spell:lesser-restoration",
+    "dungeonedraghi:spell:6977": "2014:phb2014:spell:greater-restoration",
+    "dungeonedraghi:spell:6978": "2014:phb2014:spell:awaken",
+    "dungeonedraghi:spell:6979": "2014:phb2014:spell:expeditious-retreat",
+    "dungeonedraghi:spell:6980": "2014:phb2014:spell:jump",
+    "dungeonedraghi:spell:6981": "2014:phb2014:spell:spare-the-dying",
+    "dungeonedraghi:spell:6982": "2014:phb2014:spell:hallow",
+    "dungeonedraghi:spell:6983": "2014:phb2014:spell:sanctuary",
+    "dungeonedraghi:spell:6984": "2014:phb2014:spell:mordenkainen-s-private-sanctum",
+    "dungeonedraghi:spell:6985": "2014:phb2014:spell:bestow-curse",
+    "dungeonedraghi:spell:6987": "2014:phb2014:spell:knock",
+    "dungeonedraghi:spell:6988": "2014:phb2014:spell:meteor-swarm",
+    "dungeonedraghi:spell:6989": "2014:phb2014:spell:stone-shape",
+    "dungeonedraghi:spell:6990": "2014:phb2014:spell:find-the-path",
+    "dungeonedraghi:spell:6991": "2014:phb2014:spell:find-traps",
+    "dungeonedraghi:spell:6992": "2014:phb2014:spell:leomund-s-secret-chest",
+    "dungeonedraghi:spell:6994": "2014:phb2014:spell:illusory-script",
+    "dungeonedraghi:spell:6995": "2014:phb2014:spell:scrying",
+    "dungeonedraghi:spell:6996": "2014:phb2014:spell:shield",
+    "dungeonedraghi:spell:6997": "2014:phb2014:spell:shield-of-faith",
+    "dungeonedraghi:spell:6998": "2014:phb2014:spell:fire-shield",
+    "dungeonedraghi:spell:6999": "2014:phb2014:spell:darkvision",
+    "dungeonedraghi:spell:7000": "2014:phb2014:spell:mordenkainen-s-faithful-hound",
+    "dungeonedraghi:spell:7001": "2014:phb2014:spell:seeming",
+    "dungeonedraghi:spell:7002": "2014:phb2014:spell:demiplane",
+    "dungeonedraghi:spell:7004": "2014:phb2014:spell:arcane-lock",
+    "dungeonedraghi:spell:7005": "2014:phb2014:spell:unseen-servant",
+    "dungeonedraghi:spell:7006": "2014:phb2014:spell:otiluke-s-freezing-sphere",
+    "dungeonedraghi:spell:7007": "2014:phb2014:spell:otiluke-s-resilient-sphere",
+    "dungeonedraghi:spell:7008": "2014:phb2014:spell:flaming-sphere",
+    "dungeonedraghi:spell:7009": "2014:phb2014:spell:blur",
+    "dungeonedraghi:spell:7010": "2014:phb2014:spell:eyebite",
+    "dungeonedraghi:spell:7012": "2014:phb2014:spell:silence",
+    "dungeonedraghi:spell:7013": "2014:phb2014:spell:symbol",
+    "dungeonedraghi:spell:7014": "2014:phb2014:spell:simulacrum",
+    "dungeonedraghi:spell:7015": "2014:phb2014:spell:dream",
+    "dungeonedraghi:spell:7016": "2014:phb2014:spell:sleep",
+    "dungeonedraghi:spell:7017": "2014:phb2014:spell:mordenkainen-s-sword",
+    "dungeonedraghi:spell:7018": "2014:phb2014:spell:plane-shift",
+    "dungeonedraghi:spell:7019": "2014:phb2014:spell:color-spray",
+    "dungeonedraghi:spell:7020": "2014:phb2014:spell:prismatic-spray",
+    "dungeonedraghi:spell:7022": "2014:phb2014:spell:poison-spray",
+    "dungeonedraghi:spell:7023": "2014:phb2014:spell:shocking-grasp",
+    "dungeonedraghi:spell:7024": "2014:phb2014:spell:suggestion",
+    "dungeonedraghi:spell:7025": "2014:phb2014:spell:mass-suggestion",
+    "dungeonedraghi:spell:7026": "2014:phb2014:spell:thaumaturgy",
+    "dungeonedraghi:spell:7027": "2014:phb2014:spell:telekinesis",
+    "dungeonedraghi:spell:7028": "2014:phb2014:spell:teleport",
+    "dungeonedraghi:spell:7029": "2014:phb2014:spell:fire-storm",
+    "dungeonedraghi:spell:7030": "2014:phb2014:spell:ice-storm",
+    "dungeonedraghi:spell:7031": "2014:phb2014:spell:sleet-storm",
+    "dungeonedraghi:spell:7032": "2014:phb2014:spell:storm-of-vengeance",
+    "dungeonedraghi:spell:7033": "2014:phb2014:spell:evard-s-black-tentacles",
+    "dungeonedraghi:spell:7034": "2014:phb2014:spell:earthquake",
+    "dungeonedraghi:spell:7035": "2014:phb2014:spell:hallucinatory-terrain",
+    "dungeonedraghi:spell:7037": "2014:phb2014:spell:chill-touch",
+    "dungeonedraghi:spell:7039": "2014:phb2014:spell:vampiric-touch",
+    "dungeonedraghi:spell:7041": "2014:phb2014:spell:hypnotic-pattern",
+    "dungeonedraghi:spell:7042": "2014:phb2014:spell:shapechange",
+    "dungeonedraghi:spell:7043": "2014:phb2014:spell:tree-stride",
+    "dungeonedraghi:spell:7044": "2014:phb2014:spell:transport-via-plants",
+    "dungeonedraghi:spell:7045": "2014:phb2014:spell:find-steed",
+    "dungeonedraghi:spell:7046": "2014:phb2014:spell:find-familiar",
+    "dungeonedraghi:spell:7047": "2014:phb2014:spell:rope-trick",
+    "dungeonedraghi:spell:7048": "2014:phb2014:spell:grease",
+    "dungeonedraghi:spell:7049": "2014:phb2014:spell:see-invisibility",
+    "dungeonedraghi:spell:7051": "2014:phb2014:spell:haste",
+    "dungeonedraghi:spell:7053": "2014:phb2014:spell:guards-and-wards",
+    "dungeonedraghi:spell:7054": "2014:phb2014:spell:warding-bond",
+    "dungeonedraghi:spell:7055": "2014:phb2014:spell:true-seeing",
+    "dungeonedraghi:spell:7056": "2014:phb2014:spell:false-life",
+    "dungeonedraghi:spell:7058": "2014:phb2014:spell:fly",
+    "dungeonedraghi:spell:7060": "2014:phb2014:spell:mind-blank",
+    "dungeonedraghi:spell:7061": "2014:phb2014:spell:zone-of-truth",
+    "dust-devil": "unclassified:dust-devil",
+    "earth-tremor": "unclassified:earth-tremor",
+    "earthbind": "unclassified:earthbind",
+    "earthquake": "2014:phb2014:spell:earthquake",
+    "ego-whip": "unclassified:ego-whip",
+    "eldritch-blast": "2014:phb2014:spell:eldritch-blast",
+    "elemental-bane": "unclassified:elemental-bane",
+    "elemental-weapon": "2014:phb2014:spell:elemental-weapon",
+    "encode-thoughts": "unclassified:encode-thoughts",
+    "enemies-abound": "unclassified:enemies-abound",
+    "enervation": "unclassified:enervation",
+    "enhance-ability": "2014:phb2014:spell:enhance-ability",
+    "enlarge-reduce": "2014:phb2014:spell:enlarge-reduce",
+    "ensnaring-strike": "2014:phb2014:spell:ensnaring-strike",
+    "entangle": "2014:phb2014:spell:entangle",
+    "enthrall": "2014:phb2014:spell:enthrall",
+    "erupting-earth": "unclassified:erupting-earth",
+    "etherealness": "2014:phb2014:spell:etherealness",
+    "evards-black-tentacles": "2014:phb2014:spell:evard-s-black-tentacles",
+    "expeditious-retreat": "2014:phb2014:spell:expeditious-retreat",
+    "eyebite": "2014:phb2014:spell:eyebite",
+    "fabricate": "2014:phb2014:spell:fabricate",
+    "faerie-fire": "2014:phb2014:spell:faerie-fire",
+    "false-life": "2014:phb2014:spell:false-life",
+    "far-step": "unclassified:far-step",
+    "fast-friends": "unclassified:fast-friends",
+    "fear": "2014:phb2014:spell:fear",
+    "feather-fall": "2014:phb2014:spell:feather-fall",
+    "feeblemind": "2014:phb2014:spell:feeblemind",
+    "feign-death": "2014:phb2014:spell:feign-death",
+    "find-familiar": "2014:phb2014:spell:find-familiar",
+    "find-greater-steed": "unclassified:find-greater-steed",
+    "find-steed": "2014:phb2014:spell:find-steed",
+    "find-the-path": "2014:phb2014:spell:find-the-path",
+    "find-traps": "2014:phb2014:spell:find-traps",
+    "find-vehicle": "unclassified:find-vehicle",
+    "finger-of-death": "2014:phb2014:spell:finger-of-death",
+    "fire-bolt": "2014:phb2014:spell:fire-bolt",
+    "fire-shield": "2014:phb2014:spell:fire-shield",
+    "fire-storm": "2014:phb2014:spell:fire-storm",
+    "fireball": "2014:phb2014:spell:fireball",
+    "fizban-s-platinum-shield-ua": "unclassified:fizban-s-platinum-shield-ua",
+    "fizbans-platinum-shield": "unclassified:fizbans-platinum-shield",
+    "flame-arrows": "unclassified:flame-arrows",
+    "flame-blade": "2014:phb2014:spell:flame-blade",
+    "flame-stride": "unclassified:flame-stride",
+    "flame-strike": "2014:phb2014:spell:flame-strike",
+    "flaming-sphere": "2014:phb2014:spell:flaming-sphere",
+    "flesh-to-stone": "2014:phb2014:spell:flesh-to-stone",
+    "flock-of-familiars": "unclassified:flock-of-familiars",
+    "fly": "2014:phb2014:spell:fly",
+    "fog-cloud": "2014:phb2014:spell:fog-cloud",
+    "forbiddance": "2014:phb2014:spell:forbiddance",
+    "forcecage": "2014:phb2014:spell:forcecage",
+    "foresight": "2014:phb2014:spell:foresight",
+    "fortunes-favor": "unclassified:fortunes-favor",
+    "freedom-of-movement": "2014:phb2014:spell:freedom-of-movement",
+    "friends": "2014:phb2014:spell:friends",
+    "frost-fingers": "unclassified:frost-fingers",
+    "frostbite": "unclassified:frostbite",
+    "galders-speedy-courier": "unclassified:galders-speedy-courier",
+    "galders-tower": "unclassified:galders-tower",
+    "gaseous-form": "2014:phb2014:spell:gaseous-form",
+    "gate": "2014:phb2014:spell:gate",
+    "gate-seal": "unclassified:gate-seal",
+    "geas": "2014:phb2014:spell:geas",
+    "gentle-repose": "2014:phb2014:spell:gentle-repose",
+    "giant-insect": "2014:phb2014:spell:giant-insect",
+    "gift-of-alacrity": "unclassified:gift-of-alacrity",
+    "gift-of-gab": "unclassified:gift-of-gab",
+    "glibness": "2014:phb2014:spell:glibness",
+    "globe-of-invulnerability": "2014:phb2014:spell:globe-of-invulnerability",
+    "glyph-of-warding": "2014:phb2014:spell:glyph-of-warding",
+    "goodberry": "2014:phb2014:spell:goodberry",
+    "grasping-vine": "2014:phb2014:spell:grasping-vine",
+    "gravity-fissure": "unclassified:gravity-fissure",
+    "gravity-sinkhole": "unclassified:gravity-sinkhole",
+    "grease": "2014:phb2014:spell:grease",
+    "greater-invisibility": "2014:phb2014:spell:greater-invisibility",
+    "greater-restoration": "2014:phb2014:spell:greater-restoration",
+    "green-flame-blade": "unclassified:green-flame-blade",
+    "guardian-of-faith": "2014:phb2014:spell:guardian-of-faith",
+    "guardian-of-nature": "unclassified:guardian-of-nature",
+    "guards-and-wards": "2014:phb2014:spell:guards-and-wards",
+    "guidance": "2014:phb2014:spell:guidance",
+    "guiding-bolt": "2014:phb2014:spell:guiding-bolt",
+    "guiding-hand-ua": "unclassified:guiding-hand-ua",
+    "gust": "unclassified:gust",
+    "gust-of-wind": "2014:phb2014:spell:gust-of-wind",
+    "hail-of-thorns": "2014:phb2014:spell:hail-of-thorns",
+    "hallow": "2014:phb2014:spell:hallow",
+    "hallucinatory-terrain": "2014:phb2014:spell:hallucinatory-terrain",
+    "hand-of-radiance": "unclassified:hand-of-radiance",
+    "harm": "2014:phb2014:spell:harm",
+    "haste": "2014:phb2014:spell:haste",
+    "haywire": "unclassified:haywire",
+    "heal": "2014:phb2014:spell:heal",
+    "healing-elixir-ua": "unclassified:healing-elixir-ua",
+    "healing-spirit": "unclassified:healing-spirit",
+    "healing-word": "2014:phb2014:spell:healing-word",
+    "heat-metal": "2014:phb2014:spell:heat-metal",
+    "hellish-rebuke": "2014:phb2014:spell:hellish-rebuke",
+    "heroes-feast": "2014:phb2014:spell:heroes-feast",
+    "heroism": "2014:phb2014:spell:heroism",
+    "hex": "2014:phb2014:spell:hex",
+    "hold-monster": "2014:phb2014:spell:hold-monster",
+    "hold-person": "2014:phb2014:spell:hold-person",
+    "holy-aura": "2014:phb2014:spell:holy-aura",
+    "holy-weapon": "unclassified:holy-weapon",
+    "house-of-cards-ua": "unclassified:house-of-cards-ua",
+    "hunger-of-hadar": "2014:phb2014:spell:hunger-of-hadar",
+    "hunters-mark": "2014:phb2014:spell:hunter-s-mark",
+    "hypnotic-pattern": "2014:phb2014:spell:hypnotic-pattern",
+    "ice-knife": "unclassified:ice-knife",
+    "ice-storm": "2014:phb2014:spell:ice-storm",
+    "icingdeath-s-frost": "unclassified:icingdeath-s-frost",
+    "id-insinuation": "unclassified:id-insinuation",
+    "identify": "2014:phb2014:spell:identify",
+    "illusory-dragon": "unclassified:illusory-dragon",
+    "illusory-script": "2014:phb2014:spell:illusory-script",
+    "immolation": "unclassified:immolation",
+    "immovable-object": "unclassified:immovable-object",
+    "imprisonment": "2014:phb2014:spell:imprisonment",
+    "incendiary-cloud": "2014:phb2014:spell:incendiary-cloud",
+    "incite-greed": "unclassified:incite-greed",
+    "infallible-relay": "unclassified:infallible-relay",
+    "infernal-calling": "unclassified:infernal-calling",
+    "infestation": "unclassified:infestation",
+    "inflict-wounds": "2014:phb2014:spell:inflict-wounds",
+    "insect-plague": "2014:phb2014:spell:insect-plague",
+    "intellect-fortress": "unclassified:intellect-fortress",
+    "investiture-of-flame": "unclassified:investiture-of-flame",
+    "investiture-of-ice": "unclassified:investiture-of-ice",
+    "investiture-of-stone": "unclassified:investiture-of-stone",
+    "investiture-of-wind": "unclassified:investiture-of-wind",
+    "invisibility": "2014:phb2014:spell:invisibility",
+    "invisibility-to-cameras": "unclassified:invisibility-to-cameras",
+    "invulnerability": "unclassified:invulnerability",
+    "jims-glowing-coin": "unclassified:jims-glowing-coin",
+    "jims-magic-missile": "unclassified:jims-magic-missile",
+    "jump": "2014:phb2014:spell:jump",
+    "kinetic-jaunt": "unclassified:kinetic-jaunt",
+    "knock": "2014:phb2014:spell:knock",
+    "legend-lore": "2014:phb2014:spell:legend-lore",
+    "leomunds-secret-chest": "2014:phb2014:spell:leomund-s-secret-chest",
+    "leomunds-tiny-hut": "2014:phb2014:spell:leomund-s-tiny-hut",
+    "lesser-restoration": "2014:phb2014:spell:lesser-restoration",
+    "levitate": "2014:phb2014:spell:levitate",
+    "life-transference": "unclassified:life-transference",
+    "light": "2014:phb2014:spell:light",
+    "lightning-arrow": "2014:phb2014:spell:lightning-arrow",
+    "lightning-bolt": "2014:phb2014:spell:lightning-bolt",
+    "lightning-lure": "unclassified:lightning-lure",
+    "locate-animals-or-plants": "2014:phb2014:spell:locate-animals-or-plants",
+    "locate-creature": "2014:phb2014:spell:locate-creature",
+    "locate-object": "2014:phb2014:spell:locate-object",
+    "longstrider": "2014:phb2014:spell:longstrider",
+    "maddening-darkness": "unclassified:maddening-darkness",
+    "maelstrom": "unclassified:maelstrom",
+    "mage-armor": "2014:phb2014:spell:mage-armor",
+    "mage-hand": "2014:phb2014:spell:mage-hand",
+    "magic-circle": "2014:phb2014:spell:magic-circle",
+    "magic-jar": "2014:phb2014:spell:magic-jar",
+    "magic-missile": "2014:phb2014:spell:magic-missile",
+    "magic-mouth": "2014:phb2014:spell:magic-mouth",
+    "magic-stone": "unclassified:magic-stone",
+    "magic-weapon": "2014:phb2014:spell:magic-weapon",
+    "magnify-gravity": "unclassified:magnify-gravity",
+    "major-image": "2014:phb2014:spell:major-image",
+    "mass-cure-wounds": "2014:phb2014:spell:mass-cure-wounds",
+    "mass-heal": "2014:phb2014:spell:mass-heal",
+    "mass-healing-word": "2014:phb2014:spell:mass-healing-word",
+    "mass-polymorph": "unclassified:mass-polymorph",
+    "mass-suggestion": "2014:phb2014:spell:mass-suggestion",
+    "maximillians-earthen-grasp": "unclassified:maximillians-earthen-grasp",
+    "maze": "2014:phb2014:spell:maze",
+    "meld-into-stone": "2014:phb2014:spell:meld-into-stone",
+    "melfs-acid-arrow": "2014:phb2014:spell:melf-s-acid-arrow",
+    "melfs-minute-meteors": "unclassified:melfs-minute-meteors",
+    "mending": "2014:phb2014:spell:mending",
+    "mental-barrier": "unclassified:mental-barrier",
+    "mental-prison": "unclassified:mental-prison",
+    "message": "2014:phb2014:spell:message",
+    "meteor-swarm": "2014:phb2014:spell:meteor-swarm",
+    "mighty-fortress": "unclassified:mighty-fortress",
+    "mind-blank": "2014:phb2014:spell:mind-blank",
+    "mind-sliver": "unclassified:mind-sliver",
+    "mind-spike": "unclassified:mind-spike",
+    "mind-thrust": "unclassified:mind-thrust",
+    "minor-illusion": "2014:phb2014:spell:minor-illusion",
+    "mirage-arcane": "2014:phb2014:spell:mirage-arcane",
+    "mirror-image": "2014:phb2014:spell:mirror-image",
+    "mislead": "2014:phb2014:spell:mislead",
+    "misty-step": "2014:phb2014:spell:misty-step",
+    "modify-memory": "2014:phb2014:spell:modify-memory",
+    "mold-earth": "unclassified:mold-earth",
+    "moonbeam": "2014:phb2014:spell:moonbeam",
+    "mordenkainens-faithful-hound": "2014:phb2014:spell:mordenkainen-s-faithful-hound",
+    "mordenkainens-magnificent-mansion": "2014:phb2014:spell:mordenkainen-s-magnificent-mansion",
+    "mordenkainens-private-sanctum": "2014:phb2014:spell:mordenkainen-s-private-sanctum",
+    "mordenkainens-sword": "2014:phb2014:spell:mordenkainen-s-sword",
+    "motivational-speech": "unclassified:motivational-speech",
+    "move-earth": "2014:phb2014:spell:move-earth",
+    "nathairs-mischief": "unclassified:nathairs-mischief",
+    "nathairs-mischief-ua": "unclassified:nathairs-mischief-ua",
+    "negative-energy-flood": "unclassified:negative-energy-flood",
+    "nondetection": "2014:phb2014:spell:nondetection",
+    "nystuls-magic-aura": "2014:phb2014:spell:nystul-s-magic-aura",
+    "on-off": "unclassified:on-off",
+    "otherworldly-form": "unclassified:otherworldly-form",
+    "otilukes-freezing-sphere": "2014:phb2014:spell:otiluke-s-freezing-sphere",
+    "otilukes-resilient-sphere": "2014:phb2014:spell:otiluke-s-resilient-sphere",
+    "ottos-irresistible-dance": "2014:phb2014:spell:otto-s-irresistible-dance",
+    "pass-without-trace": "2014:phb2014:spell:pass-without-trace",
+    "passwall": "2014:phb2014:spell:passwall",
+    "phantasmal-force": "2014:phb2014:spell:phantasmal-force",
+    "phantasmal-killer": "2014:phb2014:spell:phantasmal-killer",
+    "phantom-steed": "2014:phb2014:spell:phantom-steed",
+    "planar-ally": "2014:phb2014:spell:planar-ally",
+    "planar-binding": "2014:phb2014:spell:planar-binding",
+    "plane-shift": "2014:phb2014:spell:plane-shift",
+    "plant-growth": "2014:phb2014:spell:plant-growth",
+    "poison-spray": "2014:phb2014:spell:poison-spray",
+    "polymorph": "2014:phb2014:spell:polymorph",
+    "power-word-heal": "2014:phb2014:spell:power-word-heal",
+    "power-word-kill": "2014:phb2014:spell:power-word-kill",
+    "power-word-pain": "unclassified:power-word-pain",
+    "power-word-stun": "2014:phb2014:spell:power-word-stun",
+    "prayer-of-healing": "2014:phb2014:spell:prayer-of-healing",
+    "prestidigitation": "2014:phb2014:spell:prestidigitation",
+    "primal-savagery": "unclassified:primal-savagery",
+    "primordial-ward": "unclassified:primordial-ward",
+    "prismatic-spray": "2014:phb2014:spell:prismatic-spray",
+    "prismatic-wall": "2014:phb2014:spell:prismatic-wall",
+    "produce-flame": "2014:phb2014:spell:produce-flame",
+    "programmed-illusion": "2014:phb2014:spell:programmed-illusion",
+    "project-image": "2014:phb2014:spell:project-image",
+    "protection-from-ballistics": "unclassified:protection-from-ballistics",
+    "protection-from-energy": "2014:phb2014:spell:protection-from-energy",
+    "protection-from-evil-and-good": "2014:phb2014:spell:protection-from-evil-and-good",
+    "protection-from-poison": "2014:phb2014:spell:protection-from-poison",
+    "psionic-blast": "unclassified:psionic-blast",
+    "psychic-crush": "unclassified:psychic-crush",
+    "psychic-scream": "unclassified:psychic-scream",
+    "pulse-wave": "unclassified:pulse-wave",
+    "puppet": "unclassified:puppet",
+    "purify-food-and-drink": "2014:phb2014:spell:purify-food-and-drink",
+    "pyrotechnics": "unclassified:pyrotechnics",
+    "raise-dead": "2014:phb2014:spell:raise-dead",
+    "rarys-telepathic-bond": "2014:phb2014:spell:rary-s-telepathic-bond",
+    "raulothims-psychic-lance": "unclassified:raulothims-psychic-lance",
+    "raulothims-psychic-lance-ua": "unclassified:raulothims-psychic-lance-ua",
+    "ravenous-void": "unclassified:ravenous-void",
+    "ray-of-enfeeblement": "2014:phb2014:spell:ray-of-enfeeblement",
+    "ray-of-frost": "2014:phb2014:spell:ray-of-frost",
+    "ray-of-sickness": "2014:phb2014:spell:ray-of-sickness",
+    "reality-break": "unclassified:reality-break",
+    "regenerate": "2014:phb2014:spell:regenerate",
+    "reincarnate": "2014:phb2014:spell:reincarnate",
+    "remote-access": "unclassified:remote-access",
+    "remove-curse": "2014:phb2014:spell:remove-curse",
+    "resistance": "2014:phb2014:spell:resistance",
+    "resurrection": "2014:phb2014:spell:resurrection",
+    "reverse-gravity": "2014:phb2014:spell:reverse-gravity",
+    "revivify": "2014:phb2014:spell:revivify",
+    "rimes-binding-ice": "unclassified:rimes-binding-ice",
+    "rope-trick": "2014:phb2014:spell:rope-trick",
+    "sacred-flame": "2014:phb2014:spell:sacred-flame",
+    "sanctuary": "2014:phb2014:spell:sanctuary",
+    "sapping-sting": "unclassified:sapping-sting",
+    "scatter": "unclassified:scatter",
+    "scorching-ray": "2014:phb2014:spell:scorching-ray",
+    "scrying": "2014:phb2014:spell:scrying",
+    "searing-smite": "2014:phb2014:spell:searing-smite",
+    "see-invisibility": "2014:phb2014:spell:see-invisibility",
+    "seeming": "2014:phb2014:spell:seeming",
+    "sending": "2014:phb2014:spell:sending",
+    "sense-emotion": "unclassified:sense-emotion",
+    "sequester": "2014:phb2014:spell:sequester",
+    "shadow-blade": "unclassified:shadow-blade",
+    "shadow-of-moil": "unclassified:shadow-of-moil",
+    "shape-water": "unclassified:shape-water",
+    "shapechange": "2014:phb2014:spell:shapechange",
+    "shatter": "2014:phb2014:spell:shatter",
+    "shield": "2014:phb2014:spell:shield",
+    "shield-of-faith": "2014:phb2014:spell:shield-of-faith",
+    "shillelagh": "2014:phb2014:spell:shillelagh",
+    "shocking-grasp": "2014:phb2014:spell:shocking-grasp",
+    "shutdown": "unclassified:shutdown",
+    "sickening-radiance": "unclassified:sickening-radiance",
+    "silence": "2014:phb2014:spell:silence",
+    "silent-image": "2014:phb2014:spell:silent-image",
+    "silvery-barbs": "unclassified:silvery-barbs",
+    "simulacrum": "2014:phb2014:spell:simulacrum",
+    "skill-empowerment": "unclassified:skill-empowerment",
+    "skywrite": "unclassified:skywrite",
+    "sleep": "2014:phb2014:spell:sleep",
+    "sleet-storm": "2014:phb2014:spell:sleet-storm",
+    "slow": "2014:phb2014:spell:slow",
+    "snare": "unclassified:snare",
+    "snillocs-snowball-swarm": "unclassified:snillocs-snowball-swarm",
+    "soul-cage": "unclassified:soul-cage",
+    "spare-the-dying": "2014:phb2014:spell:spare-the-dying",
+    "speak-with-animals": "2014:phb2014:spell:speak-with-animals",
+    "speak-with-dead": "2014:phb2014:spell:speak-with-dead",
+    "speak-with-plants": "2014:phb2014:spell:speak-with-plants",
+    "spider-climb": "2014:phb2014:spell:spider-climb",
+    "spike-growth": "2014:phb2014:spell:spike-growth",
+    "spirit-guardians": "2014:phb2014:spell:spirit-guardians",
+    "spirit-of-death": "unclassified:spirit-of-death",
+    "spirit-of-death-ua": "unclassified:spirit-of-death-ua",
+    "spirit-shroud": "unclassified:spirit-shroud",
+    "spiritual-weapon": "2014:phb2014:spell:spiritual-weapon",
+    "spray-of-cards": "unclassified:spray-of-cards",
+    "spray-of-cards-ua": "unclassified:spray-of-cards-ua",
+    "staggering-smite": "2014:phb2014:spell:staggering-smite",
+    "steel-wind-strike": "unclassified:steel-wind-strike",
+    "stinking-cloud": "2014:phb2014:spell:stinking-cloud",
+    "stone-shape": "2014:phb2014:spell:stone-shape",
+    "stoneskin": "2014:phb2014:spell:stoneskin",
+    "storm-of-vengeance": "2014:phb2014:spell:storm-of-vengeance",
+    "storm-sphere": "unclassified:storm-sphere",
+    "sudden-awakening": "unclassified:sudden-awakening",
+    "suggestion": "2014:phb2014:spell:suggestion",
+    "summon-aberration": "unclassified:summon-aberration",
+    "summon-beast": "unclassified:summon-beast",
+    "summon-celestial": "unclassified:summon-celestial",
+    "summon-construct": "unclassified:summon-construct",
+    "summon-draconic-spirit": "unclassified:summon-draconic-spirit",
+    "summon-draconic-spirit-ua": "unclassified:summon-draconic-spirit-ua",
+    "summon-elemental": "unclassified:summon-elemental",
+    "summon-fey": "unclassified:summon-fey",
+    "summon-fiend": "unclassified:summon-fiend",
+    "summon-greater-demon": "unclassified:summon-greater-demon",
+    "summon-lesser-demons": "unclassified:summon-lesser-demons",
+    "summon-shadowspawn": "unclassified:summon-shadowspawn",
+    "summon-undead": "unclassified:summon-undead",
+    "summon-warrior-spirit": "unclassified:summon-warrior-spirit",
+    "sunbeam": "2014:phb2014:spell:sunbeam",
+    "sunburst": "2014:phb2014:spell:sunburst",
+    "swift-quiver": "2014:phb2014:spell:swift-quiver",
+    "sword-burst": "unclassified:sword-burst",
+    "symbol": "2014:phb2014:spell:symbol",
+    "synaptic-static": "unclassified:synaptic-static",
+    "synchronicity": "unclassified:synchronicity",
+    "system-backdoor": "unclassified:system-backdoor",
+    "tashas-caustic-brew": "unclassified:tashas-caustic-brew",
+    "tashas-hideous-laughter": "2014:phb2014:spell:tasha-s-hideous-laughter",
+    "tashas-mind-whip": "unclassified:tashas-mind-whip",
+    "tashas-otherworldly-guise": "unclassified:tashas-otherworldly-guise",
+    "telekinesis": "2014:phb2014:spell:telekinesis",
+    "telepathy": "2014:phb2014:spell:telepathy",
+    "teleport": "2014:phb2014:spell:teleport",
+    "teleportation-circle": "2014:phb2014:spell:teleportation-circle",
+    "temple-of-the-gods": "unclassified:temple-of-the-gods",
+    "temporal-shunt": "unclassified:temporal-shunt",
+    "tensers-floating-disk": "2014:phb2014:spell:tenser-s-floating-disk",
+    "tensers-transformation": "unclassified:tensers-transformation",
+    "tether-essence": "unclassified:tether-essence",
+    "thaumaturgy": "2014:phb2014:spell:thaumaturgy",
+    "thorn-whip": "2014:phb2014:spell:thorn-whip",
+    "thought-shield": "unclassified:thought-shield",
+    "thunder-step": "unclassified:thunder-step",
+    "thunderclap": "unclassified:thunderclap",
+    "thunderous-smite": "2014:phb2014:spell:thunderous-smite",
+    "thunderwave": "2014:phb2014:spell:thunderwave",
+    "tidal-wave": "unclassified:tidal-wave",
+    "time-ravage": "unclassified:time-ravage",
+    "time-stop": "2014:phb2014:spell:time-stop",
+    "tiny-servant": "unclassified:tiny-servant",
+    "toll-the-dead": "unclassified:toll-the-dead",
+    "tongues": "2014:phb2014:spell:tongues",
+    "transmute-rock": "unclassified:transmute-rock",
+    "transport-via-plants": "2014:phb2014:spell:transport-via-plants",
+    "tree-stride": "2014:phb2014:spell:tree-stride",
+    "true-polymorph": "2014:phb2014:spell:true-polymorph",
+    "true-resurrection": "2014:phb2014:spell:true-resurrection",
+    "true-seeing": "2014:phb2014:spell:true-seeing",
+    "true-strike": "2014:phb2014:spell:true-strike",
+    "tsunami": "2014:phb2014:spell:tsunami",
+    "unearthly-chorus": "unclassified:unearthly-chorus",
+    "unseen-servant": "2014:phb2014:spell:unseen-servant",
+    "vampiric-touch": "2014:phb2014:spell:vampiric-touch",
+    "vicious-mockery": "2014:phb2014:spell:vicious-mockery",
+    "virtue": "unclassified:virtue",
+    "vitriolic-sphere": "unclassified:vitriolic-sphere",
+    "vortex-warp": "unclassified:vortex-warp",
+    "wall-of-fire": "2014:phb2014:spell:wall-of-fire",
+    "wall-of-force": "2014:phb2014:spell:wall-of-force",
+    "wall-of-ice": "2014:phb2014:spell:wall-of-ice",
+    "wall-of-light": "unclassified:wall-of-light",
+    "wall-of-sand": "unclassified:wall-of-sand",
+    "wall-of-stone": "2014:phb2014:spell:wall-of-stone",
+    "wall-of-thorns": "2014:phb2014:spell:wall-of-thorns",
+    "wall-of-water": "unclassified:wall-of-water",
+    "warding-bond": "2014:phb2014:spell:warding-bond",
+    "warding-wind": "unclassified:warding-wind",
+    "warp-sense": "unclassified:warp-sense",
+    "water-breathing": "2014:phb2014:spell:water-breathing",
+    "water-walk": "2014:phb2014:spell:water-walk",
+    "watery-sphere": "unclassified:watery-sphere",
+    "web": "2014:phb2014:spell:web",
+    "weird": "2014:phb2014:spell:weird",
+    "whirlwind": "unclassified:whirlwind",
+    "wild-cunning": "unclassified:wild-cunning",
+    "wind-walk": "2014:phb2014:spell:wind-walk",
+    "wind-wall": "2014:phb2014:spell:wind-wall",
+    "wish": "2014:phb2014:spell:wish",
+    "witch-bolt": "2014:phb2014:spell:witch-bolt",
+    "wither-and-bloom": "unclassified:wither-and-bloom",
+    "word-of-radiance": "unclassified:word-of-radiance",
+    "word-of-recall": "2014:phb2014:spell:word-of-recall",
+    "wrath-of-nature": "unclassified:wrath-of-nature",
+    "wrathful-smite": "2014:phb2014:spell:wrathful-smite",
+    "wristpocket": "unclassified:wristpocket",
+    "zephyr-strike": "unclassified:zephyr-strike",
+    "zone-of-truth": "2014:phb2014:spell:zone-of-truth"
+  }
+}

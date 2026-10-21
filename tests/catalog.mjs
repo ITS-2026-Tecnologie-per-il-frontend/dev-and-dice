@@ -1,10 +1,18 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { parseCatalog, searchCatalog, sheetFromCatalog, templateFromCatalog, sheetWithCombatSpells, sheetWithCombatAbilities } from '../src/utils/Catalog.ts'
+import { parseCatalog, searchCatalog, sheetFromCatalog, templateFromCatalog, sheetWithCombatSpells, sheetWithCombatAbilities, refreshCombatSheetAbilities, catalogAbilityKind } from '../src/utils/Catalog.ts'
 import { abilitiesFromSheet, parseCharacterSheets, newCharacterSheet, turnFromSheet, importSheetAbility } from '../src/utils/CharacterSheets.ts'
 
 const raw = JSON.parse(readFileSync(new URL('../public/data/database.json', import.meta.url), 'utf8'))
 const catalog = parseCatalog(raw)
+const bite=catalog.abilities.find(entry=>entry.id==='7738:ability:1')
+assert(catalogAbilityKind(bite).weaponAttack,'Natural weapon attacks belong with physical attacks')
+assert(catalogAbilityKind(undefined,'action','Melee Weapon Attack: +5 to hit.').weaponAttack,'Manual attacks with an explicit weapon header are recognized')
+assert(catalogAbilityKind(undefined,'action','Attacco in mischia con arma: +5 a colpire.').weaponAttack,'Alternate Italian headers in the legacy database stay physical attacks')
+assert(!catalogAbilityKind(undefined,'action','Melee Spell Attack: +5 to hit.').weaponAttack,'Spell attacks are not physical attacks')
+assert(!catalogAbilityKind({...bite,data:{...bite.data,mechanics:{kind:'ranged-spell-attack'}}}).weaponAttack,'Structured spell-attack data takes precedence over an old weapon description')
+assert(catalogAbilityKind({...bite,description:'',data:{...bite.data,edition:'2024',mechanics:{kind:'ranged-weapon-attack'}}}).weaponAttack,'Grouping uses the entry metadata without replacing its edition')
+assert(!catalogAbilityKind(undefined,'action','Infligge danni da fuoco.').weaponAttack,'Damage alone does not identify a weapon attack')
 assert.equal(catalog.creatures.length, 321)
 assert.equal(catalog.abilities.length, raw.abilities.length + raw.spells.length + raw.spellIndex.length)
 assert.equal(searchCatalog(catalog.creatures, '').length, 0)
@@ -30,7 +38,11 @@ assert.equal(sheet.strength, '21')
 assert.equal(sheet.initiative, '', 'Selecting a monster must leave initiative empty for the roll')
 assert.ok(sheet.notes.includes('Schiavizzare'))
 assert.equal(sheet.abilities.length, aboleth.data.abilityIds.length)
-assert.ok(sheet.abilities.every((ability) => ability.remainingTurns === 0 && ability.duration === 'Personalizzata'), 'Undefined monster ability durations must not be invented')
+assert.ok(sheet.abilities.every((ability) => ability.remainingTurns === 0), 'Undefined monster ability durations must not be invented')
+for (const ability of sheet.abilities) {
+    const kind=catalogAbilityKind(catalog.abilities.find(entry=>entry.id===ability.catalogId))
+    assert.equal(ability.duration,kind.attack || kind.passive ? 'Senza conteggio' : 'Personalizzata')
+}
 assert.deepEqual(parseCharacterSheets(JSON.stringify([sheet])), [sheet], 'Catalog links and custom durations must survive browser persistence')
 assert.ok(abilitiesFromSheet(sheet, 42, 0).every((ability) => ability.ownerId === 42 && ability.catalogId && !ability.active))
 const npc = catalog.creatures.find((entry) => entry.data.isNpc)
@@ -94,3 +106,22 @@ assert.equal(italianFromEnglishSheet.abilities[0].name, 'Freccia Acida')
 assert.equal(templateFromCatalog(englishAid).remainingTurns, aidTemplate.remainingTurns)
 assert.equal(englishCatalog.creatures[0].id, catalog.creatures[0].id)
 console.log('Spell language checks passed: Italian fallback, full English catalog, aliases and stable saved references')
+
+const armed={...newCharacterSheet(),name:'Ladra',playerDetails:{'attacks.0.0':'Pugnale','attacks.0.1':'+8','attacks.0.2':'1d4+6 perforante'}}
+const armedCombat=sheetWithCombatAbilities(armed,catalog)
+const dagger=armedCombat.abilities.find(ability=>ability.ruleId==='sheet-attack:0')
+assert(dagger && catalogAbilityKind(undefined,dagger.section,dagger.description).weaponAttack)
+assert(dagger.description.includes('+8 a colpire') && dagger.description.includes('1d4+6 perforante'),'Reuse saved attack overrides rather than recalculating them')
+assert.equal(armed.abilities.length,0,'Reading attack rows leaves the original sheet unchanged')
+assert.equal(sheetWithCombatAbilities(armedCombat,catalog).abilities.length,1,'Repeated expansion does not duplicate weapons')
+const twoDaggers={...armed,playerDetails:{...armed.playerDetails,'attacks.1.0':'Pugnale','attacks.1.1':'+9','attacks.1.2':'1d4+7 perforante'}}
+assert.equal(sheetWithCombatAbilities(twoDaggers,catalog).abilities.length,2,'Same-name weapons with different saved totals remain distinct')
+assert.equal(sheetWithCombatAbilities({...twoDaggers,playerDetails:{...twoDaggers.playerDetails,'attacks.1.1':'+8','attacks.1.2':'1d4+6 perforante'}},catalog).abilities.length,1,'Identical weapon rows do not create duplicate actions')
+const renamed={...armedCombat,playerDetails:{...armedCombat.playerDetails,'attacks.0.0':'Pugnale argentato'}}
+const refreshed=refreshCombatSheetAbilities(armedCombat,renamed,catalog)
+assert.equal(refreshed.sheet.abilities[0].name,'Pugnale argentato','Weapon row identity preserves the combat index when renamed')
+assert.deepEqual(refreshed.availableAbilityIndexes,[0])
+const removed=refreshCombatSheetAbilities(armedCombat,{...armedCombat,playerDetails:{}},catalog)
+assert.deepEqual(removed.availableAbilityIndexes,[],'Removed weapon rows are retired while old combat indexes survive')
+assert.equal(removed.sheet.abilities[0].name,'Pugnale')
+console.log('Weapon row checks passed: saved totals, repeat import, rename and retirement')

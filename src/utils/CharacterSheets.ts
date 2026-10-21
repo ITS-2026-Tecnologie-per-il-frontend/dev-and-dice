@@ -10,7 +10,7 @@ export const characterFields = {
 
 export const numericCharacterFields = ['hitPoints', 'armorClass', 'initiative', 'strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const
 
-export const creatureAbilitySections = { trait:'Abilità', action:'Azioni', bonus:'Azioni bonus', reaction:'Reazioni', legendary:'Azioni leggendarie', lair:'Azioni di tana' } as const
+export const creatureAbilitySections = { trait:'Abilità passive', action:'Azioni', bonus:'Azioni bonus', reaction:'Reazioni', legendary:'Azioni leggendarie', lair:'Azioni di tana' } as const
 export type SheetAbility = { name: string; duration: keyof typeof durationTurns; catalogId?: string; remainingTurns?: number; timed?: boolean; description?: string; expiresAt?:'start'|'end'; repeatSave?:string;ruleId?:string;concentration?:boolean;section?:keyof typeof creatureAbilitySections;spellLevel?:number }
 
 export type CharacterSheet = { id: string; abilities: SheetAbility[]; catalogId?: string; playerDetails?: Record<string, string> } & Record<keyof typeof characterFields, string>

@@ -32,16 +32,47 @@ try {
         'spell.0.0.name':'Dardo di Fuoco','spell.0.0.index':'fire-bolt','spell.0.0.source':'class',
         'spell.3.0.name':'Palla di Fuoco','spell.3.0.index':'fireball','spell.3.0.source':'class','spell.3.0.prepared':'true'}
     wizard.abilities=[{name:'Protezione di prova',duration:'1 minuto',remainingTurns:10,description:'Azione personalizzata: effetto manuale senza danni.'}]
+    wizard.abilities.push({name:'Fiuto passivo',duration:'Senza conteggio',section:'trait',description:'Vantaggio a Percezione basata sull’olfatto.'},templateFromCatalog(catalog.abilities.find(entry=>entry.id==='7738:ability:0')))
     const game=(await api(master,'/api/play/games','POST',{name:'Richieste QA'})).body,path='/api/play/games/'+game.id
     ok(await api(player,'/api/play/invites/'+game.inviteToken+'/join','POST',{sheet:wizard}))
-    const ally={...newCharacterSheet(),name:'Alleata',hitPoints:'30',playerDetails:{temporaryHitPoints:'5','rules2014.concentration':'test-concentration'}}
+    const ally={...newCharacterSheet(),name:'Alleata',hitPoints:'30',playerDetails:{temporaryHitPoints:'5','rules2014.concentration':'test-concentration','attacks.0.0':'Pugnale','attacks.0.1':'+5','attacks.0.2':'1d4+3 perforante'}}
     ok(await api(other,'/api/play/invites/'+game.inviteToken+'/join','POST',{sheet:ally}))
-    const monster={...newCharacterSheet(),name:'Orco',kind:'Mostro',hitPoints:'30',playerDetails:{secret:'PRIVATE MONSTER SHEET'}}
+    const monster={...newCharacterSheet(),name:'Orco',kind:'Mostro',hitPoints:'30',armorClass:'14',playerDetails:{secret:'PRIVATE MONSTER SHEET'}}
     const turn=(id,sheet)=>({id,description:sheet.name,initiative:'10',hitPoints:sheet.hitPoints,armorClass:sheet.armorClass,temporaryHitPoints:sheet.playerDetails?.temporaryHitPoints??'',sheet})
     let state={turns:[turn(1,wizard),turn(2,ally),turn(3,monster)],abilities:[],combat:{activeId:1,round:1}}
     async function current(user=master){return ok(await api(user,path))}
     async function save(stateOverride=state){const now=await current();const result=ok(await api(master,path+'/state','PUT',{revision:now.revision,state:stateOverride,sheets:now.characters.map(record=>record.sheet).concat(now.characters.some(record=>record.id===monster.id)?[]:[monster])}));state=result.state;return result}
     await save()
+    await save({...state,combat:{activeId:2,round:1}})
+    const weaponChoices=ok(await api(other,path+'/actions')),dagger=weaponChoices.actions.find(action=>action.name==='Pugnale')
+    assert(dagger,'Player requests include weapons from the sheet attack table')
+    assert.equal(dagger.mode,'attack','A weapon requests an attack roll rather than automatic damage')
+    assert.equal(dagger.damageEnabled,true)
+    assert.equal(dagger.options[0].targeting.maximum,1)
+    for(const [die,hit,critical] of [[9,true,false],[8,false,false],[1,false,false],[20,true,true]]) {
+        const choices=ok(await api(other,path+'/actions'))
+        const body={id:crypto.randomUUID(),revision:choices.revision,key:dagger.key,option:'free',cost:1,mode:'attack',damageEnabled:true,attackDie:die,
+            targets:[{id:3,roll:'A player-supplied total is not authoritative',hit:!hit,damageRoll:'1d4 + 3 = 5',damage:'5'}]}
+        for(const invalid of [0,21,1.5,'20']) assert.equal((await api(other,path+'/requests','POST',{...body,attackDie:invalid})).status,400)
+        const response=ok(await api(other,path+'/requests','POST',body))
+        const visible=response.combatRequests.find(request=>request.id===body.id)
+        assert.deepEqual(Object.keys(visible.targets[0]).sort(),['damage','damageRoll','id','name','roll'],'Player responses exclude AC and inferred hit/miss')
+        const review=(await current()).combatRequests.find(request=>request.id===body.id)
+        assert.equal(review.targets[0].attack.modifier,5)
+        assert.equal(review.targets[0].attack.total,die+5)
+        assert.equal(review.targets[0].attack.armorClass,14)
+        assert.equal(review.targets[0].attack.hit,hit,'Only the canonical die, modifier and AC determine the Master assessment')
+        assert.equal(review.targets[0].attack.critical,critical)
+        const now=await current()
+        if(!hit) {
+            ok(await api(master,path+'/requests/'+body.id+'/approve','POST',{revision:now.revision,confirmed:true,targets:[{id:3,damage:'0'}]}))
+            assert.equal((await current()).state.turns[2].hitPoints,'30','A missed weapon attack defaults to no applied damage')
+            const playerRequest=(await current(other)).combatRequests.find(request=>request.id===body.id)
+            assert.equal(playerRequest.targets[0].damage,'5','Player history retains proposed damage without leaking the Master outcome')
+            assert(!Object.hasOwn(playerRequest.targets[0],'attack')&&!Object.hasOwn(playerRequest.targets[0],'hit'))
+        } else ok(await api(master,path+'/requests/'+body.id+'/reject','POST',{revision:now.revision}))
+    }
+    await save({...state,combat:{activeId:1,round:1}})
     async function proposal(name,extra={}) {
         const choices=ok(await api(player,path+'/actions')),action=choices.actions.find(action=>action.name===name)
         assert(action,'Missing action '+name)
@@ -53,12 +84,22 @@ try {
     async function decide(body,decision='approve',extra={}) {const now=await current();return api(master,path+'/requests/'+body.id+'/'+decision,'POST',{revision:now.revision,confirmed:true,targets:body.targets.map(({id,damage})=>({id,damage})),...extra})}
     const names={ray:template('scorching-ray').name,missile:template('magic-missile').name,bolt:template('fire-bolt').name,fireball:template('fireball').name}
     const choices=ok(await api(player,path+'/actions'))
-    assert.deepEqual(choices.actions.find(action=>action.name===names.ray).entry,JSON.parse(JSON.stringify(catalog.abilities.find(entry=>entry.data.referenceId==='phb2014:spell:scorching-ray'))),'Player actions retain the complete catalog entry used by the Master detail')
+    const rayDetails=choices.actions.find(action=>action.name===names.ray).entry
+    assert.deepEqual(rayDetails,JSON.parse(JSON.stringify(catalog.abilities.find(entry=>entry.data.referenceId==='phb2014:spell:scorching-ray'))),'Player actions retain the same complete spell entry as the Master detail')
+    assert.equal(choices.actions.find(action=>action.name==='Protezione di prova').entry,undefined,'Custom actions keep their own description without inventing a catalog entry')
+    assert.equal(choices.actions.find(action=>action.name===names.bolt).options[0].targeting.maximum,1)
+    assert.equal(choices.actions.find(action=>action.name===names.ray).options.find(option=>option.id==='slot:2').targeting.maximum,3)
+    assert.equal(choices.actions.find(action=>action.name===names.ray).options.find(option=>option.id==='slot:3').targeting.maximum,4)
+    assert(!choices.actions.some(action=>['Fiuto passivo','Udito e Olfatto Affinato'].includes(action.name)),'Neither manual nor catalog passive traits can be proposed as actions')
     assert.deepEqual(Object.keys(choices.targets[2]).sort(),['id','name'])
     assert(!JSON.stringify(choices).includes('PRIVATE MONSTER'))
     assert.equal((await api(outsider,path+'/actions')).status,404)
     assert.equal((await api(master,path+'/actions')).status,403)
     assert.equal((await api(other,path+'/actions')).status,409)
+    const invalidBolt=await proposal(names.bolt,{targets:[{id:2,roll:'',hit:true,damageRoll:'1d10 = 5',damage:'5'},{id:3,roll:'',hit:true,damageRoll:'1d10 = 5',damage:'5'}]})
+    const beforeInvalid=await current()
+    assert.equal((await submit(invalidBolt)).status,409,'A forged request cannot damage two creatures with a single-target spell')
+    assert.deepEqual((await current()).characters,beforeInvalid.characters,'Rejected targeting never spends resources or changes HP')
 
     const miss=await proposal(names.ray,{mode:'attack',targets:[{id:3,roll:'7 (d20 2 + 5)',hit:false,damageRoll:'',damage:'0'}]})
     assert.equal((await api(other,path+'/requests','POST',miss)).status,409,'Direct submissions cannot impersonate the active character')
@@ -67,9 +108,9 @@ try {
     const before=await current(),beforeSheet=before.characters.find(record=>record.id===wizard.id)
     const concurrent=await Promise.all([submit(miss),submit(miss)])
     concurrent.forEach(ok)
-    assert.equal((await current()).combatRequests.length,1,'Retry/double-click creates one request')
+    assert.equal((await current()).combatRequests.filter(request=>request.id===miss.id).length,1,'Retry/double-click creates one request')
     assert.deepEqual((await current()).characters,before.characters,'Proposal never spends resources or applies damage')
-    assert.equal((await api(other,path)).body.combatRequests.length,0,'Other players cannot see this request')
+    assert(!(await api(other,path)).body.combatRequests.some(request=>request.id===miss.id),'Other players cannot see this request')
     assert.equal((await api(player,path+'/requests/'+miss.id+'/approve','POST',{revision:before.revision})).status,403)
     assert.equal((await api(outsider,path+'/requests/'+miss.id+'/approve','POST',{})).status,404)
     assert.equal((await decide(miss,'approve',{confirmed:false})).status,400)

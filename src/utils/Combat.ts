@@ -1,3 +1,5 @@
+import type { SheetAbility } from './CharacterSheets.ts'
+
 export type Combat = { activeId: number; round: number }
 
 export function hitPointsAfterHealing(hitPoints: string, healing: string, maximum: string): string | null {
@@ -61,6 +63,7 @@ export type Ability = {
     active: boolean
     catalogId?: string
     sheetAbilityIndex?: number
+    section?: SheetAbility['section']
     timed?: boolean
     description?: string
     expiresAt?:'start'|'end'
@@ -69,6 +72,9 @@ export type Ability = {
     repeatSave?:string
     ruleId?:string
     concentration?:boolean
+    weaponEffects?:import('../domain/dnd/CombatResolution.ts').WeaponEnchantment[]
+    sourceEffectId?:number
+    resolutionEffects?:import('../domain/dnd/CombatResolution.ts').EffectSpec[]
     spellLevel?:number
     castingSource?:'class'|'resource'|'free'
     castingAlternative?:number

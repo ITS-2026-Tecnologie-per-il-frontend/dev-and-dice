@@ -1,20 +1,25 @@
-import type { CatalogEntry } from './Catalog'
+import type { ResolutionPlan, RollPacket, TargetResolution, SaveAbility, DefenseProfile } from '../domain/dnd/CombatResolution'
+import type { AttackAssessment } from '../domain/dnd/CombatActions'
 import type { CharacterSheet } from './CharacterSheets'
 import type { TrackerState } from '../components/TurnsTracker'
+import type { CombatTargetRule } from '../domain/dnd/CombatTargets'
+import type { CatalogEntry } from './Catalog'
 
 export type OwnedCharacter = { id:string; ownerId:string; gameId:string|null; revision:number; sheet:CharacterSheet }
-export type NotificationSummary = {revision:number;unreadCount:number}
+export type NotificationSummary = {revision:number;unreadCount:number;newestUnreadRevision?:number}
 export type SheetNotification = {id:string;characterId:string;characterName:string;actorName:string;actorRole:'master'|'player';createdAt:string;status:'applied'|'rejected';rejectedAt?:string;read:boolean;canReject:boolean;changes:{path:string[];before:unknown;after:unknown}[]}
 export type NotificationPage = {revision:number;items:SheetNotification[];next:string|null}
 export type GameSummary = { id:string; name:string; role:'master'|'player'; revision:number }
-export type CombatTarget = {id:number;name:string;roll:string;hit:boolean;damageRoll:string;damage:string}
-export type CombatRequest = {id:string;characterName:string;actorName:string;actionName:string;createdAt:string;status:'pending'|'approved'|'rejected'|'stale';optionLabel:string;cost:number;spendsResources:boolean;mode:'attack'|'save'|'automatic'|'none';damageEnabled:boolean;prolonged:boolean;targets:CombatTarget[];resolvedAt?:string}
-type Requests = {requestsRevision:number;combatRequests:CombatRequest[]}
-export type ActionChoices = {revision:number;targets:{id:number;name:string}[];actions:{key:string;name:string;entry?:CatalogEntry;duration:string;remainingTurns:number;active:boolean;description:string;options:{id:string;label:string;remaining:number|null;cost?:number}[];error:string;cost:number;damageEnabled:boolean;mode:CombatRequest['mode'];prolonged:boolean;ritual:boolean}[]}
+export type CombatTarget = {id:number;name:string;roll:string;hit?:boolean;attack?:AttackAssessment;resolution?:TargetResolution;damageRoll:string;damage:string}
+export type WindSave={mode:'dice'|'manual';die?:number;secondDie?:number;bonuses?:Record<string,number>;success?:boolean}
+export type WindReview={candidates:{id:number;name:string;sheetId:string;profile:DefenseProfile}[];selected:number[];saves:Record<string,WindSave>;editable:boolean}
+export type CombatRequest = {wind?:WindReview;id:string;characterId?:string;characterName:string;actorName:string;actionName:string;createdAt:string;status:'pending'|'approved'|'rejected'|'stale';optionLabel:string;cost:number;spendsResources:boolean;mode:'attack'|'save'|'automatic'|'none';attackDie?:number;packets?:RollPacket[];weaponChoices?:{targetId:number;items:{id:string;name:string;quantity:number}[]}[];resolution?:ResolutionPlan;rollsRevision?:number;damageEnabled:boolean;prolonged:boolean;targets:CombatTarget[];resolvedAt?:string}
+type Requests = {requestsRevision:number;combatRequests:CombatRequest[];newestPendingRequest?:number}
+export type ActionChoices = {revision:number;canPropose:boolean;blockedReason?:string;ownerId:number|null;targets:{id:number;name:string}[];actions:{key:string;name:string;entry?:CatalogEntry;description:string;attackBonus?:string;resolution?:ResolutionPlan;group:'Incantesimi'|'Attacchi fisici'|'Abilità attivabili';spellLevel?:number;duration:string;remainingTurns:number;active:boolean;options:{id:string;label:string;remaining:number|null;cost?:number;targeting:CombatTargetRule;resolution?:ResolutionPlan}[];error:string;cost:number;damageEnabled:boolean;mode:CombatRequest['mode'];prolonged:boolean;ritual:boolean}[]}
 export type MasterGame = GameSummary & Requests & { role:'master'; notifications:NotificationSummary;inviteToken:string; characters:OwnedCharacter[]; state:TrackerState }
 export type PrivateNotes = {text:string;revision:number}
 export type PlayerEffect = {name:string;duration:string;remainingTurns:number;timed:boolean;concentration:boolean;description?:string;expiresAt?:'start'|'end';repeatSave?:string}
-export type PlayerGame = GameSummary & Requests & { role:'player'; notifications:NotificationSummary;character:OwnedCharacter; turns:{name:string;current:boolean}[]; effects:PlayerEffect[]; notes:PrivateNotes }
+export type PlayerGame = GameSummary & Requests & { role:'player'; rollRequests?:{requestId:string;targetId:number;actionName:string;kind:'save'|'save-second'|'attack'|'bonus-save'|'bonus-attack';label?:string;sides?:number;optional?:boolean;effectId?:number;ability?:SaveAbility;bonus?:number;packet?:number;revision:number}[];notifications:NotificationSummary;character:OwnedCharacter; turns:{name:string;current:boolean}[]; effects:PlayerEffect[]; notes:PrivateNotes }
 export type Game = MasterGame | PlayerGame
 export type HomeData = { characters:OwnedCharacter[]; games:GameSummary[] }
 export class PlayApiError extends Error {

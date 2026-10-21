@@ -379,6 +379,11 @@ function PlayerSheetLayout({ sheet:layoutSheet, catalog:baseCatalog, creationDat
             <CreationStatus sheet={sheet} enable={() => {const current=textStore?.read()??sheet;emit(enableCreation(current,data),current)}} disable={() => {const current=textStore?.read()??sheet;emit({...current,playerDetails:{...current.playerDetails,'creation.enabled':'false'}},current)}} />
             {automatic && <button className="player-sheet-reset" type="button" onClick={() => {const current=textStore?.read()??sheet;emit(resetCreationOverrides(current,data),current)}}>Ripristina i campi generati (annulla le loro modifiche manuali)</button>}
         </details> : <p className="player-sheet-loading" role="status">{dataError || 'Caricamento opzioni del personaggio…'}{dataError && <button type="button" onClick={() => setRetry(retry + 1)}>Riprova</button>}</p>}
+        <details className="player-box" data-print="exclude"><summary>Difese ai danni e proprietà degli attacchi</summary>
+            <p className="player-hint">Annota i tipi di danno separati da virgole, ad esempio fuoco, freddo. Le difese razziali verificate e gli effetti temporanei vengono aggiunti automaticamente; le eccezioni descritte a testo sono segnalate al Master.</p>
+            {field('combat.resistances','Resistenze ai danni')}{field('combat.immunities','Immunità ai danni')}{field('combat.vulnerabilities','Vulnerabilità ai danni')}{field('combat.conditionImmunities','Immunità alle condizioni')}
+            {Array.from({length:6},(_,index)=>details[`attacks.${index}.0`]?<label className="player-field" key={index}><span>{details[`attacks.${index}.0`]} · natura dell’arma</span><select value={details[`attacks.${index}.magical`]??''} onChange={event=>detail(`attacks.${index}.magical`,event.target.value)}><option value="">Da verificare</option><option value="false">Non magica</option><option value="true">Magica</option></select></label>:null)}
+        </details>
         {data?.verified && exportPage===undefined && <Suspense fallback={<p role="status">Caricamento delle regole 2014…</p>}><RulesPanel data={data} sheet={sheet} onChange={onChange}/></Suspense>}
     </>
     return <div className={settingsInDialog ? 'player-sheet player-sheet-session' : 'player-sheet'}>

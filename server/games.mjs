@@ -1,10 +1,13 @@
+import { activeEffects, validEffectSpecs, validWeaponEnchantments } from '../src/domain/dnd/CombatResolution.ts'
+import { spellEdition } from '../src/utils/Spellcasting.ts'
+import { integerValue } from '../src/utils/CharacterSheets.ts'
 import { randomBytes, randomUUID } from 'node:crypto'
 import { readFile, writeFile, rename, unlink } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import express from 'express'
 import { rateLimit } from 'express-rate-limit'
 import { isDeepStrictEqual } from 'node:util'
-import { combatRules, actionContext, actionChoices, requestProposal, validCombatRequest, requestStatus, visibleRequests, prepareAction, applyCombatRequest } from './combat-requests.mjs'
+import { combatRules, actionContext, actionChoices, requestProposal, validCombatRequest, requestStatus, visibleRequests, prepareAction, applyCombatRequest, createRequestResolution, pendingSavingThrows, recordResolutionRoll } from './combat-requests.mjs'
 
 const fields = 'name kind race characterClass level hitPoints armorClass initiative speed strength dexterity constitution intelligence wisdom charisma notes'.split(' ')
 const numeric = 'hitPoints armorClass initiative strength dexterity constitution intelligence wisdom charisma'.split(' ')
@@ -66,9 +69,13 @@ export function validateState(state) {
     && typeof ability.name === 'string' && durations.includes(ability.duration) && integer(ability.remainingTurns) && typeof ability.active === 'boolean'
     && (ability.ownerId === null || ids.includes(ability.ownerId))
     && ['damageEnabled','instantaneous','requirementsConfirmed','timed','concentration'].every(key=>ability[key]===undefined||typeof ability[key]==='boolean')
+    && (ability.weaponEffects===undefined||validWeaponEnchantments(ability.weaponEffects))
+    && (ability.sourceEffectId===undefined||integer(ability.sourceEffectId)&&ability.sourceEffectId!==ability.id)
+    && (ability.resolutionEffects===undefined||validEffectSpecs(ability.resolutionEffects))
     && (ability.useOption===undefined || typeof ability.useOption==='string' && ability.useOption.length<=250)
     && (ability.resourceCost===undefined || integer(ability.resourceCost) && ability.resourceCost>=1)
     && (ability.spellLevel===undefined || integer(ability.spellLevel) && ability.spellLevel<=9)
+    && (ability.section===undefined || ['trait','action','bonus','reaction','legendary','lair'].includes(ability.section))
     && (ability.castingSource===undefined || ['class','resource','free'].includes(ability.castingSource))
     && (ability.castingAlternative===undefined || integer(ability.castingAlternative))
     && (ability.targets===undefined || Array.isArray(ability.targets) && ability.targets.length<=ids.length
@@ -78,7 +85,8 @@ export function validateState(state) {
     && (ability.execution===undefined || object(ability.execution) && idPattern.test(ability.execution.id)
       && ['casting','resolving'].includes(ability.execution.phase) && typeof ability.execution.option==='string' && ability.execution.option.length<=250
       && integer(ability.execution.cost) && ability.execution.cost>=1 && ability.ownerId!==null && !ability.active))) fail(400, 'Abilità del combattimento non valide.')
-  return structuredClone(state)
+  const active=new Set(activeEffects(state.abilities).map(a=>a.id))
+  return structuredClone({...state,abilities:state.abilities.map(a=>a.sourceEffectId!==undefined&&!active.has(a.id)?{...a,active:false}:a)})
 }
 
 export async function gamesRouter({ dataDir, authenticate }) {
@@ -101,7 +109,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
       if (game.notificationRevision!==undefined && !integer(game.notificationRevision) || game.sheetChanges!==undefined && (!Array.isArray(game.sheetChanges) || !game.sheetChanges.every(entry=>object(entry)
         && [entry.id,entry.characterId,entry.ownerId,entry.actorId].every(id=>idPattern.test(id)) && typeof entry.actorName==='string' && typeof entry.characterName==='string'
         && ['master','player'].includes(entry.actorRole) && ['applied','rejected'].includes(entry.status) && typeof entry.createdAt==='string'
-        && Array.isArray(entry.readBy) && entry.readBy.every(id=>idPattern.test(id)) && Array.isArray(entry.changes) && entry.changes.length>0 && entry.changes.every(validChange)))) throw new Error('Storico delle modifiche non valido; originale conservato.')
+        && (entry.noticeRevision===undefined||integer(entry.noticeRevision)&&entry.noticeRevision>0) && Array.isArray(entry.readBy) && entry.readBy.every(id=>idPattern.test(id)) && Array.isArray(entry.changes) && entry.changes.length>0 && entry.changes.every(validChange)))) throw new Error('Storico delle modifiche non valido; originale conservato.')
     }
     return db
   }
@@ -138,7 +146,11 @@ export async function gamesRouter({ dataDir, authenticate }) {
   const checkRevision = (record, revision) => { if (record.revision !== revision) fail(409, 'I dati sono cambiati in un’altra schermata. Ricarica prima di salvare; le modifiche aperte sono conservate.') }
   const summary = (game,user) => ({ id:game.id, name:game.name, role:game.masterId === user ? 'master' : 'player', revision:game.revision })
   const visibleChanges = (game,user) => (game.sheetChanges??[]).filter(entry=>game.masterId===user || entry.ownerId===user && (entry.actorId!==user || entry.status==='rejected') && game.players.some(player=>player.userId===user && player.characterId===entry.characterId))
-  const notificationSummary = (game,user) => ({revision:game.notificationRevision??0,unreadCount:visibleChanges(game,user).filter(entry=>!entry.readBy.includes(user)).length})
+  const notificationSummary = (game,user) => {
+    const unread=new Set(visibleChanges(game,user).filter(entry=>!entry.readBy.includes(user)))
+    const newestUnreadRevision=(game.sheetChanges??[]).reduce((latest,entry,index)=>unread.has(entry)?Math.max(latest,entry.noticeRevision??index+1):latest,0)
+    return {revision:game.notificationRevision??0,unreadCount:unread.size,newestUnreadRevision}
+  }
   const canReject = (game,entry) => entry.actorRole==='player' && entry.status==='applied' && game.players.some(player=>player.characterId===entry.characterId && player.userId===entry.ownerId)
   function saveSheet(game,record,sheet,req) {
     const changes=sheetChanges(record.sheet,sheet)
@@ -146,7 +158,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
     if (game?.players.some(player=>player.characterId===record.id && player.userId===record.ownerId)) {
       // ponytail: store only changed fields; the JSON journal grows with the session. Move it to paginated DB storage with the existing single-file store.
       ;(game.sheetChanges??=[]).push({id:randomUUID(),characterId:record.id,characterName:sheet.name,ownerId:record.ownerId,actorId:req.userId,actorName:req.username,
-        actorRole:game.masterId===req.userId?'master':'player',createdAt:new Date().toISOString(),status:'applied',readBy:[req.userId],changes})
+        actorRole:game.masterId===req.userId?'master':'player',createdAt:new Date().toISOString(),noticeRevision:(game.notificationRevision??0)+1,status:'applied',readBy:[req.userId],changes})
       game.notificationRevision=(game.notificationRevision??0)+1
     }
     record.sheet=sheet;record.revision++
@@ -154,6 +166,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
   function view(db,game,user) {
     const result = {...summary(game,user),notifications:notificationSummary(game,user),requestsRevision:game.requestsRevision??0,combatRequests:visibleRequests(game,user)}
     if (result.role === 'master') {
+      result.newestPendingRequest=(game.combatRequests??[]).reduce((latest,entry,index)=>requestStatus(game,entry)==='pending'?index+1:latest,0)
       const characters = db.characters.filter(character => character.gameId === game.id)
       const state = structuredClone(game.state)
       state.turns = state.turns.map(turn => {
@@ -164,10 +177,10 @@ export async function gamesRouter({ dataDir, authenticate }) {
       return { ...result, inviteToken:game.inviteToken, characters, state }
     }
     const participant = game.players.find(player => player.userId === user)
-    return { ...result, character:db.characters.find(character => character.id === participant.characterId),
+    return { ...result, rollRequests:pendingSavingThrows(db,game,user), character:db.characters.find(character => character.id === participant.characterId),
       notes:participant.notes ?? {text:'',revision:0},
-      effects:game.state.abilities.filter(ability => ability.active && (ability.timed === false || ability.remainingTurns > 0)
-        && game.state.turns.some(turn => turn.id === ability.ownerId && turn.sheet?.id === participant.characterId)).map(ability => ({
+      effects:activeEffects(game.state.abilities).filter(ability => ability.active && (ability.timed === false || ability.remainingTurns > 0)
+        && game.state.turns.some(turn => (turn.id === ability.ownerId || ability.targets?.some(target=>target.id===turn.id)) && turn.sheet?.id === participant.characterId)).map(ability => ({
           name:ability.name, duration:ability.duration, remainingTurns:ability.remainingTurns, timed:ability.timed !== false,
           concentration:ability.concentration === true,
           ...(typeof ability.description === 'string' ? {description:ability.description} : {}),
@@ -187,7 +200,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
   router.get('/games/:id/actions', async (req,res)=>{
     gameFor(await read(),req.params.id,req.userId)
     const rules=await combatRules(),db=await read(),game=gameFor(db,req.params.id,req.userId)
-    res.json(actionChoices(actionContext(db,game,req.userId,rules),game,db))
+    res.json(actionChoices(actionContext(db,game,req.userId,rules,req.query.preview==='1'),game,db))
   })
   router.post('/games/:id/requests', async (req,res)=>{
     gameFor(await read(),req.params.id,req.userId)
@@ -196,6 +209,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
       const game=gameFor(db,req.params.id,req.userId)
       const duplicate=game.combatRequests?.find(entry=>entry.id===proposal.id)
       if (duplicate) {
+        if(duplicate.resolution?.plan.deferredSave&&proposal.mode==='save'&&!proposal.damageEnabled&&proposal.packets?.every(p=>p.die===undefined&&!p.damage.length))proposal.mode='none'
         if (duplicate.ownerId!==req.userId || !isDeepStrictEqual(duplicate.proposal,proposal)) fail(409,'Identificativo già usato da un’altra richiesta.')
         return view(db,game,req.userId)
       }
@@ -206,15 +220,30 @@ export async function gamesRouter({ dataDir, authenticate }) {
       const targetSheets=proposal.targets.flatMap(target=>game.state.turns.find(turn=>turn.id===target.id)?.sheet?.id ?? [])
       if (new Set(targetSheets).size!==targetSheets.length) fail(400,'La stessa scheda compare in più bersagli: il Master deve correggere i partecipanti duplicati.')
       const {action,option}=prepareAction(context,proposal,rules)
+      // Snapshot canonical attack/AC values for the Master's review and history; visibleRequests hides them from players.
       const entry={id:proposal.id,ownerId:req.userId,characterId:context.record.id,characterName:context.record.sheet.name,actorName:req.username,
+        ...(proposal.attackDie!==undefined?{weaponAttack:{edition:spellEdition(context.record.sheet),modifier:integerValue(action.attackBonus)}}:{}),
+        ...(proposal.packets!==undefined?{resolution:createRequestResolution(db,game,context,action,proposal,rules)}:{}),
         actionName:action.ability.name,optionLabel:option.label,prolonged:action.info.prolonged || option.id==='ritual',createdAt:new Date().toISOString(),status:'pending',proposal,
-        targets:proposal.targets.map(target=>{const turn=game.state.turns.find(turn=>turn.id===target.id);return {...target,name:db.characters.find(record=>record.id===turn.sheet?.id)?.sheet.name ?? turn.description}})}
+        targets:proposal.targets.map(target=>{const turn=game.state.turns.find(turn=>turn.id===target.id),record=db.characters.find(record=>record.gameId===game.id&&record.id===turn.sheet?.id);return {...target,name:record?.sheet.name ?? turn.description,...(proposal.attackDie!==undefined?{armorClass:integerValue(record?record.sheet.armorClass:turn.armorClass)}:{})}})}
       if (!validCombatRequest(entry)) fail(400,'Testo dell’azione o dei bersagli troppo lungo.')
       ;(game.combatRequests??=[]).push(entry)
       game.requestsRevision=(game.requestsRevision??0)+1
       return view(db,game,req.userId)
     }))
   })
+  router.post('/games/:id/requests/:requestId/roll', async(req,res)=>{
+    gameFor(await read(),req.params.id,req.userId)
+    const rules=['wind','wind-refresh'].includes(req.body?.kind)?await combatRules():undefined
+    res.json(await write(db=>{
+      const game=gameFor(db,req.params.id,req.userId),entry=game.combatRequests?.find(e=>e.id===req.params.requestId)
+      if(!entry)fail(404,'Richiesta non disponibile.')
+      checkRevision(game,req.body?.revision)
+      recordResolutionRoll(db,game,req.userId,entry,req.body,rules)
+      return view(db,game,req.userId)
+    }))
+  })
+
   router.post('/games/:id/requests/:requestId/:decision', async (req,res)=>{
     const initial=gameFor(await read(),req.params.id,req.userId)
     if (initial.masterId!==req.userId) fail(403,'Solo il Master può approvare o rifiutare un’azione.')
@@ -238,7 +267,8 @@ export async function gamesRouter({ dataDir, authenticate }) {
           saveSheet(game,record,validateSheet(sheet),req)
         }
         game.state=state;game.revision++
-        entry.targets=entry.targets.map(target=>({...target,damage:req.body.targets.find(final=>final.id===target.id).damage}))
+        if(result.wind)entry.resolution.wind=result.wind
+        entry.targets=entry.targets.map(target=>({...target,damage:req.body.targets.find(final=>final.id===target.id)?.damage??target.damage}))
       }
       entry.status=status;entry.resolvedAt=new Date().toISOString();game.requestsRevision=(game.requestsRevision??0)+1
       return view(db,game,req.userId)
@@ -327,7 +357,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
       else target[key]=structuredClone(change.before)
     }
     record.sheet=validateSheet(restored);record.revision++
-    entry.status='rejected';entry.rejectedAt=new Date().toISOString();entry.readBy=[req.userId]
+    entry.status='rejected';entry.rejectedAt=new Date().toISOString();entry.noticeRevision=(game.notificationRevision??0)+1;entry.readBy=[req.userId]
     game.notificationRevision=(game.notificationRevision??0)+1;game.revision++
     return view(db,game,req.userId)
   })))

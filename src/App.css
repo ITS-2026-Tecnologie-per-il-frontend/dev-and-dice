@@ -348,14 +348,14 @@ html { scroll-behavior: smooth; }
 .column-separator.is-dragging::before { background: var(--ui-action, var(--ui-accent, #147d72)); }
 .tracker-layout:has(.is-dragging) { user-select: none; cursor: col-resize; }
 
-.tracker-main .abilities-tracker {
+:is(.tracker-main,.master-inspector) .abilities-tracker {
     padding: 16px;
     border: 1px solid var(--border);
     border-radius: 8px;
     box-sizing: border-box;
 }
 
-.tracker-main .ability-row {
+:is(.tracker-main,.master-inspector) .ability-row {
     grid-template-columns: 36px repeat(2, minmax(0, 1fr)) 36px;
     grid-template-areas:
         "drag name name delete"
@@ -371,7 +371,7 @@ html { scroll-behavior: smooth; }
 }
 
 .tracker-main .combat-tracker,
-.tracker-main .abilities-tracker {
+:is(.tracker-main,.master-inspector) .abilities-tracker {
     width: 100%;
     margin: 0;
 }
@@ -507,6 +507,8 @@ html { scroll-behavior: smooth; }
     font: inherit;
     cursor: pointer;
 }
+
+.end-ability { grid-area: activation; justify-self: start; margin-top: 0; min-height: 44px; white-space: nowrap; }
 
 .abilities-tracker button:disabled {
     opacity: 0.6;
@@ -646,6 +648,9 @@ html { scroll-behavior: smooth; }
 .info-scores { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .info-scores > div { text-align: center; }
 .info-wide { grid-column: 1 / -1; }
+.info-spell .info-wide { padding: 16px; }
+.info-secondary > summary { color: var(--text-h); cursor: pointer; }
+.info-secondary[open] > summary { margin-bottom: 12px; }
 .info-prose .info-fields { grid-template-columns: minmax(0, 1fr); }
 .info-prose .info-fields > div { background: transparent; padding: 8px 0; }
 .info-prose dt { font-size: 16px; font-weight: 600; color: var(--text-h); }
@@ -674,7 +679,7 @@ html { scroll-behavior: smooth; }
     .info-fields { grid-template-columns: minmax(0, 1fr); }
     .info-scores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-.tracker-main .ability-row { grid-template-areas: "drag name name delete" "duration duration remaining remaining" "owner owner owner owner" "details details details details" "use use use use" ". activation activation ."; }
+:is(.tracker-main,.master-inspector) .ability-row { grid-template-areas: "drag name name delete" "duration duration remaining remaining" "owner owner owner owner" "details details details details" "use use use use" ". activation activation ."; }
 
 .hitpoint-adjustment { display: flex; align-items: end; gap: 6px; min-width: 0; }
 .turn-row .hitpoint-adjustment input { width: 60px; }
@@ -691,8 +696,8 @@ html { scroll-behavior: smooth; }
 .ability-metadata dd { margin:0; color:var(--text-h); font-size:13px; line-height:1.4; overflow-wrap:anywhere; }
 .ability-owner-controls:has(.ability-metadata) { align-items:center; }
 .ability-owner-controls:has(.ability-metadata) > .more-info { min-height:36px; padding:6px 8px; font-size:12px; }
-.tracker-main .ability-row[data-owner-fixed="true"] { grid-template-areas:"drag name name delete" "owner owner owner owner" "timing timing timing timing" "details details details details" "use use use use" ". activation activation ."; }
-.tracker-main .ability-row[data-owner-fixed="true"][data-instantaneous="true"] { grid-template-areas:"drag name name delete" "owner owner owner owner" "use use use use" ". activation activation ."; }
+:is(.tracker-main,.master-inspector) .ability-row[data-owner-fixed="true"] { grid-template-areas:"drag name name delete" "owner owner owner owner" "timing timing timing timing" "details details details details" "use use use use" ". activation activation ."; }
+:is(.tracker-main,.master-inspector) .ability-row[data-owner-fixed="true"][data-instantaneous="true"] { grid-template-areas:"drag name name delete" "owner owner owner owner" "use use use use" ". activation activation ."; }
 .ability-timing-controls { grid-area:timing; min-width:0; color:var(--text); font-size:12px; }
 .ability-timing-controls > summary { min-height:28px; display:flex; align-items:center; cursor:pointer; }
 .ability-timing-controls > summary::before { content:'›'; margin-right:6px; }
@@ -711,20 +716,58 @@ html { scroll-behavior: smooth; }
 }
 .ability-use-controls > p { margin: 0; }
 .ability-use-controls label { display: grid; gap: 4px; min-width: 0; }
-.ability-use-controls .ability-check { display: flex; align-items: start; gap: 8px; font-size: 13px; }
+.ability-use-controls .ability-check { display: flex; flex-direction:row; align-items: start; gap: 8px; font-size: 13px; }
 .ability-use-controls input[type='checkbox'] { width: 18px; min-width: 18px; height: 18px; padding: 0; margin: 2px 0 0; }
-.ability-targets { min-width: 0; margin: 0; padding: 8px 10px; border: 1px solid var(--border); border-radius: 4px; }
+.ability-targets,.master-inspector .ability-targets { min-width: 0; margin: 0; padding: 8px 10px; border: 1px solid var(--border); border-radius: 4px; }
+.master-inspector .ability-targets label { margin:0; }
+.ability-target > label:not(.ability-check) { display:grid; gap:4px; }
 .ability-targets > .library-help { margin: 0 0 6px; font-size: 12px; line-height: 1.45; }
 .ability-target-list { display: grid; max-height: 180px; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
 .ability-target { display: grid; gap: 4px; padding: 4px 0; }
 .ability-target > .ability-check { min-height: 28px; align-items: center; }
 .ability-target + .ability-target { border-top: 1px solid var(--border); }
+.ability-self-target { border-top: 1px solid var(--border); }
+.ability-self-target > summary { padding: 6px 0; color: var(--text); font-size: 12px; cursor: pointer; text-align: right; }
 .ability-casting-summary { color: var(--text-h); font-size: 13px; font-weight: 600; }
 .ability-target-note { color: var(--text); font-size: 13px; line-height: 1.5; }
 .ability-use-controls input[type='checkbox'],
 .master-renewed .ability-use-controls input[type='checkbox'] { min-height: 18px; max-height: 18px; flex: 0 0 18px; }
-@media (pointer: coarse) { .ability-target > .ability-check { min-height: 36px; } }
+@media (pointer: coarse) { .ability-target > .ability-check { min-height: 36px; } .ability-self-target > summary { min-height: 44px; box-sizing: border-box; align-content: center; } }
 .combat-shortcut-settings { flex-basis: 100%; margin-top: 8px; font-size: 14px; }
 .combat-shortcut-settings summary { cursor: pointer; }
 .combat-shortcut-settings label { display: grid; gap: 6px; margin-top: 10px; }
 .combat-shortcut-settings input { box-sizing: border-box; width: 100%; max-width: 320px; padding: 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text-h); font: inherit; }
+
+.player-packet-rolls,.player-roll-packet,.player-shared-damage { display:grid; gap:12px; min-width:0; }
+.player-packet-rolls .player-roll-packet { margin:4px 0; padding:8px; }
+.player-packet-rolls .player-roll-packet label { gap:6px; }
+.player-packet-rolls .player-weapon-label > label { min-width:0; overflow-wrap:anywhere; }
+.player-roll-packet .library-help { font-size:12px; }
+.player-weapon-attack { display:grid; gap:6px; }
+.player-weapon-attack > p { margin:0; }
+.player-weapon-roll { display:grid; grid-template-columns:minmax(0,280px) minmax(96px,1fr); gap:12px; align-items:end; }
+.player-weapon-roll label { margin:0; }
+.player-weapon-roll input { height:56px; }
+.player-weapon-roll > div { display:grid; align-self:stretch; align-content:space-between; gap:6px; color:var(--text); font-size:12px; }
+.player-weapon-roll > .player-weapon-die { font-size:14px; }
+.player-weapon-label { display:flex; align-items:center; gap:4px; }
+.player-weapon-roll output { display:block; box-sizing:border-box; height:56px; padding:8px; border:1px solid var(--border); border-radius:4px; background:var(--bg); color:var(--text-h); font-size:18px; line-height:38px; font-weight:650; }
+
+.action-roll-form > fieldset { display:grid; gap:16px; min-width:0; margin:0; padding:12px; }
+.action-roll-form > fieldset > :is(p,label,fieldset) { margin:0; }
+.action-roll-form .player-action-description > summary { display:flex; justify-content:flex-start; align-items:center; gap:8px; list-style:none; cursor:pointer; }
+.action-roll-form .player-action-description > summary::-webkit-details-marker { display:none; }
+.action-roll-form .player-action-description > summary::after { content:'▸'; }
+.action-roll-form .player-action-description[open] > summary::after { transform:rotate(90deg); }
+.master-attack-form .ability-target-list { max-height:none; overflow:visible; }
+.master-action-form > fieldset { border:0; padding:0; }
+.master-action-form > fieldset > legend { padding:0; margin-bottom:12px; }
+.master-attack-form .player-weapon-roll { grid-template-columns:minmax(0,280px) minmax(80px,1fr); gap:8px; }
+.master-action-form .player-roll-packet { margin:8px 0; padding:8px; border:1px solid var(--border); border-radius:4px; }
+.spell-save-notice { display:flex; align-items:center; gap:8px; min-width:0; color:var(--text-h); font-size:13px; }
+.spell-save-help { display:grid; gap:12px; }
+.spell-save-help p { margin:0; }
+.master-attack-result { display:grid; gap:8px; border-top:1px solid var(--border); padding-top:12px; }
+.master-attack-result p { margin:0; }
+.master-attack-result strong { font-size:20px; color:var(--text-h); }
+.master-attack-result summary { cursor:pointer; }

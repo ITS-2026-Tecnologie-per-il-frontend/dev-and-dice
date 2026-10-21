@@ -197,7 +197,7 @@ try {
         await abilityName.fill(name);await abilityName.press('Escape')
         await monsterSheet.getByRole('textbox',{name:`Descrizione abilità o azione ${index}`,exact:true}).fill(description)
     }
-    await monsterSheet.getByRole('region',{name:'Abilità',exact:true}).getByRole('combobox',{name:'Nome abilità 1 della scheda',exact:true}).waitFor()
+    await monsterSheet.getByRole('region',{name:'Abilità passive',exact:true}).getByRole('combobox',{name:'Nome abilità 1 della scheda',exact:true}).waitFor()
     await monsterSheet.getByRole('region',{name:'Azioni',exact:true}).getByRole('combobox',{name:'Nome abilità 2 della scheda',exact:true}).waitFor()
     await monsterSheet.getByLabel('Sezione abilità o azione 2',{exact:true}).selectOption('reaction')
     await monsterSheet.getByRole('region',{name:'Reazioni',exact:true}).getByRole('combobox',{name:'Nome abilità 2 della scheda',exact:true}).waitFor()
@@ -242,7 +242,6 @@ try {
     await abilities.getByLabel('Durata abilità 1',{exact:true}).selectOption('1 minuto')
     await abilities.getByLabel('Proprietario di Protezione Browser',{exact:true}).selectOption({label:'Kara Browser'})
     await abilities.getByRole('button',{name:'Usa',exact:true}).click()
-    await abilities.getByRole('button',{name:'Concludi uso',exact:true}).click()
     const effects=player.page.locator('.play-player-effects')
     await effects.getByRole('heading',{name:'Protezione Browser',exact:true}).waitFor()
     await effects.getByText('10 turni rimanenti · 1 minuto',{exact:true}).waitFor()
@@ -251,7 +250,6 @@ try {
     await abilities.getByLabel('Durata abilità 2',{exact:true}).selectOption('1 minuto')
     await abilities.getByLabel('Proprietario di Effetto nemico privato',{exact:true}).selectOption({label:'Goblin Browser'})
     await abilities.getByRole('button',{name:'Usa',exact:true}).click()
-    await abilities.getByRole('button',{name:'Concludi uso',exact:true}).click()
     await master.page.getByRole('button',{name:'Turno successivo →',exact:true}).click()
     await effects.getByText('9 turni rimanenti · 1 minuto',{exact:true}).waitFor()
     assert(!(await effects.innerText()).includes('Effetto nemico privato'))
@@ -575,9 +573,8 @@ try {
     await requirements(ritualRow).check();await ritualRow.getByRole('button',{name:'Usa',exact:true}).click()
     await ritualRow.getByRole('button',{name:'Interrompi lancio senza consumo',exact:true}).click()
     await requirements(ritualRow).check();await ritualRow.getByRole('button',{name:'Usa',exact:true}).click()
-    await ritualRow.getByRole('button',{name:'Completa lancio',exact:true}).click()
     const ritualSaved=master.page.waitForResponse(async response=>response.url()===apiUrl+'/state'&&response.ok()&&(await response.json()).state.abilities.every(ability=>ability.name!=='Identificare'))
-    await ritualRow.getByRole('button',{name:'Concludi uso',exact:true}).click();await ritualSaved
+    await ritualRow.getByRole('button',{name:'Completa lancio',exact:true}).click();await ritualSaved
     const finalState=await (await master.context.request.get(apiUrl)).json(),finalCaster=finalState.characters.find(record=>record.id===caster.id).sheet
     assert.equal(finalCaster.playerDetails['slots.2.used'],'1');assert.equal(finalCaster.playerDetails['slots.3.used'],'1','Cantrips and rituals never spend slots')
     const stale=await master.context.request.put(apiUrl+'/state',{headers:{Origin:url},data:{revision:during.revision,state:during.state,sheets:during.characters.map(record=>record.sheet)}})
@@ -598,7 +595,7 @@ try {
     await master.page.reload()
     await master.page.getByRole('button',{name:'Dardo Incantato · Usa',exact:true}).click()
     const missileRow=master.page.locator('.ability-row').filter({has:master.page.locator('.ability-name input[value="Dardo Incantato"]')})
-    assert.equal(await missileRow.locator('.ability-duration output').textContent(),'Istantanea')
+    await missileRow.locator('.ability-metadata').getByText('Istantanea',{exact:true}).waitFor()
     assert.equal(await missileRow.getByLabel('Turni rimanenti di Dardo Incantato',{exact:true}).count(),0,'An instantaneous spell has no timer requirement')
     await missileRow.getByLabel('Bersaglio Orco QA di Dardo Incantato',{exact:true}).check()
     await missileRow.getByRole('button',{name:'Usa',exact:true}).click()

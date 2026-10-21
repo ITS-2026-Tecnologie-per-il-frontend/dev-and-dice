@@ -4,18 +4,43 @@ import { readFileSync, existsSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { loadCandidateCreationData } from '../src/domain/dnd/VerifiedDatabase.ts'
 import { activateCreationData, activeCatalog } from '../src/domain/dnd/ActiveRules.ts'
-import { combatAbilityInfo, combatAbilityStatus, combatUseOptions, selectedUseOption, spendCombatUse, resolvedAbility, resolveCombatDamage } from '../src/domain/dnd/CombatActions.ts'
+import { combatAbilityInfo, combatAbilityStatus, combatUseOptions, selectedUseOption, spendCombatUse, resolvedAbility, resolveCombatDamage, assessAttack } from '../src/domain/dnd/CombatActions.ts'
 import { newCharacterSheet } from '../src/utils/CharacterSheets.ts'
-import { templateFromCatalog } from '../src/utils/Catalog.ts'
+import { templateFromCatalog, catalogAbilityKind, sheetFromCatalog, sheetWithCombatAbilities } from '../src/utils/Catalog.ts'
 import { applyCreation, enableCreation, withWizardCatalog } from '../src/utils/PlayerCreation.ts'
 import { pdfCombatAbilities } from '../src/utils/PlayerAbilities.ts'
 import { validateState } from '../server/games.mjs'
+import { combatTargeting, assertCombatTargets } from '../src/domain/dnd/CombatTargets.ts'
 
+for(const edition of ['2014','2024']) {
+    assert.equal(assessAttack(edition,9,5,14).hit,true,'Equality with AC hits')
+    assert.equal(assessAttack(edition,8,5,14).hit,false)
+    assert.equal(assessAttack(edition,1,100,1).hit,false,'A natural one misses despite the total')
+    assert.equal(assessAttack(edition,20,-100,1000).hit,true,'A natural twenty hits despite AC')
+    assert.equal(assessAttack(edition,20,undefined,undefined).critical,true)
+    assert.equal(assessAttack(edition,15,undefined,14).hit,undefined,'A missing modifier never becomes zero')
+    assert.equal(assessAttack(edition,15,5,undefined).hit,undefined,'Missing AC requires Master review')
+    assert.equal(assessAttack(edition,15,-2,13).hit,true)
+    for(const die of [0,21,1.5,NaN]) assert.throws(()=>assessAttack(edition,die,5,14))
+}
 const directory=resolve('public/data/rules2014')
 const verified=await loadCandidateCreationData('runtime',async url=>{const file=join(directory,url.replace('runtime/',''));return {ok:existsSync(file),text:async()=>readFileSync(file,'utf8')}})
 const old=file=>JSON.parse(readFileSync(`public/data/${file}.json`,'utf8'))
 const legacy=withWizardCatalog({...old('character-options'),...old('character-equipment'),skills:old('character-rules').skills,experienceThresholds:old('character-rules').experienceThresholds},old('wizard-catalog'))
 const data=activateCreationData(verified,legacy),catalog=activeCatalog(verified,'it')
+for(const edition of ['2014','2024']) {
+    const armed={...newCharacterSheet(),name:'Ladra',playerDetails:{'rules.edition':edition,'inventory.version':'1','inventory.0.id':'owned-dagger','inventory.0.0':'Pugnale','inventory.0.2':'1','inventory.ref.attacks.0.0':'owned-dagger','attacks.0.0':'Pugnale','attacks.0.1':'+5','attacks.0.2':'1d4+3 perforante'}}
+    const template=sheetWithCombatAbilities(armed,catalog).abilities.find(ability=>ability.ruleId==='sheet-attack:0')
+    const action={...template,id:42,ownerId:0,active:false}
+    const info=combatAbilityInfo(action,catalog)
+    assert(info.attack && info.instantaneous && info.damage,edition+': a sheet weapon opens as an instant damaging attack')
+    assert.equal(combatTargeting(action,catalog,armed).maximum,1)
+    assert.throws(()=>assertCombatTargets({...action,targets:[{id:1},{id:2}]},catalog,armed),/Troppi bersagli/)
+    assert.deepEqual(spendCombatUse(armed,action,catalog,data,'free').playerDetails,armed.playerDetails,'Weapon attacks do not consume spell slots or inventory quantity')
+    const unavailable={...armed,playerDetails:{...armed.playerDetails,'inventory.0.2':'0'}}
+    assert(!sheetWithCombatAbilities(unavailable,catalog).abilities.some(ability=>ability.ruleId==='sheet-attack:0'))
+    assert.throws(()=>spendCombatUse(unavailable,action,catalog,data,'free'),/Arma non più disponibile/,'Old cards cannot use a removed weapon')
+}
 const entry=id=>catalog.abilities.find(entry=>entry.data.referenceId==='phb2014:spell:'+id)
 const ability=id=>({...templateFromCatalog(entry(id)),id:0,ownerId:0,active:false})
 const character=enableCreation({...newCharacterSheet(),name:'Mago',level:'5',strength:'10',dexterity:'14',constitution:'14',intelligence:'16',wisdom:'12',charisma:'10',playerDetails:{'creation.class':'wizard','creation.race':'human'}},data)
@@ -179,15 +204,63 @@ for(const entity of verified.reviewedEntities.filter(entity=>entity.kind==='spel
     }
 }
 assert.equal(checkedSpells,361);assert.equal(checkedLegacy,361)
+// MM 2014, D&D_5_Monster_Original_Handbook.pdf, PDF 342, Worg:
+// Keen Hearing and Smell is a passive trait; Bite is an instantaneous damaging action.
+const worg=sheetFromCatalog(catalog.creatures.find(entry=>entry.name==='Worg'),catalog)
+const senses=worg.abilities.find(ability=>ability.name==='Udito e Olfatto Affinato'),bite=worg.abilities.find(ability=>ability.name==='Morso')
+assert.equal(senses.section,'trait');assert.equal(bite.section,'action')
+const sensesAction={...senses,id:0,ownerId:0,active:false},biteAction={...bite,id:1,ownerId:0,active:false}
+assert.equal(combatAbilityInfo(sensesAction,catalog).passive,true)
+assert.deepEqual(combatUseOptions(worg,sensesAction,catalog,data),[])
+assert.equal(combatAbilityStatus(worg,sensesAction,catalog,data),'Passiva')
+assert.throws(()=>spendCombatUse(worg,sensesAction,catalog,data,'free'),/non disponibile/)
+assert.equal(combatAbilityInfo({...sensesAction,section:undefined},catalog).passive,true,'Old saved traits resolve from their catalog identity')
+assert.equal(combatAbilityInfo({...biteAction,section:undefined,duration:'Personalizzata',remainingTurns:0},catalog).instantaneous,true,'Old 0-turn attacks are instantaneous')
+assert.equal(combatAbilityInfo(biteAction,catalog).damage,true)
+assert.equal(combatAbilityInfo(biteAction,catalog).passive,false)
+assert.equal(selectedUseOption(worg,biteAction,catalog,data).remaining,null,'Bite consumes no finite resource')
+assert.equal(combatTargeting(biteAction,catalog,worg).maximum,1)
+const doubleBite={...biteAction,targets:[{id:1,damage:'10',resolved:true},{id:2,damage:'10',resolved:true}]}
+assert.throws(()=>spendCombatUse(worg,doubleBite,catalog,data,'free'),/Troppi bersagli/,'Validate cardinality before spending or applying damage')
+assert.throws(()=>resolveCombatDamage({...doubleBite,execution:{id:crypto.randomUUID(),phase:'resolving',option:'free',cost:1}},turns,catalog),/Troppi bersagli/,'Old saved executions cannot damage two targets with one Bite')
+for(const id of ['fire-bolt','inflict-wounds','witch-bolt','vampiric-touch','spiritual-weapon']) assert.equal(combatTargeting(ability(id),catalog,wizard).maximum,1,id)
+assert.equal(combatTargeting(ability('acid-splash'),catalog,wizard).maximum,2)
+assert.equal(combatTargeting(acid,catalog,wizard,'slot:2').maximum,3)
+assert.equal(combatTargeting(acid,catalog,wizard,'slot:3').maximum,4)
+assert.equal(combatTargeting({...acid,execution:{id:crypto.randomUUID(),phase:'resolving',option:'slot:3',cost:1},useOption:'slot:2'},catalog,wizard).maximum,4,'Use the slot actually spent by an existing execution')
+assert.equal(combatTargeting(ability('magic-missile'),catalog,wizard,'slot:1').maximum,3)
+assert.equal(combatTargeting(ability('magic-missile'),catalog,wizard,'slot:4').maximum,6)
+assert.equal(combatTargeting(ability('chain-lightning'),catalog,wizard,'slot:6').maximum,4)
+assert.equal(combatTargeting(ability('chain-lightning'),catalog,wizard,'slot:8').maximum,6)
+for(const [level,max] of [[1,1],[5,2],[11,3],[17,4]]) assert.equal(combatTargeting(ability('eldritch-blast'),catalog,{...wizard,level:String(level)},'cantrip').maximum,max)
+assert.equal(combatTargeting(ability('eldritch-blast'),catalog,worg,'cantrip').kind,'review','A monster CR is not a character level')
+assert.equal(combatTargeting(ability('hold-person'),catalog,wizard,'slot:4').maximum,3)
+for(const id of ['fireball','burning-hands','lightning-bolt','call-lightning','wall-of-fire','hail-of-thorns']) {
+    const rule=combatTargeting(ability(id),catalog,wizard)
+    assert.equal(rule.kind,'area',id);assert.equal(rule.maximum,null,id)
+}
+assert.equal(combatTargeting({catalogId:otherEdition.id},{abilities:[otherEdition],creatures:[]},wizard).kind,'review','No 2014 targeting rule is imported into 2024')
+assert.equal(combatTargeting({},{abilities:[],creatures:[]}).kind,'review','Unknown text must not invent unlimited or single targeting')
+const splash={id:'test:splash',name:'Attacco con esplosione',description:'Attacco con arma da mischia: +5 a colpire, un bersaglio. Colpisce: 5 danni. Ogni creatura entro 3 metri subisce 2 danni.',data:{creatureId:'test',category:'action'}}
+assert.equal(combatTargeting({catalogId:splash.id},{abilities:[splash],creatures:[]}).maximum,null,'Secondary victims must not be mistaken for a single-target attack')
+assert.throws(()=>assertCombatTargets({...ability('fire-bolt'),targets:doubleBite.targets},catalog,wizard),/Troppi bersagli/)
+assert.equal(combatAbilityInfo({duration:'Personalizzata',remainingTurns:0},catalog).instantaneous,false,'An unknown duration alone is not an instantaneous effect')
+const aggressive=catalog.abilities.find(entry=>entry.data.category==='trait' && entry.name==='Aggressivo')
+assert.equal(catalogAbilityKind(aggressive).section,'bonus','An active trait with an explicit bonus action must remain usable')
+assert.equal(catalogAbilityKind(aggressive).passive,false)
 const manualCreature={...newCharacterSheet(),name:'Creatura di prova',kind:'Mostro',playerDetails:Object.fromEntries(Array.from({length:9},(_,i)=>[`slots.${i+1}.total`,'1']))}
-let checkedCatalog=0,checkedAttacks=0
+let checkedCatalog=0,checkedAttacks=0,checkedPassives=0
 for(const entry of catalog.abilities) {
     const action={...templateFromCatalog(entry),id:0,ownerId:0,active:false,requirementsConfirmed:true}
+    const info=combatAbilityInfo(action,catalog),kind=entry.data.mechanics?.kind
+    const targeting=combatTargeting(action,catalog,manualCreature)
+    assert(['single','multiple','area','review'].includes(targeting.kind) && targeting.summary.trim(),entry.name+': every entry has an explicit targeting result')
+    if(entry.data.mechanics?.target==='one-target' && !entry.data.mechanics?.effect?.area) assert.equal(targeting.maximum,1,entry.name+': structured single attacks must be capped')
+    if(info.passive) {assert.deepEqual(combatUseOptions(manualCreature,action,catalog,data),[]);checkedPassives++;continue}
     if(entry.data.edition==='2024'||entry.data.ruleset==='dnd5e-2024') {assert.throws(()=>combatUseOptions(manualCreature,action,catalog,data),/edizione/);continue}
     const option=selectedUseOption(manualCreature,action,catalog,data)
     assert(option,entry.name+': a manual creature can resolve the action with the DM')
     assert.doesNotThrow(()=>spendCombatUse(manualCreature,action,catalog,data,option.id,option.cost??1),entry.name)
-    const info=combatAbilityInfo(action,catalog),kind=entry.data.mechanics?.kind
     if(typeof kind==='string' && kind.includes('attack')) {assert(info.instantaneous && info.damage,entry.name+': a verified attack is instantaneous and needs damage targets');checkedAttacks++}
     checkedCatalog++
 }
@@ -199,5 +272,5 @@ for(const owner of owners.values()) for(const template of pdfCombatAbilities(own
     checkedFeatures++
 }
 assert(checkedAttacks>0 && checkedFeatures>0)
-console.log(`Use audit: ${checkedSpells} PHB spells + ${checkedLegacy} legacy templates, ${checkedRituals} rituals, ${checkedCatalog} catalog entries, ${checkedAttacks} verified attacks and ${checkedFeatures} class abilities`)
+console.log(`Use audit: ${checkedSpells} PHB spells + ${checkedLegacy} legacy templates, ${checkedRituals} rituals, ${checkedCatalog} usable catalog entries, ${checkedPassives} passive traits, ${checkedAttacks} verified attacks and ${checkedFeatures} class abilities`)
 console.log('Combat actions: slots, upcasting, cantrips, rituals, creature scores, damage resolution, persistence and edition checks passed')

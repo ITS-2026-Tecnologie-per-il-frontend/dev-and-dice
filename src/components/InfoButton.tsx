@@ -1,6 +1,10 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { useDialogDismiss } from '../utils/Dialog.ts'
 import type { CatalogEntry } from '../utils/Catalog'
+import spellDamage from '../domain/dnd/spell-damage.json' with { type: 'json' }
+
+const damageRecords: Record<string, { summary: string; status: string }> = spellDamage.records
+const damageBindings: Record<string, string> = spellDamage.bindings
 
 const labels: Record<string, string> = {
     stats: 'Statistiche', abilityScores: 'Caratteristiche', armorClass: 'Classe armatura', hitPoints: 'Punti ferita',
@@ -17,6 +21,9 @@ const labels: Record<string, string> = {
     damageResistances: 'Resistenze al danno', damageImmunities: 'Immunità al danno',
     conditionImmunities: 'Immunità alle condizioni', damageVulnerabilities: 'Vulnerabilità al danno',
     initiativeModifier: 'Modificatore iniziativa', initiative: 'Iniziativa inserita',
+    effect: 'Effetto', damage: 'Danno', ruleSources: 'Fonti',
+    acid: 'Acido', bludgeoning: 'Contundente', cold: 'Freddo', fire: 'Fuoco', force: 'Forza', lightning: 'Fulmine',
+    necrotic: 'Necrotico', piercing: 'Perforante', poison: 'Veleno', psychic: 'Psichico', radiant: 'Radioso', slashing: 'Tagliente', thunder: 'Tuono',
 }
 function valueText(value: unknown): string {
     if (value === null || value === undefined) return 'Non disponibile'
@@ -69,9 +76,9 @@ function creatureSections(entry: CatalogEntry) {
     return Object.entries(sections).filter(([, blocks]) => blocks.length > 0)
 }
 
-function InfoFields({ values, scores = false }: { values: Record<string, unknown>; scores?: boolean }) {
+function InfoFields({ values, scores = false, wideFields }: { values: Record<string, unknown>; scores?: boolean; wideFields?: string[] }) {
     return <dl className={`info-fields${scores ? ' info-scores' : ''}`}>{Object.entries(values).map(([key, value]) => (
-        <div key={key} className={typeof value === 'string' && value.length > 100 ? 'info-wide' : undefined}>
+        <div key={key} className={(wideFields ? wideFields.includes(key) : typeof value === 'string' && value.length > 100) ? 'info-wide' : undefined}>
             <dt>{labels[key] ?? key}</dt><dd>{scores && value && typeof value === 'object' && 'score' in value && 'modifier' in value
                 ? `${value.score} (${Number(value.modifier) >= 0 ? '+' : ''}${value.modifier})` : valueText(value)}</dd>
         </div>
@@ -92,21 +99,50 @@ export function InfoButton({ entry, name, description, fields = {}, label = 'Alt
             'id', 'name', 'description', 'sourceUrl', 'srdData', 'slug', 'abilityIds', 'creatureId', 'catalogId', 'licenseId', ...grouped,
         ].includes(key)))
         const text = entry?.description || description
+        const isSpell = entry?.type === 'ability' && typeof details.level === 'number'
+        const mechanics = details.mechanics as Record<string, unknown> | undefined
+        const effect = mechanics?.effect as Record<string, unknown> | undefined
+        const spellSections = details.sections as Record<string, unknown> | undefined
+        const damageEdition = details.ruleset === 'dnd5e-2024' ? '2024' : details.edition
+        const damageKey = damageEdition ? `${damageEdition}:${details.referenceId ?? details.id}` : damageBindings[String(details.id)]
+        const savedDamage = damageRecords[damageKey]
+        const spellSummary = {
+            castingTime: details.castingTime ?? mechanics?.castingTime,
+            components: details.components ?? mechanics?.components,
+            duration: entry?.data.duration ?? mechanics?.duration ?? details.duration,
+            range: details.range ?? mechanics?.range,
+            level: details.level,
+            ritual: mechanics?.ritual ?? details.ritual,
+            school: details.school ?? mechanics?.school,
+            concentration: mechanics?.concentration ?? details.concentration ?? (details.durationInfo as Record<string, unknown> | undefined)?.concentration,
+            type: details.type ?? effect?.damageType ?? '—',
+            damage: savedDamage ? `${!damageEdition && damageKey.startsWith('2014:') ? 'Regole 2014: ' : ''}${savedDamage.summary}` : 'Da verificare: sintesi del danno non disponibile per questa edizione.',
+            effect: spellSections?.Effetto ?? spellSections?.Effect ?? text,
+        }
+        const extraSpellSections = Object.fromEntries(Object.entries(spellSections ?? {}).filter(([key]) => ![
+            'Nome Inglese', 'Livello', 'Scuola di Magia', 'Rituale', 'Tempo di Lancio', 'Gittata', 'Componenti', 'Durata', 'Concentrazione', 'Tipo', 'Danno', 'Effetto', 'Effect',
+        ].includes(key)))
         const sections = entry?.type === 'creature' ? creatureSections(entry) : []
         const isLeftSection = (title: string) => title === 'Abilità' || title === 'Azioni leggendarie'
         const columns = [sections.filter(([title]) => isLeftSection(title)), sections.filter(([title]) => !isLeftSection(title))].filter((column) => column.length)
         return <>
             <div className="dialog-header"><h2 id={heading}>{name || 'Dettagli'}</h2><button autoFocus type="button" className="delete-turn" aria-label="Chiudi dettagli" onClick={() => dialog.current?.close()}>×</button></div>
             {entry && <p className="library-help">{entry.label}</p>}
-            <section className="info-section" aria-label="Dati principali"><InfoFields values={summary} /></section>
-            {grouped.map((key) => {
+            {isSpell ? <>
+                <section className="info-section info-spell" aria-label="Dati principali"><InfoFields values={spellSummary} wideFields={['damage', 'effect']} /></section>
+                {Object.keys(extraSpellSections).length > 0 && <section className="info-section info-prose" aria-label="Altri effetti"><InfoFields values={extraSpellSections} /></section>}
+                <details className="info-section info-secondary"><summary>Altri dettagli e fonti</summary><InfoFields values={Object.fromEntries(Object.entries({
+                    englishName: details.englishName, language: details.language, ...fields, ruleSources: details.ruleSources,
+                }).filter(([key, value]) => value !== undefined && !(key in spellSummary)))} /></details>
+            </> : <section className="info-section" aria-label="Dati principali"><InfoFields values={summary} /></section>}
+            {!isSpell && grouped.map((key) => {
                 const values = details[key]
                 if (!values || typeof values !== 'object' || Array.isArray(values)) return null
                 return <section className={`info-section${key === 'sections' ? ' info-prose' : ''}`} key={key}>
                     <h3>{labels[key]}</h3><InfoFields values={values as Record<string, unknown>} scores={key === 'abilityScores'} />
                 </section>
             })}
-            {text && !details.sections && (entry?.type === 'creature' ? (
+            {!isSpell && text && !details.sections && (entry?.type === 'creature' ? (
                 <div className="info-ability-sections">{columns.map((column, index) => (
                     <div className="info-ability-column" key={index}>{column.map(([title, blocks]) => (
                     <section className="info-section info-panel" key={title} aria-label={title}>

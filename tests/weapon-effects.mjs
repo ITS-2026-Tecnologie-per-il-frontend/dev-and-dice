@@ -1,0 +1,110 @@
+// Run: node tests/weapon-effects.mjs — isolated rules and approval transactions; no live accounts.
+import assert from 'node:assert/strict'
+import {combatRules,actionContext,actionChoices,prepareAction,requestProposal,createRequestResolution,applyCombatRequest,visibleRequests,validCombatRequest} from '../server/combat-requests.mjs'
+import {resolutionPlan,weaponProfile,resolveTarget,defenseProfile,validWeaponEnchantments} from '../src/domain/dnd/CombatResolution.ts'
+import {newCharacterSheet} from '../src/utils/CharacterSheets.ts'
+import {templateFromCatalog} from '../src/utils/Catalog.ts'
+import {addInventoryItem,setInventoryReference,ownedInventoryItems,separateInventoryItem,reconcileInventory} from '../src/utils/Inventory.ts'
+import {validateState} from '../server/games.mjs'
+const rules=await combatRules(),{data,catalog}=rules
+const spell=id=>templateFromCatalog(catalog.abilities.find(a=>a.data.referenceId==='phb2014:spell:'+id))
+const dagger={...newCharacterSheet(),name:'Baldur',strength:'10',dexterity:'16',armorClass:'13',hitPoints:'30',playerDetails:{'attacks.0.0':'Pugnale','attacks.0.1':'5','attacks.0.2':'1d4+3','attacks.0.3':'Perforante'}}
+const attack={...dagger.abilities[0],id:0,name:'Pugnale',ruleId:'sheet-attack:0',ownerId:2,active:false,duration:'Senza conteggio',remainingTurns:0,timed:false}
+const weaponContext={data,active:[]}
+let plan=resolutionPlan(dagger,attack,catalog,'free',weaponContext)
+assert.deepEqual(plan.damageTypes,['piercing']);assert.equal(plan.magical,false,'A standard dagger is nonmagical without prompting the Master')
+assert.equal(plan.damageBonuses.piercing,3)
+assert.equal(plan.attackAbility,'dexterity','A known finesse weapon reports the attribute actually selected by its profile')
+assert.equal(weaponProfile({...dagger,strength:'16'},0,data).attackAbility,undefined,'Equal finesse modifiers do not invent which attribute the player chose')
+assert.equal(weaponProfile({...dagger,playerDetails:{...dagger.playerDetails,'attacks.0.0':'Mace'}},0,data).attackAbility,'strength')
+assert.equal(weaponProfile({...dagger,playerDetails:{...dagger.playerDetails,'attacks.0.0':'Longbow'}},0,data).attackAbility,'dexterity')
+const defender={...newCharacterSheet(),armorClass:'13',playerDetails:{'combat.resistances':'fuoco'}}
+const profile=defenseProfile(defender,undefined,[],3)
+assert.equal(resolveTarget(plan,[{targetId:3,die:13,damage:[{type:'piercing',amount:2}]}],profile).damage,5,'Only dice are entered; the flat damage bonus is added once')
+assert.equal(resolveTarget({...plan,damageTypes:['untyped'],magical:null},[{targetId:3,die:2,damage:[{type:'untyped',amount:4}]}],{...profile,reviewDamage:true}).damage,0,'A known miss never needs weapon properties')
+let owned=addInventoryItem(dagger,data,'Pugnale','dagger','2')
+const id=ownedInventoryItems(owned)[0].id
+owned=setInventoryReference(owned,'attacks.0.0',id)
+const separated=separateInventoryItem(owned,id)
+assert.deepEqual(ownedInventoryItems(separated).map(i=>Number(i.quantity)),[1,1])
+assert.equal(separated.playerDetails['inventory.ref.attacks.0.0'],id)
+assert.equal(new Set(ownedInventoryItems(separated).map(i=>i.id)).size,2)
+assert.equal(ownedInventoryItems(owned)[0].quantity,'2','Splitting does not mutate the source')
+const generated={...owned,playerDetails:{...owned.playerDetails,'creation.enabled':'true','inventory.0.source':'initial:weapon','inventory.0.generated':'test'}}
+assert.equal(ownedInventoryItems(reconcileInventory(generated,data)).length,1,'Reading inventory preserves existing starting grants')
+const mage={...newCharacterSheet(),name:'Maga',characterClass:'Mago',level:'5',wisdom:'16',abilities:['magic-weapon','elemental-weapon','shillelagh'].map(spell),playerDetails:{'slots.2.total':'10','slots.3.total':'10',castingAbility:'Saggezza'}}
+const weaponSpell=resolutionPlan(mage,spell('magic-weapon'),catalog,'slot:2')
+assert.equal(weaponSpell.kind,'none');assert.equal(weaponSpell.weaponEffect.attackBonus,1);assert.equal(weaponSpell.weaponEffect.damageBonus,1)
+assert.equal(resolutionPlan(mage,spell('magic-weapon'),catalog,'slot:4').weaponEffect.attackBonus,2)
+assert.equal(resolutionPlan(mage,spell('elemental-weapon'),catalog,'slot:5').weaponEffect.extraDamage.dice,'2d4')
+assert.equal(resolutionPlan(mage,spell('shillelagh'),catalog,'cantrip').weaponEffect.castingModifier,3)
+const source={id:1,name:'Arma magica',ruleId:'phb2014:spell:magic-weapon',ownerId:1,active:true,timed:true,remainingTurns:600,duration:'1 ora',weaponEffects:[{characterId:owned.id,itemId:id,magical:true,attackBonus:1,damageBonus:1}]}
+plan=resolutionPlan(owned,attack,catalog,'free',{data,active:[source]})
+assert.equal(plan.magical,true);assert.equal(plan.attackBonus,6);assert.equal(plan.damageBonuses.piercing,4)
+assert.equal(weaponProfile(owned,0,data,[{...source,active:false}]).magical,false)
+assert.equal(weaponProfile(owned,0,data,[{...source,remainingTurns:0}]).attackBonus,5)
+const elemental={...source,weaponEffects:[{...source.weaponEffects[0],damageBonus:0,extraDamage:{type:'fire',dice:'1d4'}}]}
+plan=resolutionPlan(owned,attack,catalog,'free',{data,active:[elemental]})
+assert.deepEqual(plan.damageTypes,['piercing','fire'])
+assert.equal(resolveTarget(plan,[{targetId:3,die:13,damage:[{type:'piercing',amount:2},{type:'fire',amount:3}]}],profile).damage,6,'Typed extra damage uses its own resistance')
+assert.equal(resolveTarget(plan,[{targetId:3,die:20,damage:[{type:'piercing',amount:2},{type:'fire',amount:3}]}],profile,{critical:{'0:piercing':2,'0:fire':3}}).damage,10,'Critical dice do not double flat bonuses')
+assert.equal(resolveTarget({...plan,damageBonuses:{piercing:-3}},[{targetId:3,die:20,damage:[{type:'piercing',amount:1}]}],profile,{critical:{'0:piercing':2}}).damage,0,'Negative modifiers are applied after all critical dice, before clamping damage to zero')
+assert(!validWeaponEnchantments([{...source.weaponEffects[0],itemId:''}]))
+const gameId=crypto.randomUUID(),caster=crypto.randomUUID(),player=crypto.randomUUID(),master=crypto.randomUUID()
+const db={characters:[{id:mage.id,ownerId:caster,gameId,sheet:mage},{id:owned.id,ownerId:player,gameId,sheet:owned}]}
+const turn=(id,sheet)=>({id,sheet,description:sheet.name,initiative:'10',hitPoints:sheet.hitPoints,armorClass:sheet.armorClass,temporaryHitPoints:''})
+const game={id:gameId,revision:0,masterId:master,players:[{userId:caster,characterId:mage.id},{userId:player,characterId:owned.id}],state:{turns:[turn(1,mage),turn(2,owned)],abilities:[],combat:{activeId:1,round:1}}}
+function proposal(spellId,targetId=2) {
+ const context=actionContext(db,game,caster,rules),action=context.actions.find(a=>a.ability.name===spell(spellId).name),option=action.options.find(o=>o.id.startsWith('slot:'))??action.options[0]
+ const proposal=requestProposal({id:crypto.randomUUID(),revision:game.revision,key:action.key,option:option.id,cost:1,mode:'none',damageEnabled:false,packets:[{targetId,damage:[]}]})
+ prepareAction(context,proposal,rules)
+ const entry={id:proposal.id,ownerId:caster,characterId:mage.id,characterName:mage.name,actorName:'Caster',actionName:action.ability.name,createdAt:new Date().toISOString(),status:'pending',prolonged:false,optionLabel:option.label,proposal,targets:proposal.targets.map(t=>({...t,name:'Baldur'})),resolution:createRequestResolution(db,game,context,action,proposal,rules)}
+ assert(validCombatRequest(entry));return entry
+}
+const entry=proposal('magic-weapon')
+assert.equal(entry.resolution.weaponChoices[0].items[0].quantity,2)
+assert.equal(visibleRequests({...game,combatRequests:[entry]},caster)[0].weaponChoices,undefined,'Another character inventory never leaks to the caster')
+assert.equal(visibleRequests({...game,combatRequests:[entry]},master)[0].weaponChoices[0].items[0].id,id)
+const body={confirmed:true,targets:[{id:2,damage:'0'}]}
+assert.throws(()=>applyCombatRequest(db,game,entry,rules,body),e=>e.status===400)
+assert.throws(()=>applyCombatRequest(db,game,entry,rules,{...body,weapons:[{targetId:2,itemId:'not-owned'}]}),e=>e.status===400)
+const result=applyCombatRequest(db,game,entry,rules,{...body,weapons:[{targetId:2,itemId:id}]})
+assert.deepEqual(ownedInventoryItems(result.sheets.find(s=>s.id===owned.id)).map(i=>Number(i.quantity)),[1,1])
+assert.equal(result.sheets.find(s=>s.id===mage.id).playerDetails['slots.2.used'],'1')
+assert.equal(result.state.abilities[0].weaponEffects[0].itemId,id)
+assert.deepEqual(validateState(JSON.parse(JSON.stringify(result.state))).abilities[0].weaponEffects,result.state.abilities[0].weaponEffects,'Weapon bindings persist across JSON/state validation')
+game.state=result.state;game.revision++
+for(const sheet of result.sheets)db.characters.find(r=>r.id===sheet.id).sheet=sheet
+game.state.combat.activeId=2
+const choices=actionChoices(actionContext(db,game,player,rules),game,db),daggerAction=choices.actions.find(a=>a.name==='Pugnale')
+assert.equal(daggerAction.resolution.magical,true);assert.equal(daggerAction.resolution.attackBonus,6)
+assert.equal(daggerAction.resolution.damageBonuses.piercing,4)
+game.state.abilities[0].active=false
+assert.equal(actionChoices(actionContext(db,game,player,rules),game,db).actions.find(a=>a.name==='Pugnale').resolution.magical,false)
+
+// Enchanting the caster's own stacked weapon must preserve the slot spend.
+let self=addInventoryItem(db.characters[0].sheet,data,'Pugnale','dagger','2')
+const selfId=ownedInventoryItems(self)[0].id
+self=setInventoryReference(self,'attacks.0.0',selfId)
+self={...self,playerDetails:{...self.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]'}}
+db.characters[0].sheet=self;game.state.turns[0].sheet=self;game.state.combat.activeId=1;game.state.combat.round++
+const selfEntry=proposal('magic-weapon',1)
+const selfResult=applyCombatRequest(db,game,selfEntry,rules,{confirmed:true,targets:[{id:1,damage:'0'}],weapons:[{targetId:1,itemId:selfId}]})
+assert.equal(selfResult.sheets.find(s=>s.id===mage.id).playerDetails['slots.2.used'],'2')
+assert.deepEqual(ownedInventoryItems(selfResult.sheets.find(s=>s.id===mage.id)).map(i=>Number(i.quantity)),[1,1])
+const elementalEntry=proposal('elemental-weapon')
+assert.throws(()=>applyCombatRequest(db,game,elementalEntry,rules,{...body,weapons:[{targetId:2,itemId:id}]}),e=>e.status===400)
+assert.throws(()=>applyCombatRequest(db,game,elementalEntry,rules,{...body,weapons:[{targetId:2,itemId:id,damageType:'necrotic'}]}),e=>e.status===400)
+const elementalResult=applyCombatRequest(db,game,elementalEntry,rules,{...body,weapons:[{targetId:2,itemId:id,damageType:'fire'}]})
+const enhanced=elementalResult.state.abilities.find(a=>a.ruleId==='phb2014:spell:elemental-weapon')
+assert.equal(enhanced.weaponEffects[0].extraDamage.type,'fire')
+assert.equal(elementalResult.sheets.find(s=>s.id===mage.id).playerDetails['slots.3.used'],'1')
+assert.equal(ownedInventoryItems(elementalResult.sheets.find(s=>s.id===owned.id)).length,2,'An already separated weapon is not split again')
+const otherId=ownedInventoryItems(elementalResult.sheets.find(s=>s.id===owned.id)).find(i=>i.id!==id).id
+let second=setInventoryReference(elementalResult.sheets.find(s=>s.id===owned.id),'attacks.1.0',otherId)
+second={...second,playerDetails:{...second.playerDetails,'attacks.1.1':'5','attacks.1.2':'1d4+3'}}
+assert.equal(weaponProfile(second,1,data,[enhanced]).magical,false,'Only the selected physical weapon is enchanted')
+assert.equal(weaponProfile(second,0,data,[enhanced]).magical,true)
+// The rules edition is a hard boundary, even if an imported catalog entry has copied mechanics.
+assert.equal(resolutionPlan({...mage,playerDetails:{...mage.playerDetails,'rules.edition':'2024'}},spell('magic-weapon'),catalog,'slot:2'),undefined)
+console.log('PASS weapons: catalog defaults, separate Type column, dice-only bonuses, misses, typed enchantments, duration, inventory split, private Master choice, approval and persistence')

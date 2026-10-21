@@ -1,7 +1,7 @@
 import { durationTurns } from './Combat.ts'
-import { newCharacterSheet, type CharacterSheet, type SheetAbility } from './CharacterSheets.ts'
+import { creatureAbilitySections, newCharacterSheet, type CharacterSheet, type SheetAbility } from './CharacterSheets.ts'
 import { spellRowState, savedSpellGrants } from './Spellcasting.ts'
-import { pdfCombatAbilities } from './PlayerAbilities.ts'
+import { pdfCombatAbilities, sheetCombatAttacks } from './PlayerAbilities.ts'
 
 export type CatalogEntry = {
     id: string
@@ -22,6 +22,25 @@ function normalized(text: string) {
 export function searchCatalog(entries: CatalogEntry[], query: string): CatalogEntry[] {
     const term = normalized(query)
     return term ? entries.filter((entry) => [entry.name, ...(Array.isArray(entry.data.aliases) ? entry.data.aliases.filter((name): name is string => typeof name === 'string') : [])].some((name) => normalized(name).includes(term))) : []
+}
+
+export function catalogAbilityKind(entry?: CatalogEntry, section?: SheetAbility['section'], description = entry?.description ?? '') {
+    const mechanics = entry?.data.mechanics as { kind?: unknown; activation?: unknown } | undefined
+    const category = section ?? entry?.data.category
+    let group = typeof category === 'string' && Object.hasOwn(creatureAbilitySections, category) ? category as SheetAbility['section'] : undefined
+    // MM 2014, D&D_5_Monster_Original_Handbook.pdf, PDF 11–12: weapon attacks include natural weapons; spell attacks are distinct.
+    const weaponAttack = typeof mechanics?.kind === 'string' ? mechanics.kind.includes('weapon-attack')
+        : /^\s*(?:Attacco(?: con Arma\b| (?:in mischia|a distanza) con arma\b)[^:\n]*|(?:Melee|Ranged)[^:\n]*Weapon Attack)\s*:/i.test(description)
+    const attack = weaponAttack || typeof mechanics?.kind === 'string' && mechanics.kind.includes('attack')
+        || !!entry?.data.creatureId && /^\s*(?:Attacco[^:\n]*|(?:Melee|Ranged)[^:\n]*Attack)\s*:/i.test(description)
+    if (group === 'trait') {
+        // ponytail: explicit activation clauses keep active traits usable; ambiguous text stays a trait.
+        // Prefer a verified activation field when richer creature metadata becomes available.
+        if (mechanics?.activation === 'bonus-action' || /azione bonus|bonus action/i.test(description)) group = 'bonus'
+        else if (mechanics?.activation === 'reaction' || /(?:come|con|usando) (?:una |la (?:sua|propria) )?reazione|as a reaction|use its reaction/i.test(description)) group = 'reaction'
+        else if (attack || mechanics?.activation === 'action' || /as an action|(?:come|con|usando) (?:un['’]?\s*|una )azione|pu[oò] (?:usare|utilizzare|spendere) un['’]?\s*azione/i.test(description)) group = 'action'
+    }
+    return { section: group, attack, weaponAttack, passive: group === 'trait' }
 }
 
 export function parseCatalog(raw: unknown, language: 'it' | 'en' = 'it'): Catalog {
@@ -64,10 +83,12 @@ export function parseCatalog(raw: unknown, language: 'it' | 'en' = 'it'): Catalo
 }
 
 export function templateFromCatalog(entry: CatalogEntry): SheetAbility {
+    const kind = catalogAbilityKind(entry)
     const mechanics=entry.data.mechanics as {duration?:unknown}|undefined
     const untilDispelled=typeof mechanics?.duration==='string' && /^Until dispelled(?: or triggered)?$/i.test(mechanics.duration)
-    const duration = entry.rounds === 0 || untilDispelled ? 'Senza conteggio' : (Object.keys(durationTurns) as SheetAbility['duration'][]).find((key) => durationTurns[key] === entry.rounds) ?? 'Personalizzata'
+    const duration = kind.attack || kind.passive || entry.rounds === 0 || untilDispelled ? 'Senza conteggio' : (Object.keys(durationTurns) as SheetAbility['duration'][]).find((key) => durationTurns[key] === entry.rounds) ?? 'Personalizzata'
     return { name: entry.name, catalogId: entry.id, duration, remainingTurns: entry.rounds ?? 0, timed: duration !== 'Senza conteggio',
+        ...(kind.section ? {section:kind.section} : {}),
         ...(typeof entry.data.level==='number' ? {spellLevel:entry.data.level} : {}),
         ...(entry.data.expiresAt==='start'||entry.data.expiresAt==='end' ? {expiresAt:entry.data.expiresAt} : {}),
         ...(typeof entry.data.repeatSave==='string' ? {repeatSave:entry.data.repeatSave} : {}),
@@ -100,12 +121,16 @@ export function sheetWithCombatSpells(sheet: CharacterSheet, catalog: Catalog, a
 }
 
 export function sheetWithCombatAbilities(sheet: CharacterSheet, catalog: Catalog): CharacterSheet {
+    if (sheet.kind!=='PG') return sheet
     const result = sheetWithCombatSpells(sheet, catalog, true)
-    const abilities = [...result.abilities]
+    const abilities = result.abilities.filter(ability=>!/^sheet-attack:[0-5]$/.test(ability.ruleId ?? ''))
     for (const ability of pdfCombatAbilities(sheet)) {
         if (!abilities.some((item) => normalized(item.name) === normalized(ability.name))) abilities.push(ability)
     }
-    return sheet.kind === 'PG' ? { ...result, abilities } : sheet
+    for (const attack of sheetCombatAttacks(sheet)) {
+        if (!abilities.some(item=>normalized(item.name)===normalized(attack.name) && item.description===attack.description)) abilities.push(attack)
+    }
+    return { ...result, abilities }
 }
 
 export function refreshCombatSheetAbilities(previous: CharacterSheet, current: CharacterSheet, catalog: Catalog) {
@@ -115,7 +140,7 @@ export function refreshCombatSheetAbilities(previous: CharacterSheet, current: C
     // Per liste molto grandi usare un indice per chiave; reinserire il personaggio ricostruisce la lista.
     for (const template of latest.abilities) {
         let index = templates.findIndex((item, i) => !availableIndexes.has(i) && item.duration === template.duration &&
-            (item.catalogId && template.catalogId ? item.catalogId === template.catalogId : item.name.trim().toLowerCase() === template.name.trim().toLowerCase()))
+            (/^sheet-attack:[0-5]$/.test(template.ruleId ?? '') ? item.ruleId===template.ruleId : item.catalogId && template.catalogId ? item.catalogId === template.catalogId : item.name.trim().toLowerCase() === template.name.trim().toLowerCase()))
         if (index < 0) { index = templates.length; templates.push(template) }
         else templates[index] = template
         availableIndexes.add(index)

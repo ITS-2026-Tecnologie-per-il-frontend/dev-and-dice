@@ -1,6 +1,20 @@
 import { durationTurns } from './Combat.ts'
 import type { CharacterSheet, SheetAbility } from './CharacterSheets.ts'
 import { savedWizardFeatures } from './Wizard.ts'
+import { inventoryFieldValue } from './Inventory.ts'
+
+export function sheetCombatAttacks(sheet:CharacterSheet):SheetAbility[] {
+    if (sheet.kind!=='PG') return []
+    const d=sheet.playerDetails ?? {}
+    // ponytail: reuse saved totals for the sheet's six attack rows; extend the range if the sheet gains rows.
+    return Array.from({length:6},(_,index)=>{
+        const name=(inventoryFieldValue(sheet,`attacks.${index}.0`) ?? d[`attacks.${index}.0`] ?? '').trim()
+        if (!name) return []
+        const bonus=d[`attacks.${index}.1`]?.trim(),damage=d[`attacks.${index}.2`]?.trim()
+        return [{name,ruleId:`sheet-attack:${index}`,section:'action' as const,duration:'Senza conteggio' as const,remainingTurns:0,timed:false,
+            description:`Attacco con Arma: ${bonus ? `${bonus} a colpire, ` : ''}un bersaglio. Colpisce: ${damage || 'danni da verificare nella scheda'}.`}]
+    }).flat()
+}
 
 const passiveNames = new Set([
     'unarmored defense', 'difesa senza armatura', 'darkvision', 'scurovisione', 'extra attack', 'attacco extra',

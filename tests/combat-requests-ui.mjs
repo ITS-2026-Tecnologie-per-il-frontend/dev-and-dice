@@ -1,8 +1,7 @@
 // Run: node tests/combat-requests-ui.mjs — real browser, two accounts, isolated API/Vite.
 import assert from 'node:assert/strict'
 import { once } from 'node:events'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { mkdtemp, rm, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { chromium } from 'playwright'
 import { createServer } from 'vite'
@@ -11,7 +10,9 @@ import { combatRules } from '../server/combat-requests.mjs'
 import { templateFromCatalog } from '../src/utils/Catalog.ts'
 import { newCharacterSheet } from '../src/utils/CharacterSheets.ts'
 
-const dataDir=await mkdtemp(join(tmpdir(),'dev-and-dice-actions-ui-'))
+const runtimeRoot=join(import.meta.dirname,'..','.test-runtime.local')
+await mkdir(runtimeRoot,{recursive:true,mode:0o700})
+const dataDir=await mkdtemp(join(runtimeRoot,'dev-and-dice-actions-ui-'))
 const server=(await createApp({dataDir,production:false,sessionSecret:'combat-request-ui-isolated-secret-long-enough'})).listen(0)
 await once(server,'listening')
 const frontend=await createServer({logLevel:'error',server:{host:'127.0.0.1',port:0,proxy:{'/api':{target:`http://127.0.0.1:${server.address().port}`,changeOrigin:false}}}})
@@ -54,14 +55,15 @@ try {
     await playerPage.keyboard.press('Escape')
     await actions.getByLabel('Risoluzione',{exact:true}).selectOption('attack')
     await actions.getByRole('checkbox',{name:'Orco UI',exact:true}).check()
-    assert.equal(await actions.getByLabel('Tiro dei danni',{exact:true}).count(),0,'Damage comes after the attack roll and hit confirmation')
+    assert(await actions.getByRole('checkbox',{name:'Maga UI',exact:true}).isDisabled(),'A single-target spell prevents selecting a second creature')
+    await actions.getByText('Selezionati: 1/1.',{exact:false}).waitFor()
+    assert.equal(await actions.getByLabel('Danni tirati',{exact:true}).count(),0,'Damage comes after the attack roll and hit confirmation')
     await actions.getByLabel('Tiro per colpire (totale, con modificatori)',{exact:true}).fill('18 = 13 + 5')
     await actions.getByRole('checkbox',{name:'Almeno un attacco ha colpito',exact:false}).check()
-    await actions.getByLabel('Tiro dei danni',{exact:true}).fill('1d10 = 9')
-    await actions.getByLabel('Danni finali proposti',{exact:true}).fill('9')
+    await actions.getByLabel('Danni tirati',{exact:true}).fill('9')
     await playerPage.setViewportSize({width:390,height:844})
     assert(await playerPage.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+2),'The open action form must fit a phone screen')
-    await actions.screenshot({path:'/tmp/dev-and-dice-combat-actions-form-mobile.png'})
+    await actions.screenshot({path:join(runtimeRoot,'dev-and-dice-combat-actions-form-mobile.png')})
     await playerPage.setViewportSize({width:1440,height:1000})
     await actions.getByRole('button',{name:'Invia al Master',exact:true}).dblclick()
     await actions.getByText('In attesa del Master',{exact:true}).waitFor()
@@ -83,9 +85,9 @@ try {
     await masterPage.keyboard.press('Escape');await reviews.waitFor({state:'hidden'});await actionButton.click()
     assert.equal(await reviews.locator('.play-notifications-body').evaluate(body=>body.scrollTop),0,'Reopening actions resets the feed to the latest request')
     await reviews.locator('.play-notification-list').evaluate(list=>list.style.removeProperty('min-height'))
-    assert(await review.getByRole('button',{name:'Approva azione'}).isDisabled())
+    assert(await review.getByRole('button',{name:'Approva azione'}).isEnabled(),'A ready action can be approved directly')
     await review.getByLabel('Danni finali a Orco UI',{exact:true}).fill('4')
-    await review.getByRole('checkbox',{name:'Confermo requisiti',exact:false}).check()
+    assert.equal(await review.getByRole('checkbox',{name:/Confermo requisiti/}).count(),0,'Approval does not require a second confirmation');
     await review.getByRole('button',{name:'Approva azione',exact:true}).dblclick()
     await review.getByText('Approvata',{exact:true}).waitFor()
     await masterPage.getByRole('button',{name:'Azioni dei giocatori: 0 in attesa',exact:true,includeHidden:true}).waitFor({state:'attached'})
@@ -96,8 +98,7 @@ try {
     await actions.getByLabel('Risoluzione',{exact:true}).selectOption('automatic')
     await actions.getByRole('checkbox',{name:'Orco UI',exact:true}).check()
     assert.equal(await actions.getByLabel('Tiro per colpire (totale, con modificatori)').count(),0,'Automatic hit does not require an attack roll')
-    await actions.getByLabel('Tiro dei danni',{exact:true}).fill('3d4 + 3 = 10')
-    await actions.getByLabel('Danni finali proposti',{exact:true}).fill('10')
+    await actions.getByLabel('Danni tirati',{exact:true}).fill('10')
     await actions.getByRole('button',{name:'Invia al Master',exact:true}).click()
     await actions.getByText('In attesa del Master',{exact:true}).waitFor()
     const rejected=reviews.locator('.combat-request').filter({has:masterPage.getByRole('heading',{name:missile.name,exact:true})})
@@ -124,7 +125,7 @@ try {
     await actions.getByLabel('Azione',{exact:true}).selectOption({label:'Protezione UI'})
     await actions.getByRole('button',{name:'Invia al Master',exact:true}).click()
     const pendingReview=reviews.locator('.combat-request').filter({hasText:'In attesa del Master'})
-    await pendingReview.getByRole('checkbox',{name:'Confermo requisiti',exact:false}).check()
+    assert.equal(await pendingReview.getByRole('checkbox',{name:/Confermo requisiti/}).count(),0,'Approval does not require a second confirmation');
     let releaseResponse,started
     const release=new Promise(resolve=>{releaseResponse=resolve}),received=new Promise(resolve=>{started=resolve})
     await masterPage.route('**/requests/*/approve',async route=>{const response=await route.fetch();started();await release;await route.fulfill({response})})
@@ -145,12 +146,12 @@ try {
         await playerPage.setViewportSize({width,height:844})
         await masterPage.setViewportSize({width,height:844})
         for(const page of [playerPage,masterPage]) {
-            await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))
+            await waitUntil(()=>page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+2))
             assert(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+2),'No horizontal overflow at '+width)
         }
     }
-    await actions.screenshot({path:'/tmp/dev-and-dice-combat-actions-mobile.png'})
-    await reviews.screenshot({path:'/tmp/dev-and-dice-combat-reviews-mobile.png'})
+    await actions.screenshot({path:join(runtimeRoot,'dev-and-dice-combat-actions-mobile.png')})
+    await reviews.screenshot({path:join(runtimeRoot,'dev-and-dice-combat-reviews-mobile.png')})
     await playerPage.reload();await playerPage.getByText('Approvata',{exact:true}).first().waitFor()
     await masterPage.keyboard.press('Escape');await reviews.waitFor({state:'hidden'})
     await masterPage.reload();await actionButton.click();await reviews.getByText('Approvata',{exact:true}).first().waitFor()
@@ -159,7 +160,7 @@ try {
 } catch(error) {
     for(const context of browser.contexts()) for(const page of context.pages()) {
         console.error(page.url(),(await page.locator('body').innerText()).slice(-6000))
-        await page.screenshot({path:'/tmp/dev-and-dice-actions-failure-'+browser.contexts().indexOf(context)+'.png'})
+        await page.screenshot({path:join(runtimeRoot,'dev-and-dice-actions-failure-'+browser.contexts().indexOf(context)+'.png')})
     }
     console.error(errors);throw error
 } finally {await browser.close();await frontend.close();await new Promise(resolve=>server.close(resolve));await rm(dataDir,{recursive:true,force:true})}

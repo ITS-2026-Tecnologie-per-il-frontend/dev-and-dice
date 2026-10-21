@@ -2,23 +2,35 @@ import { castSheetSpell, sheetClassLevels, sheetRuleResources } from './ActiveRu
 import { wildShapeResources } from './VerifiedDatabase.ts'
 import { integerValue, type CharacterSheet } from '../../utils/CharacterSheets.ts'
 import { durationTurns, hitPointsAfterDamageWithTemporary, type Ability } from '../../utils/Combat.ts'
-import { templateFromCatalog, type Catalog } from '../../utils/Catalog.ts'
+import { catalogAbilityKind, templateFromCatalog, type Catalog } from '../../utils/Catalog.ts'
 import { creationEnabled, type CreationData } from '../../utils/PlayerCreation.ts'
 import { spellEdition, classId } from '../../utils/Spellcasting.ts'
 import { savedWizardFeatures, featureResourceKey, featureResourceRemaining } from '../../utils/Wizard.ts'
+import { assertCombatTargets } from './CombatTargets.ts'
+import { sheetCombatAttacks } from '../../utils/PlayerAbilities.ts'
 
 const object=(value:unknown):Record<string,unknown> => value && typeof value==='object' && !Array.isArray(value) ? value as Record<string,unknown> : {}
 const normalized=(value:string)=>value.normalize('NFD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'')
+export function assessAttack(edition:'2014'|'2024',die:number,modifier:number|undefined,armorClass:number|undefined) {
+    // 2014: D&D_5_Player_Original_Handbook.pdf, PDF 195, Attack Rolls / Rolling 1 or 20.
+    // 2024: D&D_5.5_manuale_compatto_italiano.pdf (SRD 5.2.1), PDF 7–8, Tiri per colpire / Ottenere un 20 o un 1.
+    if (!['2014','2024'].includes(edition)||!Number.isInteger(die)||die<1||die>20) throw new Error('Tiro per colpire non valido.')
+    const bonus=modifier!==undefined&&Number.isSafeInteger(modifier)?modifier:undefined
+    const total=bonus!==undefined&&Number.isSafeInteger(die+bonus)?die+bonus:undefined
+    const ac=armorClass!==undefined&&Number.isSafeInteger(armorClass)&&armorClass>=0?armorClass:undefined
+    return {edition,die,modifier:bonus,total,armorClass:ac,critical:die===20,hit:die===20?true:die===1?false:total!==undefined&&ac!==undefined?total>=ac:undefined}
+}
+export type AttackAssessment=ReturnType<typeof assessAttack>
 export type UseOption={id:string;label:string;remaining:number|null;cost?:number}
 
-export function combatAbilityInfo(ability:Pick<Ability,'catalogId'|'duration'|'remainingTurns'|'instantaneous'|'damageEnabled'|'spellLevel'|'castingAlternative'|'description'>,catalog:Catalog) {
+export function combatAbilityInfo(ability:Pick<Ability,'catalogId'|'duration'|'remainingTurns'|'instantaneous'|'damageEnabled'|'spellLevel'|'castingAlternative'|'description'|'section'>,catalog:Catalog) {
     const entry=catalog.abilities.find(entry=>entry.id===ability.catalogId),m=object(entry?.data.mechanics)
     const level=ability.spellLevel ?? (typeof entry?.data.level==='number' ? entry.data.level : undefined)
     // PHB 2014, D&D_5_Player_Original_Handbook.pdf, PDF 260, Mending:
     // repairs a touched object; "former damage" describes the repair, not damage dealt.
     // Keep this verified exception scoped to its edition and identity, including old saved overrides.
     const repairsObject=entry?.data.referenceId==='phb2014:spell:mending' && entry.data.edition==='2014'
-    const attack=typeof m.kind==='string' && m.kind.includes('attack')
+    const {attack,passive}=catalogAbilityKind(entry,ability.section,ability.description ?? entry?.description)
     const instantaneous=repairsObject || (ability.instantaneous ?? (m.duration==='Instantaneous' || object(entry?.data.durationInfo).kind==='instantaneous' || entry?.rounds===0 || attack))
     // ponytail: damage text only suggests a checkbox; the DM confirms targets and final damage, never an inferred dice formula.
     const damage=!repairsObject && (ability.damageEnabled ?? (attack || /damage|\bdanni\b/i.test(Object.keys(m).length ? JSON.stringify(m) : entry?.description || ability.description || '')))
@@ -28,7 +40,7 @@ export function combatAbilityInfo(ability:Pick<Ability,'catalogId'|'duration'|'r
     const ritual=m.ritual===true || entry?.data.ritual===true
     const concentration=m.concentration===true || object(entry?.data.durationInfo).concentration===true
     const unit=typeof casting.unit==='string' ? casting.unit : /bonus/i.test(castingText) ? 'bonus-action' : /reazion|reaction/i.test(castingText) ? 'reaction' : prolonged ? 'minute' : 'action'
-    return {entry,level,instantaneous,damage,prolonged,ritual,concentration,unit,alternatives,repairsObject}
+    return {entry,level,instantaneous,damage,prolonged,ritual,concentration,unit,alternatives,repairsObject,passive,attack}
 }
 
 function pool(sheet:CharacterSheet,key:string) {
@@ -42,7 +54,8 @@ function pool(sheet:CharacterSheet,key:string) {
 }
 
 export function combatUseOptions(sheet:CharacterSheet|undefined,ability:Ability,catalog:Catalog,data?:CreationData):UseOption[] {
-    const {entry,level,ritual}=combatAbilityInfo(ability,catalog),d=sheet?.playerDetails ?? {}
+    const {entry,level,ritual,passive}=combatAbilityInfo(ability,catalog),d=sheet?.playerDetails ?? {}
+    if (passive) return []
     const edition=entry?.data.edition ?? (entry?.data.ruleset==='dnd5e-2024' ? '2024' : ability.ruleId?.includes('2014:') ? '2014' : undefined)
     if (sheet && (edition==='2014' || edition==='2024') && spellEdition(sheet)!==edition) throw new Error(`Questa voce usa regole ${edition}: scegli la voce dell’edizione della scheda.`)
     if (!sheet) return level!==undefined && level>0 && ability.castingSource!=='free' ? [] : [{id:level===0 ? 'cantrip' : 'free',label:'Senza risorse',remaining:null}]
@@ -90,12 +103,15 @@ export function selectedUseOption(sheet:CharacterSheet|undefined,ability:Ability
 }
 
 export function combatAbilityStatus(sheet:CharacterSheet|undefined,ability:Ability,catalog:Catalog,data?:CreationData) {
+    if (combatAbilityInfo(ability,catalog).passive) return 'Passiva'
     if (ability.execution || ability.active && (ability.timed===false || ability.remainingTurns>0)) return 'In esecuzione'
     const options=combatUseOptions(sheet,ability,catalog,data),cost=ability.resourceCost ?? 1
     return options.every(option=>option.remaining!==null && option.remaining<(option.cost ?? cost)) ? 'Esauriti utilizzi' : 'Usa'
 }
 
 export function spendCombatUse(sheet:CharacterSheet,ability:Ability,catalog:Catalog,data:CreationData|undefined,optionId:string,cost=1):CharacterSheet {
+    if (/^sheet-attack:[0-5]$/.test(ability.ruleId ?? '') && !sheetCombatAttacks(sheet).some(attack=>attack.ruleId===ability.ruleId)) throw new Error('Arma non più disponibile tra gli attacchi della scheda.')
+    assertCombatTargets(ability,catalog,sheet,optionId)
     if (!Number.isSafeInteger(cost) || cost<1) throw new Error('Il costo deve essere un intero positivo.')
     const option=combatUseOptions(sheet,ability,catalog,data).find(option=>option.id===optionId)
     if (!option || option.remaining!==null && option.remaining<cost) throw new Error('Utilizzi esauriti o modalità di utilizzo non disponibile.')
@@ -148,8 +164,9 @@ export function resolvedAbility(ability:Ability,catalog:Catalog,combat:import('.
     return next
 }
 
-export function resolveCombatDamage<T extends {id:number;hitPoints:string;temporaryHitPoints:string}>(ability:Ability,turns:T[]):T[] {
+export function resolveCombatDamage<T extends {id:number;hitPoints:string;temporaryHitPoints:string;sheet?:CharacterSheet}>(ability:Ability,turns:T[],catalog?:Catalog):T[] {
     if (!ability.execution || ability.execution.phase!=='resolving') throw new Error('Nessun utilizzo da risolvere.')
+    if (catalog) assertCombatTargets(ability,catalog,turns.find(turn=>turn.id===ability.ownerId)?.sheet)
     const targets=ability.targets ?? []
     if (new Set(targets.map(target=>target.id)).size!==targets.length) throw new Error('Bersagli duplicati.')
     for (const target of targets) if (!target.resolved || !target.damage.trim() || !Number.isSafeInteger(Number(target.damage)) || Number(target.damage)<0 || !turns.some(turn=>turn.id===target.id)) throw new Error('Conferma i danni finali di ciascun bersaglio (0 se non subisce danni).')

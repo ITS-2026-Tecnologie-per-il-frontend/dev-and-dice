@@ -3,7 +3,7 @@ import type { CreationData, Equipment, Ref } from './PlayerCreation.ts'
 
 export type InventoryGrant = { ref: Ref; count: number; source: string; origin: string }
 export type InventoryItem = { row: number; id: string; name: string; quantity: string; weight: string; catalog: string; source: string; origin: string; notes: string }
-const itemFields = ['0','1','2','catalog','notes','equipped','requiresAttunement','attuned','consumable','damageDice','damageType','armorBase','armorDexMax']
+const itemFields = ['0','1','2','catalog','notes','equipped','requiresAttunement','attuned','consumable','damageDice','damageType','magical','armorBase','armorDexMax']
 export const inventoryReferenceKey = (field: string) => `inventory.ref.${field}`
 export const inventoryReferenceField = (field: string) => /^(armor|shield|attacks\.\d+\.0|ammunition\.\d+\.0|magicItem\.\d+\.name|worn\..+)$/.test(field)
 export function inventoryItems(sheet: CharacterSheet): InventoryItem[] {
@@ -96,7 +96,9 @@ function expandInventoryGrants(grants: InventoryGrant[],data: CreationData,paren
         return item?.contents?.length && !parents.includes(item.index) ? expandInventoryGrants(item.contents.map((child,i) => ({ref:child.item,count:child.quantity*grant.count,source:`${grant.source}/contents.${i}.${child.item.index}`,origin:`${grant.origin} · ${item.nameIt ?? item.name}`})),data,[...parents,item.index]) : [grant]
     })
 }
-export function reconcileInventory(input: CharacterSheet,data: CreationData,grants: InventoryGrant[] = []): CharacterSheet {
+export function reconcileInventory(input: CharacterSheet,data: CreationData,grants?: InventoryGrant[]): CharacterSheet {
+    const reconcileGrants=grants!==undefined
+    grants??=[]
     if (input.kind !== 'PG') return input
     const d={...input.playerDetails}, sheet={...input,playerDetails:d}
     const oldFields=Object.entries(d).filter(([key,value]) => value.trim() && (inventoryReferenceField(key) || ['equipment','consumables','attunedItems'].includes(key)))
@@ -140,7 +142,7 @@ export function reconcileInventory(input: CharacterSheet,data: CreationData,gran
     const desired=expandInventoryGrants(grants,data)
     let ledger: Record<string,string>={},validLedger=true
     try { const parsed=JSON.parse(d['inventory.grants'] ?? '{}');if (!parsed || typeof parsed!=='object' || Array.isArray(parsed) || !Object.values(parsed).every((x) => typeof x==='string')) throw new Error('Provenienza non valida');ledger=parsed } catch {validLedger=false;d['inventory.invalidGrants']=d['inventory.grants'] ?? ''}
-    for (const item of validLedger && d['creation.enabled']==='true' ? inventoryItems(sheet) : []) if (item.source.startsWith('initial:') && !desired.some((g) => g.source===item.source)) {
+    for (const item of validLedger && reconcileGrants && d['creation.enabled']==='true' ? inventoryItems(sheet) : []) if (item.source.startsWith('initial:') && !desired.some((g) => g.source===item.source)) {
         if (d[`inventory.${item.row}.generated`]===snapshot(d,item.row)) {removeRow(d,item.row);delete ledger[item.source]}
         else {d[`inventory.${item.row}.source`]='manual';d[`inventory.${item.row}.origin`]='Dotazione precedente modificata: conservata'}
     }
@@ -322,5 +324,19 @@ export function setWornInventoryReferences(sheet: CharacterSheet,field: string,i
     if (!field.startsWith('worn.') || ids.some((id) => !ownedInventoryItems(sheet).some((x) => x.id===id))) return sheet
     const d={...sheet.playerDetails,[inventoryReferenceKey(field)]:JSON.stringify([...new Set(ids)])}
     delete d[`inventory.pending.${field}`]
+    return projectInventory({...sheet,playerDetails:d})
+}
+
+// Keep the selected object's ID and links; the remaining copies get a new ID.
+export function separateInventoryItem(sheet:CharacterSheet,id:string):CharacterSheet {
+    const item=ownedInventoryItems(sheet).find(i=>i.id===id)
+    if(!item)throw new Error('Arma non più disponibile nell’inventario.')
+    const quantity=item.quantity.trim()?integerValue(item.quantity):1
+    if(quantity===undefined||quantity<1)throw new Error('Quantità dell’arma non valida.')
+    if(quantity===1)return sheet
+    const d={...sheet.playerDetails},row=nextRow(d),from=`inventory.${item.row}`,to=`inventory.${row}`
+    for(const [key,value] of Object.entries(d))if(key.startsWith(from+'.')&&!['id','generated','source','origin'].includes(key.slice(from.length+1)))d[to+key.slice(from.length)]=value
+    d[from+'.2']='1';d[to+'.2']=String(quantity-1);d[to+'.source']='manual';d[to+'.origin']='Separato da '+item.name
+    assignId(sheet,d,row)
     return projectInventory({...sheet,playerDetails:d})
 }
