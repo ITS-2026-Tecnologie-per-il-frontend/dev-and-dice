@@ -96,6 +96,20 @@ export function templateFromCatalog(entry: CatalogEntry): SheetAbility {
         ...(entry.data.edition==='2014' && entry.data.mechanics && typeof entry.data.mechanics==='object' && 'concentration' in entry.data.mechanics && entry.data.mechanics.concentration===true ? {concentration:true} : {}) }
 }
 
+export function removeSheetAbility(sheet:CharacterSheet,index:number,catalog:Catalog):CharacterSheet {
+    const ability=sheet.abilities[index]
+    if(!ability)return sheet
+    const entry=catalog.abilities.find(entry=>entry.id===ability.catalogId)
+    const details={...sheet.playerDetails},roots=new Set<string>()
+    if(ability.spellLevel!==undefined||typeof entry?.data.level==='number') {
+        const names=new Set([ability.name,entry?.name,...(Array.isArray(entry?.data.aliases)?entry.data.aliases:[])].filter((name):name is string=>typeof name==='string').map(normalized))
+        const reference=typeof entry?.data.referenceId==='string'?entry.data.referenceId.split(':').at(-1):undefined
+        for(const [key,value]of Object.entries(details))if(/^spell\.\d+\.\d+\.name$/.test(key)&&value.trim()&&(names.has(normalized(value))||reference&&details[key.slice(0,-5)+'.index']===reference))roots.add(key.slice(0,-5))
+        for(const key of Object.keys(details))if(roots.has(/^(spell\.\d+\.\d+)\./.exec(key)?.[1]??'')||/^wizard\.(?:mastery\.[12]|signature\.[01])$/.test(key)&&roots.has(details[key]))delete details[key]
+    }
+    return {...sheet,abilities:sheet.abilities.filter((_,i)=>i!==index),playerDetails:details}
+}
+
 export function sheetWithCombatSpells(sheet: CharacterSheet, catalog: Catalog, availableOnly = false): CharacterSheet {
     if (sheet.kind !== 'PG') return sheet
     const abilities = [...(sheet.abilities ?? [])]

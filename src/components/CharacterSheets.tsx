@@ -1,7 +1,7 @@
 import { durationTurns } from '../utils/Combat'
 import { createContext, memo, useCallback, useContext, useDeferredValue, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type Dispatch, type Ref, type SetStateAction } from 'react'
 import { abilityModifier, signedBonus, creatureAbilitySections, characterFields, clampCurrentHitPointsToMaximum, characterLevel, numericCharacterFields, newCharacterSheet, parseCharacterSheets, initiativeBonus, type SheetStats, type CharacterSheet, type SheetAbility } from '../utils/CharacterSheets'
-import { catalogAbilityKind, sheetFromCatalog, sheetWithCombatSpells, templateFromCatalog, type Catalog } from '../utils/Catalog'
+import { catalogAbilityKind, sheetFromCatalog, sheetWithCombatSpells, removeSheetAbility, templateFromCatalog, type Catalog } from '../utils/Catalog'
 import { CatalogSearch } from './CatalogSearch'
 import { InfoButton } from './InfoButton'
 import { useDialogDismiss } from '../utils/Dialog'
@@ -66,6 +66,7 @@ function CharacterSheetsLayout({ libraryHidden, onAdd, onSaved, combatStarted, p
         if (repositorySheets) currentSheets.current=repositorySheets
     },[repositorySheets])
     const catalog=draft ? catalogForSheet(creationData,baseCatalog,draft) ?? baseCatalog : baseCatalog
+    const spellWarnings=useMemo(()=>draft?.kind==='PG'&&creationData&&characterLevel(draft)!==undefined&&creationData.classes.some(x=>x.index===classId(draft))?spellSelection(draft,creationData).issues:[],[draft,creationData])
     const [error, setError] = useState('')
     const [tutorial, setTutorial] = useState(() => {
         try {
@@ -233,9 +234,6 @@ function CharacterSheetsLayout({ libraryHidden, onAdd, onSaved, combatStarted, p
             setError('La scheda è cambiata sul server mentre era aperta. Ricarica prima di salvare; le tue modifiche restano aperte.')
             return
         }
-        if (draft.kind === 'PG' && classId(draft) === 'wizard' && !creationData && Object.entries(draft.playerDetails ?? {}).some(([key,value]) => /^spell\.\d+\.\d+\.name$/.test(key) && value.trim())) {
-            setError('Attendi il caricamento delle regole prima di salvare: serve per verificare i limiti degli incantesimi. Le modifiche restano aperte.'); return
-        }
         if (guided) {
             if (!creationData) { setError('Attendi il caricamento delle opzioni prima di completare il tutorial.'); return }
             const required = tutorialIssues(draft, creationData, 8)
@@ -244,7 +242,6 @@ function CharacterSheetsLayout({ libraryHidden, onAdd, onSaved, combatStarted, p
         const calculated = clampCurrentHitPointsToMaximum(creationData ? applyCreation(draft, creationData) : draft)
         const sheet = { ...calculated, ...(guided ? { playerDetails: { ...calculated.playerDetails, 'tutorial.active': 'false', 'tutorial.completed': 'true' } } : {}), name: calculated.name.trim(), abilities: calculated.abilities.map((ability) => ({ ...ability, name: ability.name.trim() })) }
         const issues = sheet.kind === 'PG' ? characterCalculationIssues(sheet) : []
-        if (sheet.kind === 'PG' && creationData && characterLevel(sheet) !== undefined && creationData.classes.some((x) => x.index === classId(sheet))) issues.push(...spellSelection(sheet,creationData).issues)
         if (issues.length) { setError(issues.join(' ')); return }
         if (!numericCharacterFields.every((field) => sheet[field] === '' || (sheet[field].trim() !== '' && Number.isSafeInteger(Number(sheet[field]))))) {
             setError('Inserisci numeri interi validi nelle statistiche.')
@@ -342,6 +339,7 @@ function CharacterSheetsLayout({ libraryHidden, onAdd, onSaved, combatStarted, p
                             <section className="info-section info-prose" aria-label="Descrizione"><h3>Descrizione</h3><div className="info-fields">{creatureField('notes','Descrizione e note')}</div></section>
                         </>}
                         {!guided && <CharacterCombatPanels draft={draft} catalog={catalog} setDraft={setDraft}/>}
+                        {!guided&&spellWarnings.length>0&&<aside className="sheet-rule-warnings" role="status" aria-label="Avvisi sulle regole"><strong>Avvisi sulle regole</strong><ul>{spellWarnings.map(warning=><li key={warning}>{warning}</li>)}</ul><p>Come Master puoi comunque salvare la scheda con questi avvisi.</p></aside>}
                         {!guided && <>{error && <p role="alert">{error}{repository&&error.includes('è cambiata sul server')&&<button type="button" onClick={()=>{const latest=currentSheets.current.find(sheet=>sheet.id===draft.id);if(latest&&window.confirm('Ricaricare la scheda dal server e scartare le modifiche aperte?')){openDraft(latest);setError('')}}}>Ricarica scheda</button>}</p>}
                         <p className="library-help" role="status">Le modifiche si salvano anche cliccando fuori dalla finestra.</p>
                         <div className="turn-actions">
@@ -425,7 +423,7 @@ const CharacterCombatPanels=memo(function CharacterCombatPanels({draft,catalog,s
                                         if (Number.isSafeInteger(remainingTurns) && remainingTurns >= 0) setDraft(current=>current&&({ ...current, abilities: current.abilities.map((item, i) => i === index ? { ...item, remainingTurns } : item) }))
                                     }} /></label>}
                                     <InfoButton name={catalog.abilities.find((entry) => entry.id === ability.catalogId)?.name ?? ability.name} description={ability.description} entry={catalog.abilities.find((entry) => entry.id === ability.catalogId)} fields={{ duration: ability.duration, remainingTurns: ability.remainingTurns ?? durationTurns[ability.duration] }} />
-                                    <button className="delete-turn" type="button" aria-label={`Elimina ${ability.name || `abilità ${index + 1}`} dalla scheda`} onClick={() => setDraft(current=>current&&({ ...current, abilities: current.abilities.filter((_, i) => i !== index) }))}>×</button>
+                                    <button className="delete-turn" type="button" aria-label={`Elimina ${ability.name || `abilità ${index + 1}`} dalla scheda`} onClick={() => setDraft(current=>current&&removeSheetAbility(current,index,catalog))}>×</button>
                                     {kind.passive && <p className="sheet-ability-description info-description">{ability.description ?? entry?.description ?? 'Si applica nelle circostanze descritte, senza attivazione.'}</p>}
                                     {draft.kind!=='PG' && <label className="sheet-ability-section"><span>Sezione</span><select aria-label={`Sezione abilità o azione ${index+1}`} value={kind.section ?? 'trait'} onChange={event => setDraft({...draft,abilities:draft.abilities.map((item,i) => i===index ? {...item,section:event.target.value as SheetAbility['section']} : item)})}>{Object.entries(creatureAbilitySections).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>}
                                     {draft.kind!=='PG' && !draft.catalogId && <label className="sheet-ability-description"><span>Descrizione dell’abilità o azione</span><textarea aria-label={`Descrizione abilità o azione ${index+1}`} rows={3} value={ability.description ?? ''} onChange={event => setDraft({...draft,abilities:draft.abilities.map((item,i) => i===index ? {...item,description:event.target.value,catalogId:undefined} : item)})} /></label>}

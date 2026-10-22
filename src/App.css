@@ -542,6 +542,9 @@ html { scroll-behavior: smooth; }
 .sheet-spell-card:last-child { border-bottom: 0; padding-bottom: 0; }
 .sheet-spell-card > div { min-width: 0; overflow-wrap: anywhere; }
 .sheet-spell-card strong, .pdf-ability-card > strong { font-size: 16px; line-height: 1.5; font-weight: 650; overflow-wrap: anywhere; }
+.sheet-rule-warnings { margin:16px 0; padding:12px 16px; border:1px solid #b88734; border-radius:6px; color:var(--text-h); background:color-mix(in srgb,#b88734 10%,var(--bg)); font-size:14px; line-height:1.5; }
+.sheet-rule-warnings ul { margin:8px 0; padding-left:20px; }
+.sheet-rule-warnings p { margin:8px 0 0; }
 .sheet-spell-card .more-info { flex-shrink: 0; }
 .sheet-spell-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 6px; font-size: 13px; line-height: 1.5; color: var(--text); }
 .sheet-spell-level { padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color: var(--text-h); background: var(--sheet-section-tint); }
