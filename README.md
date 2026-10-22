@@ -29,6 +29,15 @@ lo carica e non richiede il server MCP. Per abilitarlo, aggiungi
 non è installato, l'app parte comunque senza annotazioni. Le build di produzione
 non includono Agentation.
 
+I dati per creare i personaggi sono già inclusi in Git: non occorre generare
+cataloghi né procurarsi i PDF dei manuali. `.gitattributes` conserva gli a capo LF
+dei file in `public/data/rules2014/`, necessari alle impronte SHA-256 anche su
+Windows. Se una copia precedente segnala «Impronta non valida», dopo aver
+aggiornato il progetto e salvato eventuali modifiche locali ai cataloghi, esegui
+`git archive HEAD public/data/rules2014 | tar -xf -`
+(su Windows usa Git Bash) e riavvia l'app.
+Verifica dell'installazione: `node tests/installation.mjs`.
+
 Il proxy Vite conserva l'header `Host` del browser per il controllo dell'origine
 delle richieste. Dopo modifiche alla configurazione del proxy, riavvia
 `npm run dev` per applicarle.
