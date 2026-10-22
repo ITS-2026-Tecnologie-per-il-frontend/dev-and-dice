@@ -2,7 +2,7 @@ import type { Ability } from '../../utils/Combat.ts'
 import type { CharacterSheet } from '../../utils/CharacterSheets.ts'
 import type { Catalog } from '../../utils/Catalog.ts'
 
-export type CombatTargetRule = { kind:'single'|'multiple'|'area'|'review'; maximum:number|null; summary:string }
+export type CombatTargetRule = { kind:'single'|'multiple'|'area'|'review'; maximum:number|null; summary:string; creatureTypes?:string[]; excludedCreatureTypes?:string[] }
 const object=(value:unknown):Record<string,unknown> => value && typeof value==='object' && !Array.isArray(value) ? value as Record<string,unknown> : {}
 const count=(value:unknown):number|undefined => typeof value==='number' && Number.isSafeInteger(value) && value>0 ? value : undefined
 const limited=(maximum:number,note=''):CombatTargetRule => ({kind:maximum===1?'single':'multiple',maximum,summary:(maximum===1?'Un solo bersaglio per utilizzo.':`Fino a ${maximum} bersagli distinti per utilizzo.`)+(note?' '+note:'')})
@@ -12,12 +12,13 @@ const review=(note='Numero di bersagli non determinato dai dati disponibili.'):C
 
 // PHB 2014, D&D_5_Player_Original_Handbook.pdf, PDF 205, Targets / Areas of Effect.
 // MM 2014, D&D_5_Monster_Original_Handbook.pdf, PDF 342, Worg: one target per Bite.
-export function combatTargeting(ability:Pick<Ability,'catalogId'|'spellLevel'|'execution'|'useOption'|'ruleId'>,catalog:Catalog,sheet?:CharacterSheet,optionId=ability.execution?.option ?? ability.useOption):CombatTargetRule {
+function targetCount(ability:Pick<Ability,'catalogId'|'spellLevel'|'execution'|'useOption'|'ruleId'>,catalog:Catalog,sheet?:CharacterSheet,optionId=ability.execution?.option ?? ability.useOption):CombatTargetRule {
     // One attack, not the entire Attack action: D&D_5_Player_Original_Handbook.pdf PDF 195;
     // D&D_5.5_manuale_compatto_italiano.pdf (SRD 5.2.1) PDF 16.
     if (!ability.catalogId && /^sheet-attack:[0-5]$/.test(ability.ruleId ?? '')) return limited(1)
     const entry=catalog.abilities.find(entry=>entry.id===ability.catalogId)
     if (!entry) return review()
+    if(entry.data.edition==='2014'&&ability.ruleId==='phb2014:spell:false-life')return limited(1,'Solo il lanciatore.')
     // A mismatched reference must never import the 2014 interpretation into a revised spell.
     if (entry.data.edition==='2024' || entry.data.ruleset==='dnd5e-2024') return review('La voce 2024 richiede una verifica separata.')
     const m=object(entry.data.mechanics),effect=object(m.effect),upcast=object(m.upcast)
@@ -66,6 +67,46 @@ export function combatTargeting(ability:Pick<Ability,'catalogId'|'spellLevel'|'e
     }
     if (/\b(?:ogni|ciascuna|tutte le|each|all) (?:creatur[ae]|creatures?)\b/i.test(description) && /\b(?:cono|cubo|sfera|cilindro|raggio|linea|cone|cube|sphere|cylinder|radius|line)\b/i.test(description)) return area()
     return review(description ? undefined : 'Descrizione e regole dei bersagli assenti nel catalogo.')
+}
+
+export const creatureTypeNames:Record<string,string>={aberration:'Aberrazione',beast:'Bestia',celestial:'Celestiale',construct:'Costrutto',dragon:'Drago',elemental:'Elementale',fey:'Folletto',fiend:'Immondo',giant:'Gigante',humanoid:'Umanoide',monstrosity:'Mostruosità',ooze:'Melma',plant:'Vegetale',undead:'Non morto'}
+
+export function creatureType(sheet?:CharacterSheet):string|undefined {
+    if(!sheet)return undefined
+    const explicit=sheet.playerDetails?.['creature.type']
+    if(explicit)return Object.hasOwn(creatureTypeNames,explicit)?explicit:undefined
+    const race=sheet.race.toLowerCase()
+    const known=Object.entries(creatureTypeNames).find(([type,name])=>new RegExp(`(?:^|[\\s,;(])(?:${type}|${name.toLowerCase()})(?:$|[\\s,;)])`).test(race))
+    // ponytail: core 2014 player species are humanoids. Custom species use the explicit
+    // creature.type override; revised species need their own verified type metadata.
+    return known?.[0]??(sheet.kind==='PG'&&sheet.playerDetails?.['rules.edition']!=='2024'?'humanoid':undefined)
+}
+
+export function combatTargeting(ability:Pick<Ability,'catalogId'|'spellLevel'|'execution'|'useOption'|'ruleId'>,catalog:Catalog,sheet?:CharacterSheet,optionId=ability.execution?.option??ability.useOption):CombatTargetRule {
+    const count=targetCount(ability,catalog,sheet,optionId),entry=catalog.abilities.find(e=>e.id===ability.catalogId)
+    if(entry?.data.edition!=='2014')return count
+    const m=object(entry.data.mechanics),effect=object(m.effect)
+    const target=String(effect.target??m.target??'').replace(/^(?:visible|one|willing)-/,'')
+    const [type,except]=target.split('-except-')
+    // ponytail: interpret explicit structured type descriptors only. More complex
+    // choices or prose require verified target metadata, never a guess from a name.
+    const excluded=Array.isArray(effect.excludedCreatureTypes)?effect.excludedCreatureTypes.filter((t):t is string=>typeof t==='string'&&Object.hasOwn(creatureTypeNames,t)):[]
+    if(except&&Object.hasOwn(creatureTypeNames,except))excluded.push(except)
+    return {...count,...(Object.hasOwn(creatureTypeNames,type)?{creatureTypes:[type]}:{}),...(excluded.length?{excludedCreatureTypes:excluded}:{})}
+}
+
+export function targetTypeError(rule:CombatTargetRule,type:string|undefined):string|undefined {
+    if(!rule.creatureTypes&&!rule.excludedCreatureTypes)return undefined
+    if(!type)return 'Tipo di creatura da specificare nella scheda o nei dettagli del Master.'
+    if(rule.creatureTypes&&!rule.creatureTypes.includes(type))return `Richiede: ${rule.creatureTypes.map(t=>creatureTypeNames[t]).join(', ')}. Tipo attuale: ${creatureTypeNames[type]??type}.`
+    if(rule.excludedCreatureTypes?.includes(type))return `Bersaglio escluso: ${creatureTypeNames[type]??type}.`
+}
+
+export function assertTargetTypes(rule:CombatTargetRule,targets:{id:number;sheet?:CharacterSheet}[],ids:number[]) {
+    for(const id of ids) {
+        const error=targetTypeError(rule,creatureType(targets.find(t=>t.id===id)?.sheet))
+        if(error)throw new Error(error)
+    }
 }
 
 export function assertCombatTargets(ability:Ability,catalog:Catalog,sheet?:CharacterSheet,optionId?:string) {

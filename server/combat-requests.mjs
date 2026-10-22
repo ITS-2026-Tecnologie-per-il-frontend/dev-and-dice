@@ -3,12 +3,13 @@ import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { loadCandidateCreationData } from '../src/domain/dnd/VerifiedDatabase.ts'
 import { activateCreationData, activeCatalog, catalogForSheet, concentrationSave } from '../src/domain/dnd/ActiveRules.ts'
-import { combatAbilityInfo, combatUseOptions, spendCombatUse, resolvedAbility, resolveCombatDamage, assessAttack } from '../src/domain/dnd/CombatActions.ts'
+import { combatAbilityInfo, combatUseOptions, spendCombatUse, resolvedAbility, resolveCombatDamage, restoreCombatHitPoints, grantCombatTemporaryHitPoints, assessAttack, requiresAdditionalSpellAction } from '../src/domain/dnd/CombatActions.ts'
 import { catalogAbilityKind, parseCatalog, sheetWithCombatAbilities } from '../src/utils/Catalog.ts'
 import { withWizardCatalog } from '../src/utils/PlayerCreation.ts'
 import { spellEdition } from '../src/utils/Spellcasting.ts'
 import { resolutionPlan, spellAttackAbility, damageNames, conditionNames, defenseProfile, validPackets, assertPacketPlan, packetTargets, resolveTarget, activeEffects, validEffectSpecs, saveNames, weaponProfile, validWeaponEnchantments, validWeaponEffect } from '../src/domain/dnd/CombatResolution.ts'
-import { combatTargeting } from '../src/domain/dnd/CombatTargets.ts'
+import { endIncapacitatedConcentration, settleCombatEffects } from '../src/domain/dnd/CombatConditions.ts'
+import { combatTargeting, creatureType, assertTargetTypes } from '../src/domain/dnd/CombatTargets.ts'
 
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status})}
 const object=value=>!!value && typeof value==='object' && !Array.isArray(value)
@@ -34,6 +35,25 @@ export function combatRules() {
   return loaded
 }
 
+export function recoverRepeatSaveDCs(game) {
+  return game.state.abilities.map(effect=>{
+    if(!effect.active||Number.isSafeInteger(effect.repeatSaveRoll?.dc)||effect.sourceEffectId===undefined)return effect
+    const parent=game.state.abilities.find(a=>a.id===effect.sourceEffectId)
+    if(parent?.ruleId!=='phb2014:spell:hold-person'||!effect.repeatSave)return effect
+    const caster=game.state.turns.find(t=>t.id===parent.ownerId)?.sheet?.id
+    const targets=parent.targets?.map(t=>t.id)??[]
+    // ponytail: legacy effects lack a request ID. Recover only when every matching
+    // approved cast agrees on the original DC; ambiguous history stays manual.
+    const dcs=new Set((game.combatRequests??[]).filter(entry=>entry.status==='approved'&&entry.characterId===caster
+      &&entry.resolution?.plan.ruleId===parent.ruleId&&entry.proposal.option===parent.useOption
+      &&entry.proposal.targets.length===targets.length&&entry.proposal.targets.every(t=>targets.includes(t.id))
+      &&entry.resolution.targets.some(t=>t.id===effect.ownerId)&&Number.isSafeInteger(entry.resolution.plan.save?.dc))
+      .map(entry=>entry.resolution.plan.save.dc))
+    if(dcs.size!==1)return effect
+    return {...effect,repeatSaveRoll:{ability:'wisdom',timing:'end',...effect.repeatSaveRoll,dc:[...dcs][0]}}
+  })
+}
+
 // Requests contain proposals only; canonical sheets and Master-configured actions are read again at approval.
 export function actionContext(db,game,user,rules,preview=false) {
   const member=game.players.find(player=>player.userId===user)
@@ -57,7 +77,7 @@ export function actionContext(db,game,user,rules,preview=false) {
     const ability={...template,...existing,id:existing?.id ?? 0,ownerId:owner?.id ?? null,active:existing?.active ?? false,remainingTurns:existing?.remainingTurns ?? template.remainingTurns ?? 0}
     let options=[],error=''
     try {
-      if (ability.execution || ability.active && !ability.weaponEffects?.length && (ability.timed===false || ability.remainingTurns>0)) throw new Error('Questa abilità è già in esecuzione.')
+      if (ability.execution || ability.active && ability.ruleId!=='phb2014:spell:false-life' && !ability.weaponEffects?.length && (ability.timed===false || ability.remainingTurns>0)) throw new Error('Questa abilità è già in esecuzione.')
       if (spellEdition(record.sheet)==='2024' && ability.ruleId?.includes('2014:')) throw new Error('Questa voce usa regole 2014.')
       options=combatUseOptions(record.sheet,ability,catalog,rules.data)
     } catch(cause) {error=cause.message}
@@ -69,15 +89,25 @@ export function actionContext(db,game,user,rules,preview=false) {
     const attackBonus=attackRow ? record.sheet.playerDetails?.[`attacks.${attackRow[1]}.1`] : undefined
     return {key:String(index),ability,options,error,info,mode,attackBonus,resolution:canonicalPlan}
   }).filter(action=>!action.info.passive)
-  return {record,owner,catalog,actions,weaponContext,canPropose,blockedReason:blocked?'Il personaggio non può agire mentre è incapacitato.':undefined}
+  return {record,owner,catalog,actions,weaponContext,targets:game.state.turns.map(turn=>({...turn,sheet:db.characters.find(r=>r.gameId===game.id&&r.id===turn.sheet?.id)?.sheet??turn.sheet})),canPropose,blockedReason:blocked?'Il personaggio non può agire mentre è incapacitato.':undefined}
+}
+
+function castReceipt(context,game,ability) {
+  const entry=(game.combatRequests??[]).findLast(entry=>entry.characterId===context.record.id
+    && (entry.resolution?.plan.ruleId&&ability.ruleId?entry.resolution.plan.ruleId===ability.ruleId:entry.actionName===ability.name)
+    && ['pending','approved'].includes(requestStatus(game,entry)))
+  if(!entry)return undefined
+  const benefit=entry.resolution?.plan.temporaryHitPoints,packet=entry.proposal.packets?.[0]
+  return {id:entry.id,status:requestStatus(game,entry),createdAt:entry.createdAt,optionLabel:entry.optionLabel,packets:entry.proposal.packets,
+    ...(benefit&&packet?{temporaryHitPoints:{roll:packet.temporaryHitPointsRoll,bonus:benefit.bonus,total:packet.temporaryHitPointsRoll+benefit.bonus,keptPrevious:packet.keepTemporaryHitPoints}}:{})}
 }
 
 export function actionChoices(context,game,db) {
-  return {revision:game.revision,canPropose:context.canPropose,blockedReason:context.blockedReason,ownerId:context.owner?.id ?? null,actions:context.actions.map(({key,ability,options,error,info,mode,attackBonus})=>({key,attackBonus,name:ability.name,entry:info.entry,description:ability.description ?? info.entry?.description ?? '',options:options.map(option=>({...option,targeting:combatTargeting(ability,context.catalog,context.record.sheet,option.id),resolution:resolutionPlan(context.record.sheet,ability,context.catalog,option.id,context.weaponContext)})),error,
+  return {revision:game.revision,canPropose:context.canPropose,blockedReason:context.blockedReason,ownerId:context.owner?.id ?? null,actions:context.actions.map(({key,ability,options,error,info,mode,attackBonus})=>({key,attackBonus,lastCast:castReceipt(context,game,ability),additionalActionRequired:requiresAdditionalSpellAction(context.record.sheet,ability,context.catalog),name:ability.name,entry:info.entry,description:ability.description ?? info.entry?.description ?? '',options:options.map(option=>({...option,targeting:combatTargeting(ability,context.catalog,context.record.sheet,option.id),resolution:resolutionPlan(context.record.sheet,ability,context.catalog,option.id,context.weaponContext)})),error,
     spellLevel:info.level,group:info.level!==undefined ? 'Incantesimi' : catalogAbilityKind(info.entry,ability.section,ability.description ?? info.entry?.description).weaponAttack ? 'Attacchi fisici' : 'Abilità attivabili',
     duration:info.instantaneous ? 'Istantanea' : ability.duration==='Personalizzata' ? `${ability.remainingTurns} turni` : ability.duration,remainingTurns:ability.remainingTurns,active:!!ability.execution || ability.active && (ability.timed===false || ability.remainingTurns>0),
     cost:ability.resourceCost ?? 1,resolution:resolutionPlan(context.record.sheet,ability,context.catalog,undefined,context.weaponContext),damageEnabled:info.damage,mode,prolonged:info.prolonged,ritual:info.ritual})),
-    targets:game.state.turns.map(turn=>({id:turn.id,name:db.characters.find(record=>record.id===turn.sheet?.id)?.sheet.name ?? turn.description}))}
+    targets:game.state.turns.map(turn=>({id:turn.id,name:db.characters.find(record=>record.id===turn.sheet?.id)?.sheet.name ?? turn.description,creatureType:creatureType(db.characters.find(record=>record.id===turn.sheet?.id)?.sheet??turn.sheet)}))}
 }
 
 export function requestProposal(body) {
@@ -115,6 +145,7 @@ export function validCombatRequest(entry) {
 
 function validResolutionSnapshot(entry) {
   const snapshot=entry.resolution,p=snapshot?.plan,packets=entry.proposal.packets
+  if(snapshot?.additionalActionRequired!==undefined&&typeof snapshot.additionalActionRequired!=='boolean')return false
   const strings=v=>Array.isArray(v)&&v.length<=1000&&v.every(s=>text(s,2000))
   const types=v=>Array.isArray(v)&&v.length<=14&&v.every(t=>typeof t==='string'&&Object.hasOwn(damageNames,t))
   const number=v=>v===undefined||Number.isSafeInteger(v)
@@ -123,6 +154,8 @@ function validResolutionSnapshot(entry) {
     &&['attacks','saveBonuses','attackBonuses','critical'].every(k=>v[k]===undefined||object(v[k])&&Object.entries(v[k]).every(([key,n])=>/^\d+(?::[a-z\d]+)?$/.test(key)&&integer(n)))
   if(snapshot?.weaponChoices!==undefined&&(!Array.isArray(snapshot.weaponChoices)||snapshot.weaponChoices.length>1000||!snapshot.weaponChoices.every(c=>object(c)&&entry.proposal.targets.some(t=>t.id===c.targetId)&&Array.isArray(c.items)&&c.items.length<=1000&&c.items.every(i=>object(i)&&text(i.id,250)&&text(i.name,20000)&&integer(i.quantity)&&i.quantity>0))))return false
   if(p?.weaponEffect!==undefined&&!validWeaponEffect(p.weaponEffect))return false
+  if(p?.temporaryHitPoints!==undefined&&(!object(p.temporaryHitPoints)||p.edition!=='2014'||p.ruleId!=='phb2014:spell:false-life'||p.kind!=='none'||p.damageTypes?.length!==0||p.maximumPackets!==1||p.temporaryHitPoints.dice!=='1d4'||!integer(p.temporaryHitPoints.bonus)||p.temporaryHitPoints.bonus<4||p.temporaryHitPoints.bonus>44||(p.temporaryHitPoints.bonus-4)%5!==0||!integer(p.temporaryHitPoints.current)))return false
+  if(p?.healing!==undefined&&(!object(p.healing)||p.edition!=='2014'||p.ruleId!=='phb2014:spell:cure-wounds'||p.kind!=='none'||p.damageTypes?.length!==0||p.maximumPackets!==1||!integer(p.healing.count)||p.healing.count<1||p.healing.count>9||p.healing.sides!==8||p.healing.dice!==`${p.healing.count}d8`||!number(p.healing.modifier)||p.healing.ability!==undefined&&!Object.hasOwn(saveNames,p.healing.ability)))return false
   if(p?.deferredSave!==undefined&&(!object(p.deferredSave)||!Object.hasOwn(saveNames,p.deferredSave.ability)||!number(p.deferredSave.dc)||p.deferredSave.trigger!=='start-own-turn-in-line'||!integer(p.deferredSave.pushFt)||p.deferredSave.pushFt>1000))return false
   if(snapshot?.wind!==undefined&&(!p?.deferredSave||!validateWind(snapshot.wind)||!snapshot.wind.candidates.every(c=>number(c.profile.saveBonus)&&dice(c.profile.saveDice)&&['normal','advantage','disadvantage',undefined].includes(c.profile.saveMode)&&(c.profile.automaticSaveFailure===undefined||typeof c.profile.automaticSaveFailure==='boolean'))))return false
   if(p?.weaponName!==undefined&&!text(p.weaponName,20000))return false
@@ -140,7 +173,7 @@ function validResolutionSnapshot(entry) {
     return snapshot.targets.every(t=>{
       const d=t?.profile
       if(!object(t)||!entry.proposal.targets.some(v=>v.id===t.id)||t.characterId!==undefined&&!uuid(t.characterId)||!object(d)||!rolls(t.rolls)
-        ||!number(d.armorClass)||!number(d.saveBonus)||!strings(d.notes)||!strings(d.conditionImmunities)||d.spellImmunities!==undefined&&!strings(d.spellImmunities)
+        ||!number(d.hitPoints)||!number(d.maxHitPoints)||!number(d.armorClass)||!number(d.saveBonus)||!strings(d.notes)||!strings(d.conditionImmunities)||d.spellImmunities!==undefined&&!strings(d.spellImmunities)
         ||!['attackMode','saveMode'].every(k=>d[k]===undefined||['normal','advantage','disadvantage'].includes(d[k]))
         ||!['attackDisadvantage','grantsAttackAdvantage','automaticSaveFailure','reviewDamage','reviewAttack'].every(k=>d[k]===undefined||typeof d[k]==='boolean')||!dice(d.attackDice)||!dice(d.saveDice)
         ||!['resistances','immunities','vulnerabilities'].every(k=>Array.isArray(d[k])&&d[k].length<=1000&&d[k].every(r=>object(r)&&types([r.type])&&['always','nonmagical'].includes(r.when)&&text(r.source,20000))))return false
@@ -192,7 +225,7 @@ export function visibleRequests(game,user) {
   const entries=(game.combatRequests??[]).filter(entry=>game.masterId===user || entry.ownerId===user && game.players.some(player=>player.userId===user && player.characterId===entry.characterId))
   // ponytail: like the sheet journal, persisted requests grow for one session; move both journals to paginated DB storage together.
   return [...entries].reverse().filter((entry,index)=>index<20 || requestStatus(game,entry)==='pending').map(entry=>({id:entry.id,characterId:entry.characterId,characterName:entry.characterName,actorName:entry.actorName,actionName:entry.actionName,
-    createdAt:entry.createdAt,status:requestStatus(game,entry),optionLabel:entry.optionLabel,cost:entry.proposal.cost,spendsResources:!['free','cantrip','ritual'].includes(entry.proposal.option),mode:entry.proposal.mode,damageEnabled:entry.proposal.damageEnabled,prolonged:entry.prolonged,
+    createdAt:entry.createdAt,status:requestStatus(game,entry),additionalActionRequired:entry.resolution?.additionalActionRequired??false,optionLabel:entry.optionLabel,cost:entry.proposal.cost,spendsResources:!['free','cantrip','ritual'].includes(entry.proposal.option),mode:entry.proposal.mode,damageEnabled:entry.proposal.damageEnabled,prolonged:entry.prolonged,
     ...(entry.proposal.attackDie!==undefined?{attackDie:entry.proposal.attackDie}:{}),
     ...(entry.resolution?{packets:entry.proposal.packets,rollsRevision:entry.rollsRevision??0,...(game.masterId===user?{resolution:{...entry.resolution.plan,attackAbility:entry.resolution.plan.attackAbility??(entry.resolution.plan.kind==='attack'&&!entry.resolution.plan.weaponName&&!/^sheet-attack:/.test(entry.resolution.plan.ruleId??'')?spellAttackAbility(game.state?.turns.find(t=>t.sheet?.id===entry.characterId)?.sheet):undefined)},weaponChoices:entry.resolution.weaponChoices,...(entry.resolution.wind?{wind:{...entry.resolution.wind,editable:windEditable(game,entry)}}:{})}: {})}:{}),
     targets:(entry.resolution?.wind?entry.resolution.wind.selected.map(id=>{const c=entry.resolution.wind.candidates.find(c=>c.id===id);return {id,name:c.name,roll:'',damageRoll:'',damage:'0'}}):entry.targets).map(({id,name,roll,hit,damageRoll,damage,armorClass})=>{
@@ -214,11 +247,14 @@ export function prepareAction(context,proposal,rules) {
     // Old previews called Gust of Wind an immediate save. Only this verified,
     // damage-free deferred save can be normalized without discarding dice.
     if(plan?.deferredSave&&proposal.mode==='save'&&!proposal.damageEnabled&&proposal.packets.every(p=>p.die===undefined&&!p.damage.length))proposal.mode=plan.kind
+    if(plan?.temporaryHitPoints&&proposal.packets.some(packet=>packet.targetId!==context.owner.id))fail(400,'Vita Falsata si applica soltanto al lanciatore.')
     if(!plan||proposal.mode!==plan.kind||proposal.damageEnabled!==(plan.damageTypes.length>0))fail(400,'La risoluzione deve rispettare l’azione della scheda.')
     try {assertPacketPlan(plan,proposal.packets,combatTargeting(action.ability,context.catalog,context.record.sheet,proposal.option).maximum)}catch(error){fail(400,error.message)}
   }
+  if(proposal.packets===undefined){const plan=resolutionPlan(context.record.sheet,action.ability,context.catalog,proposal.option,context.weaponContext);if(plan?.healing||plan?.temporaryHitPoints)fail(400,'Aggiorna le azioni e inserisci i dadi richiesti prima di inviare la richiesta.')}
   const option=action.options.find(option=>option.id===proposal.option)
   if (!option || option.cost!==undefined && option.cost!==proposal.cost) fail(400,'Modalità o costo non valido per questa azione.')
+  try {assertTargetTypes(combatTargeting(action.ability,context.catalog,context.record.sheet,proposal.option),context.targets??[],proposal.targets.map(t=>t.id))}catch(error){fail(400,error.message)}
   // Validate resources and spell restrictions without persisting any spend during the proposal.
   const ability={...action.ability,requirementsConfirmed:true,targets:proposal.targets.map(target=>({id:target.id,damage:target.damage,resolved:false}))}
   const rage=ability.ruleId==='phb2014:class-feature:barbarian-1-rage',info=action.info
@@ -237,6 +273,8 @@ export function applyCombatRequest(db,game,entry,rules,body) {
   if(body.wind!==undefined&&!wind)fail(400,'Questa azione non prevede correzioni dell’area.')
   const proposal=wind?{...entry.proposal,packets:wind.selected.map(targetId=>({targetId,damage:[]})),targets:packetTargets(wind.selected.map(targetId=>({targetId,damage:[]})))}:entry.proposal
   const {action,ability,sheet,rage}=prepareAction(context,proposal,rules)
+  if(requiresAdditionalSpellAction(context.record.sheet,ability,context.catalog)&&body.additionalActionConfirmed!==true)fail(409,'Conferma che il personaggio disponga di un’altra azione valida per lanciare questo incantesimo.')
+  if(body.additionalActionConfirmed!==undefined&&typeof body.additionalActionConfirmed!=='boolean')fail(400,'Conferma dell’azione aggiuntiva non valida.')
   const proposed=proposal.targets
   const enchantments=entry.resolution?.plan.weaponEffect?prepareWeaponEnchantments(db,game,entry,context,rules,body.weapons,sheet):[]
   if(!entry.resolution?.plan.weaponEffect&&body.weapons!==undefined&&(!Array.isArray(body.weapons)||body.weapons.length))fail(400,'Questa azione non modifica armi.')
@@ -255,6 +293,19 @@ export function applyCombatRequest(db,game,entry,rules,body) {
   try {updated=resolveCombatDamage(resolving,turns,context.catalog)} catch(error) {fail(409,error.message)}
   const sheets=new Map([[sheet.id,sheet]])
   updated=updated.map(turn=>{
+    if(entry.resolution?.plan.temporaryHitPoints&&proposed.some(t=>t.id===turn.id)){
+      const amount=resolveRequestTarget(entry,turn.id).temporaryHitPoints
+      try{if(!entry.proposal.packets[0].keepTemporaryHitPoints)turn=grantCombatTemporaryHitPoints(turn,amount,entry.id)}catch(error){fail(409,error.message)}
+      const record=db.characters.find(record=>record.id===turn.sheet?.id&&record.gameId===game.id)
+      if(record)sheets.set(record.id,{...turn.sheet,abilities:record.sheet.abilities})
+    }
+    if(entry.resolution?.plan.healing&&proposed.some(t=>t.id===turn.id)) {
+      const amount=resolveRequestTarget(entry,turn.id).healing
+      if(typeof amount!=='number')fail(409,'Completa i dati di guarigione prima di approvare.')
+      try {turn=restoreCombatHitPoints(turn,amount)}catch(error){fail(409,error.message)}
+      const record=db.characters.find(record=>record.id===turn.sheet?.id&&record.gameId===game.id)
+      if(record)sheets.set(record.id,{...turn.sheet,abilities:record.sheet.abilities})
+    }
     const original=turns.find(original=>original.id===turn.id),amount=Number(body.targets.find(target=>target.id===turn.id)?.damage ?? 0)
     if (amount && turn.sheet) {
       const next={...turn.sheet,hitPoints:turn.hitPoints,playerDetails:{...turn.sheet.playerDetails,temporaryHitPoints:turn.temporaryHitPoints}}
@@ -275,11 +326,12 @@ export function applyCombatRequest(db,game,entry,rules,body) {
   }
   // A sheet action may not yet have a combat row; never reuse its placeholder ID.
   const existing=game.state.abilities.find(item=>item.ownerId===context.owner.id && (ability.catalogId ? item.catalogId===ability.catalogId : item.name===ability.name))
-  const abilities=game.state.abilities.filter(item=>item!==existing).map(item=>((rage || action.info.concentration || ability.concentration) && item.ownerId===context.owner.id && (item.concentration || item.execution?.phase==='casting') || existing&&item.sourceEffectId===existing.id) ? {...item,active:false,execution:undefined,remainingTurns:0} : item)
-  if (!action.info.instantaneous || enchantments.length) {
+  const keepPrevious=!!entry.resolution?.plan.temporaryHitPoints&&entry.proposal.packets[0].keepTemporaryHitPoints
+  const abilities=game.state.abilities.filter(item=>keepPrevious||item!==existing).map(item=>((rage || action.info.concentration || ability.concentration) && item.ownerId===context.owner.id && (item.concentration || item.execution?.phase==='casting') || existing&&item.sourceEffectId===existing.id) ? {...item,active:false,execution:undefined,remainingTurns:0} : item)
+  if (!keepPrevious&&(!action.info.instantaneous || enchantments.length)) {
     if (abilities.length>=2000) fail(409,'Limite delle abilità in combattimento raggiunto.')
     const id=existing?.id ?? Math.max(-1,...abilities.map(item=>item.id))+1
-    abilities.push(resolvedAbility({...resolving,id,...(enchantments.length?{weaponEffects:enchantments.map(c=>c.effect)}:{}),concentration:ability.concentration || action.info.concentration,...(entry.resolution?{resolutionEffects:entry.resolution.plan.effects.filter(effect=>effect.trigger==='always')}: {})},context.catalog,game.state.combat,updated))
+    abilities.push(resolvedAbility({...resolving,id,...(entry.resolution?.plan.temporaryHitPoints?{temporaryHitPointsSource:entry.id}:{}),...(enchantments.length?{weaponEffects:enchantments.map(c=>c.effect)}:{}),concentration:ability.concentration || action.info.concentration,...(entry.resolution?{resolutionEffects:entry.resolution.plan.effects.filter(effect=>effect.trigger==='always')}: {})},context.catalog,game.state.combat,updated))
   }
   if(entry.resolution) {
     const parent=abilities.find(a=>a.ownerId===context.owner.id&&(ability.catalogId?a.catalogId===ability.catalogId:a.name===ability.name))
@@ -293,9 +345,9 @@ export function applyCombatRequest(db,game,entry,rules,body) {
         const conditionAliases={paralyzed:['paralyzed','paralizzato'],restrained:['restrained','trattenuto'],frightened:['frightened','spaventato'],blinded:['blinded','accecato'],poisoned:['poisoned','avvelenato'],prone:['prone','prono']}
         if(effect.condition&&conditionAliases[effect.condition]?.some(name=>immunity.includes(name)))continue
         const id=Math.max(-1,...abilities.map(a=>a.id))+1
-        const child={id,name:action.ability.name+' · '+(effect.kind==='speed'?'velocità −3 m':effect.kind==='roll-bonus'?'dado ai tiri':conditionNames[effect.condition]??effect.condition),ownerId:target.id,active:true,duration:'Personalizzata',remainingTurns:effect.kind==='speed'?1:parent?.remainingTurns??10,timed:true,resolutionEffects:[effect],
-          ...(parent?{sourceEffectId:parent.id}:{}),...(effect.kind==='speed'?{expiresAt:'start',expiryOwnerId:context.owner.id,expiryRound:(game.state.combat?.round??1)+1}:{}),
-          ...(effect.repeatSave?{repeatSave:'Tiro salvezza su '+entry.resolution.plan.save.ability+' a fine turno'}:{})}
+        const child={id,name:effect.kind==='condition'?(conditionNames[effect.condition]??effect.condition)+' - '+action.ability.name:action.ability.name+' · '+(effect.kind==='speed'?'velocità −3 m':'dado ai tiri'),ownerId:target.id,active:true,duration:'Personalizzata',remainingTurns:effect.kind==='speed'?1:parent?.remainingTurns??10,timed:true,resolutionEffects:[effect],
+          ...(parent?{sourceEffectId:parent.id,...(parent.ruleId==='phb2014:spell:hold-person'?{expiresAt:parent.expiresAt,expiryOwnerId:parent.expiryOwnerId,expiryRound:parent.expiryRound}:{})}:{}),...(effect.kind==='speed'?{expiresAt:'start',expiryOwnerId:context.owner.id,expiryRound:(game.state.combat?.round??1)+1}:{}),
+          ...(effect.repeatSave?{repeatSave:'Tiro salvezza su '+saveNames[entry.resolution.plan.save.ability]+' a fine turno',...(entry.resolution.plan.ruleId==='phb2014:spell:hold-person'?{repeatSaveRoll:{ability:entry.resolution.plan.save.ability,dc:entry.resolution.plan.save.dc,timing:'end'}}:{})}:{})}
         abilities.push(child)
       }
     }
@@ -307,7 +359,10 @@ export function applyCombatRequest(db,game,entry,rules,body) {
     }
     if(abilities.length>2000)fail(409,'Limite degli effetti in combattimento raggiunto.')
   }
-  return {state:{...game.state,turns:updated,abilities},sheets:[...sheets.values()],...(wind?{wind}:{})}
+  const incapacitated=endIncapacitatedConcentration(abilities,updated)
+  const settled=settleCombatEffects(incapacitated.abilities,incapacitated.turns)
+  for(const turn of settled.turns)if(turn.sheet&&turn.sheet!==updated.find(t=>t.id===turn.id)?.sheet)sheets.set(turn.sheet.id,turn.sheet)
+  return {state:{...game.state,turns:settled.turns,abilities:settled.abilities},sheets:[...sheets.values()],...(wind?{wind}:{})}
 }
 
 function weaponCandidates(db,game,targetId,rules,effect,casterId) {
@@ -363,7 +418,7 @@ export function createRequestResolution(db,game,context,action,proposal,rules) {
     const profile=defenseProfile(sheet,plan.deferredSave.ability,active,target.id,undefined,rules.data)
     return {id:target.id,name:record?.sheet.name??turn.description,sheetId:sheet.id,profile}
   }).filter(Boolean)
-  return {plan,...(plan.deferredSave?{wind:{candidates:targets,selected:proposal.targets.map(t=>t.id),saves:{}}}:{}),...(plan.weaponEffect?{weaponChoices:proposal.targets.map(target=>({targetId:target.id,items:weaponCandidates(db,game,target.id,rules,plan.weaponEffect,context.record.id)}))}:{}),targets:proposal.targets.map(target=>{
+  return {plan,additionalActionRequired:requiresAdditionalSpellAction(context.record.sheet,action.ability,context.catalog),...(plan.deferredSave?{wind:{candidates:targets,selected:proposal.targets.map(t=>t.id),saves:{}}}:{}),...(plan.weaponEffect?{weaponChoices:proposal.targets.map(target=>({targetId:target.id,items:weaponCandidates(db,game,target.id,rules,plan.weaponEffect,context.record.id)}))}:{}),targets:proposal.targets.map(target=>{
     const turn=game.state.turns.find(t=>t.id===target.id),record=db.characters.find(r=>r.gameId===game.id&&r.id===turn?.sheet?.id),sheet=record?.sheet??turn?.sheet
     if(!sheet)fail(409,'Per risolvere i dadi serve la scheda del bersaglio.')
     const profile=defenseProfile(sheet,plan.save?.ability,active,target.id,inventoryEquipment(referencedInventoryItem(sheet,'armor'),sheet,rules.data)?.armor_category==='Heavy'?true:inventoryEquipment(referencedInventoryItem(sheet,'armor'),sheet,rules.data)?false:!inventoryFieldValue(sheet,'armor')?false:undefined,rules.data)

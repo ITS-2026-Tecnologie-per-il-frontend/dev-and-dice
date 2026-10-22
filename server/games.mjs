@@ -1,4 +1,5 @@
-import { activeEffects, validEffectSpecs, validWeaponEnchantments } from '../src/domain/dnd/CombatResolution.ts'
+import { settleCombatEffects } from '../src/domain/dnd/CombatConditions.ts'
+import { activeEffects, saveNames, validEffectSpecs, validWeaponEnchantments } from '../src/domain/dnd/CombatResolution.ts'
 import { spellEdition } from '../src/utils/Spellcasting.ts'
 import { integerValue } from '../src/utils/CharacterSheets.ts'
 import { randomBytes, randomUUID } from 'node:crypto'
@@ -7,7 +8,7 @@ import { resolve } from 'node:path'
 import express from 'express'
 import { rateLimit } from 'express-rate-limit'
 import { isDeepStrictEqual } from 'node:util'
-import { combatRules, actionContext, actionChoices, requestProposal, validCombatRequest, requestStatus, visibleRequests, prepareAction, applyCombatRequest, createRequestResolution, pendingSavingThrows, recordResolutionRoll } from './combat-requests.mjs'
+import { combatRules, actionContext, actionChoices, requestProposal, validCombatRequest, requestStatus, visibleRequests, prepareAction, applyCombatRequest, createRequestResolution, pendingSavingThrows, recordResolutionRoll, recoverRepeatSaveDCs } from './combat-requests.mjs'
 
 const fields = 'name kind race characterClass level hitPoints armorClass initiative speed strength dexterity constitution intelligence wisdom charisma notes'.split(' ')
 const numeric = 'hitPoints armorClass initiative strength dexterity constitution intelligence wisdom charisma'.split(' ')
@@ -70,7 +71,9 @@ export function validateState(state) {
     && (ability.ownerId === null || ids.includes(ability.ownerId))
     && ['damageEnabled','instantaneous','requirementsConfirmed','timed','concentration'].every(key=>ability[key]===undefined||typeof ability[key]==='boolean')
     && (ability.weaponEffects===undefined||validWeaponEnchantments(ability.weaponEffects))
+    && (ability.temporaryHitPointsSource===undefined||typeof ability.temporaryHitPointsSource==='string'&&idPattern.test(ability.temporaryHitPointsSource))
     && (ability.sourceEffectId===undefined||integer(ability.sourceEffectId)&&ability.sourceEffectId!==ability.id)
+    && (ability.repeatSaveRoll===undefined||object(ability.repeatSaveRoll)&&Object.hasOwn(saveNames,ability.repeatSaveRoll.ability)&&ability.repeatSaveRoll.timing==='end'&&(ability.repeatSaveRoll.dc===undefined||Number.isSafeInteger(ability.repeatSaveRoll.dc))&&(ability.repeatSaveRoll.lastRound===undefined||integer(ability.repeatSaveRoll.lastRound)))
     && (ability.resolutionEffects===undefined||validEffectSpecs(ability.resolutionEffects))
     && (ability.useOption===undefined || typeof ability.useOption==='string' && ability.useOption.length<=250)
     && (ability.resourceCost===undefined || integer(ability.resourceCost) && ability.resourceCost>=1)
@@ -169,6 +172,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
       result.newestPendingRequest=(game.combatRequests??[]).reduce((latest,entry,index)=>requestStatus(game,entry)==='pending'?index+1:latest,0)
       const characters = db.characters.filter(character => character.gameId === game.id)
       const state = structuredClone(game.state)
+      state.abilities = recoverRepeatSaveDCs(game)
       state.turns = state.turns.map(turn => {
         const record = characters.find(character => character.id === turn.sheet?.id)
         return record ? { ...turn, description:record.sheet.name, hitPoints:record.sheet.hitPoints, armorClass:record.sheet.armorClass,
@@ -416,6 +420,12 @@ export async function gamesRouter({ dataDir, authenticate }) {
       if (record && record.gameId !== game.id || !record && turn.sheet.kind === 'PG') fail(403, 'Personaggio estraneo alla sessione.')
       if (record) {turn.sheet = {...record.sheet,abilities:turn.sheet.abilities};turn.hitPoints=record.sheet.hitPoints;turn.armorClass=record.sheet.armorClass;turn.description=record.sheet.name}
     }
+    const settled=settleCombatEffects(state.abilities,state.turns)
+    for(const turn of settled.turns)if(turn.sheet&&turn.sheet!==state.turns.find(t=>t.id===turn.id)?.sheet) {
+      const record=db.characters.find(c=>c.id===turn.sheet.id&&c.gameId===game.id)
+      if(record)saveSheet(game,record,turn.sheet,req)
+    }
+    state.abilities=settled.abilities;state.turns=settled.turns
     // Removing a card must not delete another user's character or its membership.
     game.state = state; game.revision++
     return view(db,game,req.userId)

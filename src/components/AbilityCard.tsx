@@ -13,7 +13,7 @@ export function AbilityMetadata({duration,owner,ownerLabel}:{duration:string;own
 }
 
 export function AbilityTargets({candidates,ownerId,selectedIds,maximum,summary,disabled=false,disableNewTargets=false,label='Bersagli del danno',checkboxLabel,onChange,renderSelected}: {
-    candidates:{id:number;name:string}[];ownerId?:number|null;selectedIds:number[];maximum:number|null;summary?:string;disabled?:boolean;disableNewTargets?:boolean;label?:string;
+    candidates:{id:number;name:string;unavailableReason?:string}[];ownerId?:number|null;selectedIds:number[];maximum:number|null;summary?:string;disabled?:boolean;disableNewTargets?:boolean;label?:string;
     checkboxLabel?:(candidate:{id:number;name:string})=>string;onChange:(id:number,checked:boolean)=>void;renderSelected?:(candidate:{id:number;name:string})=>ReactNode
 }) {
     const selected=new Set(selectedIds),tooMany=maximum!==null&&selected.size>maximum
@@ -25,7 +25,8 @@ export function AbilityTargets({candidates,ownerId,selectedIds,maximum,summary,d
         <div className="ability-target-list">{candidates.filter(candidate=>candidate.id!==ownerId).concat(owner?[owner]:[]).map(candidate=>{
             const picked=selected.has(candidate.id)
             const row=<div className="ability-target" key={candidate.id}>
-                <label className="ability-check"><input type="checkbox" aria-label={checkboxLabel?.(candidate)} checked={picked} disabled={disabled&&!(tooMany&&picked)||!picked&&(disableNewTargets||maximum!==null&&selected.size>=maximum)} onChange={event=>onChange(candidate.id,event.target.checked)}/>{candidate.name}</label>
+                <label className="ability-check"><input type="checkbox" aria-label={checkboxLabel?.(candidate)} checked={picked} disabled={!!candidate.unavailableReason&&!picked||disabled&&!(tooMany&&picked)||!picked&&(disableNewTargets||maximum!==null&&selected.size>=maximum)} onChange={event=>onChange(candidate.id,event.target.checked)}/>{candidate.name}</label>
+                {candidate.unavailableReason&&<span className="library-help">{candidate.unavailableReason}</span>}
                 {picked&&renderSelected?.(candidate)}
             </div>
             return candidate.id===ownerId ? <details className="ability-self-target" key={candidate.id} open={picked}><summary>Includi te stesso{picked?' · selezionato':''}</summary>{row}</details> : row

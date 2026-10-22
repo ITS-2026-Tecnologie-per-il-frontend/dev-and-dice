@@ -723,6 +723,7 @@ html { scroll-behavior: smooth; }
 .ability-target > label:not(.ability-check) { display:grid; gap:4px; }
 .ability-targets > .library-help { margin: 0 0 6px; font-size: 12px; line-height: 1.45; }
 .ability-target-list { display: grid; max-height: 180px; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.action-roll-form .ability-target-list:has(.player-healing-roll) { max-height:none; overflow:visible; scrollbar-gutter:auto; }
 .ability-target { display: grid; gap: 4px; padding: 4px 0; }
 .ability-target > .ability-check { min-height: 28px; align-items: center; }
 .ability-target + .ability-target { border-top: 1px solid var(--border); }
@@ -771,3 +772,40 @@ html { scroll-behavior: smooth; }
 .master-attack-result p { margin:0; }
 .master-attack-result strong { font-size:20px; color:var(--text-h); }
 .master-attack-result summary { cursor:pointer; }
+
+.turn-statuses { grid-column:1/-1; display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; min-width:0; }
+.turn-condition-pills { display:flex; flex-wrap:wrap; gap:4px; }
+.turn-condition-pill { padding:3px 8px; border:1px solid color-mix(in srgb,#b77916 55%,var(--border)); border-radius:999px; background:color-mix(in srgb,#b77916 12%,var(--bg)); color:var(--text-h); font-size:12px; font-weight:650; }
+.turn-save-reminder { flex-basis:100%; margin:0; color:var(--text-h); font-size:12px; line-height:1.5; }
+.turn-row.turn-needs-resolution { outline:2px solid #c28a27; outline-offset:-2px; animation:turn-resolution-pulse 2.4s ease-in-out infinite; }
+@keyframes turn-resolution-pulse { 50% { box-shadow:inset 0 0 0 3px #c28a2755; } }
+@media (prefers-reduced-motion:reduce) { .turn-row.turn-needs-resolution { animation:none; } }
+.repeat-save-dialog { width:min(620px,calc(100% - 32px)); padding:16px; }
+.player-healing-roll { display:grid; grid-template-columns:minmax(0,1fr) 64px auto; align-items:end; gap:4px 8px; margin-top:6px; }
+.player-healing-heading { grid-column:1 / -1; display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.player-healing-roll > input { min-width:0; width:100%; box-sizing:border-box; }
+.player-healing-roll :is(output,strong) { display:block; font-size:18px; font-weight:700; }
+.player-healing-roll output { min-height:28px; display:flex; align-items:center; }
+.player-healing-roll small { grid-column:1 / -1; }
+.repeat-save-dialog .combat-request--review .combat-result-stats { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,.75fr); gap:8px; }
+.repeat-save-dialog .combat-request--review .combat-result-stats dd { font-size:18px; }
+.master-creature-type { display:grid; gap:4px; margin:10px 0; font-size:13px; }
+.master-creature-type select { min-height:44px; color:var(--text-h); background:var(--bg); border:1px solid var(--border); border-radius:4px; font:inherit; }
+
+.player-cast-close { grid-area: delete; justify-self: end; }
+.player-cast-summary { display:grid; gap:14px; }
+.player-cast-summary p { margin:0; }
+.player-cast-heading { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; font-size:13px; color:var(--text); }
+.player-cast-heading .combat-request-state { margin:0; padding:3px 8px; border:1px solid var(--border); border-radius:4px; color:var(--text-h); font-size:12px; font-weight:600; }
+.player-cast-heading .combat-request-state[data-state="approved"] { border-color:color-mix(in srgb,var(--ui-accent,#147d72) 55%,var(--border)); background:color-mix(in srgb,var(--ui-accent,#147d72) 12%,var(--bg)); }
+.player-cast-stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin:0; padding:16px 0; border-block:1px solid var(--border); }
+.player-cast-stats dt { min-height:2.8em; font-size:12px; color:var(--text); line-height:1.4; }
+.player-cast-stats dd { margin:6px 0 0; font-size:28px; line-height:1.15; font-weight:700; color:var(--text-h); font-variant-numeric:tabular-nums; }
+.player-cast-stats dd.player-cast-time { font-size:19px; line-height:1.5; }
+.player-cast-stats small { display:block; margin-top:3px; font-size:12px; color:var(--text); }
+.player-cast-details { min-width:0; font-size:13px; }
+.player-cast-details summary { cursor:pointer; color:var(--text); }
+.player-cast-details time { display:block; margin-top:12px; color:var(--text); font-size:12px; }
+.player-cast-details p { margin-top:8px; }
+.player-cast-note { font-size:13px; line-height:1.5; }
+.player-cast-recast { width:100%; }

@@ -3,18 +3,18 @@ import type { Ability } from '../utils/Combat'
 import type { CharacterSheet } from '../utils/CharacterSheets'
 import type { Catalog } from '../utils/Catalog'
 import type { CreationData } from '../utils/PlayerCreation'
-import { combatAbilityInfo, type UseOption } from '../domain/dnd/CombatActions'
+import { combatAbilityInfo, requiresAdditionalSpellAction, type UseOption } from '../domain/dnd/CombatActions'
 import { assertPacketPlan, defenseProfile, resolutionPlan, resolveTarget, packetTargets, damageNames, type ResolutionRolls, type TargetResolution, type ResolutionPlan } from '../domain/dnd/CombatResolution'
-import { combatTargeting } from '../domain/dnd/CombatTargets'
+import { combatTargeting, creatureType, assertTargetTypes } from '../domain/dnd/CombatTargets'
 import { inventoryEquipment, inventoryFieldValue, referencedInventoryItem } from '../utils/Inventory'
 import { ActionRollForm, ResolutionDetails, FinalDamageField, MasterCriticalRolls, MasterResolutionRolls, MasterSavingRolls, type RollSubmission, type ResolutionReview, type RequestDecision } from './CombatRolls'
 
 const validNumber=(value:string)=>/^\d+$/.test(value)&&Number.isSafeInteger(Number(value))
-export type ResolvedDamagePackets={id:number;damage:number[]}[]
+export type ResolvedDamagePackets={id:number;damage:number[];healing?:number;temporaryHitPoints?:number;keepTemporaryHitPoints?:boolean;effects?:import('../domain/dnd/CombatResolution').EffectSpec[]}[]
 
-export function MasterSpellRolls({ability,owner,participants,abilities,catalog,catalogForOwner,data,options,optionId,error,children,onApply}:{
-    ability:Ability;owner:CharacterSheet;participants:{id:number;description:string;sheet?:CharacterSheet}[];abilities:Ability[];catalog:Catalog;catalogForOwner?:(id:number|null)=>Catalog;data:CreationData;options:UseOption[];optionId?:string;error:string;children:ReactNode;
-    onApply:(ability:Ability,damagePackets:ResolvedDamagePackets)=>boolean|void
+export function MasterSpellRolls({ability,owner,participants,abilities,catalog,catalogForOwner,data,options,optionId,error,children,onApply,inCombat=false}:{
+    inCombat?:boolean;ability:Ability;owner:CharacterSheet;participants:{id:number;description:string;sheet?:CharacterSheet}[];abilities:Ability[];catalog:Catalog;catalogForOwner?:(id:number|null)=>Catalog;data:CreationData;options:UseOption[];optionId?:string;error:string;children:ReactNode;
+    onApply:(ability:Ability,damagePackets:ResolvedDamagePackets,additionalActionConfirmed?:boolean)=>boolean|void
 }) {
     // PHB 2014, D&D_5_Player_Original_Handbook.pdf, PDF 274, Scorching Ray:
     // keep each ray separate; the versioned resolver handles hits and defenses.
@@ -22,6 +22,8 @@ export function MasterSpellRolls({ability,owner,participants,abilities,catalog,c
     // a Dexterity save for each target, half damage on success.
     const [draft,setDraft]=useState<RollSubmission>(),[rolls,setRolls]=useState<Record<number,ResolutionRolls>>({}),[overrides,setOverrides]=useState<Record<number,string>>({})
     const [edited,setEdited]=useState<RollSubmission>(),[properties,setProperties]=useState<Pick<ResolutionPlan,'magical'|'damageTypeOverride'>>({magical:true})
+    const [additionalActionConfirmed,setAdditionalActionConfirmed]=useState(false)
+    const additionalActionRequired=inCombat&&requiresAdditionalSpellAction(owner,ability,catalog)
     const decisionId=useId()
     const working=useRef(false),[executionId]=useState(()=>crypto.randomUUID())
     const info=combatAbilityInfo(ability,catalog)
@@ -38,7 +40,7 @@ export function MasterSpellRolls({ability,owner,participants,abilities,catalog,c
     const results:{id:number;name:string;profile:ReturnType<typeof defenseProfile>;result?:TargetResolution}[]=[]
     let reviewError=''
     try {
-        if(draft)assertPacketPlan(plan,draft.packets,combatTargeting(ability,catalog,owner,draft.option).maximum)
+        if(draft){if(plan.temporaryHitPoints&&draft.packets.some(packet=>packet.targetId!==ability.ownerId))throw new Error('Vita Falsata si applica soltanto al lanciatore.');assertPacketPlan(plan,draft.packets,combatTargeting(ability,catalog,owner,draft.option).maximum);assertTargetTypes(combatTargeting(ability,catalog,owner,draft.option),participants,draft.packets.map(p=>p.targetId))}
         if(draft)for(const id of new Set(draft.packets.map(packet=>packet.targetId))) {
             const target=participants.find(p=>p.id===id)
             if(!target?.sheet)throw new Error('Collega la scheda del bersaglio per calcolare l’attacco.')
@@ -50,16 +52,18 @@ export function MasterSpellRolls({ability,owner,participants,abilities,catalog,c
             results.push({id,name:target.description,profile,result:resolveTarget(plan,draft.packets.filter(packet=>packet.targetId===id),profile,rolls[id])})
         }
     }catch(cause){reviewError=cause instanceof Error?cause.message:'Verifica i risultati dei dadi.'}
-    if(!draft)return <ActionRollForm action={action} targets={participants.map(p=>({id:p.id,name:p.description}))} ownerId={ability.ownerId} canSubmit={!error} disabled={false} label={`Lancio: ${ability.name}`} className="master-action-form master-spell-form" initialOption={optionId} initialDraft={edited} submitLabel="Calcola esiti" onSubmit={draft=>{
+    if(!draft)return <ActionRollForm action={action} targets={participants.map(p=>({id:p.id,name:p.description,creatureType:creatureType(p.sheet)}))} ownerId={ability.ownerId} canSubmit={!error} disabled={false} label={`Lancio: ${ability.name}`} className="master-action-form master-spell-form" initialOption={optionId} initialDraft={edited} submitLabel="Calcola esiti" onSubmit={draft=>{
         const plan=action.options.find(option=>option.id===draft.option)?.resolution
         if(!plan)throw new Error('Modalità di lancio non disponibile.')
+        if(plan.temporaryHitPoints&&draft.packets.some(packet=>packet.targetId!==ability.ownerId))throw new Error('Vita Falsata si applica soltanto al lanciatore.')
         assertPacketPlan(plan,draft.packets,combatTargeting(ability,catalog,owner,draft.option).maximum)
+        assertTargetTypes(combatTargeting(ability,catalog,owner,draft.option),participants,draft.packets.map(p=>p.targetId))
         packetTargets(draft.packets)
         if(draft.packets.some(packet=>!participants.some(p=>p.id===packet.targetId&&p.sheet)))throw new Error('Collega la scheda di ogni bersaglio prima di risolvere l’attacco.')
         setDraft(draft)
     }}>{children}</ActionRollForm>
     const finalDamage=(id:number,result:TargetResolution)=>overrides[id]??(result.damage===null?'':String(result.damage))
-    const complete=!reviewError&&results.length>0&&results.every(({id,result})=>result&&(!result.save||result.save.success!==undefined&&!result.save.needsSecondDie&&!result.save.needsBonusDice?.length)&&!result.packets.some(packet=>packet.needsCritical.length||packet.needsSecondDie||packet.needsBonusDice?.length)&&validNumber(finalDamage(id,result)))
+    const complete=(!additionalActionRequired||additionalActionConfirmed)&&!reviewError&&results.length>0&&results.every(({id,result})=>result&&(!result.save||result.save.success!==undefined&&!result.save.needsSecondDie&&!result.save.needsBonusDice?.length)&&!result.packets.some(packet=>packet.needsCritical.length||packet.needsSecondDie||packet.needsBonusDice?.length)&&validNumber(finalDamage(id,result)))
     const summary:ResolutionReview={id:executionId,status:'pending',resolution:plan,packets:draft.packets,mode:plan.kind,damageEnabled:draft.damageEnabled,
         targets:results.map(({id,name,result})=>({...packetTargets(draft.packets.filter(packet=>packet.targetId===id))[0],name,resolution:result}))}
     async function recordRoll(id:string,decision:RequestDecision,body:unknown) {
@@ -94,6 +98,7 @@ export function MasterSpellRolls({ability,owner,participants,abilities,catalog,c
     return <section className="combat-request combat-request--review master-spell-review" aria-label={`Esiti: ${ability.name}`}>
         {children&&<div className="master-spell-origin">{children}</div>}
         <ResolutionDetails request={summary} review renderSave={target=><MasterSavingRolls request={summary} target={target} disabled={false} onDecide={recordRoll}/>} renderPacket={(target,index)=><MasterCriticalRolls request={summary} target={target} index={index} disabled={false} onDecide={recordRoll}/>} renderTarget={target=>{
+            if(!draft.damageEnabled)return null
             const result=target.resolution!,calculated=result.damage===null?'':String(result.damage)
             return <FinalDamageField target={target} result={result} value={finalDamage(target.id,result)} calculated={calculated} disabled={false} formId={decisionId} onChange={value=>setOverrides(current=>{
                 const next={...current};if(calculated!==''&&value!==''&&Number(value)===Number(calculated))delete next[target.id];else next[target.id]=value;return next
@@ -106,10 +111,12 @@ export function MasterSpellRolls({ability,owner,participants,abilities,catalog,c
             if(working.current||!complete)return
             working.current=true
             const targets=results.map(({id,result})=>({id,damage:finalDamage(id,result!),resolved:true}))
-            const damagePackets=results.map(({id,result})=>({id,damage:Number(finalDamage(id,result!))===result!.damage?result!.packets.map(packet=>packet.damage!):[Number(finalDamage(id,result!))]}))
-            if(onApply({...ability,useOption:draft.option,requirementsConfirmed:true,targets,execution:ability.execution??{id:executionId,phase:'resolving',option:draft.option,cost:draft.cost}},damagePackets)===false)working.current=false
-        }}><fieldset><div className="play-actions">
-            <button className="play-primary" type="submit" disabled={!complete}>Applica danni</button>
+            const damagePackets=results.map(({id,result})=>({id,...(plan.temporaryHitPoints?{temporaryHitPoints:result!.temporaryHitPoints!,keepTemporaryHitPoints:draft.packets[0].keepTemporaryHitPoints}:{}),...(plan.healing?{healing:result!.healing!}:{}),effects:result!.packets.flatMap(packet=>packet.effects),damage:Number(finalDamage(id,result!))===result!.damage?result!.packets.map(packet=>packet.damage!):[Number(finalDamage(id,result!))]}))
+            const applied=onApply({...ability,useOption:draft.option,requirementsConfirmed:true,targets,execution:ability.execution??{id:executionId,phase:'resolving',option:draft.option,cost:draft.cost}},damagePackets,additionalActionConfirmed)
+            working.current=false
+            if(applied!==false){setDraft(undefined);setEdited(undefined);setRolls({});setOverrides({});setAdditionalActionConfirmed(false)}
+        }}><fieldset>{additionalActionRequired&&<label className="combat-request-check"><input type="checkbox" checked={additionalActionConfirmed} onChange={event=>setAdditionalActionConfirmed(event.target.checked)}/>Confermo un’altra azione valida per lanciare un incantesimo (es. Azione Impetuosa 2014)</label>}<div className="play-actions">
+            <button className="play-primary" type="submit" disabled={!complete}>{plan.temporaryHitPoints?'Applica PF temporanei':plan.healing?'Applica cura':draft.damageEnabled?'Applica danni':'Applica esiti'}</button>
             <button className="play-secondary" type="button" onClick={()=>{setEdited(draft);setDraft(undefined);setRolls({});setOverrides({});setProperties({magical:true});working.current=false}}>Modifica tiri</button>
         </div></fieldset></form>
     </section>

@@ -244,6 +244,8 @@
 .player-page-renewed .play-player-actions > p { font-size:13px; margin-bottom:12px; }
 .player-page-renewed .play-player-actions > button { width:100%; margin:12px 0; }
 .player-page-renewed .ability-row > .ability-name { grid-column:1/-1; }
+.player-page-renewed .ability-row:has(> .player-cast-close) > .ability-name { grid-column:1/-2; }
+.player-page-renewed .ability-row > .player-cast-close { grid-column:-2/-1; grid-row:1; }
 .player-page-renewed #player-action-proposal > fieldset { display:grid; gap:16px; border:0; padding:0; }
 .player-page-renewed #player-action-proposal > fieldset > :is(p,label,fieldset) { margin:0; }
 .player-page-renewed .player-action-description > summary { display:flex; justify-content:flex-start; align-items:center; gap:8px; list-style:none; cursor:pointer; }

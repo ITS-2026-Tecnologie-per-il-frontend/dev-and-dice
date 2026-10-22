@@ -1,7 +1,7 @@
 import { castSheetSpell, sheetClassLevels, sheetRuleResources } from './ActiveRules.ts'
 import { wildShapeResources } from './VerifiedDatabase.ts'
 import { integerValue, type CharacterSheet } from '../../utils/CharacterSheets.ts'
-import { durationTurns, hitPointsAfterDamageWithTemporary, type Ability } from '../../utils/Combat.ts'
+import { durationTurns, hitPointsAfterHealing, hitPointsAfterDamageWithTemporary, type Ability } from '../../utils/Combat.ts'
 import { catalogAbilityKind, templateFromCatalog, type Catalog } from '../../utils/Catalog.ts'
 import { creationEnabled, type CreationData } from '../../utils/PlayerCreation.ts'
 import { spellEdition, classId } from '../../utils/Spellcasting.ts'
@@ -41,6 +41,16 @@ export function combatAbilityInfo(ability:Pick<Ability,'catalogId'|'duration'|'r
     const concentration=m.concentration===true || object(entry?.data.durationInfo).concentration===true
     const unit=typeof casting.unit==='string' ? casting.unit : /bonus/i.test(castingText) ? 'bonus-action' : /reazion|reaction/i.test(castingText) ? 'reaction' : prolonged ? 'minute' : 'action'
     return {entry,level,instantaneous,damage,prolonged,ritual,concentration,unit,alternatives,repairsObject,passive,attack}
+}
+
+// D&D_5_Player_Original_Handbook.pdf (2014), PDF 190, 73 and 203: another action spell needs another valid
+// action (e.g. Action Surge). The Master confirms availability, not an extra slot.
+export function requiresAdditionalSpellAction(sheet:CharacterSheet,ability:Ability,catalog:Catalog) {
+    const info=combatAbilityInfo(ability,catalog)
+    if(spellEdition(sheet)!=='2014'||info.level===undefined||info.unit!=='action')return false
+    const history=JSON.parse(sheet.playerDetails?.['rules2014.spellsThisTurn']??sheet.playerDetails?.['combat.spellsThisTurn']??'[]')
+    if(!Array.isArray(history))throw new Error('Cronologia degli incantesimi del turno non valida.')
+    return history.some(cast=>cast?.unit==='action')
 }
 
 function pool(sheet:CharacterSheet,key:string) {
@@ -157,6 +167,9 @@ export function resolvedAbility(ability:Ability,catalog:Catalog,combat:import('.
     const restored=ability.duration==='Personalizzata' && ability.remainingTurns===0 && info.entry ? templateFromCatalog(info.entry) : ability
     const remainingTurns=restored.duration==='Personalizzata' ? restored.remainingTurns ?? 0 : durationTurns[restored.duration]
     const next={...ability,duration:restored.duration,timed:restored.timed,execution:undefined,requirementsConfirmed:false,active:!info.instantaneous,remainingTurns}
+    // PHB 2014, D&D_5_Player_Original_Handbook.pdf, PDF 190, 240 and 252:
+    // Durations follow the caster’s turn: ten rounds/minute, 600 rounds/hour.
+    if(next.active&&['phb2014:spell:hold-person','phb2014:spell:false-life'].includes(next.ruleId??'')&&combat)return {...next,expiresAt:'start',expiryOwnerId:next.ownerId??undefined,expiryRound:combat.round+remainingTurns}
     if (next.active && next.expiresAt && combat) {
         const owner=next.expiryOwnerId ?? next.ownerId,ownerIndex=participants.findIndex(participant=>participant.id===owner),activeIndex=participants.findIndex(participant=>participant.id===combat.activeId)
         next.expiryRound=combat.round+(ownerIndex>activeIndex ? 0 : 1)
@@ -177,4 +190,22 @@ export function resolveCombatDamage<T extends {id:number;hitPoints:string;tempor
         if (!result) throw new Error('Punti ferita del bersaglio non validi.')
         return {...turn,...result}
     })
+}
+
+// PHB 2014, D&D_5_Player_Original_Handbook.pdf, PDF 198, Healing:
+// regained HP cannot exceed the maximum; temporary HP are unaffected.
+export function restoreCombatHitPoints<T extends {hitPoints:string;sheet?:CharacterSheet}>(turn:T,amount:number):T {
+    const current=integerValue(turn.hitPoints),maximum=integerValue(turn.sheet?.playerDetails?.maxHitPoints)
+    if(!Number.isSafeInteger(amount)||amount<0||current===undefined||current<0||maximum===undefined||maximum<0)throw new Error('Guarigione non applicata: verifica i PF attuali e massimi nella scheda del bersaglio.')
+    const hitPoints=amount===0?turn.hitPoints:hitPointsAfterHealing(turn.hitPoints,String(amount),String(maximum))
+    if(hitPoints===null)throw new Error('Punti ferita del bersaglio non validi.')
+    return {...turn,hitPoints,sheet:turn.sheet?{...turn.sheet,hitPoints}:undefined}
+}
+
+// PHB 2014, D&D_5_Player_Original_Handbook.pdf, PDF 199: the chosen pool
+// replaces the old one, never adds to it and never changes actual HP.
+export function grantCombatTemporaryHitPoints<T extends {temporaryHitPoints:string;sheet?:CharacterSheet}>(turn:T,amount:number|undefined,source?:string):T {
+    if(amount===undefined||!Number.isSafeInteger(amount)||amount<0)throw new Error('PF temporanei non validi.')
+    const temporaryHitPoints=String(amount)
+    return {...turn,temporaryHitPoints,sheet:turn.sheet?{...turn.sheet,playerDetails:{...turn.sheet.playerDetails,temporaryHitPoints,'temporaryHitPoints.source':source??''}}:undefined}
 }

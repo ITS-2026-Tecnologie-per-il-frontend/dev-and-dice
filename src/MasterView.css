@@ -83,7 +83,7 @@
 .master-renewed .tracker-main .turn-row .turn-drag-handle:disabled { opacity:.3; }
 .master-renewed .turn-max-hitpoints { font-size:12px; }
 .master-renewed .master-participant-name { min-width:0; }
-.master-participant-name > button { display:grid; width:100%; min-height:44px; gap:4px; padding:4px 0; border:0; background:transparent; color:var(--text-h); text-align:left; }
+.master-participant-identity > button { display:grid; width:100%; min-height:44px; gap:4px; padding:4px 0; border:0; background:transparent; color:var(--text-h); text-align:left; }
 .master-participant-name strong { font-size:15px; line-height:1.3; overflow-wrap:anywhere; }
 .master-participant-name button > span,.master-participant-effects { color:var(--text); font-size:12px; line-height:1.4; }
 .master-participant-effects { display:block; margin-top:3px; }
@@ -212,3 +212,20 @@
     .master-settings-dialog h2 { font-size:21px; }
 }
 @media (prefers-reduced-motion:no-preference) { .master-renewed button { transition:background-color .15s,border-color .15s; } }
+
+.master-renewed .tracker-main .turn-statuses { grid-area:warning; margin-top:6px; }
+.master-renewed .turn-statuses .master-concentration-check { margin:0; }
+
+.master-renewed .master-participant-name:has(> .turn-statuses) { display:grid; grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr); align-items:center; gap:10px; }
+.master-participant-identity { min-width:0; }
+.master-renewed .tracker-main .master-participant-name > .turn-statuses { display:grid; align-content:center; grid-area:auto; gap:4px; margin:0; }
+.master-participant-name .turn-save-reminder { font-size:11px; line-height:1.4; overflow-wrap:anywhere; }
+.master-participant-name .turn-condition-pill { max-width:100%; box-sizing:border-box; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.master-participant-name .turn-condition-pills { min-width:0; }
+@media (max-width:640px) {
+    .master-renewed .tracker-main .turn-row:has(.master-participant-name > .turn-statuses) { grid-template-columns:24px repeat(3,minmax(0,1fr)) 24px; grid-template-areas:'drag name name name delete' '. initiative pf ca .' '. damage damage damage .' '. warning warning warning .'; }
+    .master-renewed .turn-row:has(.master-participant-name > .turn-statuses) :is(.turn-pf,.turn-ca) { display:grid; align-items:start; gap:5px; }
+    .master-renewed .turn-row:has(.master-participant-name > .turn-statuses) .turn-ca input { width:100%; min-width:0; }
+    .master-renewed .turn-row:has(.master-participant-name > .turn-statuses) .turn-hitpoints { min-width:0; }
+    .master-renewed .turn-row:has(.master-participant-name > .turn-statuses) .turn-hitpoints input { width:0; min-width:0; }
+}

@@ -93,6 +93,7 @@ export function updateCharacterField(sheet: CharacterSheet, key: string, value: 
     const inventory = updateInventoryField(sheet,key,value)
     if (inventory) return inventory
     const d = { ...sheet.playerDetails }
+    if(key==='temporaryHitPoints'&&value!==d.temporaryHitPoints)delete d['temporaryHitPoints.source']
     const legacy = appearanceLegacyKey(key)
     if (legacy) delete d[legacy]
     if (Object.hasOwn(characterFields, key)) {

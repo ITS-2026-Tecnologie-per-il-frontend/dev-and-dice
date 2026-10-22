@@ -47,6 +47,32 @@ export function SpellSaveNotice({plan}:{plan:ResolutionPlan}) {
     </div></HelpTooltip></div>
 }
 
+export function HealingRollFields({plan,value,onChange}:{plan:ResolutionPlan;value:string;onChange:(value:string)=>void}) {
+    const healing=plan.healing!,id=useId(),valid=value!==''&&Number(value)>=healing.count&&Number(value)<=healing.count*healing.sides
+    return <div className="player-healing-roll">
+        <div className="player-healing-heading"><label htmlFor={id}>Guarigione tirata</label><DiceResult notation={healing.dice}/></div>
+        <input id={id} aria-label="Guarigione tirata" type="text" inputMode="numeric" pattern="[0-9]+" required placeholder="Solo dadi" value={value} onChange={event=>{if(validRollNumber(event.target.value))onChange(event.target.value)}}/>
+        <div><div className="player-weapon-label"><span>Mod.</span><HelpTooltip label="Aiuto sul modificatore di guarigione">Inserisci solo la somma dei dadi. Il modificatore {healing.ability?`di ${saveNames[healing.ability]}`:'da incantatore'} viene aggiunto automaticamente una sola volta, anche con slot superiori.</HelpTooltip></div><output aria-label="Modificatore di guarigione">{signedBonus(healing.modifier)||'Da verificare'}</output></div>
+        <div role="status" aria-label="Totale guarigione"><span>Totale</span><strong>{valid&&healing.modifier!==undefined?Math.max(0,Number(value)+healing.modifier):'—'}</strong></div>
+        {value&&!valid&&<small>Inserisci la somma dei dadi, da {healing.count} a {healing.count*healing.sides}.</small>}
+    </div>
+}
+
+export function TemporaryHitPointRollFields({plan,value,keep,onChange,onKeep}:{plan:ResolutionPlan;value:string;keep:''|'new'|'current';onChange:(value:string)=>void;onKeep:(value:''|'new'|'current')=>void}) {
+    const benefit=plan.temporaryHitPoints!,id=useId(),valid=/^[1-4]$/.test(value)
+    return <>
+        <div className="player-healing-roll">
+            <div className="player-healing-heading"><label htmlFor={id}>PF temporanei tirati</label><DiceResult notation={benefit.dice}/></div>
+            <input id={id} aria-label="PF temporanei tirati" type="text" inputMode="numeric" pattern="[1-4]" required placeholder="Solo d4" value={value} onChange={event=>{if(validRollNumber(event.target.value))onChange(event.target.value)}}/>
+            <div><span>Bonus</span><output aria-label="Bonus ai PF temporanei">+{benefit.bonus}</output></div>
+            <div role="status" aria-label="Totale PF temporanei"><span>Totale</span><strong>{valid?Number(value)+benefit.bonus:'—'}</strong></div>
+        </div>
+        <p className="library-help">Si applica a te stesso. Inserisci solo il d4: il bonus viene aggiunto automaticamente.</p>
+        {value&&!valid&&<p role="status">Inserisci il risultato del d4, da 1 a 4.</p>}
+        {benefit.current>0&&<label>PF temporanei da mantenere<select aria-label="PF temporanei da mantenere" required value={keep} onChange={event=>onKeep(event.target.value as typeof keep)}><option value="">Scegli quali mantenere…</option><option value="new">Prendi i nuovi{valid?` (${Number(value)+benefit.bonus})`:''}</option><option value="current">Mantieni gli attuali ({benefit.current})</option></select><small>I PF temporanei non si sommano.</small></label>}
+    </>
+}
+
 export function AttackRollFields({plan,value,onChange,weapon=true,compact=false}:{plan:ResolutionPlan;value:string;onChange:(value:string)=>void;weapon?:boolean;compact?:boolean}) {
     const id=useId(),valid=/^([1-9]|1[0-9]|20)$/.test(value)
     return <div className={`player-weapon-attack${compact?' player-attack-compact':''}`}>{!compact&&<p className="ability-casting-summary">Tiro per colpire con {weapon?'arma':'incantesimo'}</p>}<div className="player-weapon-roll">

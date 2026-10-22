@@ -23,6 +23,11 @@
 .player-sheet-export-controls small { max-width: 35ch; color: var(--text); font-size: 12px; line-height: 1.5; text-align: right; }
 .player-sheet-export-controls p { font-size: 14px; line-height: 1.5; }
 .player-sheet-settings { border: 1px solid var(--border); border-radius: 6px; }
+.player-combat-settings { margin-top: 12px; }
+.player-combat-settings-fields { display: grid; gap: 12px; padding: 16px; border-top: 1px solid var(--border); }
+.player-combat-settings-fields p { margin: 0; color: var(--text); font-size: 13px; line-height: 1.6; }
+.player-combat-settings-fields .player-field > span { color: var(--text); font-size: 13px; text-transform: none; letter-spacing: normal; }
+.player-combat-settings-fields :is(input,select) { min-height: 44px; width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 4px; padding: 10px; background: var(--bg); color: var(--text-h); font: inherit; }
 .player-sheet-settings > summary { padding: 12px 16px; cursor: pointer; font-size: 14px; line-height: 1.6; }
 .player-sheet-settings > summary::marker { color: var(--controls-accent); }
 .player-sheet-settings > summary:hover { background: var(--controls-tint); }

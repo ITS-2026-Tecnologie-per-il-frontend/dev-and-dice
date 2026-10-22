@@ -24,7 +24,7 @@ const normalized=(s:string)=>s.normalize('NFD').replace(/\p{M}/gu,'').toLowerCas
 const aliases:Record<string,DamageType>={acido:'acid',contundente:'bludgeoning',contundenti:'bludgeoning',freddo:'cold',fuoco:'fire',forza:'force',fulmine:'lightning',fulmini:'lightning',necrotico:'necrotic',necrotici:'necrotic',perforante:'piercing',perforanti:'piercing',veleno:'poison',psichico:'psychic',psichici:'psychic',radioso:'radiant',radiosi:'radiant',tagliente:'slashing',taglienti:'slashing',tuono:'thunder'}
 const damageType=(v:unknown):DamageType|undefined=>typeof v==='string'?(Object.hasOwn(damageNames,normalized(v))?normalized(v) as DamageType:aliases[normalized(v)]):undefined
 export type DamageRoll={type:DamageType;amount:number}
-export type RollPacket={targetId:number;die?:number;damage:DamageRoll[]}
+export type RollPacket={targetId:number;die?:number;healingRoll?:number;temporaryHitPointsRoll?:number;keepTemporaryHitPoints?:boolean;damage:DamageRoll[]}
 export type EffectSpec={kind:'resistance'|'nonmagical-resistance'|'ac'|'condition'|'speed'|'spell-immunity'|'roll-bonus';types?:DamageType[];amount?:number;condition?:string;ruleId?:string;rolls?:('attack'|'save')[];sides?:number;sign?:1|-1;consume?:boolean;trigger:'always'|'hit'|'failed-save';repeatSave?:boolean}
 export function validEffectSpecs(value:unknown):value is EffectSpec[] {
     return Array.isArray(value)&&value.length<=30&&value.every(v=>{
@@ -52,13 +52,13 @@ export function validWeaponEffect(value:unknown):value is WeaponEffect {
         &&(w.allowedWeapons===undefined||Array.isArray(w.allowedWeapons)&&w.allowedWeapons.length<=100&&w.allowedWeapons.every(v=>typeof v==='string'&&v.length<=250))
         &&(w.extraDamage===undefined||typeof extra.dice==='string'&&/^\d+d\d+$/.test(extra.dice)&&Array.isArray(extra.choices)&&extra.choices.length>0&&extra.choices.length<=13&&extra.choices.every(t=>!!damageType(t)&&t!=='untyped'))
 }
-export type ResolutionPlan={attackAbility?:SaveAbility;deferredSave?:{ability:SaveAbility;dc?:number;trigger:'start-own-turn-in-line';pushFt:number};weaponEffect?:WeaponEffect;damageBonuses?:Partial<Record<DamageType,number>>;damageDice?:Partial<Record<DamageType,string>>;weaponName?:string;edition:'2014'|'2024';ruleId?:string;kind:'attack'|'save'|'automatic'|'none';damageTypes:DamageType[];damageHint:string;attackBonus?:number;save?:{ability:SaveAbility;dc?:number;onSuccess:'half'|'none'|'review'};maximumPackets:number|null;requiredPackets?:number;sharedDamage:boolean;magical:boolean|null;damageTypeOverride?:DamageType;effects:EffectSpec[];effectChoices?:DamageType[];notes:string[]}
+export type ResolutionPlan={temporaryHitPoints?:{dice:string;bonus:number;current:number};healing?:{dice:string;count:number;sides:number;modifier?:number;ability?:SaveAbility};attackAbility?:SaveAbility;deferredSave?:{ability:SaveAbility;dc?:number;trigger:'start-own-turn-in-line';pushFt:number};weaponEffect?:WeaponEffect;damageBonuses?:Partial<Record<DamageType,number>>;damageDice?:Partial<Record<DamageType,string>>;weaponName?:string;edition:'2014'|'2024';ruleId?:string;kind:'attack'|'save'|'automatic'|'none';damageTypes:DamageType[];damageHint:string;attackBonus?:number;save?:{ability:SaveAbility;dc?:number;onSuccess:'half'|'none'|'review'};maximumPackets:number|null;requiredPackets?:number;sharedDamage:boolean;magical:boolean|null;damageTypeOverride?:DamageType;effects:EffectSpec[];effectChoices?:DamageType[];notes:string[]}
 export type DefenseRule={type:DamageType;when:'always'|'nonmagical';source:string}
 export type BonusDie={id:number;label:string;sides:number;sign:1|-1;consume:boolean}
-export type DefenseProfile={reviewDamage?:boolean;reviewAttack?:boolean;armorClass?:number;saveBonus?:number;attackMode?:'normal'|'advantage'|'disadvantage';saveMode?:'normal'|'advantage'|'disadvantage';attackDisadvantage?:boolean;grantsAttackAdvantage?:boolean;automaticSaveFailure?:boolean;attackDice?:BonusDie[];saveDice?:BonusDie[];spellImmunities?:string[];resistances:DefenseRule[];immunities:DefenseRule[];vulnerabilities:DefenseRule[];conditionImmunities:string[];notes:string[]}
+export type DefenseProfile={hitPoints?:number;maxHitPoints?:number;reviewDamage?:boolean;reviewAttack?:boolean;armorClass?:number;saveBonus?:number;attackMode?:'normal'|'advantage'|'disadvantage';saveMode?:'normal'|'advantage'|'disadvantage';attackDisadvantage?:boolean;grantsAttackAdvantage?:boolean;automaticSaveFailure?:boolean;attackDice?:BonusDie[];saveDice?:BonusDie[];spellImmunities?:string[];resistances:DefenseRule[];immunities:DefenseRule[];vulnerabilities:DefenseRule[];conditionImmunities:string[];notes:string[]}
 export type ResolutionRolls={saveOutcome?:boolean;save?:number;saveSecond?:number;attacks?:Record<string,number>;saveBonuses?:Record<string,number>;attackBonuses?:Record<string,number>;critical?:Record<string,number>}
 export type PacketResult={hit?:boolean;critical:boolean;total?:number;needsSecondDie?:boolean;needsBonusDice?:BonusDie[];damage:number|null;steps:string[];effects:EffectSpec[];needsCritical:DamageType[]}
-export type TargetResolution={damage:number|null;packets:PacketResult[];armorClass?:number;save?:{ability:SaveAbility;die?:number;secondDie?:number;needsSecondDie?:boolean;needsBonusDice?:BonusDie[];automaticFailure?:boolean;bonus?:number;dc?:number;total?:number;success?:boolean};notes:string[]}
+export type TargetResolution={temporaryHitPoints?:number;healing?:number|null;damage:number|null;packets:PacketResult[];armorClass?:number;save?:{ability:SaveAbility;die?:number;secondDie?:number;needsSecondDie?:boolean;needsBonusDice?:BonusDie[];automaticFailure?:boolean;bonus?:number;dc?:number;total?:number;success?:boolean};notes:string[]}
 
 export function resolutionPlan(sheet:CharacterSheet,ability:Ability,catalog:Catalog,optionId?:string,weaponContext?:WeaponContext):ResolutionPlan|undefined {
     const entry=catalog.abilities.find(e=>e.id===ability.catalogId),m=object(entry?.data.mechanics),e=object(m.effect),edition=spellEdition(sheet),d=sheet.playerDetails??{}
@@ -115,15 +115,23 @@ export function resolutionPlan(sheet:CharacterSheet,ability:Ability,catalog:Cata
     if(choices?.length)effects.push({kind:'resistance',types:[],trigger:'always'})
     // ponytail: only explicit, verified immediate effects are automated. New mechanics are
     // added here with a rules citation and a check; conditional prose stays visible to the Master.
-    const known=new Set(['attack','target','targets','area','damage','failureDamage','damagePerHit','damagePerDart','damageType','save','successfulSave','successDamage','automaticHit','rays','darts','simultaneous','canSplitTargets','damageRollInterpretation','beamsByCharacterLevel','armorClassBonus','resistanceChooseOne','resistanceToNonmagicalDamageTypes','failedSave','repeatSave','successfulRepeatSave','onHit','bonusDie','rollTypes','bonus','decision','ends','failure','affectsAbilityChecks','preventsDamageFrom','damageDiceByCharacterLevel'])
+    const known=new Set(['attack','target','targets','area','damage','failureDamage','damagePerHit','damagePerDart','damageType','save','successfulSave','successDamage','automaticHit','rays','darts','simultaneous','canSplitTargets','damageRollInterpretation','beamsByCharacterLevel','armorClassBonus','resistanceChooseOne','resistanceToNonmagicalDamageTypes','failedSave','repeatSave','successfulRepeatSave','onHit','bonusDie','rollTypes','bonus','decision','ends','failure','affectsAbilityChecks','preventsDamageFrom','damageDiceByCharacterLevel','excludedCreatureTypes',...(edition==='2014'&&ability.ruleId==='phb2014:spell:cure-wounds'?['healing']:[]),...(edition==='2014'&&ability.ruleId==='phb2014:spell:false-life'?['temporaryHitPoints']:[])])
     if(Object.keys(e).some(key=>!known.has(key)))notes.push('La descrizione contiene effetti o vincoli aggiuntivi da verificare con il Master.')
     const onSuccess=e.successfulSave==='half'||e.successDamage==='half'?'half':['no-damage','none'].includes(String(e.successfulSave))||e.successDamage===0||e.successDamage==='none'||!types.length?'none':'review'
-    if(kind==='none'&&!effects.length&&!choices?.length&&!weaponEffect&&!deferredSave)return undefined
+    // PHB 2014, D&D_5_Player_Original_Handbook.pdf, PDF 231, Cure Wounds.
+    // This verified healing path is specific to the 2014 spell.
+    const healingAbility=spellAttackAbility(sheet,weaponContext?.data)
+    const healing=edition==='2014'&&ability.ruleId==='phb2014:spell:cure-wounds'?{dice:`${1+extra}d8`,count:1+extra,sides:8,ability:healingAbility,modifier:healingAbility?abilityModifier(sheet[healingAbility]):undefined}:undefined
+    // PHB 2014, D&D_5_Player_Original_Handbook.pdf, PDF 240, False Life:
+    // one d4 at every slot level; upcasting adds a fixed 5 per extra level.
+    const temporaryHitPoints=edition==='2014'&&ability.ruleId==='phb2014:spell:false-life'?{dice:'1d4',bonus:4+extra*5,current:integerValue(d.temporaryHitPoints)??0}:undefined
+    if(healing||temporaryHitPoints)maximumPackets=1
+    if(kind==='none'&&!effects.length&&!choices?.length&&!weaponEffect&&!deferredSave&&!healing&&!temporaryHitPoints)return undefined
     const attackBonus=weapon?.attackBonus??(row?integerValue(d[`attacks.${row[1]}.1`]):integerValue(d.spellAttackBonus))
     // PHB 2014, D&D_5_Player_Original_Handbook.pdf, PDF 258, Magic Missile:
     // each dart adds a fixed +1 to its d4; the Strength modifier does not apply.
     const missile=edition==='2014'&&ability.ruleId==='phb2014:spell:magic-missile'
-    return {edition,attackAbility:row?weapon?.attackAbility:spellAttackAbility(sheet,weaponContext?.data),deferredSave,weaponEffect,...(weapon?{damageBonuses:weapon.bonuses,damageDice:weapon.dice,weaponName:weapon.name}:missile?{damageBonuses:{force:1},damageDice:{force:'1d4'}}:{}),ruleId:ability.ruleId,kind,damageTypes:types,damageHint:hint,attackBonus,save:immediateSave?{ability:immediateSave,dc:integerValue(d.spellDC),onSuccess}:undefined,maximumPackets,requiredPackets:Number.isSafeInteger(split)&&split>0?maximumPackets??undefined:undefined,sharedDamage:kind==='save'&&types.length>0,magical:weapon?weapon.magical:true,effects,effectChoices:choices,notes}
+    return {edition,healing,temporaryHitPoints,attackAbility:row?weapon?.attackAbility:spellAttackAbility(sheet,weaponContext?.data),deferredSave,weaponEffect,...(weapon?{damageBonuses:weapon.bonuses,damageDice:weapon.dice,weaponName:weapon.name}:missile?{damageBonuses:{force:1},damageDice:{force:'1d4'}}:{}),ruleId:ability.ruleId,kind,damageTypes:types,damageHint:hint,attackBonus,save:immediateSave?{ability:immediateSave,dc:integerValue(d.spellDC),onSuccess}:undefined,maximumPackets,requiredPackets:Number.isSafeInteger(split)&&split>0?maximumPackets??undefined:undefined,sharedDamage:kind==='save'&&types.length>0,magical:weapon?weapon.magical:true,effects,effectChoices:choices,notes}
 }
 
 export function activeEffects(abilities:Ability[]):Ability[] {
@@ -193,7 +201,7 @@ export function weaponProfile(sheet:CharacterSheet,index:number,data?:CreationDa
 }
 
 export function defenseProfile(sheet:CharacterSheet,ability:SaveAbility|undefined,active:Ability[],targetId:number,heavyArmor?:boolean,data?:CreationData):DefenseProfile {
-    const d=sheet.playerDetails??{},notes:string[]=[],profile:DefenseProfile={armorClass:integerValue(sheet.armorClass),resistances:[],immunities:[],vulnerabilities:[],conditionImmunities:[],notes}
+    const d=sheet.playerDetails??{},notes:string[]=[],profile:DefenseProfile={armorClass:integerValue(sheet.armorClass),resistances:[],immunities:[],vulnerabilities:[],conditionImmunities:[],notes,hitPoints:integerValue(sheet.hitPoints),maxHitPoints:integerValue(d.maxHitPoints)}
     if(data&&spellEdition(sheet)==='2014'&&d['creation.enabled']==='true') {
         const race=data.verified?.reviewedEntities.find(e=>e.id==='phb2014:race:'+d['creation.race'])
         for(const trait of Array.isArray(race?.mechanics.traits)?race.mechanics.traits:[]) {
@@ -268,7 +276,10 @@ export function defenseProfile(sheet:CharacterSheet,ability:SaveAbility|undefine
 export function validPackets(value:unknown):value is RollPacket[] {
     return Array.isArray(value)&&value.length<=1000&&value.every(p=>{
         const v=object(p)
-        return Object.keys(v).every(k=>['targetId','die','damage'].includes(k))&&Number.isSafeInteger(v.targetId)&&Number(v.targetId)>=0
+        return Object.keys(v).every(k=>['targetId','die','healingRoll','temporaryHitPointsRoll','keepTemporaryHitPoints','damage'].includes(k))&&Number.isSafeInteger(v.targetId)&&Number(v.targetId)>=0
+            &&(v.temporaryHitPointsRoll===undefined||Number.isSafeInteger(v.temporaryHitPointsRoll)&&Number(v.temporaryHitPointsRoll)>=0)
+            &&(v.keepTemporaryHitPoints===undefined||typeof v.keepTemporaryHitPoints==='boolean')
+            &&(v.healingRoll===undefined||Number.isSafeInteger(v.healingRoll)&&Number(v.healingRoll)>=0)
             &&(v.die===undefined||Number.isInteger(v.die)&&Number(v.die)>=1&&Number(v.die)<=20)
             &&Array.isArray(v.damage)&&v.damage.length<=14&&new Set(v.damage.map(c=>object(c).type)).size===v.damage.length
             &&v.damage.every(c=>{const x=object(c);return Object.keys(x).every(k=>['type','amount'].includes(k))&&typeof x.type==='string'&&Object.hasOwn(damageNames,x.type)&&Number.isSafeInteger(x.amount)&&Number(x.amount)>=0})
@@ -277,13 +288,16 @@ export function validPackets(value:unknown):value is RollPacket[] {
 }
 
 export function assertPacketPlan(plan:ResolutionPlan,packets:RollPacket[],targetMaximum:number|null) {
-    if(!validPackets(packets)||!packets.length&&(plan.damageTypes.length>0||plan.kind==='attack'||plan.kind==='save'||plan.effects.length>0||!!plan.weaponEffect))throw new Error('Inserisci i tiri e scegli i bersagli.')
+    if(plan.temporaryHitPoints&&(!Number.isSafeInteger(plan.temporaryHitPoints.current)||plan.temporaryHitPoints.current<0||!Number.isSafeInteger(plan.temporaryHitPoints.bonus)||plan.temporaryHitPoints.bonus<4||plan.temporaryHitPoints.bonus>44))throw new Error('Controlla i PF temporanei e il livello dello slot nella scheda.')
+    if(!validPackets(packets)||!packets.length&&(plan.damageTypes.length>0||plan.kind==='attack'||plan.kind==='save'||plan.effects.length>0||!!plan.weaponEffect||!!plan.healing||!!plan.temporaryHitPoints))throw new Error('Inserisci i tiri e scegli i bersagli.')
     if(targetMaximum!==null&&new Set(packets.map(p=>p.targetId)).size>targetMaximum)throw new Error('Troppi bersagli per questa azione.')
     if(plan.requiredPackets&&packets.length!==plan.requiredPackets)throw new Error(`Assegna tutti i ${plan.requiredPackets} colpi dell’incantesimo.`)
     if(plan.maximumPackets!==null&&packets.length>plan.maximumPackets)throw new Error('Troppi colpi per questa azione.')
     if(plan.kind!=='attack'&&plan.maximumPackets===null&&new Set(packets.map(p=>p.targetId)).size!==packets.length)throw new Error('Un solo pacchetto per bersaglio per questa azione.')
     for(const packet of packets) {
         if(plan.kind==='attack'?(packet.die===undefined):packet.die!==undefined)throw new Error('Inserisci soltanto i dadi richiesti dall’azione.')
+        if(plan.temporaryHitPoints ? packet.temporaryHitPointsRoll===undefined||packet.temporaryHitPointsRoll<1||packet.temporaryHitPointsRoll>4||typeof packet.keepTemporaryHitPoints!=='boolean' : packet.temporaryHitPointsRoll!==undefined||packet.keepTemporaryHitPoints!==undefined)throw new Error('Inserisci soltanto il d4 dei PF temporanei e scegli quali mantenere.')
+        if(plan.healing ? packet.healingRoll===undefined||packet.healingRoll<plan.healing.count||packet.healingRoll>plan.healing.count*plan.healing.sides : packet.healingRoll!==undefined)throw new Error('Inserisci soltanto il risultato dei dadi di guarigione richiesti, senza modificatore.')
         if(packet.damage.map(c=>c.type).sort().join()!==[...plan.damageTypes].sort().join())throw new Error('I tipi di danno devono corrispondere all’azione.')
     }
     if(plan.sharedDamage&&packets.some(p=>JSON.stringify(p.damage)!==JSON.stringify(packets[0].damage)))throw new Error('Un unico tiro dei danni si applica a tutti i bersagli dell’area.')
@@ -298,6 +312,23 @@ export function packetTargets(packets:RollPacket[]) {
 }
 
 export function resolveTarget(plan:ResolutionPlan,packets:RollPacket[],profile:DefenseProfile,rolls:ResolutionRolls={}):TargetResolution {
+    if(plan.temporaryHitPoints) {
+        assertPacketPlan(plan,packets,1)
+        const {bonus,current}=plan.temporaryHitPoints,packet=packets[0],rolled=packet.temporaryHitPointsRoll!,gained=rolled+bonus
+        const temporaryHitPoints=packet.keepTemporaryHitPoints?current:gained
+        if(!Number.isSafeInteger(temporaryHitPoints)||temporaryHitPoints<0)throw new Error('PF temporanei non validi.')
+        return {damage:0,temporaryHitPoints,packets:[{critical:false,damage:0,needsCritical:[],effects:[],steps:[`PF temporanei ottenuti: ${rolled} + ${bonus} = ${gained}`,`PF temporanei mantenuti: ${temporaryHitPoints}${packet.keepTemporaryHitPoints?' (mantieni quelli attuali)':' (nuovo beneficio)'}. Non si sommano ai ${current} precedenti.`]}],notes:plan.notes}
+    }
+    if(plan.healing) {
+        assertPacketPlan(plan,packets,1)
+        const {modifier}=plan.healing,raw=packets[0].healingRoll!,current=profile.hitPoints,maximum=profile.maxHitPoints
+        const ready=modifier!==undefined&&current!==undefined&&current>=0&&maximum!==undefined&&maximum>=0
+        const total=modifier===undefined?undefined:Math.max(0,raw+modifier)
+        if(total!==undefined&&!Number.isSafeInteger(total))throw new Error('Totale della guarigione troppo grande.')
+        const healing=ready?Math.min(total!,Math.max(0,maximum-current)):null
+        const notes=[...plan.notes,...(modifier===undefined?['Modificatore da incantatore mancante: correggi la caratteristica nella scheda.']:[]),...(!ready&&modifier!==undefined?['PF attuali o massimi mancanti o non validi: correggi la scheda del bersaglio.']:[])]
+        return {damage:ready?0:null,healing,packets:[{critical:false,damage:ready?0:null,needsCritical:[],effects:[],steps:[`Guarigione: ${raw}${modifier===undefined?' + modificatore da verificare':` ${modifier<0?'−':'+'} ${Math.abs(modifier)} = ${total}`}`,`PF recuperati: ${healing??'da verificare'}${ready?` (${current} → ${current+healing!}, massimo ${maximum})`:''}`]}],notes}
+    }
     if([rolls.save,rolls.saveSecond,...Object.values(rolls.attacks??{})].some(n=>n!==undefined&&(!Number.isInteger(n)||n<1||n>20))||Object.values(rolls.critical??{}).some(n=>!Number.isSafeInteger(n)||n<0))throw new Error('Risultati dei dadi non validi.')
     let success:boolean|undefined,total:number|undefined
     const bonusTotal=(dice:BonusDie[],values:Record<string,number>,prefix='')=>dice.reduce((sum,die)=>{

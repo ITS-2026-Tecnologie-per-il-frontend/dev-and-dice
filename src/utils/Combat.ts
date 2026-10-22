@@ -70,9 +70,11 @@ export type Ability = {
     expiryOwnerId?:number
     expiryRound?:number
     repeatSave?:string
+    repeatSaveRoll?:{ability:import('../domain/dnd/CombatResolution.ts').SaveAbility;dc?:number;timing:'end';lastRound?:number}
     ruleId?:string
     concentration?:boolean
     weaponEffects?:import('../domain/dnd/CombatResolution.ts').WeaponEnchantment[]
+    temporaryHitPointsSource?:string
     sourceEffectId?:number
     resolutionEffects?:import('../domain/dnd/CombatResolution.ts').EffectSpec[]
     spellLevel?:number
@@ -103,12 +105,15 @@ export function activateAbility(ability: Ability, combat?:Combat|null, participa
 
 export function advanceCombatAbilities(abilities:Ability[],previous:Combat,next:Combat):Ability[] {
     const timed=next.round>previous.round ? advanceAbilityDurations(abilities) : abilities
-    return timed.map((ability)=>{
+    const updated=timed.map((ability)=>{
         if (!ability.active || !ability.expiresAt) return ability
         const owner=ability.expiryOwnerId ?? ability.ownerId
         const event=ability.expiresAt==='end' ? previous : next
+        if(['phb2014:spell:hold-person','phb2014:spell:false-life'].includes(ability.ruleId??'')&&owner===next.activeId&&ability.expiryRound!==undefined)return {...ability,remainingTurns:Math.max(0,ability.expiryRound-next.round)}
         return owner===event.activeId && event.round>=(ability.expiryRound ?? event.round) ? {...ability,remainingTurns:0} : ability
     })
+    const parents=new Map(updated.filter(a=>a.ruleId==='phb2014:spell:hold-person').map(a=>[a.id,a]))
+    return updated.map(a=>a.sourceEffectId!==undefined&&parents.has(a.sourceEffectId)?{...a,remainingTurns:parents.get(a.sourceEffectId)!.remainingTurns}:a)
 }
 
 export function removeParticipantAbilities(abilities: Ability[], participantIds: number[], remove: boolean): Ability[] {

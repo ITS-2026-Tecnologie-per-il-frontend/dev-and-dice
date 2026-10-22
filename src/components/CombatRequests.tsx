@@ -20,12 +20,12 @@ const message=(error:unknown)=>error instanceof Error ? error.message : 'Operazi
 function RequestDescription({request,review=false}:{request:CombatRequest;review?:boolean}) {
     if(review)return <>
         <p className="combat-request-author"><strong>{request.characterName}</strong><span>Giocato da {request.actorName}</span><time dateTime={request.createdAt}>{new Date(request.createdAt).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</time></p>
-        <p className="combat-request-mode"><span>{modeLabels[request.mode]}</span><span>{request.optionLabel}{request.spendsResources?` · costo ${request.cost}`:''}</span></p>
+        <p className="combat-request-mode"><span>{request.resolution?.temporaryHitPoints?'PF temporanei':request.resolution?.healing?'Guarigione':modeLabels[request.mode]}</span><span>{request.optionLabel}{request.spendsResources?` · costo ${request.cost}`:''}</span></p>
         {request.prolonged&&<p className="combat-request-notice">Tempo di lancio prolungato: approva dopo il completamento.</p>}
     </>
     // Critical damage dice: PHB 2014 PDF 197; SRD 5.2.1 (2024) PDF 18, Colpi critici.
     return <><p>{request.characterName} · {request.actorName} · <time dateTime={request.createdAt}>{new Date(request.createdAt).toLocaleString('it-IT')}</time></p>
-        <p>{modeLabels[request.mode]} · {request.optionLabel}{request.spendsResources?` · costo ${request.cost}`:''}</p>
+        <p>{request.resolution?.temporaryHitPoints?'PF temporanei':request.resolution?.healing?'Guarigione':modeLabels[request.mode]} · {request.optionLabel}{request.spendsResources?` · costo ${request.cost}`:''}</p>
         {request.prolonged&&<p>Tempo di lancio prolungato: approvare soltanto dopo il completamento.</p>}
         <ul>{request.targets.map(target=><li key={target.id}><strong>{target.name||'Partecipante'}</strong>{!target.attack&&target.roll&&<> · {request.mode==='save'?'TS':'Tiro'}: {target.roll}</>}{request.mode==='attack'&&target.hit!==undefined&&<> · {target.hit?'Colpito':'Mancato'}</>}{target.attack&&<p>Confronto base: d20 {target.attack.die}, modificatore {target.attack.modifier===undefined?'da verificare':signedBonus(target.attack.modifier)}, totale {target.attack.total??'da verificare'} · CA {target.attack.armorClass??'da verificare'} · {target.attack.critical?'Colpo critico':target.attack.hit===undefined?'Esito da verificare':target.attack.hit?'Colpito':'Mancato'}</p>}{request.damageEnabled&&<> · Danni tirati: {target.damageRoll||'—'}{request.packets===undefined&&target.damageRoll!==target.damage&&<> · Danni finali: {target.damage}</>}</>}</li>)}</ul>
         {request.targets.some(target=>target.attack)&&<p>Verifica copertura, reazioni e altri effetti prima di confermare i danni finali.{request.targets.some(target=>target.attack?.critical)&&<> Per un critico si tirano due volte i dadi di danno, aggiungendo i modificatori una sola volta.</>}</p>}
@@ -38,6 +38,7 @@ function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDecide}:{
     const [wind,setWind]=useState<Pick<WindData,'selected'|'saves'>>(()=>({selected:request.wind?.selected??[],saves:request.wind?.saves??{}}))
     const missingWind=!!request.wind&&wind.selected.some(id=>wind.saves[id]?.mode==='manual'&&wind.saves[id]?.success===undefined)
     const [weapons,setWeapons]=useState<Record<number,{itemId:string;damageType?:string;useCastingAbility?:boolean}>>({})
+    const [additionalActionConfirmed,setAdditionalActionConfirmed]=useState(false)
     const [damages,setDamages]=useState<Record<number,string>>({}),[manual,setManual]=useState(false),[effectOverrides,setEffectOverrides]=useState<Record<number,boolean>>({}),[busy,setBusy]=useState(false),[error,setError]=useState('')
     const calculatedDamageFor=(target:CombatTarget)=>target.resolution?target.resolution.damage===null?'':String(target.resolution.damage):target.attack?.hit===false?'0':target.damage
     const damageFor=(target:CombatTarget)=>damages[target.id]??calculatedDamageFor(target)
@@ -49,7 +50,7 @@ function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDecide}:{
     async function decide(decision:'approve'|'reject') {
         if (working.current) return
         working.current=true;setBusy(true);setError('')
-        try {await onDecide(request.id,decision,{confirmed:decision==='approve',manualResolution:manual,...(request.wind?{wind}:{}),...(weaponEffect?{weapons:request.targets.map(t=>({targetId:t.id,...weapons[t.id]}))}:{}),targets:request.wind?wind.selected.map(id=>({id,damage:'0'})):request.targets.map(target=>({id:target.id,damage:damageFor(target)})),...(request.resolution?{effects:effectTargets.filter(t=>effectOverrides[t.id]!==false).map(t=>t.id)}:{})})} catch(error) {setError(message(error))} finally {working.current=false;setBusy(false)}
+        try {await onDecide(request.id,decision,{confirmed:decision==='approve',additionalActionConfirmed,manualResolution:manual,...(request.wind?{wind}:{}),...(weaponEffect?{weapons:request.targets.map(t=>({targetId:t.id,...weapons[t.id]}))}:{}),targets:request.wind?wind.selected.map(id=>({id,damage:'0'})):request.targets.map(target=>({id:target.id,damage:damageFor(target)})),...(request.resolution?{effects:effectTargets.filter(t=>effectOverrides[t.id]!==false).map(t=>t.id)}:{})})} catch(error) {setError(message(error))} finally {working.current=false;setBusy(false)}
     }
     async function saveWind(refresh=false){
         if(working.current)return
@@ -81,10 +82,11 @@ function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDecide}:{
                     </div>
                 })}</div>}
                 {pending&&<>
+                {request.additionalActionRequired&&<label className="combat-request-check"><input type="checkbox" checked={additionalActionConfirmed} onChange={event=>setAdditionalActionConfirmed(event.target.checked)}/>Confermo un’altra azione valida per lanciare un incantesimo (es. Azione Impetuosa 2014)</label>}
                 {effectTargets.map(target=><label className="combat-request-check" key={target.id}><input type="checkbox" checked={effectOverrides[target.id]!==false} onChange={event=>setEffectOverrides(current=>({...current,[target.id]:event.target.checked}))}/>Applica gli effetti aggiuntivi a {target.name}</label>)}
                 {request.resolution&&request.targets.some(t=>t.resolution?.damage===null)&&<label className="combat-request-check"><input type="checkbox" checked={manual} onChange={event=>setManual(event.target.checked)}/>Confermo una risoluzione manuale per i dati mancanti</label>}
                 </>}
-                <div className="play-actions">{stale&&request.wind&&<button type="button" onClick={()=>void saveWind(true)}>Aggiorna richiesta</button>}{pending&&<button disabled={missingWind||missingWeapon||!!request.resolution&&request.targets.some(t=>t.resolution?.damage===null)&&!manual} type="submit">Approva azione</button>}{!pending&&request.wind?.editable&&<button type="submit" disabled={missingWind}>Salva bersagli e tiri salvezza</button>}{(pending||stale)&&<button type="button" className="play-secondary" onClick={()=>void decide('reject')}>Rifiuta azione</button>}</div>
+                <div className="play-actions">{stale&&request.wind&&<button type="button" onClick={()=>void saveWind(true)}>Aggiorna richiesta</button>}{pending&&<button disabled={!!request.additionalActionRequired&&!additionalActionConfirmed||missingWind||missingWeapon||!!request.resolution&&request.targets.some(t=>t.resolution?.damage===null)&&!manual} type="submit">Approva azione</button>}{!pending&&request.wind?.editable&&<button type="submit" disabled={missingWind}>Salva bersagli e tiri salvezza</button>}{(pending||stale)&&<button type="button" className="play-secondary" onClick={()=>void decide('reject')}>Rifiuta azione</button>}</div>
             </fieldset>
         </form>}{error&&<p role="alert">{error}</p>}</article>
 }
@@ -115,6 +117,8 @@ export const MasterCombatRequests=memo(function MasterCombatRequests({game,disab
 
 export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='participant'}:{game:PlayerGame;onUpdate:(game:Game)=>void;renewed?:boolean;inspectorMode?:InspectorMode}) {
     const [open,setOpen]=useState(renewed),[choices,setChoices]=useState<ActionChoices>(),[loading,setLoading]=useState(renewed),[retry,setRetry]=useState(0),[error,setError]=useState(''),[busy,setBusy]=useState(false),[search,setSearch]=useState('')
+    const [panel,setPanel]=useState<'summary'|'cast'>('cast')
+    const selectedIdentity=useRef('')
     const form=useRef<HTMLFormElement>(null)
     const [weaponRoll,setWeaponRoll]=useState('')
     const [key,setKey]=useState(''),[optionId,setOptionId]=useState(''),[cost,setCost]=useState(1),[mode,setMode]=useState<CombatRequest['mode']>('none'),[damageEnabled,setDamageEnabled]=useState(false),[targets,setTargets]=useState<CombatTarget[]>([])
@@ -131,7 +135,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
     useEffect(()=>{
         if (!open) return
         let active=true
-        playApi<ActionChoices>('/games/'+game.id+'/actions'+(renewed?'?preview=1':'')).then(choices=>{if(active){setChoices(choices);if(renewed){setKey('');setTargets([]);setError('')}}}).catch(error=>{if(active)setError(message(error))}).finally(()=>{if(active)setLoading(false)})
+        playApi<ActionChoices>('/games/'+game.id+'/actions'+(renewed?'?preview=1':'')).then(choices=>{if(active){setChoices(choices);if(renewed){setKey(choices.actions.find(item=>(item.entry?.id??item.name)===selectedIdentity.current)?.key??'');setError('')}}}).catch(error=>{if(active)setError(message(error))}).finally(()=>{if(active)setLoading(false)})
         return ()=>{active=false}
     },[open,game.id,retry,renewed,revision])
     function refreshActions() {setLoading(true);setError('');setChoices(undefined);setKey('');setTargets([]);setRetry(current=>current+1)}
@@ -139,6 +143,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
         const action=choices?.actions.find(action=>action.key===key),option=action?.options.find(option=>option.remaining===null || option.remaining>=(option.cost??action.cost)) ?? action?.options[0]
         // Attacks: PHB 2014, D&D_5_Player_Original_Handbook.pdf, PDF 195;
         // SRD 5.2.1, D&D_5.5_manuale_compatto_italiano.pdf, PDF 16, Effettuare un attacco.
+        selectedIdentity.current=action?.entry?.id??action?.name??''
         setKey(key);setOptionId(option?.id??'');setCost(option?.cost??action?.cost??1);setMode(renewed&&action?.group==='Attacchi fisici'?'attack':action?.mode??'none');setDamageEnabled(action?.damageEnabled??false);setWeaponRoll('');setTargets([]);setError('')
     }
     function patch(id:number,values:Partial<CombatTarget>) {setTargets(current=>current.map(target=>target.id===id?{...target,...values}:target))}
@@ -150,15 +155,17 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
         const proposal={...(weapon?{attackDie:die}:{}),revision:choices.revision,key,option:optionId,cost:option?.cost??cost,mode,damageEnabled,targets:targets.map(({id,roll,hit,damageRoll,damage})=>({id,roll:weapon?weaponRollText:roll,hit:weapon?false:hit,damageRoll,damage}))}
         const signature=JSON.stringify(proposal)
         if (attempt.current?.signature!==signature) attempt.current={signature,body:{id:crypto.randomUUID(),...proposal}}
-        try {onUpdate(await playApi<Game>('/games/'+game.id+'/requests','POST',attempt.current.body));attempt.current=undefined;setKey('');setTargets([])} catch(error) {setError(message(error))} finally {working.current=false;setBusy(false)}
+        try {onUpdate(await playApi<Game>('/games/'+game.id+'/requests','POST',attempt.current.body));attempt.current=undefined;if(renewed){setPanel('summary');setRetry(current=>current+1)}else setKey('');setTargets([])} catch(error) {setError(message(error))} finally {working.current=false;setBusy(false)}
     }
     const filtered=choices?.actions.filter(action=>action.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())) ?? []
     function choose(key:string) {
         select(key)
+        const selected=choices?.actions.find(item=>item.key===key)
+        setPanel(selected?.active||selected?.lastCast?.status==='pending'?'summary':'cast')
         requestAnimationFrame(()=>{form.current?.focus({preventScroll:true});form.current?.scrollIntoView({block:'nearest'})})
     }
     function actionButton(action:ActionChoices['actions'][number]) {
-        return <button type="button" key={action.key} className="participant-ability" data-ability-state={action.active?'active':'available'} aria-pressed={key===action.key} aria-controls="player-action-proposal" disabled={busy} onClick={()=>choose(action.key)}>{action.name} · {action.active?'In esecuzione':action.error||'Usa'}</button>
+        return <button type="button" key={action.key} className="participant-ability" data-ability-state={action.active?'active':'available'} aria-pressed={key===action.key} aria-controls="player-action-proposal" disabled={busy} onClick={()=>choose(action.key)}>{action.name} · {action.lastCast?.status==='pending'?'In attesa del Master':action.active?'In esecuzione':action.error||'Usa'}</button>
     }
     function targetFields(target:CombatTarget) {
         return <>
@@ -170,7 +177,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
                         {!weapon&&mode==='attack'&&target.roll.trim()&&<label className={renewed?'ability-check':'combat-request-check'}><input type="checkbox" checked={target.hit} onChange={event=>patch(target.id,{hit:event.target.checked,damageRoll:'',damage:'0'})}/>Almeno un attacco ha colpito (da confermare col Master)</label>}
                         {damageEnabled&&(weapon?validDie:mode!=='attack'||target.hit)&&<label>Danni tirati<input type="text" inputMode="numeric" pattern="[0-9]+" required maxLength={16} placeholder="Totale, es. 7" value={target.damageRoll} onChange={event=>{const damage=event.target.value;if(!/^\d*$/.test(damage)||!Number.isSafeInteger(Number(damage)))return;patch(target.id,{damageRoll:damage,damage:damage||'0'})}}/></label>}</>
     }
-    const legacyProposal=choices&&(!renewed||action)&&<form id="player-action-proposal" ref={form} tabIndex={renewed?-1:undefined} aria-label={renewed?`Proposta: ${action?.name}`:undefined} onSubmit={event=>void submit(event)}><fieldset disabled={busy||pending||!!stale||loading||renewed&&!!action?.error}><legend>{renewed?action?.name:'Proposta al Master'}</legend>
+    const legacyProposal=choices&&(!renewed||action)&&<form id="player-action-proposal" ref={form} tabIndex={renewed?-1:undefined} aria-label={renewed?`Proposta: ${action?.name}`:undefined} onSubmit={event=>void submit(event)}><fieldset disabled={busy||pending||!!stale||loading||renewed&&!!action?.error}>{!renewed&&<legend>Proposta al Master</legend>}
                 {!renewed&&<label>Azione<select aria-label="Azione" value={key} required onChange={event=>select(event.target.value)}><option value="">Scegli un’azione…</option>{choices.actions.map(action=><option key={action.key} value={action.key} disabled={!!action.error}>{action.name}{action.error?' · '+action.error:''}</option>)}</select></label>}
                 {!choices.actions.length&&<p>Nessuna azione disponibile: controlla attacchi, abilità e incantesimi salvati nella scheda.</p>}
                 {action&&<><details className="player-action-description" open={renewed?true:undefined}><summary>Descrizione dell’azione</summary><p className="combat-request-description">{action.description||'Risoluzione da confermare con il Master.'}</p></details>
@@ -188,7 +195,24 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
                     <button className="play-primary" disabled={renewed&&!choices.canPropose||!option||tooManyTargets||weapon&&!validDie||!targets.length&&(damageEnabled||mode==='attack'||mode==='save')||option?.remaining!==null&&(option?.remaining??0)<(option?.cost??cost)}>Invia al Master</button>
                 </>}
             </fieldset></form>
-    const proposal=renewed&&choices&&action?.resolution?<PlayerActionRolls key={action.key} game={game} choices={choices} action={action} formRef={form} onUpdate={onUpdate} onSubmitted={()=>{setKey('');setTargets([])}}/>:legacyProposal
+    const proposal=choices&&action?.resolution&&(renewed||!!action.resolution.healing||!!action.resolution.temporaryHitPoints)?<PlayerActionRolls key={action.key} game={game} choices={choices} action={action} formRef={form} onUpdate={onUpdate} onSubmitted={()=>{setPanel('summary');setTargets([]);setRetry(current=>current+1)}}/>:legacyProposal
+    const remainingSeconds=Math.max(0,action?.remainingTurns??0)*6
+    const remainingTime=[Math.floor(remainingSeconds/3600)?`${Math.floor(remainingSeconds/3600)} h`:'',Math.floor(remainingSeconds%3600/60)?`${Math.floor(remainingSeconds%3600/60)} min`:'',remainingSeconds%60?`${remainingSeconds%60} s`:''].filter(Boolean).join(' ')||'0 s'
+    const summary=action&&<div className="player-cast-summary" aria-label={`Riepilogo: ${action.name}`}>
+        {action.lastCast&&<div className="player-cast-heading"><span>{action.lastCast.optionLabel}</span><span className="combat-request-state" data-state={action.lastCast.status} role="status">{statusLabels[action.lastCast.status]}</span></div>}
+        {(action.resolution?.temporaryHitPoints||action.active)&&<dl className="player-cast-stats">
+            {action.resolution?.temporaryHitPoints&&<div><dt>PF temporanei rimasti</dt><dd>{game.character.sheet.playerDetails?.temporaryHitPoints||'0'}</dd></div>}
+            {action.active&&<div><dt>Durata residua</dt><dd className="player-cast-time">{action.duration==='Senza conteggio'?'Senza conteggio':remainingTime}</dd>{action.duration!=='Senza conteggio'&&<small>{action.remainingTurns} round</small>}</div>}
+        </dl>}
+        {action.lastCast?<details className="player-cast-details"><summary>Dettagli del lancio</summary>
+            <time dateTime={action.lastCast.createdAt}>{new Date(action.lastCast.createdAt).toLocaleString('it-IT')}</time>
+            {action.lastCast.temporaryHitPoints&&<><p>Tiro originale: <strong>{action.lastCast.temporaryHitPoints.roll} sul d4 + {action.lastCast.temporaryHitPoints.bonus} = {action.lastCast.temporaryHitPoints.total} PF temporanei</strong></p>
+            <p>{action.lastCast.temporaryHitPoints.keptPrevious?'PF precedenti mantenuti, con la durata originale.':'Nuovo beneficio selezionato.'}</p></>}
+            {!action.lastCast.temporaryHitPoints&&action.lastCast.packets?.map((packet,index)=><p key={index}>Tiro {index+1}: {packet.die!==undefined&&<>d20 <strong>{packet.die}</strong> · </>}{packet.healingRoll!==undefined&&<>Dadi di guarigione: <strong>{packet.healingRoll}</strong></>}{packet.damage.map(damage=>`${damage.amount} ${damageNames[damage.type]}`).join(' + ')||(!packet.die&&packet.healingRoll===undefined?'Nessun dado richiesto.':'')}</p>)}
+        </details>:<p>I dati del tiro originale non sono disponibili per questo effetto.</p>}
+        {action.additionalActionRequired&&<p className="player-cast-note">Hai già lanciato un incantesimo con un’azione in questo turno: il Master dovrà confermare un’altra azione valida.</p>}
+        <button type="button" className="sort-turns player-cast-recast" disabled={pending||!choices?.canPropose||!!action.error||!action.options.some(option=>option.remaining===null||option.remaining>=(option.cost??action.cost))} onClick={()=>{select(action.key);setPanel('cast')}}>Lancia di nuovo</button>
+    </div>
     const Heading=renewed?'h3':'h2'
     return <section className={`play-player-actions${renewed?' master-available-abilities':''}`} aria-labelledby="player-actions"><Heading id="player-actions" hidden={renewed&&inspectorMode==='all'}>{renewed?'Abilità e azioni disponibili':'Le tue azioni'}</Heading><p>Proponi un’azione nel tuo turno. Risorse ed effetti si applicano quando il Master approva.</p>
         {!renewed&&<button type="button" className="play-secondary" aria-expanded={open} onClick={()=>{if(!open)refreshActions();setOpen(current=>!current)}}>{open?'Chiudi scelta azione':'Scegli azione'}</button>}
@@ -204,12 +228,13 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
             {!renewed&&proposal}
             {renewed&&choices&&<section className="abilities-tracker" aria-labelledby="player-abilities-heading">
                 <div className="ability-section-heading"><h2 id="player-abilities-heading">{inspectorMode==='all'?'Tutte le abilità':'Abilità in uso e da configurare'}</h2></div>
-                <div className="abilities-list">{choices.actions.filter(item=>inspectorMode==='all'||item.key===key||item.active).map(item=><AbilityCard key={item.key} id={`player-ability-${item.key}`} tabIndex={-1} data-owner-fixed="true" data-instantaneous={item.duration==='Istantanea'||undefined}>
+                <div className="abilities-list">{choices.actions.filter(item=>inspectorMode==='all'||item.key===key||item.active||item.lastCast?.status==='pending').map(item=><AbilityCard key={item.entry?.id??item.name} id={`player-ability-${item.key}`} tabIndex={-1} data-owner-fixed="true" data-instantaneous={item.duration==='Istantanea'||undefined}>
+                    {item.key===key&&<button type="button" className="delete-turn player-cast-close" aria-label={`Chiudi pannello ${item.name}`} onClick={()=>{selectedIdentity.current='';setKey('')}}>×</button>}
                     <div className="catalog-search ability-name"><input aria-label={`Nome abilità ${item.name}`} value={item.name} readOnly/></div>
                     <div className="ability-owner-controls"><AbilityMetadata duration={item.duration} owner={game.character.sheet.name} ownerLabel={item.spellLevel!==undefined?'Lanciatore':'Utilizzatore'}/><InfoButton label="Descrizione" entry={item.entry} name={item.name} description={item.description} fields={{duration:item.duration,remainingTurns:item.remainingTurns,active:item.active,owner:game.character.sheet.name}}/></div>
                     <div className="ability-use-controls">
                         {item.error&&<p role="status">{item.error}</p>}
-                        {item.key===key ? proposal : <><p className={item.group==='Attacchi fisici'?'combat-request-description':'ability-casting-summary'}>{item.group==='Attacchi fisici' ? item.description||'Controlla bonus al tiro per colpire e danni nella scheda.' : item.active ? 'In esecuzione' : item.options.map(option=>option.label).join(' · ')||'Verifica le risorse nella scheda.'}</p><button type="button" className="sort-turns" disabled={busy} onClick={()=>choose(item.key)}>{item.active?'Consulta':'Usa'}</button></>}
+                        {item.key===key ? panel==='summary'?summary:proposal : <><p className={item.group==='Attacchi fisici'?'combat-request-description':'ability-casting-summary'}>{item.group==='Attacchi fisici' ? item.description||'Controlla bonus al tiro per colpire e danni nella scheda.' : item.active ? 'In esecuzione' : item.options.map(option=>option.label).join(' · ')||'Verifica le risorse nella scheda.'}</p><button type="button" className="sort-turns" disabled={busy} onClick={()=>choose(item.key)}>{item.active||item.lastCast?.status==='pending'?'Consulta':'Usa'}</button></>}
                     </div>
                 </AbilityCard>)}</div>
                 {inspectorMode==='participant'&&!key&&!choices.actions.some(item=>item.active)&&<p className="ability-help">Scegli un’abilità del personaggio per consultarne la card e proporne l’utilizzo.</p>}

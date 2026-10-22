@@ -4,8 +4,12 @@ import {once} from 'node:events'
 import {mkdtemp,rm,mkdir} from 'node:fs/promises'
 import {join} from 'node:path'
 import {createApp} from '../server/index.mjs'
-import {combatRules,validCombatRequest,recordResolutionRoll,visibleRequests,pendingSavingThrows,actionContext,prepareAction,requestProposal,createRequestResolution,applyCombatRequest} from '../server/combat-requests.mjs'
+import {combatRules,validCombatRequest,recordResolutionRoll,visibleRequests,pendingSavingThrows,actionContext,prepareAction,requestProposal,createRequestResolution,applyCombatRequest,recoverRepeatSaveDCs} from '../server/combat-requests.mjs'
 import {defenseProfile,resolveTarget,assertPacketPlan,validPackets,activeEffects,resolutionPlan,packetTargets} from '../src/domain/dnd/CombatResolution.ts'
+import {combatTargeting,creatureType,targetTypeError,assertTargetTypes} from '../src/domain/dnd/CombatTargets.ts'
+import {conditionEffectName,conditionsFor,pendingRepeatSaves,endIncapacitatedConcentration,finishEmptyHoldPerson} from '../src/domain/dnd/CombatConditions.ts'
+import {advanceCombatAbilities} from '../src/utils/Combat.ts'
+import {resolvedAbility} from '../src/domain/dnd/CombatActions.ts'
 import {newCharacterSheet} from '../src/utils/CharacterSheets.ts'
 import {templateFromCatalog} from '../src/utils/Catalog.ts'
 
@@ -118,12 +122,70 @@ function approve(entry,damage='0',extra={}) {
  for(const r of db.characters)r.sheet={...r.sheet,playerDetails:{...r.sheet.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]'}}
  return result
 }
+const holdRule=combatTargeting(template('hold-person'),rules.catalog,magicSheet,'slot:3')
+assert.equal(holdRule.maximum,2);assert.deepEqual(holdRule.creatureTypes,['humanoid'])
+const timedHold=resolvedAbility({...template('hold-person'),id:99,ownerId:2,active:false},rules.catalog,{activeId:2,round:1},[{id:1},{id:2},{id:3}])
+assert.equal(timedHold.expiryRound,11)
+assert.equal(advanceCombatAbilities([timedHold],{activeId:3,round:1},{activeId:1,round:2})[0].remainingTurns,10,'A global round boundary does not shorten Hold Person')
+assert.equal(advanceCombatAbilities([timedHold],{activeId:1,round:2},{activeId:2,round:2})[0].remainingTurns,9)
+assert.equal(advanceCombatAbilities([timedHold],{activeId:3,round:10},{activeId:1,round:11})[0].remainingTurns,10,'The condition lasts until its caster turn, even in the last round')
+assert.equal(advanceCombatAbilities([timedHold],{activeId:1,round:11},{activeId:2,round:11})[0].remainingTurns,0)
+assert.equal(creatureType({...victim,kind:'Mostro',race:'Umanoide piccolo (goblinoide), neutrale malvagio'}),'humanoid')
+assert.equal(creatureType({...victim,kind:'Mostro',race:'Large beast, unaligned'}),'beast')
+assert.equal(creatureType({...victim,kind:'Mostro',race:'Mostruosità grande, neutrale malvagio'}),'monstrosity')
+assert(targetTypeError(holdRule,'beast'));assert(targetTypeError(holdRule,undefined))
+assert.throws(()=>assertTargetTypes(holdRule,[{id:2,sheet:{...victim,kind:'Mostro',race:'Bestia grande'}}],[2]),/Umanoide/)
+assert.equal(creatureType({...victim,playerDetails:{'creature.type':'fey'}}),'fey','An explicit custom type overrides the core player-species default')
+table.state.abilities.push({id:40,name:'Concentrazione del bersaglio',ownerId:2,active:true,concentration:true,duration:'1 minuto',remainingTurns:10,ruleId:'test-concentration'})
+db.characters[1].sheet={...db.characters[1].sheet,playerDetails:{...db.characters[1].sheet.playerDetails,'rules2014.concentration':'test-concentration'}}
 const held=propose('hold-person',[{targetId:2,damage:[]}])
 recordResolutionRoll(db,table,playerId,held,{targetId:2,kind:'save',value:1})
 assert.throws(()=>applyCombatRequest(db,table,held,rules,{confirmed:true,targets:[{id:2,damage:'0'}],effects:true}),e=>e.status===400)
+const savedVictim=db.characters[1].sheet
+db.characters[1].sheet={...savedVictim,kind:'Mostro',race:'Bestia grande'}
+assert.throws(()=>applyCombatRequest(db,table,held,rules,{confirmed:true,targets:[{id:2,damage:'0'}]}),error=>error.status===400,'Approval rechecks the current canonical creature type')
+db.characters[1].sheet=savedVictim
 approve(held)
 const paralysis=table.state.abilities.find(a=>a.resolutionEffects?.some(e=>e.condition==='paralyzed'))
 assert(paralysis?.sourceEffectId!==undefined,'A failed save creates a condition linked to concentration')
+assert.deepEqual(paralysis.repeatSaveRoll,{ability:'wisdom',dc:13,timing:'end'})
+assert.equal(conditionEffectName({...paralysis,name:'Blocca Persone · Paralizzato'},table.state.abilities),'Paralizzato - '+template('hold-person').name,'Legacy effect titles show condition before source')
+const legacyHold=table.state.abilities.map(a=>a.id===paralysis.id?{...a,repeatSaveRoll:undefined}:a)
+assert.equal(pendingRepeatSaves(legacyHold,{activeId:2,round:1})[0].repeatSaveRoll.dc,undefined,'A legacy effect asks for the missing original DC instead of guessing')
+const legacyTable={...table,state:{...table.state,abilities:legacyHold},combatRequests:[{...held,status:'approved'}]}
+assert.equal(recoverRepeatSaveDCs(legacyTable).find(a=>a.id===paralysis.id).repeatSaveRoll.dc,13,'The old effect recovers its original DC from the approved cast')
+assert.equal(legacyHold.find(a=>a.id===paralysis.id).repeatSaveRoll,undefined,'Recovery does not mutate the original stored effect')
+const conflictingCast={...held,status:'approved',resolution:{...held.resolution,plan:{...held.resolution.plan,save:{...held.resolution.plan.save,dc:19}}}}
+assert.equal(recoverRepeatSaveDCs({...legacyTable,combatRequests:[...legacyTable.combatRequests,conflictingCast]}).find(a=>a.id===paralysis.id).repeatSaveRoll,undefined,'Conflicting original DCs are never guessed')
+assert.equal(recoverRepeatSaveDCs({...legacyTable,combatRequests:[{...held,status:'rejected'}]}).find(a=>a.id===paralysis.id).repeatSaveRoll,undefined,'Rejected casts cannot supply a DC')
+assert.equal(recoverRepeatSaveDCs({...legacyTable,combatRequests:[{...held,status:'approved',characterId:crypto.randomUUID()}]}).find(a=>a.id===paralysis.id).repeatSaveRoll,undefined,'A different caster cannot supply a DC')
+
+assert.equal(db.characters[1].sheet.playerDetails['rules2014.concentration'],'','Paralysis breaks the target own concentration')
+assert.equal(table.state.abilities.find(a=>a.id===40).active,false)
+assert.deepEqual(conditionsFor(table.state.abilities,2),['Paralizzato'])
+assert.equal(pendingRepeatSaves(table.state.abilities,{activeId:1,round:1}).length,0)
+assert.equal(pendingRepeatSaves(table.state.abilities,{activeId:2,round:1}).length,1)
+const failedRepeat=table.state.abilities.map(a=>a.id===paralysis.id?{...a,repeatSaveRoll:{...a.repeatSaveRoll,lastRound:1}}:a)
+assert.equal(pendingRepeatSaves(failedRepeat,{activeId:2,round:1}).length,0,'A failed repeat is resolved only once in the current turn')
+assert.equal(pendingRepeatSaves(failedRepeat,{activeId:2,round:2}).length,1,'A failed repeat is requested again next round')
+assert.deepEqual(conditionsFor(failedRepeat.map(a=>a.id===paralysis.sourceEffectId?{...a,active:false}:a),2),[],'Ending caster concentration ends the linked condition')
+assert.deepEqual(conditionsFor(failedRepeat.map(a=>a.id===paralysis.sourceEffectId?{...a,remainingTurns:0}:a),2),[],'Expiration ends the linked condition')
+assert.equal(endIncapacitatedConcentration(table.state.abilities,table.state.turns).abilities.find(a=>a.id===40).active,false)
+const anotherHeld={...paralysis,id:777,ownerId:3}
+const repeatTurns=[...table.state.turns,{...table.state.turns[1],id:3}]
+const oneFreed=table.state.abilities.map(a=>a.id===paralysis.id?{...a,active:false}:a)
+const twoTargets=finishEmptyHoldPerson([...oneFreed,anotherHeld],repeatTurns)
+assert(twoTargets.abilities.some(a=>a.id===paralysis.sourceEffectId),'The spell continues while another target is paralyzed')
+assert.equal(twoTargets.turns[0].sheet.playerDetails['rules2014.concentration'],'phb2014:spell:hold-person')
+const noTargets=finishEmptyHoldPerson(oneFreed,table.state.turns)
+assert(!noTargets.abilities.some(a=>a.id===paralysis.id||a.id===paralysis.sourceEffectId))
+assert.equal(noTargets.turns[0].sheet.playerDetails['rules2014.concentration'],'','The last saved target releases now-unused concentration')
+assert.equal(noTargets.turns[0].sheet.playerDetails['slots.2.used'],table.state.turns[0].sheet.playerDetails['slots.2.used'],'Closing the spell never refunds its slot')
+const otherConcentration={id:888,ownerId:1,name:'Altro incantesimo',active:true,remainingTurns:10,duration:'1 minuto',concentration:true}
+const changedConcentration=finishEmptyHoldPerson([...oneFreed,otherConcentration],table.state.turns)
+assert.equal(changedConcentration.turns[0].sheet.playerDetails['rules2014.concentration'],table.state.turns[0].sheet.playerDetails['rules2014.concentration'],'Cleaning up an old effect never clears a different active concentration')
+
+
 assert.equal(actionContext(db,{...table,state:{...table.state,combat:{activeId:2,round:1}}},playerId,rules,true).canPropose,false,'Paralysis prevents taking actions')
 const fire=propose('fireball',[{targetId:2,damage:[{type:'fire',amount:21}]}])
 assert.equal(fire.resolution.targets[0].profile.automaticSaveFailure,true)
@@ -181,7 +243,7 @@ try {
  const master=await account('ResolutionMaster'),caster=await account('ResolutionCaster'),player=await account('ResolutionDefender')
  const rules=await combatRules(),spell=id=>templateFromCatalog(rules.catalog.abilities.find(e=>e.data.referenceId==='phb2014:spell:'+id))
  const wizard={...newCharacterSheet(),name:'Maga',characterClass:'Mago',level:'5',hitPoints:'30',armorClass:'12',intelligence:'16',abilities:['fire-bolt','fireball','scorching-ray','hold-person','shield-of-faith','protection-from-energy','magic-missile'].map(spell),playerDetails:{spellAttackBonus:'5',spellDC:'13','slots.1.total':'10','slots.2.total':'10','slots.3.total':'10'}}
- const hero={...defender,hitPoints:'50',playerDetails:{...defender.playerDetails,temporaryHitPoints:'3'}}
+ const hero={...defender,hitPoints:'50',wisdom:'10',playerDetails:{...defender.playerDetails,temporaryHitPoints:'3'}}
  const monster={...newCharacterSheet(),kind:'Mostro',name:'Guardiano',hitPoints:'100',armorClass:'14',dexterity:'14',wisdom:'10',playerDetails:{'monster.resistances':'fuoco','monster.savingThrows':'Dex +2'}}
  const created=await api(master,'/api/play/games','POST',{name:'Risoluzione'});assert.equal(created.status,201)
  let game=created.body,path='/api/play/games/'+game.id
@@ -232,6 +294,7 @@ try {
  const wrong=await send('fireball',[{targetId:3,damage:[{type:'cold',amount:10}]}]);assert.equal(wrong.response.status,400,'A client cannot forge damage types')
  const wrongArea=await send('fireball',[{targetId:2,damage:[{type:'fire',amount:10}]},{targetId:3,damage:[{type:'fire',amount:11}]}]);assert.equal(wrongArea.response.status,400)
  const tooMany=await send('scorching-ray',Array.from({length:4},()=>({targetId:3,die:15,damage:[{type:'fire',amount:5}]})));assert.equal(tooMany.response.status,400)
+ const invalidType=await send('hold-person',[{targetId:3,damage:[]}]);assert.equal(invalidType.response.status,400,'A forged request cannot select a monster with an unknown/non-humanoid type')
  const pending=await send('fireball',[{targetId:2,damage:[{type:'fire',amount:11}]}]);ok(pending.response)
  await new Promise(resolve=>server.close(resolve));await start()
  assert.equal((await current(player)).rollRequests.length,1,'Pending owned saves survive restart')
@@ -239,5 +302,17 @@ try {
  await nextRound()
  assert.equal((await roll(player,pending.body.id,2,10)).status,409,'Stale requests cannot accept rolls')
  assert.equal((await current()).state.turns[1].hitPoints,stateBefore.turns[1].hitPoints)
+ await nextRound()
+ const holdRecovery=await send('hold-person',[{targetId:2,damage:[]}]);ok(holdRecovery.response)
+ ok(await roll(master,holdRecovery.body.id,2,1))
+ ok(await decide(holdRecovery.body.id,[{id:2,damage:'0'}]))
+ let saved=await current(),legacyEffect=saved.state.abilities.find(a=>a.active&&a.repeatSaveRoll?.ability==='wisdom')
+ assert(legacyEffect)
+ const changedSheets=saved.characters.map(c=>c.sheet.id===wizard.id?{...c.sheet,playerDetails:{...c.sheet.playerDetails,spellDC:'21'}}:c.sheet)
+ ok(await api(master,path+'/state','PUT',{revision:saved.revision,sheets:changedSheets,state:{...saved.state,abilities:saved.state.abilities.map(a=>a.id===legacyEffect.id?{...a,repeatSaveRoll:undefined}:a)}}))
+ await new Promise(resolve=>server.close(resolve));await start()
+ saved=await current()
+ assert.equal(saved.characters.find(c=>c.id===wizard.id).sheet.playerDetails.spellDC,'21')
+ assert.equal(saved.state.abilities.find(a=>a.id===legacyEffect.id).repeatSaveRoll.dc,13,'The Master view restores the original cast DC after restart, even if the caster sheet DC has changed')
  console.log('PASS resolution: edition separation, per-hit packets, typed defenses, area damage, natural 1/20, owned saves, privacy, critical dice, active AC, atomic HP and persistence')
 } finally {if(server?.listening)await new Promise(resolve=>server.close(resolve));await rm(dir,{recursive:true,force:true})}

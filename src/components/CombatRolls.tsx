@@ -2,11 +2,12 @@ import { useId, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { playApi, type ActionChoices, type CombatRequest, type CombatTarget, type Game, type PlayerGame } from '../utils/PlayApi'
 import { damageNames, saveNames, validPackets, type DamageType, type DamageRoll, type ResolutionPlan, type RollPacket, type TargetResolution } from '../domain/dnd/CombatResolution'
 import { signedBonus } from '../utils/CharacterSheets'
+import { targetTypeError } from '../domain/dnd/CombatTargets'
 import { AbilityTargets } from './AbilityCard'
-import { AttackRollFields, DamageRollFields, SpellSaveNotice, DiceResult } from './AttackRollFields'
+import { AttackRollFields, DamageRollFields, HealingRollFields, TemporaryHitPointRollFields, SpellSaveNotice, DiceResult } from './AttackRollFields'
 
 const message=(error:unknown)=>error instanceof Error?error.message:'Operazione non riuscita.'
-type Draft={targetId:number;die:string;damage:Partial<Record<DamageType,string>>}
+type Draft={targetId:number;die:string;healingRoll?:string;damage:Partial<Record<DamageType,string>>}
 const safeNumber=(value:string)=>/^\d*$/.test(value)&&Number.isSafeInteger(Number(value))
 
 export type RollSubmission={option:string;cost:number;mode:ResolutionPlan['kind'];damageEnabled:boolean;packets:RollPacket[];effectChoice?:string}
@@ -25,9 +26,11 @@ export function ActionRollForm({action,targets,ownerId,canSubmit,disabled,formRe
     action:RollAction;targets:ActionChoices['targets'];ownerId:number|null;canSubmit:boolean;disabled:boolean;formRef?:RefObject<HTMLFormElement|null>;id?:string;label:string;className?:string;initialOption?:string;initialDraft?:RollSubmission;children?:ReactNode;submitLabel:string;onSubmit:(draft:RollSubmission)=>void|Promise<void>
 }) {
     const [optionId,setOptionId]=useState(()=>initialDraft?.option??initialOption??action.options.find(o=>o.remaining===null||o.remaining>=(o.cost??action.cost))?.id??action.options[0]?.id??'')
-    const [rows,setRows]=useState<Draft[]>(()=>initialDraft?.packets.map(packet=>({targetId:packet.targetId,die:packet.die===undefined?'':String(packet.die),damage:Object.fromEntries(packet.damage.map(damage=>[damage.type,String(damage.amount)]))}))??[]),[shared,setShared]=useState<Partial<Record<DamageType,string>>>(()=>Object.fromEntries((initialDraft?.packets[0]?.damage??[]).map(damage=>[damage.type,String(damage.amount)]))),[choice,setChoice]=useState(initialDraft?.effectChoice??''),[busy,setBusy]=useState(false),[error,setError]=useState('')
+    const [rows,setRows]=useState<Draft[]>(()=>initialDraft?.packets.map(packet=>({targetId:packet.targetId,healingRoll:packet.healingRoll===undefined?'':String(packet.healingRoll),die:packet.die===undefined?'':String(packet.die),damage:Object.fromEntries(packet.damage.map(damage=>[damage.type,String(damage.amount)]))}))??[]),[shared,setShared]=useState<Partial<Record<DamageType,string>>>(()=>Object.fromEntries((initialDraft?.packets[0]?.damage??[]).map(damage=>[damage.type,String(damage.amount)]))),[choice,setChoice]=useState(initialDraft?.effectChoice??''),[busy,setBusy]=useState(false),[error,setError]=useState('')
+    const [temporaryRoll,setTemporaryRoll]=useState(()=>initialDraft?.packets[0]?.temporaryHitPointsRoll===undefined?'':String(initialDraft.packets[0].temporaryHitPointsRoll)),[keepTemporary,setKeepTemporary]=useState<''|'new'|'current'>(()=>initialDraft?.packets[0]?.keepTemporaryHitPoints===true?'current':initialDraft?.packets[0]?.keepTemporaryHitPoints===false?'new':'')
     const option=action.options.find(o=>o.id===optionId),plan=option?.resolution??action.resolution!,targeting=option?.targeting
     const optionAvailable=!!option&&(option.remaining===null||option.remaining>=(option.cost??action.cost))
+    const invalidTemporary=!!plan.temporaryHitPoints&&(ownerId===null||! /^[1-4]$/.test(temporaryRoll)||plan.temporaryHitPoints.current>0&&!keepTemporary)
     const invalidAttack=plan.kind==='attack'&&rows.some(row=>!/^([1-9]|1[0-9]|20)$/.test(row.die))
     const hitLimitReached=plan.maximumPackets!==null&&rows.length>=plan.maximumPackets
     const working=useRef(false)
@@ -43,7 +46,8 @@ export function ActionRollForm({action,targets,ownerId,canSubmit,disabled,formRe
     }
     async function submit() {
         if(working.current||!canSubmit||disabled||!optionAvailable)return
-        const packets:RollPacket[]=rows.map(row=>({targetId:row.targetId,...(plan.kind==='attack'?{die:Number(row.die)}:{}),damage:plan.damageTypes.map(type=>({type,amount:Number((plan.sharedDamage?shared:row.damage)[type])}))}))
+        const packets:RollPacket[]=plan.temporaryHitPoints?[{targetId:ownerId??-1,damage:[],temporaryHitPointsRoll:Number(temporaryRoll),keepTemporaryHitPoints:keepTemporary==='current'}]:rows.map(row=>({targetId:row.targetId,...(plan.healing?{healingRoll:Number(row.healingRoll)}:{}),...(plan.kind==='attack'?{die:Number(row.die)}:{}),damage:plan.damageTypes.map(type=>({type,amount:Number((plan.sharedDamage?shared:row.damage)[type])}))}))
+        if(targeting&&packets.some(packet=>targetTypeError(targeting,targets.find(target=>target.id===packet.targetId)?.creatureType))){setError('Verifica il tipo dei bersagli selezionati.');return}
         if(!validPackets(packets)){setError('Verifica i risultati dei dadi.');return}
         const body={option:optionId,cost:option.cost??action.cost,mode:plan.kind,damageEnabled:plan.damageTypes.length>0,packets,...(plan.effectChoices?.length?{effectChoice:choice}:{})}
         working.current=true;setBusy(true);setError('')
@@ -56,12 +60,13 @@ export function ActionRollForm({action,targets,ownerId,canSubmit,disabled,formRe
             {!(action.options.length===1&&optionId==='free')&&<label>Risorsa<select aria-label="Risorsa" value={optionId} required onChange={event=>changeOption(event.target.value)}>{action.options.map(o=><option value={o.id} key={o.id} disabled={o.remaining!==null&&o.remaining<(o.cost??action.cost)}>{o.label}{o.remaining===null?'':` · ${o.remaining} rimasti`}</option>)}</select></label>}
             {plan.kind==='save'&&<p>Il bersaglio deve effettuare un <strong>tiro salvezza su {saveNames[plan.save!.ability]}</strong>. Lo inserirà il suo giocatore, oppure il Master per una creatura.</p>}
             {plan.kind==='automatic'&&<p>Questa azione non richiede un tiro per colpire. Inserisci soltanto i danni indicati.</p>}
-            {plan.deferredSave?<SpellSaveNotice plan={plan}/>:plan.kind==='none'&&<p>Questa azione non richiede un tiro per colpire né un tiro dei danni.</p>}
+            {plan.deferredSave?<SpellSaveNotice plan={plan}/>:plan.kind==='none'&&!plan.healing&&!plan.temporaryHitPoints&&<p>Questa azione non richiede un tiro per colpire né un tiro dei danni.</p>}
             {plan.effectChoices?.length&&<label>Tipo di protezione<select value={choice} required onChange={event=>setChoice(event.target.value)}><option value="">Scegli il tipo previsto dall’incantesimo…</option>{plan.effectChoices.map(type=><option value={type} key={type}>{damageNames[type]}</option>)}</select></label>}
             {plan.weaponEffect&&<p>Scegli il personaggio che possiede l’arma. Il Master selezionerà l’oggetto preciso quando approva l’incantesimo.</p>}
-            {targeting&&<AbilityTargets candidates={targets} ownerId={ownerId} selectedIds={[...new Set(rows.map(row=>row.targetId))]} maximum={plan.weaponEffect?1:targeting.maximum} disableNewTargets={hitLimitReached} summary={plan.weaponEffect?'Un solo personaggio per questo incantesimo.':targeting.summary} label={plan.damageTypes.length?'Bersagli del danno':'Bersagli'}
+            {plan.temporaryHitPoints&&<TemporaryHitPointRollFields plan={plan} value={temporaryRoll} keep={keepTemporary} onChange={setTemporaryRoll} onKeep={setKeepTemporary}/>}
+            {targeting&&!plan.temporaryHitPoints&&<AbilityTargets candidates={targets.map(target=>({...target,unavailableReason:targetTypeError(targeting,target.creatureType)}))} ownerId={ownerId} selectedIds={[...new Set(rows.map(row=>row.targetId))]} maximum={plan.weaponEffect?1:targeting.maximum} disableNewTargets={hitLimitReached} summary={plan.weaponEffect?'Un solo personaggio per questo incantesimo.':targeting.summary} label={plan.healing?'Bersaglio della cura':plan.damageTypes.length?'Bersagli del danno':'Bersagli'}
                 onChange={(targetId,checked)=>checked?addHit(targetId):setRows(current=>current.filter(row=>row.targetId!==targetId))}
-                renderSelected={candidate=>plan.sharedDamage||plan.kind==='none'?null:plan.kind==='save'&&!plan.damageTypes.length?<SpellSaveNotice plan={plan}/>:<div className="player-packet-rolls">{rows.map((row,index)=>row.targetId!==candidate.id?null:<fieldset key={index} className="player-roll-packet"><legend>{plan.maximumPackets!==1&&plan.maximumPackets!==null?`Colpo ${index+1}`:'Dadi richiesti'}{rows.filter(r=>r.targetId===candidate.id).length>1&&<button className="player-remove-packet" type="button" aria-label={`Rimuovi colpo ${index+1}`} title={`Rimuovi colpo ${index+1}`} onClick={()=>setRows(current=>current.filter((_,i)=>i!==index))}>×</button>}</legend>
+                renderSelected={candidate=>plan.healing?<HealingRollFields plan={plan} value={rows.find(row=>row.targetId===candidate.id)?.healingRoll??''} onChange={healingRoll=>{const index=rows.findIndex(row=>row.targetId===candidate.id);patch(index,{healingRoll})}}/>:plan.sharedDamage||plan.kind==='none'?null:plan.kind==='save'&&!plan.damageTypes.length?<SpellSaveNotice plan={plan}/>:<div className="player-packet-rolls">{rows.map((row,index)=>row.targetId!==candidate.id?null:<fieldset key={index} className="player-roll-packet"><legend>{plan.maximumPackets!==1&&plan.maximumPackets!==null?`Colpo ${index+1}`:'Dadi richiesti'}{rows.filter(r=>r.targetId===candidate.id).length>1&&<button className="player-remove-packet" type="button" aria-label={`Rimuovi colpo ${index+1}`} title={`Rimuovi colpo ${index+1}`} onClick={()=>setRows(current=>current.filter((_,i)=>i!==index))}>×</button>}</legend>
                     {plan.kind==='attack'&&<AttackRollFields compact plan={plan} value={row.die} weapon={action.group==='Attacchi fisici'} onChange={die=>patch(index,{die,damage:{}})}/>}
                     {!plan.sharedDamage&&(plan.kind!=='attack'||row.die&&Number(row.die)>=1&&Number(row.die)<=20)&&<DamageRollFields compact plan={plan} values={row.damage} onChange={(type,value)=>patch(index,{damage:{...row.damage,[type]:value}})}/>}
                 </fieldset>)}
@@ -69,7 +74,7 @@ export function ActionRollForm({action,targets,ownerId,canSubmit,disabled,formRe
                 </div>}/>}
             {rows.length>0&&plan.sharedDamage&&<fieldset className="player-shared-damage"><legend>Danno dell’area</legend><p>Un tiro per tutti i bersagli selezionati.</p><DamageRollFields compact plan={plan} values={shared} onChange={(type,value)=>setShared(current=>({...current,[type]:value}))}/></fieldset>}
             {plan.maximumPackets!==null&&plan.maximumPackets>1&&<p>Colpi assegnati: {rows.length}/{plan.maximumPackets}. Ogni colpo conserva il proprio tiro e i propri danni.</p>}
-            <button className="play-primary" disabled={!canSubmit||!optionAvailable||invalidAttack||rows.length===0&&(plan.kind==='attack'||plan.kind==='save'||!!plan.damageTypes.length||!!plan.effects.length||!!plan.weaponEffect)||plan.maximumPackets!==null&&rows.length>plan.maximumPackets||!!plan.requiredPackets&&rows.length!==plan.requiredPackets}>{submitLabel}</button>
+            <button className="play-primary" disabled={!canSubmit||!optionAvailable||invalidAttack||invalidTemporary||rows.length===0&&(plan.kind==='attack'||plan.kind==='save'||!!plan.damageTypes.length||!!plan.effects.length||!!plan.weaponEffect||!!plan.healing)||!!plan.healing&&(plan.healing.modifier===undefined||rows.some(row=>!row.healingRoll||Number(row.healingRoll)<plan.healing!.count||Number(row.healingRoll)>plan.healing!.count*plan.healing!.sides))||plan.maximumPackets!==null&&rows.length>plan.maximumPackets||!!plan.requiredPackets&&rows.length!==plan.requiredPackets}>{submitLabel}</button>
         </fieldset>{error&&<p role="alert">{error}</p>}
     </form>
 }
@@ -121,6 +126,8 @@ export function ResolutionDetails({request,review=false,renderTarget,renderPacke
             {result?.save&&<dl className="combat-result-stats">
                 <div><dt>Tiro salvezza</dt><dd>{saveNames[result.save.ability]}</dd></div><div><dt>Totale</dt><dd>{result.save.total??(result.save.automaticFailure?'Fallimento automatico':'In attesa')}</dd></div><div><dt>CD</dt><dd>{result.save.dc??'Da verificare'}</dd></div>
             </dl>}
+            {request.resolution?.temporaryHitPoints&&<p className="combat-result-damage"><span>PF temporanei di {target.name}:</span> <strong>{result?.temporaryHitPoints??'Da verificare'}</strong></p>}
+            {request.resolution?.healing&&<p className="combat-result-damage"><span>{request.status==='approved'?'PF recuperati da':'PF da curare a'} {target.name}:</span> <strong>{result?.healing??'Da verificare'}</strong></p>}
             {renderSave?.(target)}
             {packets.map((packet,index)=>{
                 if(request.mode!=='attack')return null
@@ -144,6 +151,8 @@ export function ResolutionDetails({request,review=false,renderTarget,renderPacke
                 {request.mode==='attack'&&request.resolution?.attackBonus!==undefined&&<p><span>Bonus della scheda ({request.resolution.attackAbility?saveNames[request.resolution.attackAbility]:'caratteristica da verificare'})</span> <strong>{signedBonus(request.resolution.attackBonus)}</strong></p>}
                 {attack&&<p><span>Dado / bonus della scheda</span> <strong><D20Roll value={attack.die}/> / {signedBonus(attack.modifier)||'Da verificare'}</strong></p>}
                 {result?.save&&<p><span>Dado / bonus del TS</span> <strong>{result.save.die??'In attesa'} / {signedBonus(result.save.bonus)||'Da verificare'}</strong>{result.save.secondDie!==undefined&&<> · secondo d20 {result.save.secondDie}</>}</p>}
+                {request.resolution?.temporaryHitPoints&&<p><span>Dado dei PF temporanei</span> <strong><DiceResult notation={request.resolution.temporaryHitPoints.dice} value={targetPackets?.[0]?.temporaryHitPointsRoll}/></strong></p>}
+                {request.resolution?.healing&&<p><span>Dadi di guarigione</span> <strong><DiceResult notation={request.resolution.healing.dice} value={targetPackets?.[0]?.healingRoll}/></strong></p>}
                 {request.damageEnabled&&<p><span>Danni tirati</span> <strong>{targetPackets?targetPackets.map((p,i)=><DamageDice key={i} rolls={p.damage} plan={request.resolution}/>):damageRoll||'—'}</strong></p>}
                 {result?.packets.map((packet,index)=>packet.steps.length>0&&<div key={index}>{result.packets.length>1&&<p>Colpo {index+1}</p>}<ul>{packet.steps.map((step,i)=><li key={i}>{step}</li>)}</ul></div>)}
                 {attack&&<p>Verifica copertura, reazioni e altri effetti.{attack.critical&&<> Per un critico tira due volte i dadi di danno e aggiungi i modificatori una sola volta.</>}</p>}
