@@ -1,6 +1,5 @@
 import { lazy, Suspense, useState } from 'react'
 import { Link, Navigate, Route, Routes } from 'react-router-dom'
-import { Agentation } from 'agentation'
 import { AuthPage } from './auth/AuthPage'
 import { useAuth } from './auth/useAuth'
 import { MasterViewSettings } from './components/MasterViewSettings'
@@ -99,7 +98,6 @@ function App() {
       <Route path="/schede/barbaro/pdf" element={<Suspense fallback={<p role="status">Caricamento della scheda…</p>}><BarbarianSheet /></Suspense>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes></Suspense>
-    {import.meta.env.DEV && <Agentation endpoint="http://localhost:4747" />}
     </>
   )
 }

@@ -23,6 +23,12 @@ Per lo sviluppo avvia entrambi i processi con:
 npm run dev
 ```
 
+Agentation è uno strumento facoltativo per lo sviluppatore: l'avvio normale non
+lo carica e non richiede il server MCP. Per abilitarlo, aggiungi
+`VITE_AGENTATION=true` a `.env.local` e riavvia `npm run dev`. Se il pacchetto
+non è installato, l'app parte comunque senza annotazioni. Le build di produzione
+non includono Agentation.
+
 Il proxy Vite conserva l'header `Host` del browser per il controllo dell'origine
 delle richieste. Dopo modifiche alla configurazione del proxy, riavvia
 `npm run dev` per applicarle.
