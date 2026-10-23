@@ -40,11 +40,7 @@ export function ReactionProvider({game,onUpdate,disabled,children}:{game:Game;us
     return <ReactionContext value={{paused:!!pending.length,before,ready:value=>{snapshot.current=value}}}>
         {children}
         {game.role==='player'&&pending.find(w=>w.status==='pending')&&<ReactionDialog key={pending.find(w=>w.status==='pending')!.id} window={pending.find(w=>w.status==='pending')!} game={game} onUpdate={onUpdate}/>}
-        {game.role==='master'&&!!pending.length&&<aside className="reaction-master-panels" aria-label="Reazioni da risolvere">{pending.map(window=>{
-            if(window.status==='pending')return <ReactionDialog key={window.id} window={window} game={game} onUpdate={onUpdate} disabled={disabled}/>
-            const request=game.combatRequests.find(r=>r.id===window.requestId)
-            return <section key={window.id} className="reaction-master-panel"><h2>Reazione di {window.characterName}</h2><p>Scelta confermata. Il timer è fermo: completa la risoluzione prima di proseguire.</p>{request&&<ReviewRequest request={request} disabled={disabled} onDecide={async(id,decision,body)=>onUpdate(await playApi<Game>(`/games/${game.id}/requests/${id}/${decision}`,'POST',{...body as object,revision:current.current.revision}))}/>}</section>
-        })}</aside>}
+        {game.role==='master'&&!!pending.length&&<aside className="reaction-master-panels" aria-label="Reazioni da risolvere">{pending.map(window=><ReactionDialog key={window.id} window={window} game={game} onUpdate={onUpdate} disabled={disabled}/>)}</aside>}
     </ReactionContext>
 }
 
@@ -55,11 +51,11 @@ export function MasterReactionControls({game,disabled}:{game:Game;disabled:boole
     return <div className="reaction-master-tools"><button type="button" className="play-secondary" disabled={disabled||busy||!!pending.length||!game.state.combat} onClick={async()=>{
         setBusy(true);setError('')
         try{await before({kind:'other',targetIds:[],label:'Il Master segnala una possibile reazione: verifica la condizione di attivazione nella descrizione.'})}catch(error){setError(message(error))}finally{setBusy(false)}
-    }}>Segnala una reazione</button>{!!pending.length&&<p role="status">Reazioni in attesa: {pending.map(w=>`${w.characterName}${w.status==='submitted'?' (richiesta inviata al Master)':''}`).join(', ')}. Scegli nel pannello delle reazioni o attendi il giocatore.</p>}{error&&<p role="alert">{error}</p>}</div>
+    }}>Segnala una reazione</button>{!!pending.length&&<p role="status">Reazioni in attesa: {pending.map(w=>`${w.characterName}${w.status==='submitted'?' (richiesta inviata al Master)':''}`).join(', ')}. Apri una reazione, saltala o attendi il giocatore e la scadenza.</p>}{error&&<p role="alert">{error}</p>}</div>
 }
 
 function ReactionDialog({window,game,onUpdate,disabled=false}:{window:ReactionWindow;game:Game;onUpdate:(game:Game)=>void;disabled?:boolean}){
-    const heading=useId(),panel=useRef<HTMLElement>(null),isMaster=game.role==='master'
+    const heading=useId(),isMaster=game.role==='master',[expanded,setExpanded]=useState(false)
     const dialog=useRef<HTMLDialogElement>(null),[choices,setChoices]=useState<ActionChoices>(),[key,setKey]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false)
     const [remaining,setRemaining]=useState(30),deadline=useRef(0),lastExpiry=useRef(0),working=useRef(false),activity=useRef<Promise<void>>(Promise.resolve()),lastActivity=useRef(0)
     useLayoutEffect(()=>{
@@ -69,24 +65,27 @@ function ReactionDialog({window,game,onUpdate,disabled=false}:{window:ReactionWi
         const milliseconds=Math.max(0,window.expiresAt-window.serverNow)
         deadline.current=performance.now()+milliseconds;setRemaining(Math.ceil(milliseconds/1000))
     },[window.expiresAt,window.serverNow])
-    useEffect(()=>{dialog.current?.showModal();panel.current?.scrollIntoView({block:'nearest'})},[])
-    useEffect(()=>{let active=true;void playApi<ActionChoices>(`/games/${game.id}/reactions/${window.id}/actions`).then(next=>{if(active){setChoices(next);setKey(current=>current||next.actions[0]?.key||'')}}).catch(e=>{if(active)setError(message(e))});return()=>{active=false}},[game.id,game.revision,window.id])
+    useEffect(()=>{dialog.current?.showModal()},[])
+    useEffect(()=>{if(window.status!=='pending')return;let active=true;void playApi<ActionChoices>(`/games/${game.id}/reactions/${window.id}/actions`).then(next=>{if(active){setChoices(next);setKey(current=>current||next.actions[0]?.key||'')}}).catch(e=>{if(active)setError(message(e))});return()=>{active=false}},[game.id,game.revision,window.id,window.status])
     async function decline(){
         if(working.current)return
         working.current=true;setBusy(true)
-        try{await activity.current;onUpdate(await playApi<Game>(`/games/${game.id}/reactions/${window.id}/decline`,'POST',{}))}catch(e){setError(message(e))}finally{working.current=false;setBusy(false)}
+        try{await activity.current;onUpdate(await playApi<Game>(window.status==='submitted'?`/games/${game.id}/requests/${window.requestId}/reject`:`/games/${game.id}/reactions/${window.id}/decline`,'POST',window.status==='submitted'?{revision:game.revision}:{}))}catch(e){setError(message(e))}finally{working.current=false;setBusy(false)}
     }
     // The server expires the shared window; a stale timer on either client must not decline the other client's renewed window.
-    useEffect(()=>{const timer=setInterval(()=>setRemaining(Math.max(0,Math.ceil((deadline.current-performance.now())/1000))),250);return()=>clearInterval(timer)},[])
+    useEffect(()=>{if(window.status!=='pending')return;const timer=setInterval(()=>setRemaining(Math.max(0,Math.ceil((deadline.current-performance.now())/1000))),250);return()=>clearInterval(timer)},[window.status])
     function interact(){
-        if(busy||working.current||deadline.current<=performance.now()||performance.now()-lastActivity.current<200)return
+        if(window.status!=='pending'||busy||working.current||deadline.current<=performance.now()||performance.now()-lastActivity.current<200)return
         lastActivity.current=performance.now()
         activity.current=activity.current.catch(()=>{}).then(async()=>{
             const next=await playApi<Game>(`/games/${game.id}/reactions/${window.id}/activity`,'POST',{});onUpdate(next)
         }).catch(e=>setError(message(e)))
     }
     const action=choices?.actions.find(a=>a.key===key)
-    const content=<>
+    const request=game.combatRequests.find(r=>r.id===window.requestId)
+    const content=window.status==='submitted'?<>
+        <h2 id={heading}>Reazione di {window.characterName}</h2><p>Scelta confermata. Il timer è fermo: completa la risoluzione prima di proseguire.</p>
+        {request&&<ReviewRequest request={request} disabled={disabled||busy} onDecide={async(id,decision,body)=>onUpdate(await playApi<Game>(`/games/${game.id}/requests/${id}/${decision}`,'POST',{...body as object,revision:game.revision}))}/>}</>:<>
         <div className="dialog-header"><h2 id={heading}>{isMaster?`Reazione di ${window.characterName}`:'Puoi usare una reazione'}</h2>{!isMaster&&<button type="button" className="play-secondary" aria-label="Non usare la reazione" disabled={busy} onClick={()=>void decline()}>×</button>}</div>
         <p>{window.event.label}</p>
         <div className="reaction-countdown"><strong role="timer" aria-label="Tempo rimasto per reagire">{remaining} s</strong><button type="button" className="play-secondary" aria-label="Riavvia timer" disabled={busy||remaining===0} onClick={interact}>Riavvia</button><progress max={30} value={remaining} aria-label="Tempo rimasto"/></div>
@@ -106,8 +105,13 @@ function ReactionDialog({window,game,onUpdate,disabled=false}:{window:ReactionWi
                 }
             }finally{working.current=false;setBusy(false)}
         }}/> }
-        {error&&<p role="alert">{error}</p>}
+        {!isMaster&&error&&<p role="alert">{error}</p>}
         <button type="button" className="play-secondary" disabled={busy} onClick={()=>void decline()}>Non usare la reazione</button>
     </>
-    return isMaster?<section ref={panel} className="reaction-master-panel play-player-actions" aria-labelledby={heading} onPointerDownCapture={interact} onKeyDownCapture={interact} onInputCapture={interact}>{content}</section>:<dialog ref={dialog} className="reaction-dialog play-player-actions" aria-labelledby={heading} onCancel={event=>{event.preventDefault();void decline()}} onPointerDownCapture={interact} onKeyDownCapture={interact} onInputCapture={interact}>{content}</dialog>
+    return isMaster?<section className="reaction-master-panel play-player-actions" aria-label={`Reazione di ${window.characterName}`}>
+        <div className="reaction-master-shortcuts"><button type="button" className="play-secondary" aria-expanded={expanded} aria-controls={`${heading}-panel`} disabled={busy} onClick={()=>setExpanded(open=>!open)}>{expanded?'Chiudi':'Apri'} reazione · {window.characterName}</button><button type="button" className="play-secondary" disabled={busy} onClick={()=>void decline()}>Salta reazione</button></div>
+        {!expanded&&<p className="reaction-master-wait">{window.status==='pending'?<><strong role="timer" aria-label="Tempo rimasto per reagire">{remaining} s</strong> · In attesa della scelta</>:'Scelta inviata · Da approvare'}</p>}
+        <div id={`${heading}-panel`} hidden={!expanded} onPointerDownCapture={interact} onKeyDownCapture={interact} onInputCapture={interact}>{content}</div>
+        {error&&<p role="alert">{error}</p>}
+    </section>:<dialog ref={dialog} className="reaction-dialog play-player-actions" aria-labelledby={heading} onCancel={event=>{event.preventDefault();void decline()}} onPointerDownCapture={interact} onKeyDownCapture={interact} onInputCapture={interact}>{content}</dialog>
 }

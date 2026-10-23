@@ -378,3 +378,8 @@
 .reaction-master-panel h2 { margin:0; font-size:18px; }
 .reaction-master-panel select { width:100%; }
 .reaction-master-panel .action-roll-form { margin:12px 0; }
+.reaction-master-shortcuts { display:flex; align-items:center; gap:8px; }
+.reaction-master-shortcuts button:first-child { flex:1; min-width:0; }
+.reaction-master-shortcuts button:last-child { flex-shrink:0; }
+.reaction-master-shortcuts .play-secondary { padding:8px 10px; font-size:13px; }
+.reaction-master-wait { margin:10px 0 0; font-variant-numeric:tabular-nums; }

@@ -37,6 +37,7 @@ try{
  }
  await bite(offline.name)
  const offlinePanel=page.getByRole('region',{name:'Reazione di '+offline.name,exact:true});await offlinePanel.waitFor()
+ assert(!await offlinePanel.getByRole('form',{name:'Reazione: Scudo',exact:true}).isVisible(),'The Master form stays hidden until explicitly opened')
  // A delayed poll followed by a fast one must not move an unchanged countdown forwards or backwards.
  await page.evaluate(()=>{
   const timer=document.querySelector('.reaction-master-panel [role="timer"]')
@@ -53,14 +54,20 @@ try{
   await route.fulfill({response})
   if(slow)slowDone=true;else if(slowDone)pollsAfterSlow++
  }
- await page.route(base+'/api'+path,delayedPoll);await until(()=>pollsAfterSlow>=2);await page.unroute(base+'/api'+path,delayedPoll)
+ await page.route(base+'/api'+path,delayedPoll);await until(()=>pollsAfterSlow>=2);await page.unrouteAll({behavior:'wait'})
  const ticks=await page.evaluate(()=>{globalThis.reactionObserver.disconnect();return globalThis.reactionTicks})
  assert(ticks.length>=3,'The countdown is observed across slow and fast responses')
  for(let i=1;i<ticks.length;i++){
   assert(ticks[i].seconds<=ticks[i-1].seconds,'A poll cannot restart an unchanged countdown')
   if(ticks[i].at-ticks[i-1].at<1000)assert(ticks[i-1].seconds-ticks[i].seconds<=1,'Polling must not skip seconds without real elapsed time')
  }
+ const expiryBeforeOpen=(await api(master,path)).reactionWindows.find(w=>w.status==='pending').expiresAt
+ await offlinePanel.getByRole('button',{name:'Apri reazione · '+offline.name,exact:true}).click()
+ assert.equal((await api(master,path)).reactionWindows.find(w=>w.status==='pending').expiresAt,expiryBeforeOpen,'Opening the Master form does not restart the shared timer')
  await offlinePanel.getByRole('combobox',{name:'Risorsa',exact:true}).selectOption('slot:2')
+ await offlinePanel.getByRole('button',{name:'Chiudi reazione · '+offline.name,exact:true}).click()
+ await offlinePanel.getByRole('button',{name:'Apri reazione · '+offline.name,exact:true}).click()
+ assert.equal(await offlinePanel.getByRole('combobox',{name:'Risorsa',exact:true}).inputValue(),'slot:2','Closing and reopening preserves the reaction choices')
  game=await api(master,path);assert.equal(game.characters.find(c=>c.id===offline.id).sheet.hitPoints,'22','Even with no player accounts, the attack waits for the Master reaction')
  await offlinePanel.screenshot({path:join(root,'master-reaction-panel.png')})
  await offlinePanel.getByRole('button',{name:'Usa la reazione',exact:true}).click();await offlinePanel.waitFor({state:'detached'})
@@ -73,12 +80,20 @@ try{
  await page.reload();await pp.goto(base+'/games/'+game.id);await view(pp)
  const panel=page.getByRole('region',{name:'Reazione di Aster',exact:true}),popup=pp.getByRole('dialog',{name:'Puoi usare una reazione',exact:true})
  await api(master,path+'/reactions','POST',{revision:game.revision,event:{kind:'hit',label:'Prova rinuncia del Master',targetIds:[2],actorId:0}})
- await panel.waitFor();await popup.waitFor();await panel.getByRole('button',{name:'Non usare la reazione',exact:true}).click();await panel.waitFor({state:'detached'});await popup.waitFor({state:'detached'})
+ await panel.waitFor();await popup.waitFor();await panel.getByRole('button',{name:'Salta reazione',exact:true}).click();await panel.waitFor({state:'detached'});await popup.waitFor({state:'detached'})
  game=await api(master,path);assert.equal(game.characters.find(c=>c.id===aster.id).sheet.playerDetails['slots.2.used'],undefined,'The Master can decline for the player without spending a slot')
+ await api(master,path+'/reactions','POST',{revision:game.revision,event:{kind:'hit',label:'Scelta del giocatore da rifiutare',targetIds:[2],actorId:0}})
+ await popup.waitFor();await popup.getByRole('button',{name:'Usa la reazione · invia al Master',exact:true}).click();await popup.waitFor({state:'detached'})
+ await panel.getByText('Scelta inviata · Da approvare',{exact:true}).waitFor()
+ assert(!await panel.getByRole('button',{name:'Approva azione',exact:true}).isVisible(),'A submitted player choice does not automatically open the Master review')
+ await panel.getByRole('button',{name:'Salta reazione',exact:true}).click();await panel.waitFor({state:'detached'})
+ game=await api(master,path);assert(game.combatRequests.some(r=>r.characterId===aster.id&&r.status==='rejected'),'Skipping a submitted reaction rejects its request')
+ assert.equal(game.characters.find(c=>c.id===aster.id).sheet.playerDetails['slots.1.used'],undefined,'Skipping a submitted reaction consumes no spell slot')
  const opened=await api(master,path+'/reactions','POST',{revision:game.revision,event:{kind:'hit',label:'Attacco su Aster',targetIds:[2],actorId:0}})
  const window=opened.game.reactionWindows.find(w=>w.groupId===opened.groupId)
  assert(window.expiresAt-window.serverNow<=30000&&window.expiresAt-window.serverNow>29000)
  await panel.waitFor();await popup.waitFor()
+ await panel.getByRole('button',{name:'Apri reazione · Aster',exact:true}).click()
  const denied=await stranger.request.get(base+'/api'+path+'/reactions/'+window.id+'/actions');assert.equal(denied.status(),404,'An outsider cannot inspect a session or its reaction choices')
  await new Promise(r=>setTimeout(r,1200));assert(Number((await panel.getByRole('timer').innerText()).replace(/\D/g,''))<30)
  await panel.getByRole('button',{name:'Riavvia timer',exact:true}).click()
@@ -97,13 +112,14 @@ try{
  await panel.getByRole('button',{name:'Usa la reazione',exact:true}).click();await panel.waitFor({state:'detached'});await popup.waitFor({state:'detached'})
  game=await api(master,path);let sheet=game.characters.find(c=>c.id===aster.id).sheet
  assert.equal(sheet.playerDetails['slots.2.used'],'1');assert.equal(sheet.playerDetails['combat.reactionUsed'],'true')
- assert.equal(game.combatRequests.filter(r=>r.characterId===aster.id).length,1,'A proxy cast creates one normal request owned by the character player')
+ assert.equal(game.combatRequests.filter(r=>r.characterId===aster.id&&r.status==='approved').length,1,'A proxy cast approves one normal request owned by the character player')
  assert((await api(player,path)).combatRequests.some(r=>r.characterId===aster.id&&r.actorName==='ReactionProxyMaster'),'The player sees the Master cast in their own action history')
  const late=await player.request.post(base+'/api'+path+'/requests',{data:{id:randomUUID(),revision:game.revision,key:window.actionKeys[0],reactionId:window.id,option:'slot:2',cost:1,mode:'none',damageEnabled:false,packets:[{targetId:2,damage:[]}]}});assert.equal(late.status(),409,'A late player response cannot use the Master-resolved reaction twice')
  // An unattended window really resumes the attack, with no reaction or slot spent.
  sheet={...sheet,playerDetails:{...sheet.playerDetails,'combat.reactionUsed':'false'}}
  game=await api(master,path+'/state','PUT',{revision:game.revision,sheets:game.characters.map(c=>c.id===aster.id?sheet:c.sheet),state:{...game.state,abilities:game.state.abilities.filter(a=>!(a.ownerId===2&&a.ruleId==='phb2014:spell:shield'))}})
  await pp.close();await page.reload();await bite('Aster');await panel.waitFor()
+ assert(!await panel.getByRole('form',{name:'Reazione: Scudo',exact:true}).isVisible(),'An unopened Master form still expires and resumes the attack')
  Date.now=()=>realNow()+offset;offset=31000
  await panel.waitFor({state:'detached'});await card.waitFor({state:'detached'});await saved()
  game=await api(master,path);sheet=game.characters.find(c=>c.id===aster.id).sheet
@@ -113,4 +129,4 @@ try{
  assert.deepEqual(errors,[])
  console.log('PASS Master reactions: characters without app, direct Shield, shared countdown resets, single player/Master decision, authorization, responsive form, timeout resumes damage without spending resources')
 }catch(e){await page.screenshot({path:join(root,'master-reaction-failure.png'),fullPage:true});throw e}
-finally{Date.now=realNow;await browser.close();await frontend.close();server.closeAllConnections();await new Promise(r=>server.close(r));await rm(dir,{recursive:true,force:true})}
+finally{Date.now=realNow;await page.unrouteAll({behavior:'wait'});await browser.close();await frontend.close();server.closeAllConnections();await new Promise(r=>server.close(r));await rm(dir,{recursive:true,force:true})}
