@@ -23,6 +23,10 @@ Per lo sviluppo avvia entrambi i processi con:
 npm run dev
 ```
 
+L'avvio attende che il backend sia pronto prima di avviare Vite, evitando gli
+errori proxy `ECONNREFUSED` al primo caricamento. La porta API predefinita è 3001;
+se imposti la variabile d'ambiente `PORT`, anche il proxy usa quella porta.
+
 Agentation è uno strumento facoltativo per lo sviluppatore: l'avvio normale non
 lo carica e non richiede il server MCP. Per abilitarlo, aggiungi
 `VITE_AGENTATION=true` a `.env.local` e riavvia `npm run dev`. Se il pacchetto
@@ -32,10 +36,10 @@ non includono Agentation.
 I dati per creare i personaggi sono già inclusi in Git: non occorre generare
 cataloghi né procurarsi i PDF dei manuali. `.gitattributes` conserva gli a capo LF
 dei file in `public/data/rules2014/`, necessari alle impronte SHA-256 anche su
-Windows. Se una copia precedente segnala «Impronta non valida», dopo aver
-aggiornato il progetto e salvato eventuali modifiche locali ai cataloghi, esegui
-`git archive HEAD public/data/rules2014 | tar -xf -`
-(su Windows usa Git Bash) e riavvia l'app.
+Windows. Il caricamento riconosce anche le copie precedenti convertite in CRLF:
+accetta i file solo se ripristinare LF restituisce l'impronta della release.
+Se compare ancora «Impronta non valida», i dati differiscono dalla release:
+salva eventuali modifiche locali ai cataloghi e ripristina i file originali.
 Verifica dell'installazione: `node tests/installation.mjs`.
 
 Il proxy Vite conserva l'header `Host` del browser per il controllo dell'origine

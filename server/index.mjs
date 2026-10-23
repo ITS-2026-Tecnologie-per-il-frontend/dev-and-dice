@@ -139,6 +139,7 @@ export async function createApp({
     }
     next()
   })
+  app.get('/api/health', (_req, res) => res.json({ service: 'dev-and-dice', status: 'ready' }))
   app.use(['/api/register','/api/login','/api/logout'], express.json({ limit: '16kb' }))
   app.use(session({
     name: 'dev-and-dice.sid',

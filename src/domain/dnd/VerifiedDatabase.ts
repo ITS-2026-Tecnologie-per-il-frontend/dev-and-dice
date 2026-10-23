@@ -431,7 +431,7 @@ function classLevels(levels: Record<string, number>): number {
     return values.reduce((sum, x) => sum + x, 0)
 }
 
-/** Verify the exact bytes consumed by the adapter against the immutable release manifest. */
+/** Verify release bytes, allowing Git's CRLF checkout conversion only when LF restores the pinned hash. */
 export async function loadCandidateCreationData(baseUrl: string, fetcher: Fetcher = fetch): Promise<CandidateCreationData> {
     if (!baseUrl.trim()) throw new Error('Specificare la directory della release candidata.')
     const base = baseUrl.replace(/\/$/, '')
@@ -447,9 +447,14 @@ export async function loadCandidateCreationData(baseUrl: string, fetcher: Fetche
         || manifest.editionPolicy !== '2014-reference-with-separate-unverified-legacy-content' || !object(manifest.files)) throw new Error('Manifesto candidato non valido.')
     const release = manifest as Manifest
     const read = async (file: string): Promise<unknown> => {
-        const text = await getText(file)
-        const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))].map((n) => n.toString(16).padStart(2, '0')).join('')
-        if (release.files[file] !== hash) throw new Error(`Impronta non valida: ${file}.`)
+        let text = await getText(file)
+        const digest = async (value: string) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)))].map((n) => n.toString(16).padStart(2, '0')).join('')
+        if (release.files[file] !== await digest(text)) {
+            // Older Windows checkouts may predate .gitattributes. Never accept changed JSON values.
+            if (!text.includes('\r\n')) throw new Error(`Impronta non valida: ${file}.`)
+            text = text.replace(/\r\n/g, '\n')
+            if (release.files[file] !== await digest(text)) throw new Error(`Impronta non valida: ${file}.`)
+        }
         return JSON.parse(text)
     }
     const [options, equipment, rules, wizard, choices, reference, rawCatalog, idMap] = await Promise.all([

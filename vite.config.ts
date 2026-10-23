@@ -31,7 +31,7 @@ createRoot(root).render(createElement(Agentation, { endpoint: 'http://localhost:
     plugins: [react(), agentation],
     server: {
       proxy: {
-        '/api': { target: 'http://localhost:3001', changeOrigin: false },
+        '/api': { target: `http://127.0.0.1:${process.env.PORT ?? 3001}`, changeOrigin: false },
       },
     },
   }

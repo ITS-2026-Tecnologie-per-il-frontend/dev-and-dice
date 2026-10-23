@@ -17,6 +17,7 @@ const temporary = await mkdtemp(join(tmpdir(), 'dev-and-dice-installation-'))
 const checkout = join(temporary, 'checkout')
 const originalFetch = globalThis.fetch
 const originalFlag = process.env.VITE_AGENTATION
+const originalPort = process.env.PORT
 try {
     await git('git', ['clone', '--shared', '--quiet', '--no-checkout', project, checkout])
     await copyFile(join(project, '.gitattributes'), join(checkout, '.gitattributes'))
@@ -33,6 +34,22 @@ try {
     const sheet = randomCharacter(creationData, { characterClass: 'fighter', race: 'human', level: 1 }, () => 0.5)
     assert.deepEqual(tutorialIssues(sheet, creationData, 8), [], 'The generated character must pass the creation review')
 
+    // Existing Windows copies can retain CRLF even after .gitattributes was added.
+    let corrupt = false
+    globalThis.fetch = async url => {
+        let text = await readFile(join(checkout, 'public', String(url).replace(/^\/(crlf|corrupt)-checkout\//, '')), 'utf8')
+        if (corrupt && String(url).endsWith('/rules2014/data/wizard-catalog.json')) text = text.replace('"subclasses"', '"changedSubclasses"')
+        return new Response(text.replace(/\r?\n/g, '\r\n'))
+    }
+    const windows = await loadActiveDatabase('/crlf-checkout/')
+    assert.equal(windows.creationData.verified.candidateReleaseId, creationData.verified.candidateReleaseId)
+    const windowsSheet = randomCharacter(windows.creationData, { characterClass: 'fighter', race: 'human', level: 1 }, () => 0.5)
+    assert.deepEqual(tutorialIssues(windowsSheet, windows.creationData, 8), [])
+    corrupt = true
+    await assert.rejects(loadActiveDatabase('/corrupt-checkout/'), /Impronta non valida: data\/wizard-catalog\.json/)
+    corrupt = false
+    assert.ok((await loadActiveDatabase('/corrupt-checkout/')).creationData.verified, 'A corrected catalog can be loaded again')
+
     // Only Vite and its React plugin are visible in this installation: Agentation is absent.
     await mkdir(join(checkout, 'node_modules'))
     for (const dependency of ['vite', '@vitejs']) {
@@ -40,6 +57,10 @@ try {
     }
     await copyFile(join(project, 'vite.config.ts'), join(checkout, 'vite.config.ts'))
     await copyFile(join(project, 'package.json'), join(checkout, 'package.json'))
+    process.env.PORT = '43219'
+    const proxyConfig = (await loadConfigFromFile({ command: 'serve', mode: 'development' }, join(checkout, 'vite.config.ts'))).config
+    assert.equal(proxyConfig.server.proxy['/api'].target, 'http://127.0.0.1:43219')
+    assert.equal(proxyConfig.server.proxy['/api'].changeOrigin, false)
     const hasAgentation = config => config.plugins.some(plugin => plugin?.name === 'optional-agentation')
     process.env.VITE_AGENTATION = 'false'
     assert.equal(hasAgentation((await loadConfigFromFile({ command: 'serve', mode: 'development' }, join(checkout, 'vite.config.ts'))).config), false)
@@ -48,9 +69,11 @@ try {
         'Even an explicit opt-in must allow startup when Agentation is absent')
     assert.equal(hasAgentation((await loadConfigFromFile({ command: 'build', mode: 'production' }, join(project, 'vite.config.ts'))).config), false,
         'Production must exclude developer annotations even when enabled locally')
-    console.log('Installation checks passed: Windows checkout hashes, database loading, character generation and optional Agentation.')
+    console.log('Installation checks passed: Windows LF/CRLF catalogs, corruption rejection, character generation, custom API port and optional Agentation.')
 } finally {
     globalThis.fetch = originalFetch
+    if (originalPort === undefined) delete process.env.PORT
+    else process.env.PORT = originalPort
     if (originalFlag === undefined) delete process.env.VITE_AGENTATION
     else process.env.VITE_AGENTATION = originalFlag
     await rm(temporary, { recursive: true, force: true })
