@@ -1,4 +1,4 @@
-import { useState, type Dispatch, type SetStateAction, type DragEvent } from 'react'
+import { useContext, useLayoutEffect, useRef, useState, type Dispatch, type SetStateAction, type DragEvent } from 'react'
 import { durationTurns, activateAbility, type Ability, type Combat } from '../utils/Combat'
 import { getDropIndex, getDropTargetId, reorderByDrop, reorderById } from '../utils/Reorder'
 import { templateFromCatalog, type Catalog } from '../utils/Catalog'
@@ -6,7 +6,8 @@ import { CatalogSearch } from './CatalogSearch'
 import { AbilityCard, AbilityMetadata, AbilityTargets, WeaponEffectSummary, SpellEffectSummary } from './AbilityCard'
 import { InfoButton } from './InfoButton'
 import { HelpTooltip } from './HelpTooltip'
-import type { CharacterSheet } from '../utils/CharacterSheets'
+import { currentArmorClass, type CharacterSheet } from '../utils/CharacterSheets'
+import { ReactionContext } from './ReactionContext'
 import type { CreationData } from '../utils/PlayerCreation'
 import { combatAbilityInfo, combatAbilityStatus, combatUseOptions, selectedUseOption, type UseOption } from '../domain/dnd/CombatActions'
 import { combatTargeting, creatureType, targetTypeError } from '../domain/dnd/CombatTargets'
@@ -36,6 +37,31 @@ type Props = {
 
 export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities, participants, onAdd, catalog:baseCatalog,catalogForOwner,combat,onActivate,onEnd,onResolve,onCancelCast,creationData,actionError }: Props) {
     const [recasting,setRecasting]=useState<number|null>(null)
+    const {before:beforeReaction}=useContext(ReactionContext),[manualHits,setManualHits]=useState<Record<string,string>>({}),[manualBusy,setManualBusy]=useState<number|null>(null),[manualNotice,setManualNotice]=useState<{id:number;text:string}>()
+    const latest=useRef({abilities,participants,onResolve}),working=useRef(false)
+    useLayoutEffect(()=>{latest.current={abilities,participants,onResolve}})
+    const hitKey=(ability:Ability,id:number)=>`${ability.execution?.id}:${id}`
+    async function finishManual(ability:Ability,attack:boolean){
+        if(!attack||ability.execution?.phase!=='resolving'){onResolve?.(ability);return}
+        if(working.current)return
+        const hitIds=(ability.targets??[]).filter(t=>manualHits[hitKey(ability,t.id)]==='hit').map(t=>t.id)
+        const before=new Map(hitIds.map(id=>{const sheet=participants.find(p=>p.id===id)?.sheet;return [id,sheet?currentArmorClass(sheet):'']}))
+        working.current=true;setManualBusy(ability.id);setManualNotice(undefined)
+        try{
+            if(hitIds.length&&!await beforeReaction({kind:'hit',label:`${ability.name}: il Master ha confermato un attacco a segno.`,targetIds:hitIds,actorId:ability.ownerId??undefined}))return
+            const current=latest.current.abilities.find(a=>a.id===ability.id&&a.execution?.id===ability.execution?.id)
+            if(!current)return
+            const changed=hitIds.filter(id=>{const sheet=latest.current.participants.find(p=>p.id===id)?.sheet;return (sheet?currentArmorClass(sheet):'')!==before.get(id)})
+            if(changed.length){
+                setManualHits(hits=>({...hits,...Object.fromEntries(changed.map(id=>[hitKey(current,id),'']))}))
+                setAbilities(items=>items.map(a=>a.id===current.id?{...a,targets:a.targets?.map(t=>changed.includes(t.id)?{...t,damage:'',resolved:false}:t)}:a))
+                setManualNotice({id:ability.id,text:'La reazione ha modificato la CA: '+changed.map(id=>{const target=latest.current.participants.find(p=>p.id===id);return `${target?.description}: ${before.get(id)||'da verificare'} → ${target?.sheet?currentArmorClass(target.sheet):'da verificare'}`}).join('; ')+'. Ricontrolla il tiro per colpire e conferma di nuovo esito e danni; se l’attacco manca, non applicare gli effetti legati al colpo.'})
+                return
+            }
+            latest.current.onResolve?.(current)
+        }catch(error){setManualNotice({id:ability.id,text:error instanceof Error?error.message:'Reazione non disponibile.'})}
+        finally{working.current=false;setManualBusy(null)}
+    }
     function patch(id:number,values:Partial<Ability>) {setAbilities(current=>current.map(ability=>ability.id===id ? {...ability,...values} : ability))}
     function updateAbilityName(id: number, name: string) {
         setAbilities((currentAbilities) =>
@@ -250,14 +276,18 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                                 checkboxLabel={candidate=>`Bersaglio ${candidate.name} di ${ability.name}`}
                                 onChange={(id,checked)=>patch(ability.id,{targets:checked?[...targets,{id,damage:'',resolved:false}]:targets.filter(target=>target.id!==id),requirementsConfirmed:false})}
                                 renderSelected={candidate=>{const target=targets.find(target=>target.id===candidate.id)!;return ability.execution?.phase==='resolving'&&<>
-                                    <label><span>Danno finale dopo TS e difese</span><input aria-label={`Danno finale a ${candidate.name} da ${ability.name}`} type="number" min="0" step="1" value={target.damage} onChange={event=>patch(ability.id,{targets:targets.map(item=>item.id===candidate.id?{...item,damage:event.target.value,resolved:false}:item)})}/></label>
-                                    <label className="ability-check"><input type="checkbox" aria-label={`Conferma esito di ${ability.name} su ${candidate.name}`} checked={target.resolved} onChange={event=>patch(ability.id,{targets:targets.map(item=>item.id===candidate.id?{...item,resolved:event.target.checked}:item)})}/>Esito e danno confermati</label>
+                                    <label><span>Danno finale dopo TS e difese</span><input aria-label={`Danno finale a ${candidate.name} da ${ability.name}`} type="number" min="0" step="1" value={target.damage} disabled={manualBusy===ability.id||info.attack&&manualHits[hitKey(ability,candidate.id)]==='miss'} onChange={event=>patch(ability.id,{targets:targets.map(item=>item.id===candidate.id?{...item,damage:event.target.value,resolved:info.attack?!!manualHits[hitKey(ability,candidate.id)]:false}:item)})}/></label>
+                                    {info.attack?<label>Esito dell’attacco<select aria-label={`Esito di ${ability.name} su ${candidate.name}`} disabled={manualBusy===ability.id} value={manualHits[hitKey(ability,candidate.id)]??''} onChange={event=>{
+                                        const hit=event.target.value;setManualHits(hits=>({...hits,[hitKey(ability,candidate.id)]:hit}));patch(ability.id,{targets:targets.map(item=>item.id===candidate.id?{...item,damage:hit==='miss'?'0':item.damage,resolved:!!hit}:item)})
+                                    }}><option value="">Da confermare…</option><option value="hit">Colpito</option><option value="miss">Mancato · 0 danni</option></select></label>:<label className="ability-check"><input type="checkbox" aria-label={`Conferma esito di ${ability.name} su ${candidate.name}`} checked={target.resolved} onChange={event=>patch(ability.id,{targets:targets.map(item=>item.id===candidate.id?{...item,resolved:event.target.checked}:item)})}/>Esito e danno confermati</label>}
                                 </>}}/>}
 
                             {!running && (info.level!==undefined || info.damage) && <div className="ability-confirmation"><label className="ability-check"><input type="checkbox" checked={ability.requirementsConfirmed===true} onChange={event=>patch(ability.id,{requirementsConfirmed:event.target.checked})}/>{info.repairsObject ? 'Confermo oggetto a contatto, componenti disponibili e requisiti del lancio.' : 'Confermo requisiti e bersagli'}</label>{!info.repairsObject && <HelpTooltip label="Quali requisiti confermare">Controlla azione o reazione, gittata, bersagli e componenti disponibili, inclusi quelli costosi o consumabili, secondo l’edizione della scheda.</HelpTooltip>}</div>}
                             {ability.execution && <>
                                 <div className="ability-field-help"><span>{ability.execution.phase==='casting' ? 'Lancio in corso' : 'Risoluzione dell’uso'}</span><HelpTooltip label="Aiuto sulla risoluzione dell’uso">{ability.execution.phase==='casting' ? 'Mantieni la concentrazione e completa il tempo richiesto. La risorsa sarà consumata al completamento del lancio.' : 'Concludi dopo aver applicato gli esiti. Un attacco mancato o un tiro salvezza superato non restituisce eventuali risorse già consumate.'}</HelpTooltip></div>
-                                <button className="sort-turns" type="button" disabled={tooManyTargets} onClick={()=>onResolve(ability)}>{ability.execution.phase==='casting' ? 'Completa lancio' : info.damage ? 'Concludi uso e applica danni' : 'Concludi uso'}</button>
+                                <button className="sort-turns" type="button" disabled={tooManyTargets||manualBusy===ability.id||info.attack&&ability.execution.phase==='resolving'&&targets.some(t=>!manualHits[hitKey(ability,t.id)])} onClick={()=>void finishManual(ability,info.attack)}>{ability.execution.phase==='casting' ? 'Completa lancio' : info.damage ? 'Concludi uso e applica danni' : 'Concludi uso'}</button>
+                                {manualBusy===ability.id&&<p role="status">Attendo le reazioni prima di applicare l’attacco…</p>}
+                                {manualNotice?.id===ability.id&&<p role="status">{manualNotice.text}</p>}
                                 {ability.execution.phase==='casting' && <button className="end-combat" type="button" onClick={()=>onCancelCast?.(ability)}>Interrompi lancio senza consumo</button>}
                             </>}
                             {actionError?.abilityId===ability.id && <p role="alert" id={`ability-error-${ability.id}`}>{actionError.message}</p>}
