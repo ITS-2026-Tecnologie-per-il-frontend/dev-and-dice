@@ -2,10 +2,10 @@ import {ReactionContext} from './ReactionContext'
 import { lazy, Suspense, useContext, useLayoutEffect, useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type DragEvent, type ReactNode } from 'react'
 import type { MasterView } from '../utils/MasterView'
 import { ColumnSeparator } from './ColumnSeparator'
-import { ParticipantInspector, ParticipantStats, InspectorNavigation, ParticipantAbilities } from './ParticipantInspector'
+import { ParticipantInspector, ParticipantStats, ParticipantStatIcon, InspectorNavigation, ParticipantAbilities } from './ParticipantInspector'
 import { useDialogDismiss } from '../utils/Dialog'
 import { CharacterSheets, type CharacterSheetsHandle } from './CharacterSheets'
-import { characterFields, currentArmorClass, clampHitPointsToMaximum, newCharacterSheet, findSheetCombatAbility, normalizeHitPoints, turnFromSheet, importSheetAbility, initiativeBonus, syncTurnStats, type CharacterSheet } from '../utils/CharacterSheets'
+import { characterFields, currentArmorClass, clampHitPointsToMaximum, newCharacterSheet, findSheetCombatAbility, normalizeHitPoints, turnFromSheet, importSheetAbility, initiativeBonus, integerValue, syncTurnStats, type CharacterSheet } from '../utils/CharacterSheets'
 import { AbilitiesTracker } from './AbilitiesTracker'
 import type { ResolvedDamagePackets } from './MasterSpellRolls'
 import { nextCombatTurn, sortByInitiative, advanceCombatAbilities, removeParticipantAbilities, hitPointsAfterDamageWithTemporary, hitPointsAfterHealing, type Ability, type Combat } from '../utils/Combat'
@@ -685,6 +685,19 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
                                     })}{concentration&&<HelpTooltip className="turn-condition-pill" label="Concentrazione" triggerContent="Concentrazione"><div className="turn-status-help"><strong>Concentrazione</strong><ul><li>Mantieni la concentrazione su {concentration}.</li><li>Un altro effetto che richiede concentrazione interrompe quello attuale.</li><li>Se subisci danni, serve un TS su Costituzione per mantenerla.</li><li>Termina se diventi incapacitato, muori o decidi di interromperla.</li></ul>{concentrating?origin(concentrating):<p><strong>Origine:</strong> {concentration} · {turn.description}</p>}</div></HelpTooltip>}</div>}
                                     {due.length>0&&<p className="turn-save-reminder" role="status" title="Da risolvere a fine turno. Premi Turno successivo per risolvere.">{due.map(a=>`TS ${saveNames[a.repeatSaveRoll!.ability]}${a.repeatSaveRoll!.dc===undefined?'':` · CD ${a.repeatSaveRoll!.dc}`}`).join('; ')} · fine turno</p>}
                                 </div>
+                                const initiativeField = (<label className="initiative-field">
+                                        <span className="master-stat-initiative">{renewed && <ParticipantStatIcon kind="initiative"/>}Iniziativa</span>
+                                        <input
+                                            aria-label={`Iniziativa del turno ${index + 1}`}
+                                            required
+                                            step="1"
+                                            disabled={combat !== null}
+                                            type="number"
+                                            value={turn.initiative}
+                                            title={initiativeBonus(turn.sheet) ? `Modificatore iniziativa: ${initiativeBonus(turn.sheet)}. Inserisci il risultato del tiro.` : 'Inserisci il risultato del tiro di iniziativa.'}
+                                            onChange={(event) => updateTurn(turn.id, 'initiative', event.target.value)}
+                                        />
+                                    </label>)
                                 return (
                                 <div
                                     className={`turn-row${combat?.activeId === turn.id ? ' active-turn' : ''}${renewed && selectedTurn?.id === turn.id ? ' selected-participant' : ''}${due.length||turn.concentrationChecks?.length?' turn-needs-resolution':''}`}
@@ -716,6 +729,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
                                     >
                                         <span aria-hidden="true">↕</span>
                                     </button>
+                                    {renewed && initiativeField}
                                     {renewed ? <div className="turn-description master-participant-name"><div className="master-participant-identity"><button type="button" aria-label={`Dettagli di ${turn.description || `partecipante ${index + 1}`}`} aria-pressed={selectedTurn?.id === turn.id} onClick={() => revealParticipant(turn.id)}><strong>{turn.description || 'Partecipante da nominare'}</strong><span>{turn.sheet?.kind || 'Creatura'}{combat?.activeId === turn.id ? ' · Turno attuale' : selectedTurn?.id === turn.id ? ' · Selezionato' : ' · Dettagli'}</span></button>{activeEffects.some(ability => ability.ownerId === turn.id) && <span className="master-participant-effects">{activeEffects.filter(ability => ability.ownerId === turn.id).length} {activeEffects.filter(ability => ability.ownerId === turn.id).length === 1 ? "effetto in corso" : "effetti in corso"}</span>}</div>{status}</div> : <CatalogSearch
                                         aria-label={`Creatura del turno ${index + 1}`}
                                         required
@@ -729,27 +743,16 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
                                         onChange={(value) => updateTurn(turn.id, 'description', value)}
                                         onSelect={(entry) => selectCreature(turn.id, entry)}
                                     />}
-                                    <label className="initiative-field">
-                                        <span>Iniziativa</span>
-                                        <input
-                                            aria-label={`Iniziativa del turno ${index + 1}`}
-                                            required
-                                            step="1"
-                                            disabled={combat !== null}
-                                            type="number"
-                                            value={turn.initiative}
-                                            title={initiativeBonus(turn.sheet) ? `Modificatore iniziativa: ${initiativeBonus(turn.sheet)}. Inserisci il risultato del tiro.` : 'Inserisci il risultato del tiro di iniziativa.'}
-                                            onChange={(event) => updateTurn(turn.id, 'initiative', event.target.value)}
-                                        />
-                                    </label>
+                                    {!renewed && initiativeField}
                                     <label className="turn-stat turn-pf">
-                                        <span>PF</span>
+                                        <span className="master-stat-hp">{renewed && <ParticipantStatIcon kind="hp"/>}{renewed && Number(turn.temporaryHitPoints) > 0 ? 'PF temporanei' : 'PF'}</span>
                                         <span className="turn-hitpoints">
                                         <input
                                             aria-label={`PF di ${turn.description || `creatura ${index + 1}`}`}
                                             type="number"
                                             step="1"
                                             value={turn.hitPoints}
+                                            style={renewed ? {width: `calc(${Math.max(2, turn.hitPoints.length)}ch + 4px)`} : undefined}
                                             onChange={(event) => updateTurn(turn.id, 'hitPoints', event.target.value)}
                                         />
                                         <span className="turn-max-hitpoints" aria-label="PF massimi">/{maximumHitPoints(turn) || '—'}</span>
@@ -767,7 +770,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
                                         />
                                     </label>
                                     <label className="turn-stat turn-ca">
-                                        <span>CA</span>
+                                        <span className="master-stat-ac">{renewed && <ParticipantStatIcon kind="ac"/>}{renewed && integerValue(turn.sheet?.playerDetails?.temporaryAC) !== undefined ? 'CA temporanea' : 'CA'}</span>
                                         <input
                                             aria-label={`CA di ${turn.description || `creatura ${index + 1}`}`}
                                             type="number"
@@ -836,7 +839,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
                     </div>
                     {inspectorMode === 'participant' && (selectedTurn ? <section className="master-participant-detail" aria-labelledby="master-detail-name">
                         <p className="master-detail-label">Partecipante selezionato</p>
-                        <ParticipantStats hitPoints={selectedTurn.hitPoints} maximum={maximumHitPoints(selectedTurn)} armorClass={selectedTurn.sheet?currentArmorClass(selectedTurn.sheet):selectedTurn.armorClass} initiative={selectedTurn.initiative}/>
+                        <ParticipantStats hitPoints={selectedTurn.hitPoints} maximum={maximumHitPoints(selectedTurn)} armorClass={selectedTurn.sheet?currentArmorClass(selectedTurn.sheet):selectedTurn.armorClass} initiative={selectedTurn.initiative} temporaryHitPoints={selectedTurn.temporaryHitPoints} temporaryArmorClass={integerValue(selectedTurn.sheet?.playerDetails?.temporaryAC) !== undefined}/>
                         <div className="master-detail-fields"><label><span>Nome / creatura</span><CatalogSearch aria-label="Nome del partecipante selezionato" value={selectedTurn.description} disabled={combat !== null} entries={catalog.creatures} onChange={value => updateTurn(selectedTurn.id, 'description', value)} onSelect={entry => selectCreature(selectedTurn.id, entry)}/></label>
                         <label><span>PF temporanei</span><input aria-label={`PF temporanei di ${selectedTurn.description || 'partecipante selezionato'}`} type="number" min="0" step="1" value={selectedTurn.temporaryHitPoints} onChange={event => updateTurn(selectedTurn.id, 'temporaryHitPoints', event.target.value)}/></label></div>
                         {selectedTurn.sheet&&!creatureType(selectedTurn.sheet)&&<details key={selectedTurn.id} open><summary>Dettagli creatura</summary><label className="master-creature-type">Tipo di creatura<select aria-label={`Tipo di creatura di ${selectedTurn.description}`} value={creatureType(selectedTurn.sheet)??''} onChange={event=>{

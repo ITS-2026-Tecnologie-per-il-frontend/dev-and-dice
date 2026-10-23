@@ -43,6 +43,7 @@ try {
     let game = await api(context, '/play/games', 'POST', {name:'La miniera'})
     const sheets = ['Aramil','Thora','Goblin'].map((name,index) => ({...newCharacterSheet(),name,kind:'Mostro',level:'1',hitPoints:'24',armorClass:'15',initiative:String(18-index*3),playerDetails:{maxHitPoints:'32'},abilities:[{name:'Schivata',duration:'Senza conteggio'}]}))
     sheets[0]={...sheets[0],kind:'PG',playerDetails:{...sheets[0].playerDetails,'slots.1.total':'4','slots.1.used':'1','slots.2.total':'1','slots.2.used':'1','inventory.version':'1','inventory.0.id':'owned-dagger','inventory.0.0':'Pugnale','inventory.0.2':'1','inventory.ref.attacks.0.0':'owned-dagger','attacks.0.0':'Pugnale','attacks.0.1':'+5','attacks.0.2':'1d4+3 perforante'}}
+    sheets[1].playerDetails.temporaryAC='17'
     const catalog=parseCatalog(JSON.parse(readFileSync(new URL('../public/data/database.json',import.meta.url),'utf8')))
     sheets[0].abilities.push(...['dungeonedraghi:spell:6950','7738:ability:1','7738:ability:0','dungeonedraghi:spell:6615','dungeonedraghi:spell:6755'].map(id=>templateFromCatalog(catalog.abilities.find(entry=>entry.id===id))),{name:'Trucchetto personale',spellLevel:0,duration:'Senza conteggio'},{name:'Attacco magico personale',section:'action',description:'Ranged Spell Attack: +5 to hit.',duration:'Senza conteggio'})
     for (const sheet of sheets) {
@@ -62,6 +63,22 @@ try {
     await changeView(page, 'Rinnovata')
     await page.locator('.master-renewed').waitFor()
     const aramilRow=page.locator('.turn-row[data-reorder-id="0"]')
+    for (const scheme of ['light','dark']) {
+        await page.emulateMedia({colorScheme:scheme})
+        for (const width of [1600,1024,768,375]) {
+            await fit(page,width,1000)
+            const initiative=await aramilRow.locator('.initiative-field').boundingBox()
+            const identity=await aramilRow.locator('.master-participant-name').boundingBox()
+            assert(initiative.x+initiative.width<=identity.x+1,'Initiative stays left of the name at '+width)
+            const numeric=await aramilRow.locator('.initiative-field input,.turn-pf input,.turn-ca input').evaluateAll(inputs=>inputs.map(input=>({size:getComputedStyle(input).fontSize,weight:getComputedStyle(input).fontWeight,overflow:input.scrollWidth>input.clientWidth})))
+            assert(numeric.every(style=>style.size==='22px'&&Number(style.weight)>=700&&!style.overflow),'All editable stats match the reference typography at '+width)
+            assert.equal(await aramilRow.locator('label svg[aria-hidden="true"]').count(),3)
+            await aramilRow.screenshot({path:'/tmp/dev-and-dice-turn-stats-'+scheme+'-'+width+'.png'})
+        }
+    }
+    await page.emulateMedia({colorScheme:'light'})
+    await fit(page,1600,1000)
+
     await aramilRow.getByRole('spinbutton').first().dblclick()
     assert.equal(await page.locator('.character-library dialog[open]').count(),0,'Editing turn stats does not open the sheet')
     await aramilRow.getByRole('button',{name:'Dettagli di Aramil',exact:true}).dblclick()
@@ -232,11 +249,18 @@ try {
     await page.getByRole('button',{name:'Dettagli di Thora',exact:true}).click()
     assert.equal(await page.locator('#master-detail-name').innerText(),'Thora')
     assert.equal(await page.locator('.turn-row[aria-current="step"] .master-participant-name strong').innerText(),'Aramil')
+    const thoraRow=page.locator('.turn-row[data-reorder-id="1"]')
+    assert.equal(await thoraRow.locator('.turn-ca > span').innerText(),'CA temporanea')
+    assert.equal(await stats.locator('.master-stat-ac dt').innerText(),'CA temporanea')
     await page.getByRole('spinbutton',{name:'PF temporanei di Thora',exact:true}).fill('4')
+    await thoraRow.locator('.turn-pf > span').filter({hasText:'PF temporanei'}).first().waitFor()
+    assert.equal(await stats.locator('.master-stat-hp dt').innerText(),'PF temporanei')
     await page.getByRole('spinbutton',{name:'Danni o cura per Thora',exact:true}).fill('5')
     await page.getByRole('button',{name:'Applica danni a Thora',exact:true}).click()
     assert.equal(await page.getByRole('spinbutton',{name:'PF di Thora',exact:true}).inputValue(),'23')
     assert.equal(await stats.locator('.master-stat-hp strong').innerText(),'23','The graphic updates after applying damage')
+    assert.equal(await thoraRow.locator('.turn-pf > span').first().innerText(),'PF')
+    assert.equal(await stats.locator('.master-stat-hp dt').innerText(),'PF','The label resets when temporary HP are exhausted')
     await page.getByRole('button',{name:'Dettagli di Goblin',exact:true}).click()
     await page.getByRole('searchbox',{name:'Cerca abilità del partecipante',exact:true}).fill('inesistente')
     await page.getByRole('button',{name:'Tutte le abilità',exact:true}).click()

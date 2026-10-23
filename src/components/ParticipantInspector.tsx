@@ -33,10 +33,15 @@ export function ParticipantInspector({ className = '', ...props }: ComponentProp
     return <aside {...props} className={`master-inspector ${className}`}/>
 }
 
-export function ParticipantStats({ hitPoints, maximum, armorClass, initiative }: {hitPoints: string; maximum?: string; armorClass: string; initiative: string}) {
+export function ParticipantStatIcon({kind}: {kind: 'hp' | 'ac' | 'initiative'}) {
+    const path = {hp: 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z', ac: 'm12 2 8 3v6c0 7-8 11-8 11S4 18 4 11V5Z', initiative: 'm13 2-10 12h9l-1 8 10-12h-9Z'}[kind]
+    return <svg viewBox="0 0 24 24" aria-hidden="true"><path d={path}/></svg>
+}
+
+export function ParticipantStats({ hitPoints, maximum, armorClass, initiative, temporaryHitPoints, temporaryArmorClass }: {hitPoints: string; maximum?: string; armorClass: string; initiative: string; temporaryHitPoints?: string; temporaryArmorClass?: boolean}) {
     return <dl className="master-detail-stats" aria-label="Statistiche del partecipante">
-        <div className="master-stat-hp"><dt><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg>PF</dt><dd><strong>{hitPoints || '—'}</strong><span>/ {maximum || '—'}</span></dd></div>
-        <div className="master-stat-ac"><dt><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 8 3v6c0 7-8 11-8 11S4 18 4 11V5Z"/></svg>CA</dt><dd><strong>{armorClass || '—'}</strong></dd></div>
-        <div className="master-stat-initiative"><dt><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-10 12h9l-1 8 10-12h-9Z"/></svg>Iniziativa</dt><dd><strong>{initiative || '—'}</strong></dd></div>
+        <div className="master-stat-hp"><dt><ParticipantStatIcon kind="hp"/>{Number(temporaryHitPoints) > 0 ? 'PF temporanei' : 'PF'}</dt><dd><strong>{hitPoints || '—'}</strong><span>/ {maximum || '—'}</span></dd></div>
+        <div className="master-stat-ac"><dt><ParticipantStatIcon kind="ac"/>{temporaryArmorClass ? 'CA temporanea' : 'CA'}</dt><dd><strong>{armorClass || '—'}</strong></dd></div>
+        <div className="master-stat-initiative"><dt><ParticipantStatIcon kind="initiative"/>Iniziativa</dt><dd><strong>{initiative || '—'}</strong></dd></div>
     </dl>
 }

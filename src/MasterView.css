@@ -72,7 +72,7 @@
 .master-table-options .turn-header-actions { justify-content:flex-start; gap:8px; margin:8px 0; }
 .master-table-options .combat-shortcut-settings { width:100%; margin:8px 0 0; }
 .master-renewed .turns-list { gap:0; border:1px solid var(--border); border-radius:8px; background:var(--bg); }
-.master-renewed .tracker-main .turn-row { position:relative; box-sizing:border-box; grid-template-columns:28px minmax(130px,1fr) 64px 98px 56px 118px 28px; grid-template-areas:'drag name initiative pf ca damage delete' '. warning warning warning warning warning .'; min-height:88px; padding:12px; gap:0 10px; border:0; border-bottom:1px solid var(--border); border-radius:0; background:transparent; font-variant-numeric:tabular-nums; }
+.master-renewed .tracker-main .turn-row { position:relative; box-sizing:border-box; grid-template-columns:28px 84px minmax(130px,1fr) 124px 116px 118px 28px; grid-template-areas:'drag initiative name pf ca damage delete' '. warning warning warning warning warning .'; min-height:88px; padding:12px; gap:0 10px; border:0; border-bottom:1px solid var(--border); border-radius:0; background:transparent; font-variant-numeric:tabular-nums; }
 .master-renewed .tracker-main .turn-row:first-child { border-radius:7px 7px 0 0; }
 .master-renewed .tracker-main .turn-row.selected-participant { background:var(--master-subtle); box-shadow:inset 3px 0 color-mix(in srgb,var(--master-accent) 55%,var(--border)); }
 .master-renewed .tracker-main .turn-row.active-turn { background:var(--master-tint); box-shadow:inset 4px 0 var(--master-accent); }
@@ -169,7 +169,7 @@
 @media (min-width:1800px) { .master-renewed .tracker-main { grid-template-columns:minmax(0,1fr) minmax(390px,440px); gap:32px; } }
 @media (max-width:1200px) {
     .master-renewed .tracker-main { grid-template-columns:minmax(0,1fr) 320px; gap:16px; }
-    .master-renewed .tracker-main .turn-row { grid-template-columns:24px minmax(90px,1fr) 60px 90px 48px 24px; grid-template-areas:'drag name initiative pf ca delete' '. name damage damage damage . ' '. warning warning warning warning .'; gap:8px; }
+    .master-renewed .tracker-main .turn-row { grid-template-columns:24px 84px minmax(90px,1fr) 124px 116px 24px; grid-template-areas:'drag initiative name pf ca delete' '. name damage damage damage . ' '. warning warning warning warning .'; gap:8px; }
     .master-renewed .damage-controls { flex-direction:row; align-items:center; justify-content:flex-end; }
     .master-renewed .hitpoint-adjustment { width:118px; }
     .master-renewed .master-inspector { --inspector-padding:16px; }
@@ -178,7 +178,7 @@
 @media (max-width:900px) {
     .master-renewed .tracker-main { grid-template-columns:minmax(0,1fr); }
     .master-renewed .master-inspector { position:static; max-height:none; overflow:visible; scrollbar-gutter:auto; }
-    .master-renewed .tracker-main .turn-row { grid-template-columns:28px minmax(110px,1fr) 64px 98px 56px 118px 28px; grid-template-areas:'drag name initiative pf ca damage delete' '. warning warning warning warning warning .'; gap:0 8px; }
+    .master-renewed .tracker-main .turn-row { grid-template-columns:24px 84px minmax(90px,1fr) 124px 116px 24px; grid-template-areas:'drag initiative name pf ca delete' '. . damage damage damage .' '. warning warning warning warning .'; gap:0 8px; }
     .master-renewed .damage-controls { flex-direction:column; align-items:stretch; }
     .master-renewed .hitpoint-adjustment { width:auto; }
     .master-participant-detail { scroll-margin-top:100px; }
@@ -193,7 +193,7 @@
 @media (max-width:640px) {
     .master-renewed .master-workspace-nav { gap:4px; margin-bottom:16px; flex-wrap:wrap; }
     .master-renewed .master-workspace-nav > button { padding:10px; font-size:13px; }
-    .master-renewed .tracker-main .turn-row { grid-template-columns:24px minmax(0,1fr) 60px 24px; grid-template-areas:'drag name initiative delete' '. pf ca .' '. damage damage .' '. warning warning .'; gap:10px 8px; padding:12px; }
+    .master-renewed .tracker-main .turn-row { grid-template-columns:24px 96px minmax(0,1fr) 24px; grid-template-areas:'drag initiative name delete' '. pf ca .' '. damage damage .' '. warning warning .'; gap:10px 8px; padding:12px; }
     .master-renewed .turn-pf { display:flex; align-items:center; gap:8px; }
     .master-renewed .turn-ca { display:flex; align-items:center; gap:6px; }
     .master-renewed .turn-pf .turn-hitpoints { max-width:120px; }
@@ -223,9 +223,18 @@
 .master-participant-name .turn-condition-pill { max-width:100%; box-sizing:border-box; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .master-participant-name .turn-condition-pills { min-width:0; }
 @media (max-width:640px) {
-    .master-renewed .tracker-main .turn-row:has(.master-participant-name > .turn-statuses) { grid-template-columns:24px repeat(3,minmax(0,1fr)) 24px; grid-template-areas:'drag name name name delete' '. initiative pf ca .' '. damage damage damage .' '. warning warning warning .'; }
-    .master-renewed .turn-row:has(.master-participant-name > .turn-statuses) :is(.turn-pf,.turn-ca) { display:grid; align-items:start; gap:5px; }
-    .master-renewed .turn-row:has(.master-participant-name > .turn-statuses) .turn-ca input { width:100%; min-width:0; }
-    .master-renewed .turn-row:has(.master-participant-name > .turn-statuses) .turn-hitpoints { min-width:0; }
-    .master-renewed .turn-row:has(.master-participant-name > .turn-statuses) .turn-hitpoints input { width:0; min-width:0; }
+    .master-renewed .master-participant-name:has(> .turn-statuses) { grid-template-columns:minmax(0,1fr); gap:6px; }
 }
+
+/* Editable table stats share the inspector's compact visual hierarchy. */
+.master-renewed .tracker-main .turn-row :is(.initiative-field,.turn-pf,.turn-ca) { display:grid; align-content:center; align-items:start; gap:6px; min-width:0; font-family:var(--sans); }
+.master-renewed .tracker-main .turn-row :is(.turn-pf,.turn-ca) { padding-left:10px; border-left:1px solid var(--border); }
+.master-renewed .tracker-main .turn-row :is(.initiative-field,.turn-pf,.turn-ca) > span:first-child { display:flex; align-items:center; gap:5px; font-size:12px; font-weight:400; line-height:20px; white-space:normal; }
+.master-renewed .tracker-main .turn-row :is(.initiative-field,.turn-pf,.turn-ca) svg { width:16px; height:16px; flex:none; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.master-renewed .tracker-main .turn-row :is(.initiative-field,.turn-pf,.turn-ca) input { width:100%; min-width:0; min-height:32px; padding:0; border:1px solid transparent; border-radius:3px; background:transparent; color:var(--text-h); font-family:var(--sans); font-size:22px; font-weight:700; line-height:1.2; font-variant-numeric:tabular-nums; }
+.master-renewed .tracker-main .turn-row :is(.initiative-field,.turn-pf,.turn-ca) input:enabled:hover { border-bottom-color:var(--border); }
+.master-renewed .tracker-main .turn-row :is(.initiative-field,.turn-pf,.turn-ca) input:focus-visible { background:var(--bg); }
+.master-renewed .tracker-main .turn-row .turn-hitpoints { display:flex; align-items:baseline; gap:4px; min-width:0; max-width:none; }
+.master-renewed .tracker-main .turn-row .turn-hitpoints input { width:auto; flex:0 1 auto; }
+.master-renewed .tracker-main .turn-row .turn-max-hitpoints { color:var(--text); font-family:var(--sans); font-size:12px; font-weight:400; }
+@media (pointer:coarse) { .master-renewed .tracker-main .turn-row :is(.initiative-field,.turn-pf,.turn-ca) input { min-height:44px; } }
