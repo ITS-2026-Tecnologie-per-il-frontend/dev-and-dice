@@ -58,13 +58,17 @@ try{
  await panel.waitFor();await popup.waitFor()
  const denied=await stranger.request.get(base+'/api'+path+'/reactions/'+window.id+'/actions');assert.equal(denied.status(),404,'An outsider cannot inspect a session or its reaction choices')
  await new Promise(r=>setTimeout(r,1200));assert(Number((await panel.getByRole('timer').innerText()).replace(/\D/g,''))<30)
+ await panel.getByRole('button',{name:'Riavvia timer',exact:true}).click()
+ await until(async()=>((await api(master,path)).reactionWindows.find(w=>w.id===window.id)?.expiresAt??0)>window.expiresAt)
+ await until(async()=>Number((await popup.getByRole('timer').innerText()).replace(/\D/g,''))>=29)
  await panel.getByRole('combobox',{name:'Risorsa',exact:true}).selectOption('slot:2')
  await until(async()=>((await api(master,path)).reactionWindows.find(w=>w.id===window.id)?.expiresAt??0)>window.expiresAt)
  await until(async()=>Number((await popup.getByRole('timer').innerText()).replace(/\D/g,''))>=29)
  const renewed=(await api(master,path)).reactionWindows.find(w=>w.id===window.id).expiresAt
- await new Promise(r=>setTimeout(r,1100));await popup.getByRole('combobox',{name:'Risorsa',exact:true}).selectOption('slot:2')
+ await new Promise(r=>setTimeout(r,1100));await popup.getByRole('button',{name:'Riavvia timer',exact:true}).click()
  await until(async()=>((await api(master,path)).reactionWindows.find(w=>w.id===window.id)?.expiresAt??0)>renewed)
  await until(async()=>Number((await panel.getByRole('timer').innerText()).replace(/\D/g,''))>=29)
+ await popup.getByRole('combobox',{name:'Risorsa',exact:true}).selectOption('slot:2')
  for(const width of [390,320]){await page.setViewportSize({width,height:900});assert(await panel.evaluate(e=>e.scrollWidth<=e.clientWidth+1),'Master form fits '+width)}
  await page.setViewportSize({width:1600,height:1050})
  await panel.getByRole('button',{name:'Usa la reazione',exact:true}).click();await panel.waitFor({state:'detached'});await popup.waitFor({state:'detached'})

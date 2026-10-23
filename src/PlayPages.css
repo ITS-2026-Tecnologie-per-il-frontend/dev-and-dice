@@ -369,7 +369,8 @@
 .reaction-dialog .dialog-header button { min-width:36px; margin:0; }
 .reaction-countdown { display:flex; align-items:center; gap:12px; margin:14px 0 6px; color:var(--text-h); }
 .reaction-countdown strong { white-space:nowrap; font-size:22px; font-variant-numeric:tabular-nums; }
-.reaction-countdown progress { width:100%; accent-color:#b77916; }
+.reaction-countdown .play-secondary { flex-shrink:0; min-height:36px; padding:6px 10px; font-size:13px; white-space:nowrap; }
+.reaction-countdown progress { width:100%; min-width:0; accent-color:#b77916; }
 .reaction-dialog select { width:100%; }
 .reaction-dialog .action-roll-form { margin:16px 0; }
 .reaction-master-panels { position:fixed; z-index:90; right:16px; bottom:16px; width:min(440px,calc(100vw - 32px)); max-height:calc(100dvh - 32px); overflow:auto; display:grid; gap:12px; }
