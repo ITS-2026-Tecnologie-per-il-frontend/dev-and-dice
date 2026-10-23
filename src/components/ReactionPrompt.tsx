@@ -61,8 +61,14 @@ export function MasterReactionControls({game,disabled}:{game:Game;disabled:boole
 function ReactionDialog({window,game,onUpdate,disabled=false}:{window:ReactionWindow;game:Game;onUpdate:(game:Game)=>void;disabled?:boolean}){
     const heading=useId(),panel=useRef<HTMLElement>(null),isMaster=game.role==='master'
     const dialog=useRef<HTMLDialogElement>(null),[choices,setChoices]=useState<ActionChoices>(),[key,setKey]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false)
-    const [remaining,setRemaining]=useState(30),deadline=useRef(0),working=useRef(false),activity=useRef<Promise<void>>(Promise.resolve()),lastActivity=useRef(0)
-    useLayoutEffect(()=>{deadline.current=performance.now()+Math.max(0,window.expiresAt-window.serverNow)},[window.expiresAt,window.serverNow])
+    const [remaining,setRemaining]=useState(30),deadline=useRef(0),lastExpiry=useRef(0),working=useRef(false),activity=useRef<Promise<void>>(Promise.resolve()),lastActivity=useRef(0)
+    useLayoutEffect(()=>{
+        // Polling the same deadline must not move the clock with each response's latency.
+        if(window.expiresAt<=lastExpiry.current)return
+        lastExpiry.current=window.expiresAt
+        const milliseconds=Math.max(0,window.expiresAt-window.serverNow)
+        deadline.current=performance.now()+milliseconds;setRemaining(Math.ceil(milliseconds/1000))
+    },[window.expiresAt,window.serverNow])
     useEffect(()=>{dialog.current?.showModal();panel.current?.scrollIntoView({block:'nearest'})},[])
     useEffect(()=>{let active=true;void playApi<ActionChoices>(`/games/${game.id}/reactions/${window.id}/actions`).then(next=>{if(active){setChoices(next);setKey(current=>current||next.actions[0]?.key||'')}}).catch(e=>{if(active)setError(message(e))});return()=>{active=false}},[game.id,game.revision,window.id])
     async function decline(){
@@ -75,7 +81,6 @@ function ReactionDialog({window,game,onUpdate,disabled=false}:{window:ReactionWi
     function interact(){
         if(busy||working.current||deadline.current<=performance.now()||performance.now()-lastActivity.current<200)return
         lastActivity.current=performance.now()
-        deadline.current=performance.now()+30000;setRemaining(30)
         activity.current=activity.current.catch(()=>{}).then(async()=>{
             const next=await playApi<Game>(`/games/${game.id}/reactions/${window.id}/activity`,'POST',{});onUpdate(next)
         }).catch(e=>setError(message(e)))

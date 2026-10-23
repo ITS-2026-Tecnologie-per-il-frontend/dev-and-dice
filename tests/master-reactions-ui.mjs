@@ -37,6 +37,29 @@ try{
  }
  await bite(offline.name)
  const offlinePanel=page.getByRole('region',{name:'Reazione di '+offline.name,exact:true});await offlinePanel.waitFor()
+ // A delayed poll followed by a fast one must not move an unchanged countdown forwards or backwards.
+ await page.evaluate(()=>{
+  const timer=document.querySelector('.reaction-master-panel [role="timer"]')
+  globalThis.reactionTicks=[{seconds:Number(timer.textContent.replace(/\D/g,'')),at:performance.now()}]
+  globalThis.reactionObserver=new MutationObserver(()=>globalThis.reactionTicks.push({seconds:Number(timer.textContent.replace(/\D/g,'')),at:performance.now()}))
+  globalThis.reactionObserver.observe(timer,{childList:true,characterData:true,subtree:true})
+ })
+ let pollsAfterSlow=0,held=false,slowDone=false
+ const delayedPoll=async route=>{
+  if(route.request().method()!=='GET')return route.continue()
+  const slow=!held;held=true
+  const response=await route.fetch()
+  if(slow)await new Promise(r=>setTimeout(r,1800))
+  await route.fulfill({response})
+  if(slow)slowDone=true;else if(slowDone)pollsAfterSlow++
+ }
+ await page.route(base+'/api'+path,delayedPoll);await until(()=>pollsAfterSlow>=2);await page.unroute(base+'/api'+path,delayedPoll)
+ const ticks=await page.evaluate(()=>{globalThis.reactionObserver.disconnect();return globalThis.reactionTicks})
+ assert(ticks.length>=3,'The countdown is observed across slow and fast responses')
+ for(let i=1;i<ticks.length;i++){
+  assert(ticks[i].seconds<=ticks[i-1].seconds,'A poll cannot restart an unchanged countdown')
+  if(ticks[i].at-ticks[i-1].at<1000)assert(ticks[i-1].seconds-ticks[i].seconds<=1,'Polling must not skip seconds without real elapsed time')
+ }
  await offlinePanel.getByRole('combobox',{name:'Risorsa',exact:true}).selectOption('slot:2')
  game=await api(master,path);assert.equal(game.characters.find(c=>c.id===offline.id).sheet.hitPoints,'22','Even with no player accounts, the attack waits for the Master reaction')
  await offlinePanel.screenshot({path:join(root,'master-reaction-panel.png')})
