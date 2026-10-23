@@ -726,17 +726,15 @@ html { scroll-behavior: smooth; }
 .ability-target > label:not(.ability-check) { display:grid; gap:4px; }
 .ability-targets > .library-help { margin: 0 0 6px; font-size: 12px; line-height: 1.45; }
 .ability-target-list { display: grid; max-height: 180px; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
-.action-roll-form .ability-target-list:has(.player-healing-roll) { max-height:none; overflow:visible; scrollbar-gutter:auto; }
+.action-roll-form .ability-target-list:has(.player-healing-roll, .combat-weapon-configuration) { max-height:none; overflow:visible; scrollbar-gutter:auto; }
 .ability-target { display: grid; gap: 4px; padding: 4px 0; }
 .ability-target > .ability-check { min-height: 28px; align-items: center; }
 .ability-target + .ability-target { border-top: 1px solid var(--border); }
-.ability-self-target { border-top: 1px solid var(--border); }
-.ability-self-target > summary { padding: 6px 0; color: var(--text); font-size: 12px; cursor: pointer; text-align: right; }
 .ability-casting-summary { color: var(--text-h); font-size: 13px; font-weight: 600; }
 .ability-target-note { color: var(--text); font-size: 13px; line-height: 1.5; }
 .ability-use-controls input[type='checkbox'],
 .master-renewed .ability-use-controls input[type='checkbox'] { min-height: 18px; max-height: 18px; flex: 0 0 18px; }
-@media (pointer: coarse) { .ability-target > .ability-check { min-height: 36px; } .ability-self-target > summary { min-height: 44px; box-sizing: border-box; align-content: center; } }
+@media (pointer: coarse) { .ability-target > .ability-check { min-height: 36px; } }
 .combat-shortcut-settings { flex-basis: 100%; margin-top: 8px; font-size: 14px; }
 .combat-shortcut-settings summary { cursor: pointer; }
 .combat-shortcut-settings label { display: grid; gap: 6px; margin-top: 10px; }
@@ -778,7 +776,11 @@ html { scroll-behavior: smooth; }
 
 .turn-statuses { grid-column:1/-1; display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; min-width:0; }
 .turn-condition-pills { display:flex; flex-wrap:wrap; gap:4px; }
-.turn-condition-pill { padding:3px 8px; border:1px solid color-mix(in srgb,#b77916 55%,var(--border)); border-radius:999px; background:color-mix(in srgb,#b77916 12%,var(--bg)); color:var(--text-h); font-size:12px; font-weight:650; }
+.turn-condition-pills .turn-condition-pill { padding:3px 8px; border:1px solid color-mix(in srgb,#b77916 55%,var(--border)); border-radius:999px; background:color-mix(in srgb,#b77916 12%,var(--bg)); color:var(--text-h); font-size:12px; font-weight:650; width:auto; height:auto; min-height:28px; flex:0 0 auto; line-height:1.4; }
+.turn-status-help ul { margin:8px 0; padding-left:18px; }
+.turn-status-help li + li { margin-top:5px; }
+.turn-status-help p { margin:5px 0 0; }
+.turn-status-origin { margin-top:10px; padding-top:8px; border-top:1px solid var(--border); }
 .turn-save-reminder { flex-basis:100%; margin:0; color:var(--text-h); font-size:12px; line-height:1.5; }
 .turn-row.turn-needs-resolution { outline:2px solid #c28a27; outline-offset:-2px; animation:turn-resolution-pulse 2.4s ease-in-out infinite; }
 @keyframes turn-resolution-pulse { 50% { box-shadow:inset 0 0 0 3px #c28a2755; } }
@@ -812,3 +814,27 @@ html { scroll-behavior: smooth; }
 .player-cast-details p { margin-top:8px; }
 .player-cast-note { font-size:13px; line-height:1.5; }
 .player-cast-recast { width:100%; }
+.master-active-recast { width:100%; white-space:nowrap; }
+
+.ability-weapon-effects { min-width:0; }
+.ability-weapon-effects dl { display:grid; gap:8px; margin:0; padding:12px; border:1px solid var(--border); border-radius:6px; }
+.ability-weapon-effects dl + dl { margin-top:8px; }
+.ability-weapon-effects dt { color:var(--text); font-size:12px; }
+.ability-weapon-effects dd { margin:2px 0 0; color:var(--text-h); overflow-wrap:anywhere; }
+.ability-weapon-effects dd span { display:block; }
+
+.ability-effect-total { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.ability-effect-total dd { font-size:28px; font-weight:700; line-height:1.1; }
+
+.master-attack-outcome { margin:0; }
+.master-attack-damage { margin-top:14px; padding-top:14px; border-top:1px solid var(--border); }
+.master-attack-damage > label:first-child { margin-top:0; }
+
+.player-weapon-roll .attack-modifier-trigger { display:block; box-sizing:border-box; width:100%; height:56px; min-height:56px; padding:8px; border:1px solid var(--border); border-radius:4px; background:var(--bg); color:var(--text-h); font-size:18px; line-height:38px; font-weight:650; text-align:left; }
+.attack-modifier-help dl { display:grid; gap:6px; margin:10px 0; }
+.attack-modifier-help dl > div,.attack-modifier-help p { display:flex; justify-content:space-between; align-items:baseline; gap:16px; }
+.attack-modifier-help dd { margin:0; font-weight:650; white-space:nowrap; }
+.attack-modifier-help p { margin:8px 0; padding-top:8px; border-top:1px solid var(--border); }
+.attack-modifier-help small { display:block; color:var(--text); }
+.ability-effect-total .ability-ac-formula { display:inline; font-size:20px; font-weight:500; }
+.ability-effect-total dd small { display:block; margin-top:4px; font-size:12px; font-weight:400; line-height:1.4; color:var(--text); }

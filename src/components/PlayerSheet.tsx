@@ -42,11 +42,11 @@ const SheetPortrait=memo(function SheetPortrait({src,name}:{src:string;name:stri
 })
 
 type SheetFieldProps = {
-    fieldKey:string;label:ReactNode;value:string;base?:boolean;multiline?:boolean;numeric?:boolean;placeholder?:string;onBlur?:()=>void;
+    fieldKey:string;label:ReactNode;value:string;readOnly?:boolean;base?:boolean;multiline?:boolean;numeric?:boolean;placeholder?:string;onBlur?:()=>void;
     weight:boolean;hideSpinner:boolean;picker?:'favorite'|'inventory'|'summary';pickerKey:string;
     onChange:(key:string,value:string,base:boolean)=>void;onPick:(key:string,label:ReactNode)=>void;
 }
-const SheetField=memo(function SheetField({fieldKey,label,value:sourceValue,base=false,multiline,numeric,placeholder,onBlur,weight,hideSpinner,picker,pickerKey,onChange,onPick}:SheetFieldProps) {
+const SheetField=memo(function SheetField({fieldKey,label,value:sourceValue,readOnly=false,base=false,multiline,numeric,placeholder,onBlur,weight,hideSpinner,picker,pickerKey,onChange,onPick}:SheetFieldProps) {
     const store=useContext(SheetTextContext)
     const read=()=>store&&proseField(fieldKey,base) ? (base ? store.read()[fieldKey as keyof typeof characterFields] : characterFieldValue(store.read(),fieldKey)) : sourceValue
     const value=useSyncExternalStore(store?.subscribe??noSubscription,read,read)
@@ -57,7 +57,7 @@ const SheetField=memo(function SheetField({fieldKey,label,value:sourceValue,base
     return <label data-field={fieldKey} className={`player-field${multiline ? ' player-field-prose' : ''}${hideSpinner ? ' player-field-no-spinner' : ''}`}>
         <span>{label}</span>
         {multiline ? <textarea {...inventoryProps} rows={4} value={value} onChange={event=>update(event.target.value)} placeholder={placeholder}/> :
-            <input {...inventoryProps} type={numeric ? 'number' : 'text'} inputMode={weight ? 'decimal' : undefined} step={numeric ? '1' : undefined} required={base&&fieldKey==='name'} pattern={base&&fieldKey==='name' ? '.*\\S.*' : undefined} value={weight ? weightDraft ?? formatWeight(value) : value} onFocus={weight ? ()=>setWeightDraft(formatWeight(value)) : undefined} onChange={event=>{if(weight)setWeightDraft(event.target.value);update(event.target.value)}} onBlur={()=>{if(weight)setWeightDraft(undefined);onBlur?.()}} placeholder={placeholder}/>}
+            <input {...inventoryProps} readOnly={readOnly||!!picker} title={readOnly?"Calcolata dagli effetti attivi":inventoryProps.title} type={numeric ? 'number' : 'text'} inputMode={weight ? 'decimal' : undefined} step={numeric ? '1' : undefined} required={base&&fieldKey==='name'} pattern={base&&fieldKey==='name' ? '.*\\S.*' : undefined} value={weight ? weightDraft ?? formatWeight(value) : value} onFocus={weight ? ()=>setWeightDraft(formatWeight(value)) : undefined} onChange={event=>{if(weight)setWeightDraft(event.target.value);update(event.target.value)}} onBlur={()=>{if(weight)setWeightDraft(undefined);onBlur?.()}} placeholder={placeholder}/>}
     </label>
 })
 
@@ -259,7 +259,7 @@ function PlayerSheetLayout({ sheet:layoutSheet, catalog:baseCatalog, creationDat
         const notes=/^magicItem\.(\d+)\.notes$/.exec(key),referenceKey=notes && !referencedInventoryItem(sheet,`magicItem.${notes[1]}.name`) ? `magicItem.${notes[1]}.name` : key
         const reference=inventoryReferenceField(referenceKey),summary=['equipment','consumables','attunedItems'].includes(key) && details['inventory.version']==='1'
         const favorite = /^favoriteSpell\.(\d+)\.name$/.exec(key)
-        return <SheetField key={key} fieldKey={key} label={label} value={value} {...options} numeric={!!options.numeric || !!options.base && (numericCharacterFields as readonly string[]).includes(key)} weight={weight} hideSpinner={hideNumberSpinner(key)} picker={favorite ? 'favorite' : reference ? 'inventory' : summary ? 'summary' : undefined} pickerKey={referenceKey} onChange={onFieldChange} onPick={onFieldPick}/>
+        return <SheetField key={key} fieldKey={key} label={label} value={value} readOnly={key==='temporaryAC'&&details['temporaryAC.source']==='effects'} {...options} numeric={!!options.numeric || !!options.base && (numericCharacterFields as readonly string[]).includes(key)} weight={weight} hideSpinner={hideNumberSpinner(key)} picker={favorite ? 'favorite' : reference ? 'inventory' : summary ? 'summary' : undefined} pickerKey={referenceKey} onChange={onFieldChange} onPick={onFieldPick}/>
     }
 
     function box(title: string, children: ReactNode, className = '') {

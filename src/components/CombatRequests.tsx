@@ -1,12 +1,12 @@
-import { PlayerActionRolls, ResolutionDetails, FinalDamageField, MasterResolutionRolls, MasterCriticalRolls, MasterSavingRolls, type RequestDecision } from './CombatRolls'
+import { PlayerActionRolls, WeaponEnchantmentFields, ResolutionDetails, FinalDamageField, MasterResolutionRolls, MasterCriticalRolls, MasterSavingRolls, type RequestDecision } from './CombatRolls'
 import { memo, useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { playApi, type ActionChoices, type CombatRequest, type CombatTarget, type Game, type PlayerGame, type WindReview as WindData } from '../utils/PlayApi'
 import { NotificationPopover } from './NotificationPopover'
 import { ParticipantAbilities, type InspectorMode } from './ParticipantInspector'
-import { AbilityCard, AbilityMetadata, AbilityTargets } from './AbilityCard'
+import { AbilityCard, AbilityMetadata, AbilityTargets, WeaponEffectSummary, SpellEffectSummary } from './AbilityCard'
 import { InfoButton } from './InfoButton'
 import { HelpTooltip } from './HelpTooltip'
-import { damageNames } from '../domain/dnd/CombatResolution'
+import { damageNames, directBenefit, type WeaponChoice } from '../domain/dnd/CombatResolution'
 import { integerValue, signedBonus } from '../utils/CharacterSheets'
 import { WindReview } from './WindReview'
 import { catalogForSheet, loadActiveDatabase } from '../domain/dnd/ActiveRules'
@@ -37,7 +37,7 @@ function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDecide}:{
     const decisionId=useId()
     const [wind,setWind]=useState<Pick<WindData,'selected'|'saves'>>(()=>({selected:request.wind?.selected??[],saves:request.wind?.saves??{}}))
     const missingWind=!!request.wind&&wind.selected.some(id=>wind.saves[id]?.mode==='manual'&&wind.saves[id]?.success===undefined)
-    const [weapons,setWeapons]=useState<Record<number,{itemId:string;damageType?:string;useCastingAbility?:boolean}>>({})
+    const [weapons,setWeapons]=useState<Record<number,WeaponChoice>>({})
     const [additionalActionConfirmed,setAdditionalActionConfirmed]=useState(false)
     const [damages,setDamages]=useState<Record<number,string>>({}),[manual,setManual]=useState(false),[effectOverrides,setEffectOverrides]=useState<Record<number,boolean>>({}),[busy,setBusy]=useState(false),[error,setError]=useState('')
     const calculatedDamageFor=(target:CombatTarget)=>target.resolution?target.resolution.damage===null?'':String(target.resolution.damage):target.attack?.hit===false?'0':target.damage
@@ -55,7 +55,7 @@ function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDecide}:{
     async function saveWind(refresh=false){
         if(working.current)return
         working.current=true;setBusy(true);setError('')
-        try{await onDecide(request.id,'roll',refresh?{kind:'wind-refresh'}:{kind:'wind',wind})}catch(error){setError(message(error))}finally{working.current=false;setBusy(false)}
+        try{await onDecide(request.id,'roll',refresh?{kind:request.wind?'wind-refresh':'refresh'}:{kind:'wind',wind})}catch(error){setError(message(error))}finally{working.current=false;setBusy(false)}
     }
     const pending=request.status==='pending',stale=request.status==='stale'
     return <article className="combat-request combat-request--review" aria-busy={busy}><header className="combat-request-heading"><div className="combat-request-title"><h3>{request.actionName}</h3><InfoButton label="Dettagli" name={request.actionName} entry={entry} description={ability?.description||catalogStatus||request.resolution?.notes.join('\n')||'Descrizione non disponibile. Consulta la scheda del personaggio.'} fields={ability?{duration:ability.duration}:{}}/></div><p className="combat-request-state" data-state={request.status} role="status">{statusLabels[request.status]}</p></header><RequestDescription request={request} review/>
@@ -70,23 +70,16 @@ function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDecide}:{
         <MasterResolutionRolls request={request} disabled={disabled} onDecide={onDecide}/>
         {(pending||stale||!!request.wind)&&<form id={decisionId} className="combat-request-decision" onSubmit={event=>{event.preventDefault();if(pending)void decide('approve');else if(request.wind?.editable)void saveWind()}}>
             <fieldset disabled={disabled||busy}><legend>{request.wind?'Bersagli e tiri salvezza':'Decisione del Master'}</legend>
+                {stale&&!request.wind&&directBenefit(request.resolution)&&<p role="status">La sessione è cambiata. Aggiorna la richiesta per ricontrollare turno, bersagli e risorse prima di approvare.</p>}
                 {request.wind&&!request.wind.editable&&<p className="wind-review-locked" role="status">{stale?'La sessione è cambiata. Aggiorna la richiesta per ricontrollare turno, risorse e CD e riattivare i campi. I TS precedenti saranno azzerati.':'Effetto terminato o richiesta conclusa: bersagli e tiri sono in sola lettura.'}</p>}
                 {request.wind&&request.resolution&&<WindReview review={request.wind} plan={request.resolution} casterName={request.characterName} value={wind} onChange={setWind}/>}
-                {pending&&weaponEffect&&<div className="combat-weapon-configuration">{request.targets.map(target=>{
-                    const items=request.weaponChoices?.find(c=>c.targetId===target.id)?.items??[],selected=weapons[target.id]
-                    return <div key={target.id}><label>Arma di {target.name}<select aria-label={`Arma di ${target.name}`} required value={selected?.itemId??''} onChange={e=>setWeapons(current=>({...current,[target.id]:{...current[target.id],itemId:e.target.value}}))}><option value="">Scegli l’arma da modificare…</option>{items.map(item=><option key={item.id} value={item.id}>{item.name} · {item.quantity} {item.quantity===1?'esemplare':'esemplari'}</option>)}</select></label>
-                        {!items.length&&<p role="alert">Nessuna arma compatibile. Verifica i collegamenti all’inventario e i requisiti dell’incantesimo.</p>}
-                        {(items.find(i=>i.id===selected?.itemId)?.quantity??0)>1&&<p>Un esemplare sarà separato automaticamente dagli altri.</p>}
-                        {weaponEffect.extraDamage&&<label>Tipo di danno aggiuntivo a {target.name}<select aria-label={`Tipo di danno aggiuntivo a ${target.name}`} required value={selected?.damageType??''} onChange={e=>setWeapons(current=>({...current,[target.id]:{...current[target.id],damageType:e.target.value}}))}><option value="">Scegli il tipo di danno…</option>{weaponEffect.extraDamage.choices.map(type=><option value={type} key={type}>{damageNames[type]}</option>)}</select></label>}
-                        {weaponEffect.damageDice&&<label className="combat-request-check"><input type="checkbox" checked={selected?.useCastingAbility!==false} onChange={e=>setWeapons(current=>({...current,[target.id]:{...current[target.id],useCastingAbility:e.target.checked}}))}/>Usa la caratteristica da incantatore {weaponEffect.castingModifier===undefined?'(da completare)':`(${signedBonus(weaponEffect.castingModifier)})`}</label>}
-                    </div>
-                })}</div>}
+                {pending&&weaponEffect&&<WeaponEnchantmentFields effect={weaponEffect} targets={request.targets.map(target=>({id:target.id,name:target.name,items:request.weaponChoices?.find(choice=>choice.targetId===target.id)?.items??[]}))} value={weapons} onChange={(id,choice)=>setWeapons(current=>({...current,[id]:choice}))}/>}
                 {pending&&<>
                 {request.additionalActionRequired&&<label className="combat-request-check"><input type="checkbox" checked={additionalActionConfirmed} onChange={event=>setAdditionalActionConfirmed(event.target.checked)}/>Confermo un’altra azione valida per lanciare un incantesimo (es. Azione Impetuosa 2014)</label>}
                 {effectTargets.map(target=><label className="combat-request-check" key={target.id}><input type="checkbox" checked={effectOverrides[target.id]!==false} onChange={event=>setEffectOverrides(current=>({...current,[target.id]:event.target.checked}))}/>Applica gli effetti aggiuntivi a {target.name}</label>)}
                 {request.resolution&&request.targets.some(t=>t.resolution?.damage===null)&&<label className="combat-request-check"><input type="checkbox" checked={manual} onChange={event=>setManual(event.target.checked)}/>Confermo una risoluzione manuale per i dati mancanti</label>}
                 </>}
-                <div className="play-actions">{stale&&request.wind&&<button type="button" onClick={()=>void saveWind(true)}>Aggiorna richiesta</button>}{pending&&<button disabled={!!request.additionalActionRequired&&!additionalActionConfirmed||missingWind||missingWeapon||!!request.resolution&&request.targets.some(t=>t.resolution?.damage===null)&&!manual} type="submit">Approva azione</button>}{!pending&&request.wind?.editable&&<button type="submit" disabled={missingWind}>Salva bersagli e tiri salvezza</button>}{(pending||stale)&&<button type="button" className="play-secondary" onClick={()=>void decide('reject')}>Rifiuta azione</button>}</div>
+                <div className="play-actions">{stale&&(request.wind||directBenefit(request.resolution))&&<button type="button" onClick={()=>void saveWind(true)}>Aggiorna richiesta</button>}{pending&&<button disabled={!!request.additionalActionRequired&&!additionalActionConfirmed||missingWind||missingWeapon||!!request.resolution&&request.targets.some(t=>t.resolution?.damage===null)&&!manual} type="submit">Approva azione</button>}{!pending&&request.wind?.editable&&<button type="submit" disabled={missingWind}>Salva bersagli e tiri salvezza</button>}{(pending||stale)&&<button type="button" className="play-secondary" onClick={()=>void decide('reject')}>Rifiuta azione</button>}</div>
             </fieldset>
         </form>}{error&&<p role="alert">{error}</p>}</article>
 }
@@ -109,7 +102,7 @@ export const MasterCombatRequests=memo(function MasterCombatRequests({game,disab
             const ability=candidates.length===1?candidates[0]:undefined
             const entries=catalog?.abilities.filter(entry=>ability?.catalogId?entry.id===ability.catalogId:request.resolution?.ruleId?entry.data.referenceId===request.resolution.ruleId:entry.name===request.actionName)??[]
             const entry=entries.length===1?entries[0]:undefined
-            return <li key={request.id} data-unread={request.status==='pending'}><ReviewRequest key={request.wind?request.rollsRevision:undefined} request={request} ability={ability} entry={entry} catalogStatus={database?undefined:catalogError||'Caricamento dei dettagli…'} disabled={disabled} onDecide={onDecide}/></li>
+            return <li key={request.id} data-unread={request.status==='pending'}><ReviewRequest key={request.rollsRevision} request={request} ability={ability} entry={entry} catalogStatus={database?undefined:catalogError||'Caricamento dei dettagli…'} disabled={disabled} onDecide={onDecide}/></li>
         })}</ol>
         {disabled&&<p>Concludi il salvataggio della sessione prima di approvare o rifiutare un’azione.</p>}
     </NotificationPopover>
@@ -135,9 +128,9 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
     useEffect(()=>{
         if (!open) return
         let active=true
-        playApi<ActionChoices>('/games/'+game.id+'/actions'+(renewed?'?preview=1':'')).then(choices=>{if(active){setChoices(choices);if(renewed){setKey(choices.actions.find(item=>(item.entry?.id??item.name)===selectedIdentity.current)?.key??'');setError('')}}}).catch(error=>{if(active)setError(message(error))}).finally(()=>{if(active)setLoading(false)})
+        playApi<ActionChoices>('/games/'+game.id+'/actions'+(renewed?'?preview=1':'')).then(choices=>{if(active){setChoices(choices);if(renewed){const selected=choices.actions.find(item=>(item.entry?.id??item.name)===selectedIdentity.current);if(panel==='summary'&&selected&&!selected.active&&selected.duration!=='Istantanea'&&selected.lastCast?.status!=='pending'){selectedIdentity.current='';setKey('')}else setKey(selected?.key??'');setError('')}}}).catch(error=>{if(active)setError(message(error))}).finally(()=>{if(active)setLoading(false)})
         return ()=>{active=false}
-    },[open,game.id,retry,renewed,revision])
+    },[open,game.id,retry,renewed,revision,panel])
     function refreshActions() {setLoading(true);setError('');setChoices(undefined);setKey('');setTargets([]);setRetry(current=>current+1)}
     function select(key:string) {
         const action=choices?.actions.find(action=>action.key===key),option=action?.options.find(option=>option.remaining===null || option.remaining>=(option.cost??action.cost)) ?? action?.options[0]
@@ -165,7 +158,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
         requestAnimationFrame(()=>{form.current?.focus({preventScroll:true});form.current?.scrollIntoView({block:'nearest'})})
     }
     function actionButton(action:ActionChoices['actions'][number]) {
-        return <button type="button" key={action.key} className="participant-ability" data-ability-state={action.active?'active':'available'} aria-pressed={key===action.key} aria-controls="player-action-proposal" disabled={busy} onClick={()=>choose(action.key)}>{action.name} · {action.lastCast?.status==='pending'?'In attesa del Master':action.active?'In esecuzione':action.error||'Usa'}</button>
+        return <button type="button" key={action.key} className="participant-ability" data-ability-state={action.active?'active':'available'} aria-pressed={key===action.key} aria-controls="player-action-proposal" disabled={busy} onClick={()=>choose(action.key)}>{action.displayName||action.name} · {action.lastCast?.status==='pending'?'In attesa del Master':action.active?'In esecuzione':action.error||'Usa'}</button>
     }
     function targetFields(target:CombatTarget) {
         return <>
@@ -200,6 +193,8 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
     const remainingTime=[Math.floor(remainingSeconds/3600)?`${Math.floor(remainingSeconds/3600)} h`:'',Math.floor(remainingSeconds%3600/60)?`${Math.floor(remainingSeconds%3600/60)} min`:'',remainingSeconds%60?`${remainingSeconds%60} s`:''].filter(Boolean).join(' ')||'0 s'
     const summary=action&&<div className="player-cast-summary" aria-label={`Riepilogo: ${action.name}`}>
         {action.lastCast&&<div className="player-cast-heading"><span>{action.lastCast.optionLabel}</span><span className="combat-request-state" data-state={action.lastCast.status} role="status">{statusLabels[action.lastCast.status]}</span></div>}
+        <WeaponEffectSummary effects={action.weaponEffects}/>
+        <SpellEffectSummary effects={action.effects}/>
         {(action.resolution?.temporaryHitPoints||action.active)&&<dl className="player-cast-stats">
             {action.resolution?.temporaryHitPoints&&<div><dt>PF temporanei rimasti</dt><dd>{game.character.sheet.playerDetails?.temporaryHitPoints||'0'}</dd></div>}
             {action.active&&<div><dt>Durata residua</dt><dd className="player-cast-time">{action.duration==='Senza conteggio'?'Senza conteggio':remainingTime}</dd>{action.duration!=='Senza conteggio'&&<small>{action.remainingTurns} round</small>}</div>}
@@ -230,7 +225,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
                 <div className="ability-section-heading"><h2 id="player-abilities-heading">{inspectorMode==='all'?'Tutte le abilità':'Abilità in uso e da configurare'}</h2></div>
                 <div className="abilities-list">{choices.actions.filter(item=>inspectorMode==='all'||item.key===key||item.active||item.lastCast?.status==='pending').map(item=><AbilityCard key={item.entry?.id??item.name} id={`player-ability-${item.key}`} tabIndex={-1} data-owner-fixed="true" data-instantaneous={item.duration==='Istantanea'||undefined}>
                     {item.key===key&&<button type="button" className="delete-turn player-cast-close" aria-label={`Chiudi pannello ${item.name}`} onClick={()=>{selectedIdentity.current='';setKey('')}}>×</button>}
-                    <div className="catalog-search ability-name"><input aria-label={`Nome abilità ${item.name}`} value={item.name} readOnly/></div>
+                    <div className="catalog-search ability-name"><input aria-label={`Nome abilità ${item.name}`} value={item.displayName||item.name} readOnly/></div>
                     <div className="ability-owner-controls"><AbilityMetadata duration={item.duration} owner={game.character.sheet.name} ownerLabel={item.spellLevel!==undefined?'Lanciatore':'Utilizzatore'}/><InfoButton label="Descrizione" entry={item.entry} name={item.name} description={item.description} fields={{duration:item.duration,remainingTurns:item.remainingTurns,active:item.active,owner:game.character.sheet.name}}/></div>
                     <div className="ability-use-controls">
                         {item.error&&<p role="status">{item.error}</p>}

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import '../HelpTooltip.css'
 
 /** Short, non-interactive help: hover, keyboard focus or tap; never changes form state. */
-export function HelpTooltip({ label, children }: { label: string; children: ReactNode }) {
+export function HelpTooltip({ label, children, triggerContent, className='' }: { label: string; children: ReactNode;triggerContent?:ReactNode;className?:string }) {
     const id = useId()
     const trigger = useRef<HTMLButtonElement>(null)
     const popup = useRef<HTMLDivElement>(null)
@@ -61,11 +61,11 @@ export function HelpTooltip({ label, children }: { label: string; children: Reac
     }, [open])
 
     return <>
-        <button ref={trigger} className="help-tooltip-trigger" type="button" aria-label={label} aria-describedby={open ? id : undefined} aria-expanded={open}
+        <button ref={trigger} className={`help-tooltip-trigger ${className}`} type="button" aria-label={label} aria-describedby={open ? id : undefined} aria-expanded={open}
             onPointerEnter={event => { if (event.pointerType !== 'touch') show() }} onPointerLeave={closeSoon}
             onFocus={event => { if (event.currentTarget.matches(':focus-visible')) show() }} onBlur={() => { cancelClose(); setOpen(false) }}
             onClick={() => { cancelClose(); setOpen(current => !current) }}>
-            <span aria-hidden="true">?</span>
+            {triggerContent??<span aria-hidden="true">?</span>}
         </button>
         {open && createPortal(<div ref={popup} id={id} role="tooltip" popover="manual" className="help-tooltip-popover"
             style={{ top: position?.top ?? 0, left: position?.left ?? 0, visibility: position ? 'visible' : 'hidden' }}

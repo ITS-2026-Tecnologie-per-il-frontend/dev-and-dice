@@ -62,7 +62,9 @@ function CharacterSheetsLayout({ libraryHidden, onAdd, onSaved, combatStarted, p
     })
     const saved=repositorySheets ? {...localSaved,sheets:repositorySheets} : localSaved
     const currentSheets=useRef(saved.sheets)
-    useEffect(() => {
+    // Parent combat forms may resume after a reaction in this same commit.
+    // Their next patch must preserve every freshly approved sheet/resource.
+    useLayoutEffect(() => {
         if (repositorySheets) currentSheets.current=repositorySheets
     },[repositorySheets])
     const catalog=draft ? catalogForSheet(creationData,baseCatalog,draft) ?? baseCatalog : baseCatalog

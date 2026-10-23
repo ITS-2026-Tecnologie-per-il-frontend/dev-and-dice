@@ -1,16 +1,17 @@
-import { useId, useRef, useState, type ReactNode } from 'react'
+import {ReactionContext} from './ReactionContext'
+import { useContext, useLayoutEffect, useId, useRef, useState, type ReactNode } from 'react'
 import type { Ability } from '../utils/Combat'
 import type { CharacterSheet } from '../utils/CharacterSheets'
 import type { Catalog } from '../utils/Catalog'
 import type { CreationData } from '../utils/PlayerCreation'
 import { combatAbilityInfo, requiresAdditionalSpellAction, type UseOption } from '../domain/dnd/CombatActions'
-import { assertPacketPlan, defenseProfile, resolutionPlan, resolveTarget, packetTargets, damageNames, type ResolutionRolls, type TargetResolution, type ResolutionPlan } from '../domain/dnd/CombatResolution'
-import { combatTargeting, creatureType, assertTargetTypes } from '../domain/dnd/CombatTargets'
+import { assertPacketPlan, directBenefit, weaponCandidates, type WeaponChoice, defenseProfile, resolutionPlan, resolveTarget, packetTargets, damageNames, type ResolutionRolls, type TargetResolution, type ResolutionPlan } from '../domain/dnd/CombatResolution'
+import { combatTargeting, creatureType, wearingArmor, assertTargetTypes } from '../domain/dnd/CombatTargets'
 import { inventoryEquipment, inventoryFieldValue, referencedInventoryItem } from '../utils/Inventory'
 import { ActionRollForm, ResolutionDetails, FinalDamageField, MasterCriticalRolls, MasterResolutionRolls, MasterSavingRolls, type RollSubmission, type ResolutionReview, type RequestDecision } from './CombatRolls'
 
 const validNumber=(value:string)=>/^\d+$/.test(value)&&Number.isSafeInteger(Number(value))
-export type ResolvedDamagePackets={id:number;damage:number[];healing?:number;temporaryHitPoints?:number;keepTemporaryHitPoints?:boolean;effects?:import('../domain/dnd/CombatResolution').EffectSpec[]}[]
+export type ResolvedDamagePackets={weaponChoice?:WeaponChoice;id:number;damage:number[];healing?:number;temporaryHitPoints?:number;keepTemporaryHitPoints?:boolean;effects?:import('../domain/dnd/CombatResolution').EffectSpec[]}[]
 
 export function MasterSpellRolls({ability,owner,participants,abilities,catalog,catalogForOwner,data,options,optionId,error,children,onApply,inCombat=false}:{
     inCombat?:boolean;ability:Ability;owner:CharacterSheet;participants:{id:number;description:string;sheet?:CharacterSheet}[];abilities:Ability[];catalog:Catalog;catalogForOwner?:(id:number|null)=>Catalog;data:CreationData;options:UseOption[];optionId?:string;error:string;children:ReactNode;
@@ -20,8 +21,11 @@ export function MasterSpellRolls({ability,owner,participants,abilities,catalog,c
     // keep each ray separate; the versioned resolver handles hits and defenses.
     // PHB 2014, same PDF, pp. 242–243, Fireball: one area damage roll,
     // a Dexterity save for each target, half damage on success.
+    const {before:beforeReaction}=useContext(ReactionContext),[waiting,setWaiting]=useState(false),[reactionError,setReactionError]=useState('')
+    const applyLatest=useRef<()=>void>(()=>{})
     const [draft,setDraft]=useState<RollSubmission>(),[rolls,setRolls]=useState<Record<number,ResolutionRolls>>({}),[overrides,setOverrides]=useState<Record<number,string>>({})
     const [edited,setEdited]=useState<RollSubmission>(),[properties,setProperties]=useState<Pick<ResolutionPlan,'magical'|'damageTypeOverride'>>({magical:true})
+    const [weapons,setWeapons]=useState<Record<number,WeaponChoice>>({})
     const [additionalActionConfirmed,setAdditionalActionConfirmed]=useState(false)
     const additionalActionRequired=inCombat&&requiresAdditionalSpellAction(owner,ability,catalog)
     const decisionId=useId()
@@ -52,7 +56,16 @@ export function MasterSpellRolls({ability,owner,participants,abilities,catalog,c
             results.push({id,name:target.description,profile,result:resolveTarget(plan,draft.packets.filter(packet=>packet.targetId===id),profile,rolls[id])})
         }
     }catch(cause){reviewError=cause instanceof Error?cause.message:'Verifica i risultati dei dadi.'}
-    if(!draft)return <ActionRollForm action={action} targets={participants.map(p=>({id:p.id,name:p.description,creatureType:creatureType(p.sheet)}))} ownerId={ability.ownerId} canSubmit={!error} disabled={false} label={`Lancio: ${ability.name}`} className="master-action-form master-spell-form" initialOption={optionId} initialDraft={edited} submitLabel="Calcola esiti" onSubmit={draft=>{
+    const finalDamage=(id:number,result:TargetResolution)=>overrides[id]??(result.damage===null?'':String(result.damage))
+    useLayoutEffect(()=>{applyLatest.current=()=>{
+            if(!draft)return
+            const targets=results.map(({id,result})=>({id,damage:finalDamage(id,result!),resolved:true}))
+            const damagePackets=results.map(({id,result})=>({id,...(plan.temporaryHitPoints?{temporaryHitPoints:result!.temporaryHitPoints!,keepTemporaryHitPoints:draft.packets[0].keepTemporaryHitPoints}:{}),...(plan.healing?{healing:result!.healing!}:{}),effects:result!.packets.flatMap(packet=>packet.effects),damage:Number(finalDamage(id,result!))===result!.damage?result!.packets.map(packet=>packet.damage!):[Number(finalDamage(id,result!))]}))
+            const applied=onApply({...ability,useOption:draft.option,requirementsConfirmed:true,targets,execution:ability.execution??{id:executionId,phase:'resolving',option:draft.option,cost:draft.cost}},damagePackets,additionalActionConfirmed)
+            working.current=false
+            if(applied!==false){setDraft(undefined);setEdited(undefined);setRolls({});setOverrides({});setAdditionalActionConfirmed(false)}
+    }})
+    if(!draft)return <ActionRollForm action={action} targets={participants.map(p=>({id:p.id,name:p.description,creatureType:creatureType(p.sheet),wearingArmor:p.sheet?wearingArmor(p.sheet):undefined}))} ownerId={ability.ownerId} canSubmit={!error&&(!directBenefit(plan)||!additionalActionRequired||additionalActionConfirmed)} disabled={false} label={`Lancio: ${ability.name}`} className="master-action-form master-spell-form" initialOption={optionId} initialDraft={edited} weaponSelection={{itemsForTarget:(id,effect)=>weaponCandidates(participants.find(participant=>participant.id===id)?.sheet,data,abilities,effect,owner.id),value:weapons,onChange:(id,choice)=>setWeapons(current=>({...current,[id]:choice}))}} submitLabel={directBenefit(plan)?"Applica potenziamento":"Calcola esiti"} onSubmit={draft=>{
         const plan=action.options.find(option=>option.id===draft.option)?.resolution
         if(!plan)throw new Error('Modalità di lancio non disponibile.')
         if(plan.temporaryHitPoints&&draft.packets.some(packet=>packet.targetId!==ability.ownerId))throw new Error('Vita Falsata si applica soltanto al lanciatore.')
@@ -60,9 +73,13 @@ export function MasterSpellRolls({ability,owner,participants,abilities,catalog,c
         assertTargetTypes(combatTargeting(ability,catalog,owner,draft.option),participants,draft.packets.map(p=>p.targetId))
         packetTargets(draft.packets)
         if(draft.packets.some(packet=>!participants.some(p=>p.id===packet.targetId&&p.sheet)))throw new Error('Collega la scheda di ogni bersaglio prima di risolvere l’attacco.')
-        setDraft(draft)
-    }}>{children}</ActionRollForm>
-    const finalDamage=(id:number,result:TargetResolution)=>overrides[id]??(result.damage===null?'':String(result.damage))
+        if(directBenefit(plan)){
+            const targets=packetTargets(draft.packets).map(target=>({...target,damage:'0',resolved:true}))
+            const effects=plan.effects.map(effect=>effect.kind==='resistance'&&draft.effectChoice?{...effect,types:plan.effectChoices?.filter(type=>type===draft.effectChoice)??[]}:effect)
+            const applied=onApply({...ability,resolutionEffects:effects,instantaneous:false,damageEnabled:false,useOption:draft.option,requirementsConfirmed:true,targets,execution:ability.execution??{id:executionId,phase:'resolving',option:draft.option,cost:draft.cost}},targets.map(target=>({id:target.id,damage:[0],...(plan.weaponEffect?{weaponChoice:weapons[target.id]}:{})})),additionalActionConfirmed)
+            if(applied!==false){setWeapons({});setAdditionalActionConfirmed(false)}
+        }else setDraft(draft)
+    }}>{children}{directBenefit(plan)&&additionalActionRequired&&<label className="combat-request-check"><input type="checkbox" checked={additionalActionConfirmed} onChange={event=>setAdditionalActionConfirmed(event.target.checked)}/>Confermo un’altra azione valida per lanciare un incantesimo (es. Azione Impetuosa 2014)</label>}</ActionRollForm>
     const complete=(!additionalActionRequired||additionalActionConfirmed)&&!reviewError&&results.length>0&&results.every(({id,result})=>result&&(!result.save||result.save.success!==undefined&&!result.save.needsSecondDie&&!result.save.needsBonusDice?.length)&&!result.packets.some(packet=>packet.needsCritical.length||packet.needsSecondDie||packet.needsBonusDice?.length)&&validNumber(finalDamage(id,result)))
     const summary:ResolutionReview={id:executionId,status:'pending',resolution:plan,packets:draft.packets,mode:plan.kind,damageEnabled:draft.damageEnabled,
         targets:results.map(({id,name,result})=>({...packetTargets(draft.packets.filter(packet=>packet.targetId===id))[0],name,resolution:result}))}
@@ -106,16 +123,20 @@ export function MasterSpellRolls({ability,owner,participants,abilities,catalog,c
         }}/>
         <MasterResolutionRolls request={summary} disabled={false} onDecide={recordRoll}/>
         {reviewError&&<p role="alert">{reviewError}</p>}
-        <form id={decisionId} className="combat-request-decision" aria-label={`Conferma: ${ability.name}`} onSubmit={event=>{
+        {reactionError&&<p role="alert">{reactionError}</p>}
+        {waiting&&<p role="status">Attendo le reazioni prima di applicare gli esiti…</p>}
+        <form id={decisionId} className="combat-request-decision" aria-label={`Conferma: ${ability.name}`} onSubmit={async event=>{
             event.preventDefault()
             if(working.current||!complete)return
             working.current=true
-            const targets=results.map(({id,result})=>({id,damage:finalDamage(id,result!),resolved:true}))
-            const damagePackets=results.map(({id,result})=>({id,...(plan.temporaryHitPoints?{temporaryHitPoints:result!.temporaryHitPoints!,keepTemporaryHitPoints:draft.packets[0].keepTemporaryHitPoints}:{}),...(plan.healing?{healing:result!.healing!}:{}),effects:result!.packets.flatMap(packet=>packet.effects),damage:Number(finalDamage(id,result!))===result!.damage?result!.packets.map(packet=>packet.damage!):[Number(finalDamage(id,result!))]}))
-            const applied=onApply({...ability,useOption:draft.option,requirementsConfirmed:true,targets,execution:ability.execution??{id:executionId,phase:'resolving',option:draft.option,cost:draft.cost}},damagePackets,additionalActionConfirmed)
-            working.current=false
-            if(applied!==false){setDraft(undefined);setEdited(undefined);setRolls({});setOverrides({});setAdditionalActionConfirmed(false)}
-        }}><fieldset>{additionalActionRequired&&<label className="combat-request-check"><input type="checkbox" checked={additionalActionConfirmed} onChange={event=>setAdditionalActionConfirmed(event.target.checked)}/>Confermo un’altra azione valida per lanciare un incantesimo (es. Azione Impetuosa 2014)</label>}<div className="play-actions">
+            setWaiting(true);setReactionError('')
+            try{
+                const ids=results.filter(r=>r.result?.packets.some(p=>p.hit===true)).map(r=>r.id)
+                const missile=plan.ruleId==='phb2014:spell:magic-missile'
+                if((missile||ids.length)&&!await beforeReaction({kind:missile?'magic-missile':'hit',label:`${ability.name}: puoi reagire prima dei danni.`,targetIds:missile?results.map(r=>r.id):ids,actorId:ability.ownerId??undefined})){working.current=false;return}
+                applyLatest.current()
+            }catch(error){setReactionError(error instanceof Error?error.message:'Reazione non disponibile.');working.current=false}finally{setWaiting(false)}
+        }}><fieldset disabled={waiting}>{additionalActionRequired&&<label className="combat-request-check"><input type="checkbox" checked={additionalActionConfirmed} onChange={event=>setAdditionalActionConfirmed(event.target.checked)}/>Confermo un’altra azione valida per lanciare un incantesimo (es. Azione Impetuosa 2014)</label>}<div className="play-actions">
             <button className="play-primary" type="submit" disabled={!complete}>{plan.temporaryHitPoints?'Applica PF temporanei':plan.healing?'Applica cura':draft.damageEnabled?'Applica danni':'Applica esiti'}</button>
             <button className="play-secondary" type="button" onClick={()=>{setEdited(draft);setDraft(undefined);setRolls({});setOverrides({});setProperties({magical:true});working.current=false}}>Modifica tiri</button>
         </div></fieldset></form>

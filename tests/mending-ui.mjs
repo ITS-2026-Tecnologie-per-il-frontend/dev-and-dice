@@ -67,10 +67,7 @@ try {
         await row.screenshot({path:join(artifacts,view.toLowerCase()+'.png')})
     }
     const damage=page.locator('#ability-1').getByRole('group',{name:'Bersagli del danno',exact:true})
-    assert.equal(await damage.getByRole('checkbox').count(),2,'Only other creatures are immediately visible')
-    await damage.getByText('Includi te stesso',{exact:true}).click()
-    assert.equal(await damage.getByRole('checkbox').count(),3,'Self remains selectable through the disclosure')
-    await damage.getByText('Includi te stesso',{exact:true}).click()
+    assert.equal(await damage.getByRole('checkbox').count(),3,'Self is directly selectable alongside the other creatures')
     assert((await damage.boundingBox()).height<240,'Damage target selection should remain compact')
     await damage.screenshot({path:join(artifacts,'damage-targets.png')})
     assert.equal(await page.locator('#ability-1').getByRole('combobox',{name:'Modalità di Dardo di Fuoco',exact:true}).count(),0)

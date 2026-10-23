@@ -3,14 +3,14 @@ import { durationTurns, activateAbility, type Ability, type Combat } from '../ut
 import { getDropIndex, getDropTargetId, reorderByDrop, reorderById } from '../utils/Reorder'
 import { templateFromCatalog, type Catalog } from '../utils/Catalog'
 import { CatalogSearch } from './CatalogSearch'
-import { AbilityCard, AbilityMetadata, AbilityTargets } from './AbilityCard'
+import { AbilityCard, AbilityMetadata, AbilityTargets, WeaponEffectSummary, SpellEffectSummary } from './AbilityCard'
 import { InfoButton } from './InfoButton'
 import { HelpTooltip } from './HelpTooltip'
 import type { CharacterSheet } from '../utils/CharacterSheets'
 import type { CreationData } from '../utils/PlayerCreation'
 import { combatAbilityInfo, combatAbilityStatus, combatUseOptions, selectedUseOption, type UseOption } from '../domain/dnd/CombatActions'
 import { combatTargeting, creatureType, targetTypeError } from '../domain/dnd/CombatTargets'
-import { resolutionPlan } from '../domain/dnd/CombatResolution'
+import { resolutionPlan, weaponDisplayName, weaponEffectDetails, spellEffectDetails, directBenefit } from '../domain/dnd/CombatResolution'
 import { MasterAttackRolls } from './MasterAttackRolls'
 import { MasterSpellRolls, type ResolvedDamagePackets } from './MasterSpellRolls'
 import { conditionEffectName, conditionsFor } from '../domain/dnd/CombatConditions'
@@ -112,8 +112,10 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                     const targeting=combatTargeting(ability,catalog,owner,option?.id),tooManyTargets=targeting.maximum!==null && targets.length>targeting.maximum
                     const attackPlan=owner&&creationData&&/^sheet-attack:[0-5]$/.test(ability.ruleId??'')&&option?.id==='free'?resolutionPlan(owner,ability,catalog,'free',{data:creationData,active:abilities}):undefined
                     const simpleAttack=!!onResolve&&attackPlan?.kind==='attack'&&!!owner&&!!creationData
-                    const spellPlan=owner&&info.level!==undefined&&(info.instantaneous||ability.ruleId==='phb2014:spell:hold-person'||ability.ruleId==='phb2014:spell:false-life')&&!info.prolonged?resolutionPlan(owner,ability,catalog,option?.id):undefined
-                    const spellRolls=(recasting===ability.id||!ability.active||ability.timed!==false&&ability.remainingTurns===0)&&!!onResolve&&(spellPlan?.kind==='attack'||spellPlan?.kind==='save'||spellPlan?.kind==='automatic'||!!spellPlan?.healing||!!spellPlan?.temporaryHitPoints)&&(info.damage||!!spellPlan?.healing||!!spellPlan?.temporaryHitPoints||ability.ruleId==='phb2014:spell:hold-person')&&!!creationData
+                    const candidatePlan=owner&&info.level!==undefined&&!info.prolonged?resolutionPlan(owner,ability,catalog,option?.id):undefined
+                    const spellPlan=candidatePlan&&(info.instantaneous||ability.ruleId==='phb2014:spell:hold-person'||ability.ruleId==='phb2014:spell:false-life'||directBenefit(candidatePlan))?candidatePlan:undefined
+                    const spellRolls=(recasting===ability.id||!ability.active||ability.timed!==false&&ability.remainingTurns===0)&&!!onResolve&&(spellPlan?.kind==='attack'||spellPlan?.kind==='save'||spellPlan?.kind==='automatic'||!!spellPlan?.healing||!!spellPlan?.temporaryHitPoints||directBenefit(spellPlan))&&(info.damage||!!spellPlan?.healing||!!spellPlan?.temporaryHitPoints||ability.ruleId==='phb2014:spell:hold-person'||directBenefit(spellPlan))&&!!creationData
+                    const activeTemporaryEffect=running&&!ability.execution&&(!!spellPlan?.temporaryHitPoints||directBenefit(spellPlan))&&recasting!==ability.id
                     const deferredPlan=owner&&ability.ruleId==='phb2014:spell:gust-of-wind'?resolutionPlan(owner,ability,catalog,option?.id):undefined
                     const timingControls=<>
                         <label className="ability-duration">
@@ -180,7 +182,7 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                             className="ability-name"
                             type="text"
                             placeholder="Nome abilità"
-                            value={catalog.abilities.find((entry) => entry.id === ability.catalogId)?.name ?? ability.name}
+                            value={weaponDisplayName(attackPlan,participants.map(caster=>({id:caster.id,name:caster.description})))??catalog.abilities.find((entry) => entry.id === ability.catalogId)?.name ?? ability.name}
                             disabled={running}
                             entries={catalog.abilities}
                             onChange={(value) => updateAbilityName(ability.id, value)}
@@ -216,7 +218,7 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                         </div>
                         {fixedOwner && !info.instantaneous && <details className="ability-timing-controls"><summary>Gestisci durata</summary><div>{timingControls}</div></details>}
                         {spellRolls ? <div className="ability-use-controls">{recasting===ability.id&&<button type="button" className="sort-turns" onClick={()=>setRecasting(null)}>Annulla nuovo lancio</button>}<MasterSpellRolls key={`${ability.id}:${ability.castingSource??'class'}:${ability.temporaryHitPointsSource??''}`} inCombat={!!combat} ability={ability} owner={owner!} participants={participants} abilities={abilities} catalog={catalog} catalogForOwner={catalogForOwner} data={creationData!} options={options} optionId={option?.id} error={error} onApply={(ability,packets,confirmed)=>{const result=onResolve!(ability,packets,confirmed);if(result!==false)setRecasting(null);return result}}>
-                            {!simpleCantrip&&<label><span>Origine del lancio</span><select aria-label={`Origine del lancio di ${ability.name}`} disabled={running} value={ability.castingSource??'class'} onChange={event=>patch(ability.id,{castingSource:event.target.value as Ability['castingSource'],useOption:undefined,resourceCost:1,requirementsConfirmed:false})}><option value="class">Slot, trucchetto o rituale</option><option value="resource">Privilegio con risorsa propria</option><option value="free">Privilegio senza costo</option></select></label>}
+                            {!simpleCantrip&&<label><span>Origine del lancio</span><select aria-label={`Origine del lancio di ${ability.name}`} disabled={!!ability.execution} value={ability.castingSource??'class'} onChange={event=>patch(ability.id,{castingSource:event.target.value as Ability['castingSource'],useOption:undefined,resourceCost:1,requirementsConfirmed:false})}><option value="class">Slot, trucchetto o rituale</option><option value="resource">Privilegio con risorsa propria</option><option value="free">Privilegio senza costo</option></select></label>}
                         </MasterSpellRolls>{actionError?.abilityId===ability.id&&<p role="alert">{actionError.message}</p>}</div> : simpleAttack ? <div className="ability-use-controls"><MasterAttackRolls ability={ability} owner={owner!} plan={attackPlan!} participants={participants} abilities={abilities} catalog={catalog} catalogForOwner={catalogForOwner} data={creationData!} onApply={targets=>onResolve!({...ability,instantaneous:true,damageEnabled:true,requirementsConfirmed:true,targets,execution:{id:ability.execution?.id??crypto.randomUUID(),phase:'resolving',option:'free',cost:1}})}/>{actionError?.abilityId===ability.id&&<p role="alert">{actionError.message}</p>}</div> : deferredPlan?.deferredSave&&onActivate ? <div className="ability-use-controls"><form className="action-roll-form master-action-form" aria-label={`Lancio: ${ability.name}`} onSubmit={event=>{event.preventDefault();onActivate({...ability,requirementsConfirmed:true,damageEnabled:false,instantaneous:false})}}><fieldset aria-label={`Parametri di ${ability.name}`}>
                             <details className="player-action-description" open><summary>Descrizione dell’azione</summary><p className="combat-request-description">{ability.description??info.entry?.description}</p></details>
                             <label>Risorsa<select aria-label="Risorsa" required disabled={running} value={option?.id??''} onChange={event=>patch(ability.id,{useOption:event.target.value})}>{options.map(o=><option value={o.id} key={o.id} disabled={o.remaining!==null&&o.remaining<(o.cost??ability.resourceCost??1)}>{o.label}{o.remaining===null?'':` · ${o.remaining} rimasti`}</option>)}</select></label>
@@ -224,7 +226,7 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                             <AbilityTargets candidates={participants.map(candidate=>({id:candidate.id,name:candidate.description||`Creatura ${candidate.id+1}`,unavailableReason:targetTypeError(targeting,creatureType(candidate.sheet))}))} ownerId={ability.ownerId} selectedIds={targets.map(target=>target.id)} maximum={targeting.maximum} summary={targeting.summary} label="Bersagli" disabled={!!ability.execution}
                                 onChange={(id,checked)=>patch(ability.id,{targets:checked?[...targets,{id,damage:'0',resolved:false}]:targets.filter(target=>target.id!==id)})}/>
                             {!running&&<button className="sort-turns" type="submit" disabled={!option||!!error}>Lancia incantesimo</button>}
-                        </fieldset></form>{error&&<p role="alert">{error}</p>}{actionError?.abilityId===ability.id&&<p role="alert">{actionError.message}</p>}</div> : onResolve && <div className="ability-use-controls">
+                        </fieldset></form>{error&&<p role="alert">{error}</p>}{actionError?.abilityId===ability.id&&<p role="alert">{actionError.message}</p>}</div> : activeTemporaryEffect&&onResolve ? <div className="ability-use-controls"><WeaponEffectSummary effects={weaponEffectDetails(ability.weaponEffects??[],participants.flatMap(participant=>participant.sheet?[participant.sheet]:[]))}/><SpellEffectSummary effects={spellEffectDetails({...ability,resolutionEffects:ability.resolutionEffects??spellPlan?.effects},participants.map(participant=>({...participant,name:participant.description})),abilities,creationData)}/><p role="status">In esecuzione{ability.timed!==false?` · ${ability.remainingTurns} round`:''}</p>{spellPlan?.temporaryHitPoints&&<button type="button" className="sort-turns master-active-recast" onClick={()=>setRecasting(ability.id)}>Lancia di nuovo</button>}</div> : onResolve && <div className="ability-use-controls">
                             {status!=='Usa' && <p role="status">{status}{ability.active && !ability.execution && ability.timed!==false && ability.remainingTurns>0 ? ` · ${ability.remainingTurns} turni` : ''}</p>}
                             {error && <p role="alert">{error}</p>}
                             {info.entry?.data.ruleStatus==='partial' && <div className="ability-field-help"><span>Effetti da risolvere</span><HelpTooltip label="Informazioni sugli effetti da risolvere">Questa magia ha effetti non completamente automatizzati. Verifica la descrizione e applica gli esiti prima di concludere il lancio.</HelpTooltip></div>}
@@ -260,7 +262,6 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                             </>}
                             {actionError?.abilityId===ability.id && <p role="alert" id={`ability-error-${ability.id}`}>{actionError.message}</p>}
                         </div>}
-                        {running&&!ability.execution&&spellPlan?.temporaryHitPoints&&onResolve&&recasting!==ability.id&&<button type="button" className="sort-turns" onClick={()=>setRecasting(ability.id)}>Lancia di nuovo</button>}
                         {!spellRolls&&!simpleAttack&&(!deferredPlan?.deferredSave||running)&&(onEnd && ability.active && (ability.timed===false || ability.remainingTurns>0) ? <button className="end-combat end-ability" type="button" onClick={()=>onEnd(ability)}>Termina effetto</button> : <button
                             className="activate-ability"
                             aria-describedby={actionError?.abilityId===ability.id ? `ability-error-${ability.id}` : undefined}

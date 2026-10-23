@@ -1,12 +1,12 @@
 .play-account { display:flex; align-items:center; gap:24px; padding:16px 28px; border-bottom:1px solid var(--border); color:var(--text-h); }
 .play-brand { margin-right:auto; color:var(--text-h); font-size:22px; font-weight:750; text-decoration:none; }
-:is(.play-home,.play-character-page,.play-master-page,.play-player-page,.play-account) button:not(:where(.player-sheet button,.tracker-layout button,.master-inspector-navigation button,.participant-abilities button,.ability-row button,.help-tooltip-trigger)),
+:is(.play-home,.play-character-page,.play-master-page,.play-player-page,.play-account,.reaction-dialog) button:not(:where(.player-sheet button,.tracker-layout button,.master-inspector-navigation button,.participant-abilities button,.ability-row button,.help-tooltip-trigger)),
 .play-notifications > .play-notification-button,
 .play-notification-dialog button:not(:where(.play-secondary,.more-info,.help-tooltip-trigger)),
 .play-primary { box-sizing:border-box; min-height:44px; padding:10px 18px; border:1px solid var(--ui-accent, #147d72); border-radius:5px; color:white; background:var(--ui-action, var(--ui-accent, #147d72)); font:inherit; font-size:15px; line-height:1.4; cursor:pointer; text-decoration:none; }
-:is(.play-home,.play-character-page,.play-master-page,.play-player-page,.play-account) button:disabled { opacity:.55; cursor:default; }
-:is(.play-home,.play-character-page,.play-master-page,.play-player-page,.play-account) :focus-visible { outline:3px solid var(--ui-accent, #147d72); outline-offset:3px; }
-:is(.play-home,.play-character-page,.play-master-page,.play-player-page) .play-secondary,
+:is(.play-home,.play-character-page,.play-master-page,.play-player-page,.play-account,.reaction-dialog) button:disabled { opacity:.55; cursor:default; }
+:is(.play-home,.play-character-page,.play-master-page,.play-player-page,.play-account,.reaction-dialog) :focus-visible { outline:3px solid var(--ui-accent, #147d72); outline-offset:3px; }
+:is(.play-home,.play-character-page,.play-master-page,.play-player-page,.reaction-dialog) .play-secondary,
 .play-account button { color:var(--text-h); background:var(--bg); border-color:var(--border); }
 .play-home,.play-character-page { box-sizing:border-box; width:100%; min-width:0; max-width:1280px; margin:0 auto; padding:36px 28px; text-align:left; }
 .play-master-page,.play-player-page { box-sizing:border-box; width:100%; min-width:0; padding:24px; text-align:left; }
@@ -93,6 +93,7 @@
 .play-player-effects li p { margin:8px 0 0; white-space:pre-wrap; }
 .play-player-actions { box-sizing:border-box; padding:20px; border:1px solid var(--border); border-radius:6px; min-width:0; }
 .play-player-actions h2 { margin-top:0; font-size:21px; color:var(--text-h); }
+.play-player-actions .ability-target-list { max-height:none; overflow:visible; scrollbar-gutter:auto; }
 .combat-request { margin-top:16px; padding:16px; border:1px solid var(--border); border-radius:6px; overflow-wrap:anywhere; }
 .play-notification-list .combat-request { margin:0; padding:0; border:0; }
 .combat-request h3 { margin-top:0; color:var(--text-h); }
@@ -276,6 +277,9 @@
 .action-roll-form .player-damage-compact > .library-help { grid-column:1; grid-row:2; line-height:1.4; margin:0; }
 .action-roll-form .player-damage-compact .combat-die-icon { width:20px; height:22px; }
 .action-roll-form .player-damage-compact > input { grid-column:2; grid-row:1 / 3; min-width:0; }
+.action-roll-form .player-damage-compact.player-damage-enhanced > .library-help { grid-column:1 / -1; grid-row:2; }
+.action-roll-form .player-damage-compact.player-damage-enhanced > input { grid-row:1; }
+.action-roll-form .player-damage-compact.player-damage-enhanced > .weapon-damage-breakdown { grid-column:1 / -1; grid-row:3; padding-top:4px; }
 @media (max-width:360px) { .action-roll-form .player-roll-packet { --roll-mod-width:76px; --roll-total-width:36px; --roll-gap:2px; } }
 @media (pointer:coarse) { .action-roll-form .player-remove-packet { width:44px; height:44px; min-height:44px; } }
 .play-saving-throws { margin:16px 0; padding:12px; border:1px solid var(--border); border-radius:6px; }
@@ -355,3 +359,16 @@
 .combat-request--review .combat-weapon-configuration { display:grid; gap:16px; }
 .combat-request--review .combat-weapon-configuration label:not(.combat-request-check) { grid-template-columns:1fr; }
 .combat-request--review .combat-weapon-configuration p { margin:8px 0; font-size:14px; }
+
+.reaction-master-tools { display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; padding:8px 16px; }
+.reaction-master-tools p { margin:0; }
+.reaction-dialog { box-sizing:border-box; text-align:left; width:min(560px,calc(100vw - 32px)); max-height:calc(100dvh - 32px); overflow:auto; padding:20px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text); }
+.reaction-dialog::backdrop { background:#0009; }
+.reaction-dialog .dialog-header { display:flex; justify-content:space-between; align-items:start; gap:12px; }
+.reaction-dialog h2 { margin:0; }
+.reaction-dialog .dialog-header button { min-width:36px; margin:0; }
+.reaction-countdown { display:flex; align-items:center; gap:12px; margin:14px 0 6px; color:var(--text-h); }
+.reaction-countdown strong { white-space:nowrap; font-size:22px; font-variant-numeric:tabular-nums; }
+.reaction-countdown progress { width:100%; accent-color:#b77916; }
+.reaction-dialog select { width:100%; }
+.reaction-dialog .action-roll-form { margin:16px 0; }
