@@ -91,7 +91,7 @@ try {
     assert.equal(choices.actions.find(action=>action.name===names.ray).options.find(option=>option.id==='slot:2').targeting.maximum,3)
     assert.equal(choices.actions.find(action=>action.name===names.ray).options.find(option=>option.id==='slot:3').targeting.maximum,4)
     assert(!choices.actions.some(action=>['Fiuto passivo','Udito e Olfatto Affinato'].includes(action.name)),'Neither manual nor catalog passive traits can be proposed as actions')
-    assert.deepEqual(Object.keys(choices.targets[2]).sort(),['id','name'])
+    assert.deepEqual(Object.keys(choices.targets[2]).sort(),['id','name','wearingArmor'])
     assert(!JSON.stringify(choices).includes('PRIVATE MONSTER'))
     assert.equal((await api(outsider,path+'/actions')).status,404)
     assert.equal((await api(master,path+'/actions')).status,403)
@@ -172,6 +172,7 @@ try {
     assert.equal(now.characters.find(record=>record.id===wizard.id).sheet.playerDetails['slots.3.used'],'2','The last higher-level slot is spent once')
     const exhaustedChoices=ok(await api(player,path+'/actions')),exhausted=exhaustedChoices.actions.find(action=>action.name===names.ray)
     assert.equal((await submit({...upcast,id:crypto.randomUUID(),revision:exhaustedChoices.revision,key:exhausted.key,option:'slot:2'})).status,409)
+    await newTurn()
     const cantrip=await proposal(names.bolt,{mode:'attack',targets:[{id:3,roll:'3',hit:false,damageRoll:'',damage:'0'}]})
     ok(await submit(cantrip));const slotsBefore=(await current(player)).character.sheet.playerDetails
     now=ok(await decide(cantrip));const slotsAfter=now.characters.find(record=>record.id===wizard.id).sheet.playerDetails

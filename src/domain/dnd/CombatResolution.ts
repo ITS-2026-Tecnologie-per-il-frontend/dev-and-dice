@@ -2,8 +2,9 @@ import { abilityModifier, integerValue, type CharacterSheet } from '../../utils/
 import { spellEdition, castingAbilityKey, classId } from '../../utils/Spellcasting.ts'
 import type { Ability } from '../../utils/Combat.ts'
 import type { CreationData } from '../../utils/PlayerCreation.ts'
-import { inventoryEquipment, inventoryFieldValue, inventoryReferenceKey, referencedInventoryItem } from '../../utils/Inventory.ts'
+import { inventoryEquipment, inventoryFieldValue, inventoryReferenceKey, referencedInventoryItem, reconcileInventory, ownedInventoryItems, separateInventoryItem } from '../../utils/Inventory.ts'
 import type { Catalog } from '../../utils/Catalog.ts'
+import { wearingArmor } from './CombatTargets.ts'
 import { assessAttack } from './CombatActions.ts'
 
 // Sources (PDF pages): D&D_5_Player_Original_Handbook.pdf 180, 195, 197–198, 205;
@@ -25,11 +26,11 @@ const aliases:Record<string,DamageType>={acido:'acid',contundente:'bludgeoning',
 const damageType=(v:unknown):DamageType|undefined=>typeof v==='string'?(Object.hasOwn(damageNames,normalized(v))?normalized(v) as DamageType:aliases[normalized(v)]):undefined
 export type DamageRoll={type:DamageType;amount:number}
 export type RollPacket={targetId:number;die?:number;healingRoll?:number;temporaryHitPointsRoll?:number;keepTemporaryHitPoints?:boolean;damage:DamageRoll[]}
-export type EffectSpec={kind:'resistance'|'nonmagical-resistance'|'ac'|'condition'|'speed'|'spell-immunity'|'roll-bonus';types?:DamageType[];amount?:number;condition?:string;ruleId?:string;rolls?:('attack'|'save')[];sides?:number;sign?:1|-1;consume?:boolean;trigger:'always'|'hit'|'failed-save';repeatSave?:boolean}
+export type EffectSpec={kind:'resistance'|'nonmagical-resistance'|'ac'|'ac-base'|'condition'|'speed'|'spell-immunity'|'roll-bonus';types?:DamageType[];amount?:number;condition?:string;ruleId?:string;rolls?:('attack'|'save')[];sides?:number;sign?:1|-1;consume?:boolean;trigger:'always'|'hit'|'failed-save';repeatSave?:boolean}
 export function validEffectSpecs(value:unknown):value is EffectSpec[] {
     return Array.isArray(value)&&value.length<=30&&value.every(v=>{
         const e=object(v)
-        return Object.keys(e).every(k=>['kind','types','amount','condition','ruleId','rolls','sides','sign','consume','trigger','repeatSave'].includes(k))&&['resistance','nonmagical-resistance','ac','condition','speed','spell-immunity','roll-bonus'].includes(String(e.kind))&&['always','hit','failed-save'].includes(String(e.trigger))
+        return Object.keys(e).every(k=>['kind','types','amount','condition','ruleId','rolls','sides','sign','consume','trigger','repeatSave'].includes(k))&&['resistance','nonmagical-resistance','ac','ac-base','condition','speed','spell-immunity','roll-bonus'].includes(String(e.kind))&&['always','hit','failed-save'].includes(String(e.trigger))
             &&(e.amount===undefined||Number.isSafeInteger(e.amount))&&(e.repeatSave===undefined||typeof e.repeatSave==='boolean')
             &&(e.ruleId===undefined||typeof e.ruleId==='string'&&e.ruleId.length<=250)&&(e.sides===undefined||Number.isInteger(e.sides)&&Number(e.sides)>=2&&Number(e.sides)<=100)
             &&(e.sign===undefined||e.sign===1||e.sign===-1)&&(e.consume===undefined||typeof e.consume==='boolean')
@@ -38,8 +39,40 @@ export function validEffectSpecs(value:unknown):value is EffectSpec[] {
             &&(e.types===undefined||Array.isArray(e.types)&&e.types.length<=14&&e.types.every(t=>typeof t==='string'&&t!=='untyped'&&Object.hasOwn(damageNames,t)))
     })
 }
+// Direct benefits use the shared target/resource form; unresolved mechanics keep review.
+export const directBenefit=(plan:ResolutionPlan|undefined)=>!!plan&&plan.kind==='none'&&!plan.deferredSave&&(!!plan.weaponEffect||!plan.notes.length&&plan.effects.length>0&&plan.effects.every(effect=>effect.trigger==='always'))
+export type SpellEffectDetails={targetName:string;description:string[];armorClass?:number;armorClassBefore?:number;armorClassBonus?:number}
+export function spellEffectDetails(ability:Pick<Ability,'targets'|'resolutionEffects'>&Partial<Pick<Ability,'id'|'name'|'ruleId'>>,targets:{id:number;name:string;sheet?:CharacterSheet}[],active:Ability[]=[],data?:CreationData):SpellEffectDetails[] {
+    return (ability.targets??[]).flatMap(target=>{
+        const participant=targets.find(participant=>participant.id===target.id)
+        const description=(ability.resolutionEffects??[]).flatMap(effect=>{
+            if(effect.kind==='ac-base'){
+                const dex=participant?.sheet&&abilityModifier(participant.sheet.dexterity)
+                return [`CA base: ${effect.amount} + modificatore di Destrezza${dex===undefined?'':` (${dex<0?'': '+'}${dex}) = ${(effect.amount??13)+dex}`}.`, 'Termina se il bersaglio indossa un’armatura.']
+            }
+            if(effect.kind==='ac')return [`${(effect.amount??0)<0?'':'+'}${effect.amount} alla CA.`]
+            if(effect.kind==='roll-bonus')return [`${effect.sign===-1?'−':'+'} 1d${effect.sides} ${(effect.rolls??[]).map(roll=>roll==='attack'?'ai tiri per colpire':'ai tiri salvezza').join(' e ')}.`]
+            if(effect.kind==='resistance'||effect.kind==='nonmagical-resistance')return [`Resistenza: ${(effect.types??[]).map(type=>damageNames[type]).join(', ')}${effect.kind==='nonmagical-resistance'?' da attacchi non magici':''}.`]
+            if(effect.kind==='spell-immunity')return ['Immunità a Dardo Incantato.']
+            return []
+        })
+        if(ability.ruleId==='phb2014:spell:shield')description.push('Fino all’inizio del prossimo turno del bersaglio, incluso l’attacco scatenante.')
+        const changesArmorClass=ability.resolutionEffects?.some(effect=>effect.kind==='ac'||effect.kind==='ac-base')
+        const preview:Ability={id:Math.max(-1,...active.map(effect=>effect.id))+1,name:ability.name??'Potenziamento',ruleId:ability.ruleId,ownerId:null,duration:'Personalizzata',remainingTurns:1,active:true,timed:false,targets:ability.targets,resolutionEffects:ability.resolutionEffects}
+        const armorClass=changesArmorClass&&participant?.sheet&&(!ability.resolutionEffects?.some(effect=>effect.kind==='ac-base')||abilityModifier(participant.sheet.dexterity)!==undefined)?defenseProfile(participant.sheet,undefined,[...active,preview],target.id,undefined,data).armorClass:undefined
+        const armorClassBefore=changesArmorClass&&participant?.sheet&&!ability.resolutionEffects?.some(effect=>effect.kind==='ac-base')?defenseProfile(participant.sheet,undefined,active.filter(effect=>effect.id!==ability.id||(ability.ruleId?effect.ruleId!==ability.ruleId:effect.name!==ability.name)),target.id,undefined,data).armorClass:undefined
+        return description.length?[{targetName:participant?.name||'Bersaglio non disponibile',description,...(armorClass===undefined?{}:{armorClass,...(armorClassBefore===undefined?{}:{armorClassBefore,armorClassBonus:armorClass-armorClassBefore})})}]:[]
+    })
+}
 export type WeaponEffect={magical:boolean;attackBonus:number;damageBonus:number;extraDamage?:{dice:string;choices:DamageType[]};damageDice?:string;castingModifier?:number;allowedWeapons?:string[];requiresNonmagical:boolean;selfOnly?:boolean}
 export type WeaponEnchantment={characterId:string;itemId:string;magical:boolean;attackBonus:number;damageBonus:number;extraDamage?:{dice:string;type:DamageType};damageDice?:string;castingModifier?:number}
+export type WeaponEffectDetails=Omit<WeaponEnchantment,'characterId'|'itemId'>&{targetName:string;itemName:string}
+export function weaponEffectDetails(effects:WeaponEnchantment[],sheets:CharacterSheet[]):WeaponEffectDetails[] {
+    return effects.map(({characterId,itemId,...effect})=>{
+        const sheet=sheets.find(sheet=>sheet.id===characterId)
+        return {...effect,targetName:sheet?.name||'Personaggio non disponibile',itemName:sheet&&ownedInventoryItems(sheet).find(item=>item.id===itemId)?.name||'Arma non disponibile'}
+    })
+}
 export function validWeaponEnchantments(value:unknown):value is WeaponEnchantment[] {
     return Array.isArray(value)&&value.length<=1000&&value.every(v=>{const w=object(v);return Object.keys(w).every(k=>['characterId','itemId','magical','attackBonus','damageBonus','extraDamage','damageDice','castingModifier'].includes(k))&&typeof w.characterId==='string'&&w.characterId.length<=100&&typeof w.itemId==='string'&&w.itemId.length>0&&w.itemId.length<=250&&typeof w.magical==='boolean'&&['attackBonus','damageBonus'].every(k=>Number.isSafeInteger(w[k]))&&(w.castingModifier===undefined||Number.isSafeInteger(w.castingModifier))&&(w.damageDice===undefined||typeof w.damageDice==='string'&&/^\d+d\d+$/.test(w.damageDice))&&(w.extraDamage===undefined||typeof object(w.extraDamage).dice==='string'&&/^\d+d\d+$/.test(String(object(w.extraDamage).dice))&&!!damageType(object(w.extraDamage).type)&&object(w.extraDamage).type!=='untyped')})
 }
@@ -52,13 +85,13 @@ export function validWeaponEffect(value:unknown):value is WeaponEffect {
         &&(w.allowedWeapons===undefined||Array.isArray(w.allowedWeapons)&&w.allowedWeapons.length<=100&&w.allowedWeapons.every(v=>typeof v==='string'&&v.length<=250))
         &&(w.extraDamage===undefined||typeof extra.dice==='string'&&/^\d+d\d+$/.test(extra.dice)&&Array.isArray(extra.choices)&&extra.choices.length>0&&extra.choices.length<=13&&extra.choices.every(t=>!!damageType(t)&&t!=='untyped'))
 }
-export type ResolutionPlan={temporaryHitPoints?:{dice:string;bonus:number;current:number};healing?:{dice:string;count:number;sides:number;modifier?:number;ability?:SaveAbility};attackAbility?:SaveAbility;deferredSave?:{ability:SaveAbility;dc?:number;trigger:'start-own-turn-in-line';pushFt:number};weaponEffect?:WeaponEffect;damageBonuses?:Partial<Record<DamageType,number>>;damageDice?:Partial<Record<DamageType,string>>;weaponName?:string;edition:'2014'|'2024';ruleId?:string;kind:'attack'|'save'|'automatic'|'none';damageTypes:DamageType[];damageHint:string;attackBonus?:number;save?:{ability:SaveAbility;dc?:number;onSuccess:'half'|'none'|'review'};maximumPackets:number|null;requiredPackets?:number;sharedDamage:boolean;magical:boolean|null;damageTypeOverride?:DamageType;effects:EffectSpec[];effectChoices?:DamageType[];notes:string[]}
+export type ResolutionPlan={attackBonusSources?:{name:string;amount:number}[];weaponEnhancements?:{name:string;casterId:number|null}[];damageBonusSources?:Partial<Record<DamageType,{name:string;amount:number}[]>>;temporaryHitPoints?:{dice:string;bonus:number;current:number};healing?:{dice:string;count:number;sides:number;modifier?:number;ability?:SaveAbility};attackAbility?:SaveAbility;deferredSave?:{ability:SaveAbility;dc?:number;trigger:'start-own-turn-in-line';pushFt:number};weaponEffect?:WeaponEffect;damageBonuses?:Partial<Record<DamageType,number>>;damageDice?:Partial<Record<DamageType,string>>;weaponName?:string;edition:'2014'|'2024';ruleId?:string;kind:'attack'|'save'|'automatic'|'none';damageTypes:DamageType[];damageHint:string;attackBonus?:number;save?:{ability:SaveAbility;dc?:number;onSuccess:'half'|'none'|'review'};maximumPackets:number|null;requiredPackets?:number;sharedDamage:boolean;magical:boolean|null;damageTypeOverride?:DamageType;effects:EffectSpec[];effectChoices?:DamageType[];notes:string[]}
 export type DefenseRule={type:DamageType;when:'always'|'nonmagical';source:string}
 export type BonusDie={id:number;label:string;sides:number;sign:1|-1;consume:boolean}
 export type DefenseProfile={hitPoints?:number;maxHitPoints?:number;reviewDamage?:boolean;reviewAttack?:boolean;armorClass?:number;saveBonus?:number;attackMode?:'normal'|'advantage'|'disadvantage';saveMode?:'normal'|'advantage'|'disadvantage';attackDisadvantage?:boolean;grantsAttackAdvantage?:boolean;automaticSaveFailure?:boolean;attackDice?:BonusDie[];saveDice?:BonusDie[];spellImmunities?:string[];resistances:DefenseRule[];immunities:DefenseRule[];vulnerabilities:DefenseRule[];conditionImmunities:string[];notes:string[]}
 export type ResolutionRolls={saveOutcome?:boolean;save?:number;saveSecond?:number;attacks?:Record<string,number>;saveBonuses?:Record<string,number>;attackBonuses?:Record<string,number>;critical?:Record<string,number>}
 export type PacketResult={hit?:boolean;critical:boolean;total?:number;needsSecondDie?:boolean;needsBonusDice?:BonusDie[];damage:number|null;steps:string[];effects:EffectSpec[];needsCritical:DamageType[]}
-export type TargetResolution={temporaryHitPoints?:number;healing?:number|null;damage:number|null;packets:PacketResult[];armorClass?:number;save?:{ability:SaveAbility;die?:number;secondDie?:number;needsSecondDie?:boolean;needsBonusDice?:BonusDie[];automaticFailure?:boolean;bonus?:number;dc?:number;total?:number;success?:boolean};notes:string[]}
+export type TargetResolution={effectDetails?:SpellEffectDetails;temporaryHitPoints?:number;healing?:number|null;damage:number|null;packets:PacketResult[];armorClass?:number;save?:{ability:SaveAbility;die?:number;secondDie?:number;needsSecondDie?:boolean;needsBonusDice?:BonusDie[];automaticFailure?:boolean;bonus?:number;dc?:number;total?:number;success?:boolean};notes:string[]}
 
 export function resolutionPlan(sheet:CharacterSheet,ability:Ability,catalog:Catalog,optionId?:string,weaponContext?:WeaponContext):ResolutionPlan|undefined {
     const entry=catalog.abilities.find(e=>e.id===ability.catalogId),m=object(entry?.data.mechanics),e=object(m.effect),edition=spellEdition(sheet),d=sheet.playerDetails??{}
@@ -105,6 +138,9 @@ export function resolutionPlan(sheet:CharacterSheet,ability:Ability,catalog:Cata
     const condition=e.failedSave
     if(typeof condition==='string'&&['paralyzed','restrained','frightened','blinded','poisoned','prone'].includes(condition))effects.push({kind:'condition',condition,trigger:'failed-save',repeatSave:!!e.repeatSave})
     if(e.onHit==='speed-minus-ten-ft-until-start-caster-next-turn')effects.push({kind:'speed',amount:-10,trigger:'hit'})
+    // PHB 2014, D&D_5_Player_Original_Handbook.pdf, PDF 257, Mage Armor.
+    const mageArmor=edition==='2014'&&ability.ruleId==='phb2014:spell:mage-armor'&&e.baseArmorClass==='13+dexterityModifier'
+    if(mageArmor)effects.push({kind:'ac-base',amount:13,trigger:'always'})
     if(typeof e.armorClassBonus==='number')effects.push({kind:'ac',amount:e.armorClassBonus,trigger:'always'})
     if(e.preventsDamageFrom==='magic-missile'&&edition==='2014')effects.push({kind:'spell-immunity',ruleId:'phb2014:spell:magic-missile',trigger:'always'})
     if(e.bonusDie==='1d4'&&Array.isArray(e.rollTypes))effects.push({kind:'roll-bonus',sides:4,sign:1,rolls:e.rollTypes.flatMap(t=>t==='attack-roll'?['attack' as const]:t==='saving-throw'?['save' as const]:[]),trigger:'always'})
@@ -115,7 +151,7 @@ export function resolutionPlan(sheet:CharacterSheet,ability:Ability,catalog:Cata
     if(choices?.length)effects.push({kind:'resistance',types:[],trigger:'always'})
     // ponytail: only explicit, verified immediate effects are automated. New mechanics are
     // added here with a rules citation and a check; conditional prose stays visible to the Master.
-    const known=new Set(['attack','target','targets','area','damage','failureDamage','damagePerHit','damagePerDart','damageType','save','successfulSave','successDamage','automaticHit','rays','darts','simultaneous','canSplitTargets','damageRollInterpretation','beamsByCharacterLevel','armorClassBonus','resistanceChooseOne','resistanceToNonmagicalDamageTypes','failedSave','repeatSave','successfulRepeatSave','onHit','bonusDie','rollTypes','bonus','decision','ends','failure','affectsAbilityChecks','preventsDamageFrom','damageDiceByCharacterLevel','excludedCreatureTypes',...(edition==='2014'&&ability.ruleId==='phb2014:spell:cure-wounds'?['healing']:[]),...(edition==='2014'&&ability.ruleId==='phb2014:spell:false-life'?['temporaryHitPoints']:[])])
+    const known=new Set(['attack','target','targets','maximumTargets','area','damage','failureDamage','damagePerHit','damagePerDart','damageType','save','successfulSave','successDamage','automaticHit','rays','darts','simultaneous','canSplitTargets','damageRollInterpretation','beamsByCharacterLevel','armorClassBonus','resistanceChooseOne','resistanceToNonmagicalDamageTypes','failedSave','repeatSave','successfulRepeatSave','onHit','bonusDie','rollTypes','bonus','decision','ends','failure','affectsAbilityChecks','preventsDamageFrom','damageDiceByCharacterLevel','excludedCreatureTypes',...(mageArmor?['baseArmorClass','endsWhen']:[]),...(edition==='2014'&&ability.ruleId==='phb2014:spell:shield'?['triggerChoice','includesTriggeringAttack','expires']:[]),...(edition==='2014'&&ability.ruleId==='phb2014:spell:cure-wounds'?['healing']:[]),...(edition==='2014'&&ability.ruleId==='phb2014:spell:false-life'?['temporaryHitPoints']:[])])
     if(Object.keys(e).some(key=>!known.has(key)))notes.push('La descrizione contiene effetti o vincoli aggiuntivi da verificare con il Master.')
     const onSuccess=e.successfulSave==='half'||e.successDamage==='half'?'half':['no-damage','none'].includes(String(e.successfulSave))||e.successDamage===0||e.successDamage==='none'||!types.length?'none':'review'
     // PHB 2014, D&D_5_Player_Original_Handbook.pdf, PDF 231, Cure Wounds.
@@ -131,7 +167,7 @@ export function resolutionPlan(sheet:CharacterSheet,ability:Ability,catalog:Cata
     // PHB 2014, D&D_5_Player_Original_Handbook.pdf, PDF 258, Magic Missile:
     // each dart adds a fixed +1 to its d4; the Strength modifier does not apply.
     const missile=edition==='2014'&&ability.ruleId==='phb2014:spell:magic-missile'
-    return {edition,healing,temporaryHitPoints,attackAbility:row?weapon?.attackAbility:spellAttackAbility(sheet,weaponContext?.data),deferredSave,weaponEffect,...(weapon?{damageBonuses:weapon.bonuses,damageDice:weapon.dice,weaponName:weapon.name}:missile?{damageBonuses:{force:1},damageDice:{force:'1d4'}}:{}),ruleId:ability.ruleId,kind,damageTypes:types,damageHint:hint,attackBonus,save:immediateSave?{ability:immediateSave,dc:integerValue(d.spellDC),onSuccess}:undefined,maximumPackets,requiredPackets:Number.isSafeInteger(split)&&split>0?maximumPackets??undefined:undefined,sharedDamage:kind==='save'&&types.length>0,magical:weapon?weapon.magical:true,effects,effectChoices:choices,notes}
+    return {edition,healing,temporaryHitPoints,attackBonusSources:weapon?.attackBonusSources??(attackBonus===undefined?undefined:[{name:'Bonus per colpire con incantesimi dalla scheda',amount:attackBonus}]),attackAbility:row?weapon?.attackAbility:spellAttackAbility(sheet,weaponContext?.data),deferredSave,weaponEffect,...(weapon?{weaponEnhancements:weapon.enhancements,damageBonusSources:weapon.bonusSources,damageBonuses:weapon.bonuses,damageDice:weapon.dice,weaponName:weapon.name}:missile?{damageBonuses:{force:1},damageDice:{force:'1d4'}}:{}),ruleId:ability.ruleId,kind,damageTypes:types,damageHint:hint,attackBonus,save:immediateSave?{ability:immediateSave,dc:integerValue(d.spellDC),onSuccess}:undefined,maximumPackets,requiredPackets:Number.isSafeInteger(split)&&split>0?maximumPackets??undefined:undefined,sharedDamage:kind==='save'&&types.length>0,magical:weapon?weapon.magical:true,effects,effectChoices:choices,notes}
 }
 
 export function activeEffects(abilities:Ability[]):Ability[] {
@@ -158,6 +194,33 @@ function weaponSpellEffect(sheet:CharacterSheet,ruleId:string|undefined,e:Record
     }
 }
 
+export type WeaponChoice={itemId:string;damageType?:DamageType;useCastingAbility?:boolean}
+
+export function weaponCandidates(original:CharacterSheet|undefined,data:CreationData,active:Ability[],effect:WeaponEffect,casterId:string) {
+    if(!original||effect.selfOnly&&original.id!==casterId)return []
+    const sheet=reconcileInventory(original,data)
+    return ownedInventoryItems(sheet).flatMap(item=>{
+        const equipment=inventoryEquipment(item,sheet,data)
+        if(!equipment?.weapon_category||effect.allowedWeapons&&!effect.allowedWeapons.includes(equipment.index))return []
+        const linked=Array.from({length:6},(_,i)=>i).find(i=>referencedInventoryItem(sheet,`attacks.${i}.0`)?.id===item.id)
+        const probe=linked===undefined?{...sheet,playerDetails:{...sheet.playerDetails,'inventory.ref.attacks.0.0':item.id,'attacks.0.0':item.name,'attacks.0.magical':sheet.playerDetails?.[`inventory.${item.row}.magical`]??''}}:sheet
+        if(effect.requiresNonmagical&&weaponProfile(probe,linked??0,data,active).magical!==false)return []
+        return [{id:item.id,name:item.name,quantity:Number(item.quantity||1)}]
+    })
+}
+
+export function enchantWeapon(original:CharacterSheet,data:CreationData,active:Ability[],effect:WeaponEffect,casterId:string,choice:WeaponChoice) {
+    if(!weaponCandidates(original,data,active,effect,casterId).some(item=>item.id===choice.itemId))throw new Error('Arma non valida, già magica o non disponibile per questo incantesimo.')
+    if(effect.extraDamage&&!effect.extraDamage.choices.includes(choice.damageType!)||!effect.extraDamage&&choice.damageType!==undefined||choice.useCastingAbility!==undefined&&typeof choice.useCastingAbility!=='boolean')throw new Error('Scegli un tipo di danno previsto dall’incantesimo.')
+    if(effect.damageDice&&choice.useCastingAbility!==false&&effect.castingModifier===undefined)throw new Error('Completa la caratteristica da incantatore, oppure usa la caratteristica normale dell’arma.')
+    const sheet=separateInventoryItem(reconcileInventory(original,data),choice.itemId)
+    const modifier:WeaponEnchantment={characterId:sheet.id,itemId:choice.itemId,magical:effect.magical,attackBonus:effect.attackBonus,damageBonus:effect.damageBonus,
+        ...(effect.extraDamage?{extraDamage:{dice:effect.extraDamage.dice,type:choice.damageType!}}:{}),...(effect.damageDice?{damageDice:effect.damageDice}:{}),
+        ...(choice.useCastingAbility!==false&&effect.castingModifier!==undefined?{castingModifier:effect.castingModifier}:{})}
+    if(!validWeaponEnchantments([modifier]))throw new Error('Modificatore dell’arma non valido.')
+    return {sheet,effect:modifier}
+}
+
 export function weaponProfile(sheet:CharacterSheet,index:number,data?:CreationData,active:Ability[]=[]) {
     const d=sheet.playerDetails??{},root=`attacks.${index}`,item=referencedInventoryItem(sheet,root+'.0'),name=inventoryFieldValue(sheet,root+'.0')??d[root+'.0']??''
     const matches=data?.equipment.filter(w=>w.weapon_category&&[w.index,w.name,w.nameIt,...(w.aliases??[])].some(n=>n&&normalized(n)===normalized(name)))??[]
@@ -176,20 +239,40 @@ export function weaponProfile(sheet:CharacterSheet,index:number,data?:CreationDa
     let attackAbility:SaveAbility|undefined=!equipment?undefined:equipment.weapon_range==='Ranged'?'dexterity':!finesse?'strength':str!==undefined&&dex!==undefined&&str!==dex?dex>str?'dexterity':'strength':undefined
     const baseBonus=match?.[2]?Number(match[2].replace(/\s/g,'')):ability??0
     const bonuses:Partial<Record<DamageType,number>>={[baseType]:baseBonus},dice:Partial<Record<DamageType,string>>={[baseType]:match?.[1]??equipment?.damage?.damage_dice??''}
+    // D&D_5_Player_Original_Handbook.pdf (2014), PDF 258, Magic Weapon:
+    // retain the damage type and show the spell's flat bonus separately.
+    const bonusSources:NonNullable<ResolutionPlan['damageBonusSources']>={[baseType]:[{name:'arma',amount:baseBonus}]}
+    const enhancements:NonNullable<ResolutionPlan['weaponEnhancements']>=[]
     let attackBonus=integerValue(d[root+'.1'])
+    const attackBonusSources:{name:string;amount:number}[]=[]
+    if(attackBonus!==undefined){
+        const modifier=attackAbility?abilityModifier(sheet[attackAbility]):undefined
+        const characterClass=data?.classes.find(entry=>entry.index===classId(sheet))
+        const proficient=d[`proficiency.${equipment?.weapon_category==='Simple'?'Armi semplici':'Armi da guerra'}`]==='true'||!!equipment&&!!characterClass?.proficiencies?.some(ref=>ref.index.replace(/s(?=-|$)/g,'')===equipment.index)
+        if(attackAbility&&modifier!==undefined&&d[`creation.override.${root}.1`]!=='true'){
+            attackBonusSources.push({name:`${saveNames[attackAbility]} (${sheet[attackAbility]})`,amount:modifier})
+            const proficiency=integerValue(d.proficiencyBonus)
+            if(proficient&&proficiency!==undefined)attackBonusSources.push({name:`Competenza con ${name}`,amount:proficiency})
+            const remainder=attackBonus-attackBonusSources.reduce((sum,source)=>sum+source.amount,0)
+            if(remainder)attackBonusSources.push({name:'Altri bonus o correzioni della scheda',amount:remainder})
+        }else attackBonusSources.push({name:'Modificatore indicato nella scheda',amount:attackBonus})
+    }
     const seen=new Set<string>()
     for(const source of activeEffects(active).sort((a,b)=>Math.max(0,...(b.weaponEffects??[]).map(w=>w.attackBonus))-Math.max(0,...(a.weaponEffects??[]).map(w=>w.attackBonus))))for(const modifier of source.weaponEffects??[]) {
         if(modifier.characterId!==sheet.id||modifier.itemId!==(item?.id??d[inventoryReferenceKey(root+'.0')]))continue
         const spell=source.ruleId??source.catalogId??source.name
         if(seen.has(spell))continue
         seen.add(spell);magical=modifier.magical
-        if(attackBonus!==undefined)attackBonus+=modifier.attackBonus
+        enhancements.push({name:source.name,casterId:source.ownerId})
+        bonusSources[baseType]!.push({name:source.name,amount:modifier.damageBonus})
+        if(attackBonus!==undefined){attackBonus+=modifier.attackBonus;if(modifier.attackBonus)attackBonusSources.push({name:source.name,amount:modifier.attackBonus})}
         bonuses[baseType]=(bonuses[baseType]??0)+modifier.damageBonus
         if(modifier.damageDice)dice[baseType]=modifier.damageDice
         if(modifier.castingModifier!==undefined&&ability!==undefined) {
             attackAbility=spellAttackAbility(sheet,data)
-            if(attackBonus!==undefined)attackBonus+=modifier.castingModifier-ability
+            if(attackBonus!==undefined){attackBonus+=modifier.castingModifier-ability;attackBonusSources.push({name:`Caratteristica da incantatore (${source.name})`,amount:modifier.castingModifier-ability})}
             bonuses[baseType]=(bonuses[baseType]??0)+modifier.castingModifier-ability
+            bonusSources[baseType]!.push({name:`caratteristica da incantatore (${source.name})`,amount:modifier.castingModifier-ability})
         }
         if(modifier.extraDamage) {
             const {type,dice:extra}=modifier.extraDamage
@@ -197,11 +280,27 @@ export function weaponProfile(sheet:CharacterSheet,index:number,data?:CreationDa
             dice[type]=dice[type]?dice[type]+' + '+extra:extra
         }
     }
-    return {name,item,equipment,hint,types,magical,attackBonus,attackAbility,bonuses,dice}
+    return {name,item,equipment,hint,types,magical,attackBonus,attackBonusSources,attackAbility,bonuses,bonusSources,enhancements,dice}
+}
+
+export function weaponDisplayName(plan:ResolutionPlan|undefined,casters:{id:number;name:string}[]) {
+    if(!plan?.weaponName||!plan.magical||!plan.weaponEnhancements?.length)return undefined
+    return `${plan.weaponName} - magica (${plan.weaponEnhancements.map(source=>`${source.name} - ${casters.find(caster=>caster.id===source.casterId)?.name||'incantatore non disponibile'}`).join('; ')})`
+}
+
+export function damageBonusText(plan:ResolutionPlan,type:DamageType,bonus=plan.damageBonuses?.[type]??0) {
+    const sources=plan.damageBonusSources?.[type]
+    // Saved legacy plans and manual overrides may have only a total. Do not
+    // invent its provenance when the recorded components disagree with it.
+    return sources&&sources.reduce((total,source)=>total+source.amount,0)===bonus
+        ? sources.filter(source=>source.amount!==0).map(source=>`${source.amount<0?'−':'+'} ${Math.abs(source.amount)} (${source.name})`).join(' ')
+        : bonus?`${bonus<0?'−':'+'} ${Math.abs(bonus)}`:''
 }
 
 export function defenseProfile(sheet:CharacterSheet,ability:SaveAbility|undefined,active:Ability[],targetId:number,heavyArmor?:boolean,data?:CreationData):DefenseProfile {
     const d=sheet.playerDetails??{},notes:string[]=[],profile:DefenseProfile={armorClass:integerValue(sheet.armorClass),resistances:[],immunities:[],vulnerabilities:[],conditionImmunities:[],notes,hitPoints:integerValue(sheet.hitPoints),maxHitPoints:integerValue(d.maxHitPoints)}
+    const temporary=integerValue(d[d['temporaryAC.source']==='effects'?'temporaryAC.previous':'temporaryAC'])
+    if(temporary!==undefined)profile.armorClass=temporary
     if(data&&spellEdition(sheet)==='2014'&&d['creation.enabled']==='true') {
         const race=data.verified?.reviewedEntities.find(e=>e.id==='phb2014:race:'+d['creation.race'])
         for(const trait of Array.isArray(race?.mechanics.traits)?race.mechanics.traits:[]) {
@@ -253,6 +352,13 @@ export function defenseProfile(sheet:CharacterSheet,ability:SaveAbility|undefine
                 if(condition==='paralyzed'){notes.push('Paralisi: verifica distanza e critico degli attacchi entro 1,5 m.');profile.reviewAttack=true}
                 if(condition==='prone'||condition==='frightened'){notes.push('Condizione '+condition+': verifica distanza e visibilità prima di risolvere.');profile.reviewAttack=true}
                 if(condition==='restrained'&&ability==='dexterity')profile.saveMode='disadvantage'
+            }
+            if(modifier.kind==='ac-base'&&!wearingArmor(sheet)) {
+                const dex=abilityModifier(sheet.dexterity)
+                const shieldName=inventoryFieldValue(sheet,'shield')??d.shield
+                const shield=data?inventoryEquipment(referencedInventoryItem(sheet,'shield'),sheet,data):undefined
+                if(dex===undefined){notes.push('Armatura Magica: completa Destrezza nella scheda.');profile.reviewAttack=true}
+                else profile.armorClass=Math.max(profile.armorClass??0,(modifier.amount??13)+dex+(shieldName?.trim()?shield?.armor_class?.base??integerValue(d[`inventory.${referencedInventoryItem(sheet,'shield')?.row}.armorBase`])??2:0))
             }
             if(modifier.kind==='ac') {
                 const key=effect.ruleId??effect.catalogId??effect.name
@@ -384,7 +490,8 @@ export function resolveTarget(plan:ResolutionPlan,packets:RollPacket[],profile:D
             const before=amount
             if(immune||spellImmune)amount=0
             else {if(resist)amount=Math.floor(amount/2);if(vulnerable)amount*=2}
-            steps.push(`Danni (${damageNames[component.type]}): ${component.amount}${modifier?' '+(modifier>=0?'+':'−')+' '+Math.abs(modifier):''}${attack?.critical?criticalDice===undefined?' + dadi critici da inserire':` + ${criticalDice} (critico)`:''}${attack?.critical&&criticalDice===undefined?'':`${plan.save&&success?' → TS riuscito: '+before:''}${spellImmune?' → protezione dall’incantesimo':immune?' → immunità':resist?' → resistenza':''}${vulnerable&&!immune&&!spellImmune?' → vulnerabilità':''} → ${amount}`}`)
+            const bonusText=damageBonusText(plan,component.type,modifier)
+            steps.push(`Danni (${damageNames[component.type]}): ${component.amount}${bonusText?' '+bonusText:''}${attack?.critical?criticalDice===undefined?' + dadi critici da inserire':` + ${criticalDice} (critico)`:''}${attack?.critical&&criticalDice===undefined?'':`${plan.save&&success?' → TS riuscito: '+before:''}${spellImmune?' → protezione dall’incantesimo':immune?' → immunità':resist?' → resistenza':''}${vulnerable&&!immune&&!spellImmune?' → vulnerabilità':''} → ${amount}`}`)
             if(component.type==='untyped'||profile.reviewDamage||plan.kind==='attack'&&profile.reviewAttack)ready=false
             damage+=amount
         }

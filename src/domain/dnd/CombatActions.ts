@@ -30,16 +30,20 @@ export function combatAbilityInfo(ability:Pick<Ability,'catalogId'|'duration'|'r
     // repairs a touched object; "former damage" describes the repair, not damage dealt.
     // Keep this verified exception scoped to its edition and identity, including old saved overrides.
     const repairsObject=entry?.data.referenceId==='phb2014:spell:mending' && entry.data.edition==='2014'
+    // PHB 2014 PDF 258, 238 and 276: these spells enchant a weapon;
+    // their damage bonuses are not damage dealt by casting the spell.
+    // PHB 2014 PDF 257: Mage Armor is also a lasting, damage-free benefit.
+    const knownPersistentBenefit=entry?.data.edition==='2014'&&['phb2014:spell:magic-weapon','phb2014:spell:elemental-weapon','phb2014:spell:shillelagh','phb2014:spell:mage-armor','phb2014:spell:shield'].includes(String(entry.data.referenceId))
     const {attack,passive}=catalogAbilityKind(entry,ability.section,ability.description ?? entry?.description)
-    const instantaneous=repairsObject || (ability.instantaneous ?? (m.duration==='Instantaneous' || object(entry?.data.durationInfo).kind==='instantaneous' || entry?.rounds===0 || attack))
+    const instantaneous=!knownPersistentBenefit&&(repairsObject || (ability.instantaneous ?? (m.duration==='Instantaneous' || object(entry?.data.durationInfo).kind==='instantaneous' || entry?.rounds===0 || attack)))
     // ponytail: damage text only suggests a checkbox; the DM confirms targets and final damage, never an inferred dice formula.
-    const damage=!repairsObject && (ability.damageEnabled ?? (attack || /damage|\bdanni\b/i.test(Object.keys(m).length ? JSON.stringify(m) : entry?.description || ability.description || '')))
+    const damage=!knownPersistentBenefit&&!repairsObject && (ability.damageEnabled ?? (attack || /damage|\bdanni\b/i.test(Object.keys(m).length ? JSON.stringify(m) : entry?.description || ability.description || '')))
     const alternatives=Array.isArray(m.castingAlternatives) ? m.castingAlternatives.map(object) : []
     const casting=alternatives[ability.castingAlternative ?? 0] ?? object(m.casting),castingText=String(entry?.data.castingTime ?? '')
     const prolonged=casting.unit==='minute' || casting.unit==='hour' || !casting.unit && /\bminut|\bor[ae]\b|\bhours?\b/i.test(castingText)
     const ritual=m.ritual===true || entry?.data.ritual===true
     const concentration=m.concentration===true || object(entry?.data.durationInfo).concentration===true
-    const unit=typeof casting.unit==='string' ? casting.unit : /bonus/i.test(castingText) ? 'bonus-action' : /reazion|reaction/i.test(castingText) ? 'reaction' : prolonged ? 'minute' : 'action'
+    const unit=typeof casting.unit==='string' ? casting.unit : m.activation==='reaction'||object(m.activation).unit==='reaction' ? 'reaction' : /bonus/i.test(castingText) ? 'bonus-action' : /reazion|reaction/i.test(castingText) ? 'reaction' : prolonged ? 'minute' : 'action'
     return {entry,level,instantaneous,damage,prolonged,ritual,concentration,unit,alternatives,repairsObject,passive,attack}
 }
 
@@ -120,6 +124,15 @@ export function combatAbilityStatus(sheet:CharacterSheet|undefined,ability:Abili
 }
 
 export function spendCombatUse(sheet:CharacterSheet,ability:Ability,catalog:Catalog,data:CreationData|undefined,optionId:string,cost=1):CharacterSheet {
+    // PHB 2014 PDF 191, Reactions: refresh at the START of the owner's next turn.
+    // Revised rule verified separately: D&D_5.5_manuale_compatto_italiano.pdf, PDF 211, Reazione.
+    const reaction=combatAbilityInfo(ability,catalog).unit==='reaction'
+    if(reaction&&sheet.playerDetails?.['combat.reactionUsed']==='true')throw new Error('Hai già usato la reazione: torna disponibile all’inizio del tuo prossimo turno.')
+    const next=spendCombatUseUnchecked(sheet,ability,catalog,data,optionId,cost)
+    return reaction?{...next,playerDetails:{...next.playerDetails,'combat.reactionUsed':'true'}}:next
+}
+
+function spendCombatUseUnchecked(sheet:CharacterSheet,ability:Ability,catalog:Catalog,data:CreationData|undefined,optionId:string,cost=1):CharacterSheet {
     if (/^sheet-attack:[0-5]$/.test(ability.ruleId ?? '') && !sheetCombatAttacks(sheet).some(attack=>attack.ruleId===ability.ruleId)) throw new Error('Arma non più disponibile tra gli attacchi della scheda.')
     assertCombatTargets(ability,catalog,sheet,optionId)
     if (!Number.isSafeInteger(cost) || cost<1) throw new Error('Il costo deve essere un intero positivo.')

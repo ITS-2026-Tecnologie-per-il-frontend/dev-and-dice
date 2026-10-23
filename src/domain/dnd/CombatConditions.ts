@@ -1,6 +1,7 @@
 import type { Ability, Combat } from '../../utils/Combat.ts'
 import type { CharacterSheet } from '../../utils/CharacterSheets.ts'
-import { activeEffects, conditionNames } from './CombatResolution.ts'
+import { wearingArmor } from './CombatTargets.ts'
+import { activeEffects, defenseProfile, conditionNames } from './CombatResolution.ts'
 
 export function conditionEffectName(effect:Ability,abilities:Ability[]) {
     const condition=effect.resolutionEffects?.find(e=>e.kind==='condition')?.condition
@@ -11,6 +12,22 @@ export function conditionEffectName(effect:Ability,abilities:Ability[]) {
 export function conditionsFor(abilities:Ability[],targetId:number) {
     return [...new Set(activeEffects(abilities).filter(a=>a.targets?.length?a.targets.some(t=>t.id===targetId):a.ownerId===targetId)
         .flatMap(a=>a.resolutionEffects?.filter(e=>e.kind==='condition').map(e=>conditionNames[e.condition as keyof typeof conditionNames]??e.condition!)??[]))]
+}
+
+// D&D_5_Player_Original_Handbook.pdf, PDF 291–293, Conditions; PDF 189, Bonus Actions.
+// Revised rules checked separately in D&D_5.5_manuale_compatto_italiano.pdf,
+// PDF 202, 204, 208, 210–211, 216, 218. Paralysis also imposes the revised
+// Incapacitated penalty to initiative; the other summaries below are shared.
+export function conditionHelp(condition:string,edition:'2014'|'2024'):string[] {
+    switch(condition){
+        case 'Paralizzato':return ['Non puoi muoverti, parlare, compiere azioni, azioni bonus o reazioni. La concentrazione termina.','Fallisci automaticamente i TS su Forza e Destrezza.','Gli attacchi contro di te hanno vantaggio; se chi ti colpisce è entro 1,5 m, il colpo è critico.',...(edition==='2024'?['Svantaggio al tiro di iniziativa.']:[])]
+        case 'Trattenuto':return ['Velocità 0; i bonus alla velocità non si applicano.','Svantaggio ai tuoi attacchi e ai TS su Destrezza. Gli attacchi contro di te hanno vantaggio.']
+        case 'Spaventato':return ['Svantaggio agli attacchi e alle prove di caratteristica finché vedi la fonte della paura.','Non puoi avvicinarti volontariamente alla fonte della paura.']
+        case 'Accecato':return ['Non puoi vedere e fallisci le prove che richiedono la vista.','Svantaggio ai tuoi attacchi; gli attacchi contro di te hanno vantaggio.']
+        case 'Avvelenato':return ['Svantaggio agli attacchi e alle prove di caratteristica.']
+        case 'Prono':return ['Puoi muoverti strisciando; rialzarti richiede metà della tua velocità e termina lo stato. Con velocità 0 non puoi rialzarti.','Svantaggio ai tuoi attacchi. Gli attacchi contro di te hanno vantaggio entro 1,5 m, svantaggio da più lontano.']
+        default:return ['Effetti da verificare nella descrizione della fonte.']
+    }
 }
 
 // PHB 2014, D&D_5_Player_Original_Handbook.pdf, PDF 252, Hold Person:
@@ -55,10 +72,31 @@ export function endIncapacitatedConcentration<T extends {id:number;sheet?:Charac
 // PHB 2014 PDF 199, 240: expire only the pool granted by this cast.
 // Legacy/manual pools have no source and remain under the Master's control.
 export function settleCombatEffects<T extends {id:number;sheet?:CharacterSheet;temporaryHitPoints?:string;concentrationChecks?:number[]}>(abilities:Ability[],turns:T[]) {
-    const settled=finishEmptyHoldPerson(abilities,turns)
-    const sources=new Set(activeEffects(settled.abilities).map(a=>a.temporaryHitPointsSource).filter(Boolean))
+    // PHB 2014 PDF 257: donning armor ends Mage Armor; removing it does not revive the cast.
+    const current=abilities.map(ability=>ability.active&&ability.ruleId==='phb2014:spell:mage-armor'&&ability.targets?.some(target=>{
+        const sheet=turns.find(turn=>turn.id===target.id)?.sheet
+        return sheet&&wearingArmor(sheet)
+    })?{...ability,active:false,execution:undefined,remainingTurns:0}:ability)
+    const settled=finishEmptyHoldPerson(current,turns)
+    const active=activeEffects(settled.abilities)
+    const sources=new Set(active.map(a=>a.temporaryHitPointsSource).filter(Boolean))
     return {...settled,turns:settled.turns.map(turn=>{
-        const source=turn.sheet?.playerDetails?.['temporaryHitPoints.source']
-        return source&&!sources.has(source)?{...turn,temporaryHitPoints:'0',sheet:{...turn.sheet!,playerDetails:{...turn.sheet!.playerDetails,temporaryHitPoints:'0','temporaryHitPoints.source':''}}}:turn
+        let sheet=turn.sheet,temporaryHitPoints=turn.temporaryHitPoints
+        const source=sheet?.playerDetails?.['temporaryHitPoints.source']
+        if(source&&!sources.has(source)){
+            temporaryHitPoints='0'
+            sheet={...sheet!,playerDetails:{...sheet!.playerDetails,temporaryHitPoints:'0','temporaryHitPoints.source':''}}
+        }
+        if(sheet){
+            const d=sheet.playerDetails??{},automatic=d['temporaryAC.source']==='effects'
+            // ponytail: scan the bounded combat lists; index effects by target for larger battles.
+            const affected=active.some(effect=>(effect.targets?.length?effect.targets.some(target=>target.id===turn.id):effect.ownerId===turn.id)&&effect.resolutionEffects?.some(modifier=>modifier.kind==='ac'||modifier.kind==='ac-base'))
+            const armorClass=affected?defenseProfile(sheet,undefined,active,turn.id).armorClass:undefined
+            const temporary=armorClass===undefined?automatic?d['temporaryAC.previous']??'':d.temporaryAC??'':String(armorClass)
+            const marker=armorClass===undefined?'':'effects',previous=armorClass===undefined?'':automatic?d['temporaryAC.previous']??'':d.temporaryAC??''
+            if((affected||automatic)&&(d.temporaryAC!==temporary||(d['temporaryAC.source']??'')!==marker||(d['temporaryAC.previous']??'')!==previous))
+                sheet={...sheet,playerDetails:{...d,temporaryAC:temporary,'temporaryAC.source':marker,'temporaryAC.previous':previous}}
+        }
+        return sheet!==turn.sheet?{...turn,sheet,temporaryHitPoints}:turn
     })}
 }

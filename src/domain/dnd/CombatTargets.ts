@@ -1,8 +1,10 @@
 import type { Ability } from '../../utils/Combat.ts'
 import type { CharacterSheet } from '../../utils/CharacterSheets.ts'
+import { inventoryFieldValue } from '../../utils/Inventory.ts'
 import type { Catalog } from '../../utils/Catalog.ts'
 
-export type CombatTargetRule = { kind:'single'|'multiple'|'area'|'review'; maximum:number|null; summary:string; creatureTypes?:string[]; excludedCreatureTypes?:string[] }
+export const wearingArmor=(sheet:CharacterSheet)=>!!(inventoryFieldValue(sheet,'armor')??sheet.playerDetails?.armor)?.trim()
+export type CombatTargetRule = { selfOnly?:boolean; requiresUnarmored?:boolean; kind:'single'|'multiple'|'area'|'review'; maximum:number|null; summary:string; creatureTypes?:string[]; excludedCreatureTypes?:string[] }
 const object=(value:unknown):Record<string,unknown> => value && typeof value==='object' && !Array.isArray(value) ? value as Record<string,unknown> : {}
 const count=(value:unknown):number|undefined => typeof value==='number' && Number.isSafeInteger(value) && value>0 ? value : undefined
 const limited=(maximum:number,note=''):CombatTargetRule => ({kind:maximum===1?'single':'multiple',maximum,summary:(maximum===1?'Un solo bersaglio per utilizzo.':`Fino a ${maximum} bersagli distinti per utilizzo.`)+(note?' '+note:'')})
@@ -18,6 +20,8 @@ function targetCount(ability:Pick<Ability,'catalogId'|'spellLevel'|'execution'|'
     if (!ability.catalogId && /^sheet-attack:[0-5]$/.test(ability.ruleId ?? '')) return limited(1)
     const entry=catalog.abilities.find(entry=>entry.id===ability.catalogId)
     if (!entry) return review()
+    // PHB 2014 PDF 276: Shield has range Self (not an area originating at the caster).
+    if(entry.data.edition==='2014'&&entry.data.referenceId==='phb2014:spell:shield')return {...limited(1),selfOnly:true,summary:'Si applica solo a te stesso.'}
     if(entry.data.edition==='2014'&&ability.ruleId==='phb2014:spell:false-life')return limited(1,'Solo il lanciatore.')
     // A mismatched reference must never import the 2014 interpretation into a revised spell.
     if (entry.data.edition==='2024' || entry.data.ruleset==='dnd5e-2024') return review('La voce 2024 richiede una verifica separata.')
@@ -92,10 +96,11 @@ export function combatTargeting(ability:Pick<Ability,'catalogId'|'spellLevel'|'e
     // choices or prose require verified target metadata, never a guess from a name.
     const excluded=Array.isArray(effect.excludedCreatureTypes)?effect.excludedCreatureTypes.filter((t):t is string=>typeof t==='string'&&Object.hasOwn(creatureTypeNames,t)):[]
     if(except&&Object.hasOwn(creatureTypeNames,except))excluded.push(except)
-    return {...count,...(Object.hasOwn(creatureTypeNames,type)?{creatureTypes:[type]}:{}),...(excluded.length?{excludedCreatureTypes:excluded}:{})}
+    return {...count,...(target==='creature-not-wearing-armor'?{requiresUnarmored:true,summary:count.summary+' Richiede una creatura consenziente senza armatura.'}:{}),...(Object.hasOwn(creatureTypeNames,type)?{creatureTypes:[type]}:{}),...(excluded.length?{excludedCreatureTypes:excluded}:{})}
 }
 
-export function targetTypeError(rule:CombatTargetRule,type:string|undefined):string|undefined {
+export function targetTypeError(rule:CombatTargetRule,type:string|undefined,armored?:boolean):string|undefined {
+    if(rule.requiresUnarmored&&armored!==false)return armored?'Il bersaglio indossa un’armatura.':'Verifica l’armatura nella scheda del bersaglio.'
     if(!rule.creatureTypes&&!rule.excludedCreatureTypes)return undefined
     if(!type)return 'Tipo di creatura da specificare nella scheda o nei dettagli del Master.'
     if(rule.creatureTypes&&!rule.creatureTypes.includes(type))return `Richiede: ${rule.creatureTypes.map(t=>creatureTypeNames[t]).join(', ')}. Tipo attuale: ${creatureTypeNames[type]??type}.`
@@ -104,13 +109,15 @@ export function targetTypeError(rule:CombatTargetRule,type:string|undefined):str
 
 export function assertTargetTypes(rule:CombatTargetRule,targets:{id:number;sheet?:CharacterSheet}[],ids:number[]) {
     for(const id of ids) {
-        const error=targetTypeError(rule,creatureType(targets.find(t=>t.id===id)?.sheet))
+        const sheet=targets.find(t=>t.id===id)?.sheet
+        const error=targetTypeError(rule,creatureType(sheet),sheet?wearingArmor(sheet):undefined)
         if(error)throw new Error(error)
     }
 }
 
 export function assertCombatTargets(ability:Ability,catalog:Catalog,sheet?:CharacterSheet,optionId?:string) {
     const rule=combatTargeting(ability,catalog,sheet,optionId)
+    if(rule.selfOnly&&ability.targets?.some(target=>target.id!==ability.ownerId))throw new Error('Questo incantesimo si applica soltanto al lanciatore.')
     if (rule.maximum!==null && (ability.targets?.length ?? 0)>rule.maximum) throw new Error(`Troppi bersagli: massimo ${rule.maximum} per questo utilizzo. Correggi la selezione prima di procedere.`)
     return rule
 }

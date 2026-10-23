@@ -142,8 +142,18 @@ export function abilitiesFromSheet(sheet: CharacterSheet, ownerId: number, first
     }))
 }
 
+// ponytail: linear lookup within the 2,000-effect limit; index by owner/catalog if that limit grows.
+export function findSheetCombatAbility(abilities:Ability[],template:SheetAbility,ownerId:number,index:number) {
+    const matches=abilities.filter(ability=>ability.ownerId===ownerId&&(ability.sheetAbilityIndex===index||ability.sheetAbilityIndex===undefined&&(template.catalogId?ability.catalogId===template.catalogId:template.ruleId?ability.ruleId===template.ruleId:ability.name===template.name)))
+    return matches.find(ability=>!!ability.execution||ability.active&&(ability.timed===false||ability.remainingTurns>0))??matches.find(ability=>ability.sheetAbilityIndex===index)??matches[0]
+}
+
 export function importSheetAbility(abilities: Ability[], sheet: CharacterSheet, ownerId: number, index: number, id: number): Ability[] {
     const template = sheet.abilities[index]
-    if (!template || abilities.some((ability) => ability.ownerId === ownerId && ability.sheetAbilityIndex === index)) return abilities
+    if (!template || findSheetCombatAbility(abilities,template,ownerId,index)) return abilities
     return [...abilities, { ...template, id, ownerId, sheetAbilityIndex: index, remainingTurns: template.remainingTurns ?? durationTurns[template.duration], active: false }]
+}
+
+export function currentArmorClass(sheet:CharacterSheet):string {
+    return integerValue(sheet.playerDetails?.temporaryAC)!==undefined?sheet.playerDetails!.temporaryAC:sheet.armorClass
 }
