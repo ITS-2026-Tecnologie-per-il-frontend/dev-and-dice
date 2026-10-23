@@ -41,7 +41,7 @@ try {
   assert.equal(await form.getByRole('checkbox',{name:/Effetto istantaneo|Prevede danni|Confermo|Esito e danno/}).count(),0)
   assert(await form.getByRole('button',{name:'Applica danni',exact:true}).isDisabled())
  }
- const d20=form.getByLabel('Tiro per colpire (inserisci solo il numero del dado)',{exact:true}),dmg=form.getByLabel('Danni tirati',{exact:true})
+ const d20=form.getByLabel('Tiro per colpire (inserisci solo il numero del dado)',{exact:true}),dmg=form.getByLabel('Tira danni',{exact:true})
  assert.equal(await dmg.count(),0)
  await d20.fill('27');assert.equal(await d20.inputValue(),'20');assert.equal(await d20.getAttribute('type'),'text')
  await d20.fill('16');await dmg.fill('3')
