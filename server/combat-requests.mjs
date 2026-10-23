@@ -55,9 +55,9 @@ export function recoverRepeatSaveDCs(game) {
 }
 
 // Requests contain proposals only; canonical sheets and Master-configured actions are read again at approval.
-export function actionContext(db,game,user,rules,preview=false) {
+export function actionContext(db,game,user,rules,preview=false,characterId) {
   const member=game.players.find(player=>player.userId===user)
-  const record=db.characters.find(record=>record.id===member?.characterId && record.ownerId===user && record.gameId===game.id)
+  const record=db.characters.find(record=>record.id===(user===game.masterId?characterId:member?.characterId) && record.ownerId===user && record.gameId===game.id)
   if (!record) fail(403,'Le richieste sono riservate al giocatore del personaggio.')
   const owners=game.state.turns.filter(turn=>turn.sheet?.id===record.id)
   const blocked=owners.length===1&&activeEffects(game.state.abilities).some(a=>(a.targets?.length?a.targets.some(t=>t.id===owners[0].id):a.ownerId===owners[0].id)&&a.resolutionEffects?.some(e=>e.kind==='condition'&&['paralyzed','incapacitated','stunned','unconscious'].includes(e.condition)))
@@ -286,7 +286,7 @@ export function prepareAction(context,proposal,rules) {
 
 export function applyCombatRequest(db,game,entry,rules,body) {
   if (body?.confirmed!==true) fail(400,'Il Master deve confermare requisiti, tiri, effetti e completamento del lancio.')
-  const context=actionContext(db,game,entry.ownerId,rules,!!entry.proposal.reactionId)
+  const context=actionContext(db,game,entry.ownerId,rules,!!entry.proposal.reactionId,entry.proposal.reactionId?entry.characterId:undefined)
   const wind=entry.resolution?.wind?reviewWind(db,game,entry,rules,body.wind??{selected:entry.resolution.wind.selected,saves:entry.resolution.wind.saves}):undefined
   if(body.wind!==undefined&&!wind)fail(400,'Questa azione non prevede correzioni dell’area.')
   const proposal=wind?{...entry.proposal,packets:wind.selected.map(targetId=>({targetId,damage:[]})),targets:packetTargets(wind.selected.map(targetId=>({targetId,damage:[]})))}:entry.proposal

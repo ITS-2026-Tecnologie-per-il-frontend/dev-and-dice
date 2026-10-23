@@ -58,7 +58,8 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                 setManualNotice({id:ability.id,text:'La reazione ha modificato la CA: '+changed.map(id=>{const target=latest.current.participants.find(p=>p.id===id);return `${target?.description}: ${before.get(id)||'da verificare'} → ${target?.sheet?currentArmorClass(target.sheet):'da verificare'}`}).join('; ')+'. Ricontrolla il tiro per colpire e conferma di nuovo esito e danni; se l’attacco manca, non applicare gli effetti legati al colpo.'})
                 return
             }
-            latest.current.onResolve?.(current)
+            // A refreshed snapshot must retain the hit/miss decision made before waiting.
+            latest.current.onResolve?.({...current,targets:current.targets?.map(t=>({...t,resolved:!!manualHits[hitKey(current,t.id)]}))})
         }catch(error){setManualNotice({id:ability.id,text:error instanceof Error?error.message:'Reazione non disponibile.'})}
         finally{working.current=false;setManualBusy(null)}
     }

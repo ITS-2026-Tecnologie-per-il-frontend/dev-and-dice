@@ -1,12 +1,12 @@
 .play-account { display:flex; align-items:center; gap:24px; padding:16px 28px; border-bottom:1px solid var(--border); color:var(--text-h); }
 .play-brand { margin-right:auto; color:var(--text-h); font-size:22px; font-weight:750; text-decoration:none; }
-:is(.play-home,.play-character-page,.play-master-page,.play-player-page,.play-account,.reaction-dialog) button:not(:where(.player-sheet button,.tracker-layout button,.master-inspector-navigation button,.participant-abilities button,.ability-row button,.help-tooltip-trigger)),
+:is(.play-home,.play-character-page,.play-master-page,.play-player-page,.play-account,.reaction-dialog,.reaction-master-panel) button:not(:where(.player-sheet button,.tracker-layout button,.master-inspector-navigation button,.participant-abilities button,.ability-row button,.help-tooltip-trigger)),
 .play-notifications > .play-notification-button,
 .play-notification-dialog button:not(:where(.play-secondary,.more-info,.help-tooltip-trigger)),
 .play-primary { box-sizing:border-box; min-height:44px; padding:10px 18px; border:1px solid var(--ui-accent, #147d72); border-radius:5px; color:white; background:var(--ui-action, var(--ui-accent, #147d72)); font:inherit; font-size:15px; line-height:1.4; cursor:pointer; text-decoration:none; }
-:is(.play-home,.play-character-page,.play-master-page,.play-player-page,.play-account,.reaction-dialog) button:disabled { opacity:.55; cursor:default; }
-:is(.play-home,.play-character-page,.play-master-page,.play-player-page,.play-account,.reaction-dialog) :focus-visible { outline:3px solid var(--ui-accent, #147d72); outline-offset:3px; }
-:is(.play-home,.play-character-page,.play-master-page,.play-player-page,.reaction-dialog) .play-secondary,
+:is(.play-home,.play-character-page,.play-master-page,.play-player-page,.play-account,.reaction-dialog,.reaction-master-panel) button:disabled { opacity:.55; cursor:default; }
+:is(.play-home,.play-character-page,.play-master-page,.play-player-page,.play-account,.reaction-dialog,.reaction-master-panel) :focus-visible { outline:3px solid var(--ui-accent, #147d72); outline-offset:3px; }
+:is(.play-home,.play-character-page,.play-master-page,.play-player-page,.reaction-dialog,.reaction-master-panel) .play-secondary,
 .play-account button { color:var(--text-h); background:var(--bg); border-color:var(--border); }
 .play-home,.play-character-page { box-sizing:border-box; width:100%; min-width:0; max-width:1280px; margin:0 auto; padding:36px 28px; text-align:left; }
 .play-master-page,.play-player-page { box-sizing:border-box; width:100%; min-width:0; padding:24px; text-align:left; }
@@ -372,3 +372,8 @@
 .reaction-countdown progress { width:100%; accent-color:#b77916; }
 .reaction-dialog select { width:100%; }
 .reaction-dialog .action-roll-form { margin:16px 0; }
+.reaction-master-panels { position:fixed; z-index:90; right:16px; bottom:16px; width:min(440px,calc(100vw - 32px)); max-height:calc(100dvh - 32px); overflow:auto; display:grid; gap:12px; }
+.reaction-master-panel { box-sizing:border-box; padding:16px; border:1px solid var(--border); border-left:3px solid #b77916; border-radius:8px; background:var(--bg); color:var(--text); text-align:left; box-shadow:0 8px 30px #0005; }
+.reaction-master-panel h2 { margin:0; font-size:18px; }
+.reaction-master-panel select { width:100%; }
+.reaction-master-panel .action-roll-form { margin:12px 0; }

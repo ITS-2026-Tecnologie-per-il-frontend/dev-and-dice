@@ -33,7 +33,7 @@ function RequestDescription({request,review=false}:{request:CombatRequest;review
         <p role="status">{statusLabels[request.status]}</p></>
 }
 
-function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDecide}:{request:CombatRequest;ability?:SheetAbility;entry?:CatalogEntry;catalogStatus?:string;disabled:boolean;onDecide:(id:string,decision:RequestDecision,body:unknown)=>Promise<void>}) {
+export function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDecide}:{request:CombatRequest;ability?:SheetAbility;entry?:CatalogEntry;catalogStatus?:string;disabled:boolean;onDecide:(id:string,decision:RequestDecision,body:unknown)=>Promise<void>}) {
     const decisionId=useId()
     const [wind,setWind]=useState<Pick<WindData,'selected'|'saves'>>(()=>({selected:request.wind?.selected??[],saves:request.wind?.saves??{}}))
     const missingWind=!!request.wind&&wind.selected.some(id=>wind.saves[id]?.mode==='manual'&&wind.saves[id]?.success===undefined)

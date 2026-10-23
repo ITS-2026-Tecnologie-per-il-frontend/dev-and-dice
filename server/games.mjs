@@ -227,11 +227,19 @@ export async function gamesRouter({ dataDir, authenticate }) {
       return {game:view(db,game,req.userId),groupId}
     }))
   })
+  router.get('/games/:id/reactions/:windowId/actions',async(req,res)=>{
+    const rules=await combatRules(),db=await read(),game=gameFor(db,req.params.id,req.userId)
+    const window=reactionWindow(game,req.userId,req.params.windowId)
+    const context=actionContext(db,game,window.ownerId,rules,true,window.characterId)
+    if(context.record.id!==window.characterId)fail(409,'Personaggio non più disponibile.')
+    const choices=actionChoices(context,game,db)
+    res.json({...choices,actions:choices.actions.filter(a=>window.actionKeys.includes(a.key))})
+  })
   router.post('/games/:id/reactions/:windowId/:decision',async(req,res)=>{
     if(!['activity','decline'].includes(req.params.decision))fail(400,'Decisione non valida.')
     res.json(await write(db=>{
       const game=gameFor(db,req.params.id,req.userId)
-      const existing=game.reactionWindows?.find(w=>w.id===req.params.windowId&&w.ownerId===req.userId)
+      const existing=game.reactionWindows?.find(w=>w.id===req.params.windowId&&(w.ownerId===req.userId||game.masterId===req.userId))
       if(existing&&req.params.decision==='decline'&&!reactionOpen(existing))return view(db,game,req.userId)
       const window=reactionWindow(game,req.userId,req.params.windowId)
       if(req.params.decision==='activity')window.expiresAt=Date.now()+30000
@@ -248,22 +256,24 @@ export async function gamesRouter({ dataDir, authenticate }) {
       const duplicate=game.combatRequests?.find(entry=>entry.id===proposal.id)
       if (duplicate) {
         if(duplicate.resolution?.plan.deferredSave&&proposal.mode==='save'&&!proposal.damageEnabled&&proposal.packets?.every(p=>p.die===undefined&&!p.damage.length))proposal.mode='none'
-        if (duplicate.ownerId!==req.userId || !isDeepStrictEqual(duplicate.proposal,proposal)) fail(409,'Identificativo già usato da un’altra richiesta.')
+        if ((duplicate.ownerId!==req.userId&&!(game.masterId===req.userId&&duplicate.proposal.reactionId)) || !isDeepStrictEqual(duplicate.proposal,proposal)) fail(409,'Identificativo già usato da un’altra richiesta.')
         return view(db,game,req.userId)
       }
       checkRevision(game,proposal.revision)
       const window=proposal.reactionId?reactionWindow(game,req.userId,proposal.reactionId):undefined
       if(!window&&(game.reactionWindows??[]).some(reactionOpen))fail(409,'Attendi che siano risolte le reazioni prima di proporre un’altra azione.')
-      const context=actionContext(db,game,req.userId,rules,!!window)
+      const actorId=window?.ownerId??req.userId
+      const context=actionContext(db,game,actorId,rules,!!window,window?.characterId)
+      if(window&&context.record.id!==window.characterId)fail(409,'Personaggio non più disponibile.')
       if(window&&!window.actionKeys.includes(proposal.key))fail(403,'Reazione non prevista da questo evento.')
-      if (game.combatRequests?.some(entry=>entry.ownerId===req.userId && requestStatus(game,entry)==='pending' && !!entry.proposal.reactionId===!!proposal.reactionId)) fail(409,'Hai già un’azione in attesa di approvazione.')
+      if (game.combatRequests?.some(entry=>entry.characterId===context.record.id && requestStatus(game,entry)==='pending' && !!entry.proposal.reactionId===!!proposal.reactionId)) fail(409,'Hai già un’azione in attesa di approvazione.')
       if (!proposal.targets.every(target=>game.state.turns.some(turn=>turn.id===target.id))) fail(400,'Bersaglio non disponibile.')
       const targetSheets=proposal.targets.flatMap(target=>game.state.turns.find(turn=>turn.id===target.id)?.sheet?.id ?? [])
       if (new Set(targetSheets).size!==targetSheets.length) fail(400,'La stessa scheda compare in più bersagli: il Master deve correggere i partecipanti duplicati.')
       const {action,option}=prepareAction(context,proposal,rules)
       if(window)assertReactionAction(window,action,context)
       // Snapshot canonical attack/AC values for the Master's review and history; visibleRequests hides them from players.
-      const entry={id:proposal.id,ownerId:req.userId,characterId:context.record.id,characterName:context.record.sheet.name,actorName:req.username,
+      const entry={id:proposal.id,ownerId:actorId,characterId:context.record.id,characterName:context.record.sheet.name,actorName:req.username,
         ...(proposal.attackDie!==undefined?{weaponAttack:{edition:spellEdition(context.record.sheet),modifier:integerValue(action.attackBonus)}}:{}),
         ...(proposal.packets!==undefined?{resolution:createRequestResolution(db,game,context,action,proposal,rules)}:{}),
         actionName:action.ability.name,optionLabel:option.label,prolonged:action.info.prolonged || option.id==='ritual',createdAt:new Date().toISOString(),status:'pending',proposal,

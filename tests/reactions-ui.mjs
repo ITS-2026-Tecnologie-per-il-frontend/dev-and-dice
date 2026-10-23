@@ -62,7 +62,7 @@ try{
  game=await api(master,path);const request=game.combatRequests.find(r=>r.actionName==='Scudo'&&r.status==='pending');assert(request)
  assert.equal(game.characters.find(c=>c.id===mage.id).sheet.playerDetails['slots.2.used'],undefined,'Submitting alone does not spend the slot')
  await page.getByRole('button',{name:/^Azioni dei giocatori:/}).click()
- const notification=page.locator('.combat-request--review').filter({has:page.getByRole('heading',{name:'Scudo',exact:true})})
+ const notification=page.getByRole('dialog',{name:'Azioni dei giocatori',exact:true}).locator('.combat-request--review').filter({has:page.getByRole('heading',{name:'Scudo',exact:true})})
  const ac=notification.getByLabel('CA temporanea di Aster',{exact:true})
  await ac.waitFor();assert.equal(await ac.innerText(),'12 +5 = 17')
  await notification.getByText('Fino all’inizio del prossimo turno del bersaglio, incluso l’attacco scatenante.',{exact:true}).waitFor()
@@ -86,7 +86,7 @@ try{
  opened=await api(master,path+'/reactions','POST',{revision:game.revision,event:{kind:'other',label:'Verifica condizioni nella descrizione',targetIds:[]}});await popup.waitFor();await popup.getByRole('combobox',{name:'Reazione',exact:true}).locator('option').filter({hasText:'Controincantesimo'}).waitFor({state:'attached'})
  assert((await popup.getByRole('combobox',{name:'Reazione',exact:true}).locator('option').allTextContents()).includes('Controincantesimo'))
  const expiring=opened.game.reactionWindows.find(w=>w.groupId===opened.groupId)
- const forbidden=await master.request.post(base+'/api'+path+'/reactions/'+expiring.id+'/activity',{data:{}});assert.equal(forbidden.status(),403,'Master cannot reset a player countdown')
+ const renewed=await master.request.post(base+'/api'+path+'/reactions/'+expiring.id+'/activity',{data:{}});assert.equal(renewed.status(),200,'The Master can interact with the shared reaction countdown')
  // Advance only the isolated server clock: the production 30-second deadline stays unchanged.
  Date.now=()=>realNow()+offset;offset=31000
  await popup.waitFor({state:'detached'});game=await api(master,path)
