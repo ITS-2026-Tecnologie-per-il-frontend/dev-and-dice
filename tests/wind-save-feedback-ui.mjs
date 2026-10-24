@@ -1,4 +1,4 @@
-// Run: node tests/wind-save-feedback-ui.mjs — save feedback survives the updated request remount.
+// Run: node tests/wind-save-feedback-ui.mjs — approved wind notifications are immutable receipts.
 import assert from 'node:assert/strict'
 import {mkdir,mkdtemp,writeFile,rm} from 'node:fs/promises'
 import {join,relative} from 'node:path'
@@ -24,14 +24,15 @@ try{
  const html=await frontend.transformIndexHtml('/wind-save-check',`<div id="root"></div><script type="module" src="/${relative(join(import.meta.dirname,'..'),entry)}"></script>`)
  await page.route('**/wind-save-check',route=>route.fulfill({contentType:'text/html',body:html}))
  await page.goto(base+'/wind-save-check');await page.getByRole('button',{name:/^Azioni dei giocatori:/}).click()
- const dialog=page.getByRole('dialog',{name:'Azioni dei giocatori',exact:true}),field=dialog.getByLabel('TS Forza di Guardia · solo d20',{exact:true})
- await field.fill('12');await dialog.getByRole('button',{name:'Salva bersagli e tiri salvezza',exact:true}).click()
- await dialog.getByRole('button',{name:'Salvataggio…',exact:true}).waitFor()
- await dialog.getByRole('status').filter({hasText:/^Bersagli e tiri salvezza salvati alle/}).waitFor()
- assert.equal(await field.inputValue(),'12','Saved values survive the request revision remount')
- assert.deepEqual(await page.evaluate(()=>window.savedDraft.wind),{selected:[2],saves:{2:{mode:'dice',die:12}}})
- await dialog.getByRole('button',{name:'Salva bersagli e tiri salvezza',exact:true}).waitFor()
- await dialog.screenshot({path:join(root,'wind-save-feedback.png')})
+ const dialog=page.getByRole('dialog',{name:'Azioni dei giocatori',exact:true})
+ await dialog.getByText('Approvata',{exact:true}).waitFor()
+ const summary=dialog.getByRole('region',{name:'Bersagli e tiri salvezza confermati',exact:true})
+ await summary.getByText('CD di Maga: 15',{exact:false}).waitFor()
+ await summary.getByText('Guardia: Non resiste · spinta di 4.5 m lungo la linea',{exact:true}).waitFor()
+ assert.equal(await dialog.locator('input,select,form').count(),0,'No editable controls survive approval, even if a legacy payload says editable:true')
+ assert.equal(await dialog.getByRole('button',{name:'Salva bersagli e tiri salvezza',exact:true}).count(),0)
+ assert.equal(await page.evaluate(()=>window.savedDraft),undefined)
+ await dialog.screenshot({path:join(root,'wind-approved-receipt.png')})
  assert.deepEqual(errors,[])
- console.log('PASS Wind save feedback: pending label, submitted values, success confirmation and persistence across the request remount')
+ console.log('PASS Approved Wind receipt: historical CD, dice, bonuses and outcome, no editable controls or save button')
 }catch(error){console.error('Browser errors',errors);throw error}finally{await browser.close();await frontend.close();await rm(dir,{recursive:true,force:true})}

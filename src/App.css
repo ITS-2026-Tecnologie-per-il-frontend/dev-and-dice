@@ -763,6 +763,9 @@ html { scroll-behavior: smooth; }
 .action-roll-form .player-action-description[open] > summary::after { transform:rotate(90deg); }
 .master-attack-form .ability-target-list,.master-spell-form .ability-target-list { max-height:none; overflow:visible; }
 .master-action-form > fieldset { border:0; padding:0; }
+.wind-direction-controls { display:grid; gap:12px; min-width:0; }
+.wind-direction-controls > p { margin:0; }
+.ability-row .wind-direction-controls .sort-turns:hover:not(:disabled) { background:var(--ui-action-hover, var(--ui-accent-hover, #10675f)); }
 .master-action-form > fieldset > legend { padding:0; margin-bottom:12px; }
 .master-attack-form .player-weapon-roll { grid-template-columns:minmax(0,280px) minmax(80px,1fr); gap:8px; }
 .master-action-form .player-roll-packet { margin:8px 0; padding:8px; border:1px solid var(--border); border-radius:4px; }
@@ -838,3 +841,23 @@ html { scroll-behavior: smooth; }
 .attack-modifier-help small { display:block; color:var(--text); }
 .ability-effect-total .ability-ac-formula { display:inline; font-size:20px; font-weight:500; }
 .ability-effect-total dd small { display:block; margin-top:4px; font-size:12px; font-weight:400; line-height:1.4; color:var(--text); }
+
+.wind-direction-controls .wind-review { display:grid; gap:8px; padding:0; margin:0; border:0; min-width:0; }
+.wind-direction-controls .wind-target { min-width:0; padding:0 12px; border:1px solid var(--border); border-radius:5px; }
+.wind-direction-controls .wind-target-heading { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; align-items:center; }
+.wind-direction-controls .wind-target-heading label { display:flex; align-items:center; gap:8px; min-height:44px; margin:0; }
+.wind-direction-controls .wind-target-save { display:grid; gap:6px; padding:8px 0; border-top:1px solid var(--border); }
+.wind-direction-controls .wind-target-save > label { display:grid; grid-template-columns:minmax(0,1fr) 84px; gap:8px; align-items:center; }
+.wind-direction-controls .wind-target-save :is(input,select) { box-sizing:border-box; min-width:0; width:100%; min-height:44px; padding:8px; font:inherit; background:var(--bg); color:var(--text-h); border:1px solid var(--border); border-radius:4px; }
+.wind-direction-controls .wind-target-save p { margin:0; }
+.wind-review-summary { padding-top:12px; border-top:1px solid var(--border); }
+.wind-review-summary ul { padding-left:20px; }
+.wind-review-summary li > p { margin:4px 0 12px; }
+
+.wind-direction-controls .wind-save-dc { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 6px; }
+
+.wind-direction-controls .wind-save-dc > span { flex-basis:100%; margin-left:0; text-align:left; }
+
+.wind-start-save { display:grid; gap:6px; min-width:0; flex-basis:100%; text-align:left; }
+.wind-start-save-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.wind-start-save-actions button { min-height:44px; }

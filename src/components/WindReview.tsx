@@ -2,7 +2,7 @@ import { resolveTarget, saveNames, type ResolutionPlan, type TargetResolution } 
 import { signedBonus } from '../utils/CharacterSheets'
 import type { WindReview as Review, WindSave } from '../utils/PlayApi'
 
-export function WindReview({review,plan,casterName,value,onChange}:{review:Review;plan:ResolutionPlan;casterName:string;value:Pick<Review,'selected'|'saves'>;onChange:(value:Pick<Review,'selected'|'saves'>)=>void}) {
+export function WindReview({review,plan,casterName,value,onChange,purpose='cast'}:{purpose?:'cast'|'direction';review:Review;plan:ResolutionPlan;casterName:string;value:Pick<Review,'selected'|'saves'>;onChange:(value:Pick<Review,'selected'|'saves'>)=>void}) {
     const save=plan.deferredSave!
     function patch(id:number,values:WindSave){onChange({...value,saves:{...value.saves,[id]:values}})}
     function input(label:string,current:number|undefined,change:(n:number|undefined)=>void,d20=false,caption=label) {
@@ -10,7 +10,7 @@ export function WindReview({review,plan,casterName,value,onChange}:{review:Revie
     }
     return <fieldset className="wind-review" aria-label="Bersagli e tiri salvezza" disabled={!review.editable}>
         <p className="wind-save-dc">CD di {casterName}: <strong>{save.dc??'da verificare nella scheda'}</strong><span>Resiste se d20 + bonus TS ≥ CD.</span></p>
-        <p className="library-help">Seleziona le creature nella linea. Registra il TS all’inizio di ogni loro turno: puoi approvare il lancio senza inserire dadi.</p>
+        <p className="library-help">Seleziona le creature nella linea. Registra il TS all’inizio di ogni loro turno: {purpose==='direction'?'puoi confermare il cambio direzione senza inserire dadi.':'puoi approvare il lancio senza inserire dadi.'}</p>
         {review.candidates.map(candidate=>{
             const selected=value.selected.includes(candidate.id),roll=value.saves[candidate.id]??{mode:'dice' as const},profile=candidate.profile
             let result:TargetResolution|undefined,error=''
@@ -35,4 +35,20 @@ export function WindReview({review,plan,casterName,value,onChange}:{review:Revie
             </div>
         })}
     </fieldset>
+}
+
+export function WindSummary({review,plan,casterName}:{review:Review;plan:ResolutionPlan;casterName:string}) {
+    const save=plan.deferredSave!
+    return <section className="wind-review-summary" aria-label="Bersagli e tiri salvezza confermati">
+        <p>CD di {casterName}: <strong>{save.dc??'da verificare'}</strong></p>
+        {!review.selected.length&&<p>Nessuna creatura nella linea.</p>}
+        <ul>{review.selected.map(id=>{
+            const candidate=review.candidates.find(c=>c.id===id)
+            if(!candidate)return null
+            const roll=review.saves[id]??{mode:'dice' as const}
+            let result:TargetResolution|undefined
+            try{result=resolveTarget({...plan,kind:'save',save:{ability:save.ability,dc:save.dc,onSuccess:'none'}},[{targetId:id,damage:[]}],candidate.profile,roll.mode==='manual'?{saveOutcome:roll.success}:{save:roll.die,saveSecond:roll.secondDie,saveBonuses:roll.bonuses})}catch{/* Incomplete historical rolls remain a pending save in the receipt. */}
+            return <li key={id}><strong>{candidate.name}</strong>{roll.mode==='dice'&&<span> · Bonus TS {signedBonus(candidate.profile.saveBonus)||'da verificare'}{roll.die!==undefined&&` · d20 ${roll.die}`}{result?.save?.total!==undefined&&` · Totale ${result.save.total}`}</span>}<p role="status">{candidate.name}: {result?.save?.success===undefined?'TS da risolvere all’inizio del turno':result.save.success?'Resiste':`Non resiste · spinta di ${save.pushFt*0.3} m lungo la linea`}</p></li>
+        })}</ul>
+    </section>
 }

@@ -1,5 +1,5 @@
 import { PlayerActionRolls, WeaponEnchantmentFields, ResolutionDetails, FinalDamageField, MasterResolutionRolls, MasterCriticalRolls, MasterSavingRolls, type RequestDecision } from './CombatRolls'
-import { memo, useEffect, useId, useRef, useState, type FormEvent } from 'react'
+import { memo, useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react'
 import { playApi, type ActionChoices, type CombatRequest, type CombatTarget, type Game, type PlayerGame, type WindReview as WindData } from '../utils/PlayApi'
 import { NotificationPopover } from './NotificationPopover'
 import { ParticipantAbilities, type InspectorMode } from './ParticipantInspector'
@@ -8,10 +8,11 @@ import { InfoButton } from './InfoButton'
 import { HelpTooltip } from './HelpTooltip'
 import { damageNames, directBenefit, type WeaponChoice } from '../domain/dnd/CombatResolution'
 import { integerValue, signedBonus } from '../utils/CharacterSheets'
-import { WindReview } from './WindReview'
+import { WindReview, WindSummary } from './WindReview'
+import { WindDirectionForm } from './WindDirectionForm'
 import { catalogForSheet, loadActiveDatabase } from '../domain/dnd/ActiveRules'
-import { sheetWithCombatAbilities, type CatalogEntry } from '../utils/Catalog'
-import type { SheetAbility } from '../utils/CharacterSheets'
+import { sheetWithCombatAbilities, type Catalog, type CatalogEntry } from '../utils/Catalog'
+import type { CharacterSheet, SheetAbility } from '../utils/CharacterSheets'
 
 const modeLabels={attack:'Tiro per colpire',save:'Tiro salvezza',automatic:'Colpo / effetto automatico',none:'Senza danni'}
 const statusLabels={pending:'In attesa del Master',approved:'Approvata',rejected:'Rifiutata',stale:'Superata: turno o dati cambiati'}
@@ -52,10 +53,10 @@ export function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDe
         working.current=true;setBusy(true);setError('')
         try {await onDecide(request.id,decision,{confirmed:decision==='approve',additionalActionConfirmed,manualResolution:manual,...(request.wind?{wind}:{}),...(weaponEffect?{weapons:request.targets.map(t=>({targetId:t.id,...weapons[t.id]}))}:{}),targets:request.wind?wind.selected.map(id=>({id,damage:'0'})):request.targets.map(target=>({id:target.id,damage:damageFor(target)})),...(request.resolution?{effects:effectTargets.filter(t=>effectOverrides[t.id]!==false).map(t=>t.id)}:{})})} catch(error) {setError(message(error))} finally {working.current=false;setBusy(false)}
     }
-    async function saveWind(refresh=false){
+    async function refreshRequest(){
         if(working.current)return
         working.current=true;setBusy(true);setError('')
-        try{await onDecide(request.id,'roll',refresh?{kind:request.wind?'wind-refresh':'refresh'}:{kind:'wind',wind})}catch(error){setError(message(error))}finally{working.current=false;setBusy(false)}
+        try{await onDecide(request.id,'roll',{kind:request.wind?'wind-refresh':'refresh'})}catch(error){setError(message(error))}finally{working.current=false;setBusy(false)}
     }
     const pending=request.status==='pending',stale=request.status==='stale'
     return <article className="combat-request combat-request--review" aria-busy={busy}><header className="combat-request-heading"><div className="combat-request-title"><h3>{request.actionName}</h3><InfoButton label="Dettagli" name={request.actionName} entry={entry} description={ability?.description||catalogStatus||request.resolution?.notes.join('\n')||'Descrizione non disponibile. Consulta la scheda del personaggio.'} fields={ability?{duration:ability.duration}:{}}/></div><p className="combat-request-state" data-state={request.status} role="status">{statusLabels[request.status]}</p></header><RequestDescription request={request} review/>
@@ -68,7 +69,7 @@ export function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDe
             })}/>
         }}/>
         <MasterResolutionRolls request={request} disabled={disabled} onDecide={onDecide}/>
-        {(pending||stale||!!request.wind)&&<form id={decisionId} className="combat-request-decision" onSubmit={event=>{event.preventDefault();if(pending)void decide('approve');else if(request.wind?.editable)void saveWind()}}>
+        {(pending||stale)&&<form id={decisionId} className="combat-request-decision" onSubmit={event=>{event.preventDefault();if(pending)void decide('approve')}}>
             <fieldset disabled={disabled||busy}><legend>{request.wind?'Bersagli e tiri salvezza':'Decisione del Master'}</legend>
                 {stale&&!request.wind&&directBenefit(request.resolution)&&<p role="status">La sessione è cambiata. Aggiorna la richiesta per ricontrollare turno, bersagli e risorse prima di approvare.</p>}
                 {request.wind&&!request.wind.editable&&<p className="wind-review-locked" role="status">{stale?'La sessione è cambiata. Aggiorna la richiesta per ricontrollare turno, risorse e CD e riattivare i campi. I TS precedenti saranno azzerati.':'Effetto terminato o richiesta conclusa: bersagli e tiri sono in sola lettura.'}</p>}
@@ -79,34 +80,48 @@ export function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDe
                 {effectTargets.map(target=><label className="combat-request-check" key={target.id}><input type="checkbox" checked={effectOverrides[target.id]!==false} onChange={event=>setEffectOverrides(current=>({...current,[target.id]:event.target.checked}))}/>Applica gli effetti aggiuntivi a {target.name}</label>)}
                 {request.resolution&&request.targets.some(t=>t.resolution?.damage===null)&&<label className="combat-request-check"><input type="checkbox" checked={manual} onChange={event=>setManual(event.target.checked)}/>Confermo una risoluzione manuale per i dati mancanti</label>}
                 </>}
-                <div className="play-actions">{stale&&(request.wind||directBenefit(request.resolution))&&<button type="button" onClick={()=>void saveWind(true)}>Aggiorna richiesta</button>}{pending&&<button disabled={!!request.additionalActionRequired&&!additionalActionConfirmed||missingWind||missingWeapon||!!request.resolution&&request.targets.some(t=>t.resolution?.damage===null)&&!manual} type="submit">Approva azione</button>}{!pending&&request.wind?.editable&&<button type="submit" disabled={missingWind}>{busy?'Salvataggio…':'Salva bersagli e tiri salvezza'}</button>}{(pending||stale)&&<button type="button" className="play-secondary" onClick={()=>void decide('reject')}>Rifiuta azione</button>}</div>
+                <div className="play-actions">{stale&&(request.wind||directBenefit(request.resolution))&&<button type="button" onClick={()=>void refreshRequest()}>Aggiorna richiesta</button>}{pending&&<button disabled={!!request.additionalActionRequired&&!additionalActionConfirmed||missingWind||missingWeapon||!!request.resolution&&request.targets.some(t=>t.resolution?.damage===null)&&!manual} type="submit">Approva azione</button>}{(pending||stale)&&<button type="button" className="play-secondary" onClick={()=>void decide('reject')}>Rifiuta azione</button>}</div>
             </fieldset>
-        </form>}{error&&<p role="alert">{error}</p>}</article>
+        </form>}{!pending&&!stale&&request.wind&&request.resolution&&<WindSummary review={request.wind} plan={request.resolution} casterName={request.characterName}/>}{error&&<p role="alert">{error}</p>}</article>
 }
+
+const ReviewRequestCard=memo(ReviewRequest)
+const emptyCatalog:Catalog={creatures:[],abilities:[]}
 
 export const MasterCombatRequests=memo(function MasterCombatRequests({game,disabled,onDecide}:{game:Game;disabled:boolean;onDecide:(id:string,decision:RequestDecision,body:unknown)=>Promise<void>}) {
     const [open,setOpen]=useState(false)
-    const [lastWindSave,setLastWindSave]=useState<{id:string;at:number}>()
     const [database,setDatabase]=useState<Awaited<ReturnType<typeof loadActiveDatabase>>>()
     const [catalogError,setCatalogError]=useState('')
     useEffect(()=>{let active=true;loadActiveDatabase().then(value=>{if(active)setDatabase(value)}).catch(error=>{if(active)setCatalogError(`Catalogo non disponibile: ${message(error)} Ricarica la pagina per riprovare.`)});return()=>{active=false}},[])
-    const pending=game.combatRequests.filter(request=>request.status==='pending').length
-    return <NotificationPopover id="combat-requests" title="Azioni dei giocatori" label={`Azioni dei giocatori: ${pending} in attesa`} closeLabel="Chiudi azioni" iconPath="M14 3h7v7L10 21l-7-7L14 3ZM13 4l7 7M3 21l3-3M3 14l7 7" count={pending} newest={game.newestPendingRequest} storageKey={`dev-and-dice.notification-opened.v1.${game.id}.master.actions`} open={open} onOpenChange={setOpen}>
-        <p>Ogni azione richiede approvazione esplicita. Le modifiche ordinarie alla scheda seguono le notifiche della campanella.</p>
-        {!game.combatRequests.length&&<p>Nessuna azione proposta.</p>}
-        <ol className="play-notification-list combat-request-feed">{game.combatRequests.map(request=>{
-            const owners=game.role==='master'?game.characters.filter(character=>request.characterId?character.id===request.characterId:character.sheet.name===request.characterName):[]
+    const characters=game.role==='master'?game.characters:undefined
+    const reviews=useMemo(()=>{
+        // A character's spell/attack catalog is shared by all of their requests.
+        const abilitiesBySheet=new Map<CharacterSheet,Map<Catalog|undefined,SheetAbility[]>>()
+        return game.combatRequests.map(request=>{
+            const owners=characters?characters.filter(character=>request.characterId?character.id===request.characterId:character.sheet.name===request.characterName):[]
             const sheet=owners.length===1?owners[0].sheet:undefined
             const catalog=database&&(request.resolution?.edition==='2014'?database.catalogs.it:request.resolution?.edition==='2024'?database.creationData.legacyCatalogs?.it:sheet?catalogForSheet(database.creationData,database.catalogs.it,sheet):undefined)
-            const abilities=sheet?sheetWithCombatAbilities(sheet,catalog??{creatures:[],abilities:[]}).abilities:[]
+            let abilities:SheetAbility[]=[]
+            if(sheet){
+                let byCatalog=abilitiesBySheet.get(sheet)
+                if(!byCatalog){byCatalog=new Map();abilitiesBySheet.set(sheet,byCatalog)}
+                const cached=byCatalog.get(catalog)
+                abilities=cached??sheetWithCombatAbilities(sheet,catalog??emptyCatalog).abilities
+                if(!cached)byCatalog.set(catalog,abilities)
+            }
             const candidates=abilities.filter(ability=>request.resolution?.ruleId?ability.ruleId===request.resolution.ruleId:ability.name===request.actionName)
             const ability=candidates.length===1?candidates[0]:undefined
             const entries=catalog?.abilities.filter(entry=>ability?.catalogId?entry.id===ability.catalogId:request.resolution?.ruleId?entry.data.referenceId===request.resolution.ruleId:entry.name===request.actionName)??[]
             const entry=entries.length===1?entries[0]:undefined
-            return <li key={request.id} data-unread={request.status==='pending'}><ReviewRequest key={request.rollsRevision} request={request} ability={ability} entry={entry} catalogStatus={database?undefined:catalogError||'Caricamento dei dettagli…'} disabled={disabled} onDecide={async(id,decision,body)=>{
-                await onDecide(id,decision,body)
-                if(decision==='roll'&&(body as {kind?:string}).kind==='wind')setLastWindSave({id,at:Date.now()})
-            }}/>{lastWindSave?.id===request.id&&<p role="status">Bersagli e tiri salvezza salvati alle {new Date(lastWindSave.at).toLocaleTimeString('it-IT')}.</p>}</li>
+            return {request,ability,entry}
+        })
+    },[game.combatRequests,characters,database])
+    const pending=game.combatRequests.filter(request=>request.status==='pending').length
+    return <NotificationPopover id="combat-requests" title="Azioni dei giocatori" label={`Azioni dei giocatori: ${pending} in attesa`} closeLabel="Chiudi azioni" iconPath="M14 3h7v7L10 21l-7-7L14 3ZM13 4l7 7M3 21l3-3M3 14l7 7" count={pending} newest={game.newestPendingRequest} storageKey={`dev-and-dice.notification-opened.v1.${game.id}.master.actions`} open={open} onOpenChange={setOpen}>
+        <p>Ogni azione richiede approvazione esplicita. Le modifiche ordinarie alla scheda seguono le notifiche della campanella.</p>
+        {!game.combatRequests.length&&<p>Nessuna azione proposta.</p>}
+        <ol className="play-notification-list combat-request-feed">{reviews.map(({request,ability,entry})=>{
+            return <li key={request.id} data-unread={request.status==='pending'}><ReviewRequestCard key={request.rollsRevision} request={request} ability={ability} entry={entry} catalogStatus={database?undefined:catalogError||'Caricamento dei dettagli…'} disabled={disabled} onDecide={onDecide}/></li>
         })}</ol>
         {disabled&&<p>Concludi il salvataggio della sessione prima di approvare o rifiutare un’azione.</p>}
     </NotificationPopover>
@@ -134,7 +149,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
         let active=true
         playApi<ActionChoices>('/games/'+game.id+'/actions'+(renewed?'?preview=1':'')).then(choices=>{if(active){setChoices(choices);if(renewed){const selected=choices.actions.find(item=>(item.entry?.id??item.name)===selectedIdentity.current);if(panel==='summary'&&selected&&!selected.active&&selected.duration!=='Istantanea'&&selected.lastCast?.status!=='pending'){selectedIdentity.current='';setKey('')}else setKey(selected?.key??'');setError('')}}}).catch(error=>{if(active)setError(message(error))}).finally(()=>{if(active)setLoading(false)})
         return ()=>{active=false}
-    },[open,game.id,retry,renewed,revision,panel])
+    },[open,game.id,retry,renewed,revision,panel,game.requestsRevision])
     function refreshActions() {setLoading(true);setError('');setChoices(undefined);setKey('');setTargets([]);setRetry(current=>current+1)}
     function select(key:string) {
         const action=choices?.actions.find(action=>action.key===key),option=action?.options.find(option=>option.remaining===null || option.remaining>=(option.cost??action.cost)) ?? action?.options[0]
@@ -209,8 +224,8 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
             <p>{action.lastCast.temporaryHitPoints.keptPrevious?'PF precedenti mantenuti, con la durata originale.':'Nuovo beneficio selezionato.'}</p></>}
             {!action.lastCast.temporaryHitPoints&&action.lastCast.packets?.map((packet,index)=><p key={index}>Tiro {index+1}: {packet.die!==undefined&&<>d20 <strong>{packet.die}</strong> · </>}{packet.healingRoll!==undefined&&<>Dadi di guarigione: <strong>{packet.healingRoll}</strong></>}{packet.damage.map(damage=>`${damage.amount} ${damageNames[damage.type]}`).join(' + ')||(!packet.die&&packet.healingRoll===undefined?'Nessun dado richiesto.':'')}</p>)}
         </details>:<p>I dati del tiro originale non sono disponibili per questo effetto.</p>}
-        {action.additionalActionRequired&&<p className="player-cast-note">Hai già lanciato un incantesimo con un’azione in questo turno: il Master dovrà confermare un’altra azione valida.</p>}
-        <button type="button" className="sort-turns player-cast-recast" disabled={pending||!choices?.canPropose||!!action.error||!action.options.some(option=>option.remaining===null||option.remaining>=(option.cost??action.cost))} onClick={()=>{select(action.key);setPanel('cast')}}>Lancia di nuovo</button>
+        {!action.windDirection&&action.additionalActionRequired&&<p className="player-cast-note">Hai già lanciato un incantesimo con un’azione in questo turno: il Master dovrà confermare un’altra azione valida.</p>}
+        {action.windDirection&&choices?<WindDirectionForm key={`${action.windDirection.effectId}:${game.revision}`} choice={action.windDirection} candidates={choices.targets} ownerId={choices.ownerId} disabled={pending||!!stale||loading} onSubmit={async(selected,id)=>{const next=await playApi<Game>('/games/'+game.id+'/wind-direction','POST',{id,revision:choices.revision,effectId:action.windDirection!.effectId,selected});onUpdate(next);setRetry(current=>current+1)}}/>:<button type="button" className="sort-turns player-cast-recast" disabled={pending||!choices?.canPropose||!!action.error||!action.options.some(option=>option.remaining===null||option.remaining>=(option.cost??action.cost))} onClick={()=>{select(action.key);setPanel('cast')}}>Lancia di nuovo</button>}
     </div>
     const Heading=renewed?'h3':'h2'
     return <section className={`play-player-actions${renewed?' master-available-abilities':''}`} aria-labelledby="player-actions"><Heading id="player-actions" hidden={renewed&&inspectorMode==='all'}>{renewed?'Abilità e azioni disponibili':'Le tue azioni'}</Heading><p>Proponi un’azione nel tuo turno. Risorse ed effetti si applicano quando il Master approva.</p>
@@ -232,7 +247,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
                     <div className="catalog-search ability-name"><input aria-label={`Nome abilità ${item.name}`} value={item.displayName||item.name} readOnly/></div>
                     <div className="ability-owner-controls"><AbilityMetadata duration={item.duration} owner={game.character.sheet.name} ownerLabel={item.spellLevel!==undefined?'Lanciatore':'Utilizzatore'}/><InfoButton label="Descrizione" entry={item.entry} name={item.name} description={item.description} fields={{duration:item.duration,remainingTurns:item.remainingTurns,active:item.active,owner:game.character.sheet.name}}/></div>
                     <div className="ability-use-controls">
-                        {item.error&&<p role="status">{item.error}</p>}
+                        {item.error&&!item.windDirection&&<p role="status">{item.error}</p>}
                         {item.key===key ? panel==='summary'?summary:proposal : <><p className={item.group==='Attacchi fisici'?'combat-request-description':'ability-casting-summary'}>{item.group==='Attacchi fisici' ? item.description||'Controlla bonus al tiro per colpire e danni nella scheda.' : item.active ? 'In esecuzione' : item.options.map(option=>option.label).join(' · ')||'Verifica le risorse nella scheda.'}</p><button type="button" className="sort-turns" disabled={busy} onClick={()=>choose(item.key)}>{item.active||item.lastCast?.status==='pending'?'Consulta':'Usa'}</button></>}
                     </div>
                 </AbilityCard>)}</div>

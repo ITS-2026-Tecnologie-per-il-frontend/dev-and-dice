@@ -46,6 +46,7 @@ try{
  await page.getByRole('button',{name:'Pugnale · Usa',exact:true}).click()
  const attack=page.getByRole('form',{name:'Attacco: Pugnale',exact:true})
  await attack.getByRole('checkbox',{name:'Aster',exact:true}).check();await attack.getByLabel('Tiro per colpire (inserisci solo il numero del dado)',{exact:true}).fill('10');await attack.getByLabel('Tira danni',{exact:true}).fill('3')
+ await page.getByText('Sessione sincronizzata',{exact:true}).waitFor()
  await attack.getByRole('button',{name:'Applica danni',exact:true}).click()
  const popup=pp.getByRole('dialog',{name:'Puoi usare una reazione',exact:true});await popup.waitFor();await popup.getByRole('button',{name:'Usa la reazione · invia al Master',exact:true}).waitFor()
  game=await api(master,path);assert.equal(game.characters.find(c=>c.id===mage.id).sheet.hitPoints,'22','Damage waits for the reaction')

@@ -56,8 +56,9 @@ assert.deepEqual(visibleRequests(game,casterId)[0].targets.map(t=>t.name),['Worg
 assert(validCombatRequest(JSON.parse(JSON.stringify(entry))))
 const body={kind:'wind',wind:{selected:[2,3],saves:{2:{mode:'dice',die:11},3:{mode:'manual',success:true}}}}
 assert.throws(()=>recordResolutionRoll(db,game,playerId,entry,body,rules),e=>e.status===403)
-recordResolutionRoll(db,game,masterId,entry,body,rules)
-assert.deepEqual(game.state.abilities.find(a=>a.ruleId===spell.ruleId&&a.active).targets.map(t=>t.id),[2,3],'Saving new recipients updates the active effect too')
+assert.throws(()=>recordResolutionRoll(db,game,masterId,entry,body,rules),e=>e.status===409)
+assert.equal(visibleRequests(game,masterId)[0].wind.editable,false,'Approved requests are final')
+assert.deepEqual(game.state.abilities.find(a=>a.ruleId===spell.ruleId&&a.active).targets.map(t=>t.id),[3])
 const source=entry.resolution.plan,profile=entry.resolution.wind.candidates.find(c=>c.id===2).profile
 const plan={...source,kind:'save',save:{ability:'strength',dc:source.deferredSave.dc,onSuccess:'none'}}
 assert.equal(resolveTarget(plan,[{targetId:2,damage:[]}],profile,{save:12}).save.success,true,'A total equal to the caster DC succeeds, with the Strength bonus added')
@@ -65,10 +66,8 @@ assert.equal(resolveTarget(plan,[{targetId:2,damage:[]}],profile,{save:11}).save
 assert.equal(resolveTarget({...plan,save:{...plan.save,dc:30}},[{targetId:2,damage:[]}],profile,{save:20}).save.success,false,'Natural 20 is not automatic success on a save')
 assert.equal(resolveTarget(plan,[{targetId:2,damage:[]}],{...profile,saveBonus:30},{save:1}).save.success,true,'Natural 1 is not automatic failure on a save')
 assert.equal(resolveTarget(plan,[{targetId:2,damage:[]}],{...profile,automaticSaveFailure:true},{saveOutcome:true}).save.success,true,'Explicit Master decisions override dice requirements')
-recordResolutionRoll(db,game,masterId,entry,{...body,wind:{selected:[2],saves:{2:{mode:'dice',die:4}}}},rules)
-assert.equal(entry.resolution.wind.saves[2].die,4,'A later turn can replace the previous save')
-assert.deepEqual(game.state.abilities.find(a=>a.ruleId===spell.ruleId&&a.active).targets.map(t=>t.id),[2],'Removing a recipient removes it from the active effect')
-assert.equal(db.characters[0].sheet.playerDetails['slots.2.used'],'1','Updating saves never spends a second slot')
+assert.throws(()=>recordResolutionRoll(db,game,masterId,entry,{...body,wind:{selected:[2],saves:{2:{mode:'dice',die:4}}}},rules),e=>e.status===409)
+assert.equal(db.characters[0].sheet.playerDetails['slots.2.used'],'1')
 assert(validCombatRequest(JSON.parse(JSON.stringify(entry))));assert.equal(game.state.turns[1].hitPoints,'30')
 game.state.abilities[0].active=false
 assert.equal(visibleRequests(game,masterId)[0].wind.editable,false)
@@ -94,12 +93,7 @@ testEntry.resolution.wind=withBless.wind;testEntry.status='approved';testGame.st
 for(const sheet of withBless.sheets)testDb.characters.find(r=>r.id===sheet.id).sheet=sheet
 assert(testGame.state.abilities.find(a=>a.id===80).active,'Casting wind preserves another caster’s Bless')
 testGame.state.abilities.find(a=>a.id===80).active=false
-recordResolutionRoll(testDb,testGame,masterId,testEntry,{kind:'wind',wind:savedWind},rules)
-assert.equal(testEntry.resolution.wind.candidates.find(c=>c.id===2).profile.saveDice,undefined,'Saving an older review refreshes effects that have ended')
-assert.deepEqual(testEntry.resolution.wind.saves[2].bonuses,{},'An expired known d4 is removed without rejecting the remaining valid save')
-assert.equal(savedWind.saves[2].bonuses[80],2,'Normalization does not mutate the submitted input')
-assert.equal(testEntry.resolution.wind.saves[2].die,12,'The actual d20 is retained')
-const currentProfile=testEntry.resolution.wind.candidates.find(c=>c.id===2).profile
-assert.equal(resolveTarget({...testEntry.resolution.plan,kind:'save',save:{ability:'strength',dc:14,onSuccess:'none'}},[{targetId:2,damage:[]}],currentProfile,{save:12,saveBonuses:testEntry.resolution.wind.saves[2].bonuses}).save.total,15,'The new total is d20 12 + Strength 3, without the expired +2')
-assert.throws(()=>recordResolutionRoll(testDb,testGame,masterId,testEntry,{kind:'wind',wind:{selected:[2],saves:{2:{mode:'dice',die:12,bonuses:{666:2}}}}},rules),e=>e.status===400,'Unknown bonus IDs still cannot be injected')
-console.log('PASS Gust review: concentration replacement, other-caster Bless, expired bonus cleanup, stale preview normalization, strict validation, no slot/HP duplication and persistence')
+const receipt=JSON.stringify(testEntry.resolution.wind)
+assert.throws(()=>recordResolutionRoll(testDb,testGame,masterId,testEntry,{kind:'wind',wind:savedWind},rules),e=>e.status===409)
+assert.equal(JSON.stringify(testEntry.resolution.wind),receipt,'Approved dice, defenses and bonuses stay historical after effects end')
+console.log('PASS Gust review: concentration replacement, other-caster Bless, immutable approved receipts, stale preview normalization, strict validation, no slot/HP duplication and persistence')

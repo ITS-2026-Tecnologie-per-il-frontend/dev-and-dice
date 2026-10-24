@@ -9,12 +9,13 @@ import { HelpTooltip } from './HelpTooltip'
 import { currentArmorClass, type CharacterSheet } from '../utils/CharacterSheets'
 import { ReactionContext } from './ReactionContext'
 import type { CreationData } from '../utils/PlayerCreation'
-import { combatAbilityInfo, combatAbilityStatus, combatUseOptions, selectedUseOption, type UseOption } from '../domain/dnd/CombatActions'
+import { combatAbilityInfo, combatAbilityStatus, combatUseOptions, selectedUseOption, bonusActionUsed, type UseOption } from '../domain/dnd/CombatActions'
 import { combatTargeting, creatureType, targetTypeError } from '../domain/dnd/CombatTargets'
 import { resolutionPlan, weaponDisplayName, weaponEffectDetails, spellEffectDetails, directBenefit } from '../domain/dnd/CombatResolution'
 import { MasterAttackRolls } from './MasterAttackRolls'
 import { MasterSpellRolls, type ResolvedDamagePackets } from './MasterSpellRolls'
 import { conditionEffectName, conditionsFor } from '../domain/dnd/CombatConditions'
+import { WindDirectionForm } from './WindDirectionForm'
 import { SpellSaveNotice } from './AttackRollFields'
 
 type Props = {
@@ -30,12 +31,14 @@ type Props = {
     onActivate?:(ability:Ability)=>void
     onEnd?:(ability:Ability)=>boolean
     onResolve?:(ability:Ability,damagePackets?:ResolvedDamagePackets,additionalActionConfirmed?:boolean)=>boolean|void
+    onWindDirection?:(ability:Ability,selected:number[],id:string)=>Promise<void>
+    windDirectionPending?:number[]
     onCancelCast?:(ability:Ability)=>void
     creationData?:CreationData
     actionError?:{abilityId:number;message:string}|null
 }
 
-export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities, participants, onAdd, catalog:baseCatalog,catalogForOwner,combat,onActivate,onEnd,onResolve,onCancelCast,creationData,actionError }: Props) {
+export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities, participants, onAdd, catalog:baseCatalog,catalogForOwner,combat,onActivate,onEnd,onResolve,onCancelCast,creationData,actionError,onWindDirection,windDirectionPending }: Props) {
     const [recasting,setRecasting]=useState<number|null>(null)
     const {before:beforeReaction}=useContext(ReactionContext),[manualHits,setManualHits]=useState<Record<string,string>>({}),[manualBusy,setManualBusy]=useState<number|null>(null),[manualNotice,setManualNotice]=useState<{id:number;text:string}>()
     const latest=useRef({abilities,participants,onResolve}),working=useRef(false)
@@ -133,6 +136,8 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                     if (info.passive) return null
                     let options:UseOption[]=[],option:UseOption|undefined,status='Usa',error=''
                     try {options=combatUseOptions(owner,ability,catalog,creationData);option=selectedUseOption(owner,ability,catalog,creationData);status=combatAbilityStatus(owner,ability,catalog,creationData)} catch(cause) {error=cause instanceof Error ? cause.message : 'Verifica le risorse nella scheda.'}
+                    if(!running&&info.unit==='bonus-action'&&owner&&bonusActionUsed(owner))error='Hai già usato l’azione bonus in questo turno.'
+                    if(!running&&info.unit==='bonus-action'&&combat&&combat.activeId!==ability.ownerId)error='L’azione bonus richiede il turno del personaggio.'
                     if(!running&&ability.ownerId!==null&&conditionsFor(abilities,ability.ownerId).includes('Paralizzato'))error='Il personaggio non può agire mentre è paralizzato.'
                     const simpleCantrip=info.level===0 && options.length===1 && option?.id==='cantrip'
                     const targets=ability.targets ?? []
@@ -144,6 +149,7 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                     const spellRolls=(recasting===ability.id||!ability.active||ability.timed!==false&&ability.remainingTurns===0)&&!!onResolve&&(spellPlan?.kind==='attack'||spellPlan?.kind==='save'||spellPlan?.kind==='automatic'||!!spellPlan?.healing||!!spellPlan?.temporaryHitPoints||directBenefit(spellPlan))&&(info.damage||!!spellPlan?.healing||!!spellPlan?.temporaryHitPoints||ability.ruleId==='phb2014:spell:hold-person'||directBenefit(spellPlan))&&!!creationData
                     const activeTemporaryEffect=running&&!ability.execution&&(!!spellPlan?.temporaryHitPoints||directBenefit(spellPlan))&&recasting!==ability.id
                     const deferredPlan=owner&&ability.ruleId==='phb2014:spell:gust-of-wind'?resolutionPlan(owner,ability,catalog,option?.id):undefined
+                    const windDirectionReason=combat?.activeId!==ability.ownerId?'Puoi cambiare direzione soltanto durante il turno del lanciatore.':owner&&bonusActionUsed(owner)?'Hai già usato l’azione bonus in questo turno.':windDirectionPending?.includes(ability.id)?'Cambio direzione in attesa del Master.':conditionsFor(abilities,ability.ownerId??-1).some(c=>['Paralizzato','Incapacitato','Stordito','Privo di sensi'].includes(c))?'Il personaggio non può agire.':undefined
                     const timingControls=<>
                         <label className="ability-duration">
                             <span>Durata</span>
@@ -246,7 +252,7 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                         {fixedOwner && !info.instantaneous && <details className="ability-timing-controls"><summary>Gestisci durata</summary><div>{timingControls}</div></details>}
                         {spellRolls ? <div className="ability-use-controls">{recasting===ability.id&&<button type="button" className="sort-turns" onClick={()=>setRecasting(null)}>Annulla nuovo lancio</button>}<MasterSpellRolls key={`${ability.id}:${ability.castingSource??'class'}:${ability.temporaryHitPointsSource??''}`} inCombat={!!combat} ability={ability} owner={owner!} participants={participants} abilities={abilities} catalog={catalog} catalogForOwner={catalogForOwner} data={creationData!} options={options} optionId={option?.id} error={error} onApply={(ability,packets,confirmed)=>{const result=onResolve!(ability,packets,confirmed);if(result!==false)setRecasting(null);return result}}>
                             {!simpleCantrip&&<label><span>Origine del lancio</span><select aria-label={`Origine del lancio di ${ability.name}`} disabled={!!ability.execution} value={ability.castingSource??'class'} onChange={event=>patch(ability.id,{castingSource:event.target.value as Ability['castingSource'],useOption:undefined,resourceCost:1,requirementsConfirmed:false})}><option value="class">Slot, trucchetto o rituale</option><option value="resource">Privilegio con risorsa propria</option><option value="free">Privilegio senza costo</option></select></label>}
-                        </MasterSpellRolls>{actionError?.abilityId===ability.id&&<p role="alert">{actionError.message}</p>}</div> : simpleAttack ? <div className="ability-use-controls"><MasterAttackRolls ability={ability} owner={owner!} plan={attackPlan!} participants={participants} abilities={abilities} catalog={catalog} catalogForOwner={catalogForOwner} data={creationData!} onApply={targets=>onResolve!({...ability,instantaneous:true,damageEnabled:true,requirementsConfirmed:true,targets,execution:{id:ability.execution?.id??crypto.randomUUID(),phase:'resolving',option:'free',cost:1}})}/>{actionError?.abilityId===ability.id&&<p role="alert">{actionError.message}</p>}</div> : deferredPlan?.deferredSave&&onActivate ? <div className="ability-use-controls"><form className="action-roll-form master-action-form" aria-label={`Lancio: ${ability.name}`} onSubmit={event=>{event.preventDefault();onActivate({...ability,requirementsConfirmed:true,damageEnabled:false,instantaneous:false})}}><fieldset aria-label={`Parametri di ${ability.name}`}>
+                        </MasterSpellRolls>{actionError?.abilityId===ability.id&&<p role="alert">{actionError.message}</p>}</div> : simpleAttack ? <div className="ability-use-controls"><MasterAttackRolls ability={ability} owner={owner!} plan={attackPlan!} participants={participants} abilities={abilities} catalog={catalog} catalogForOwner={catalogForOwner} data={creationData!} onApply={targets=>onResolve!({...ability,instantaneous:true,damageEnabled:true,requirementsConfirmed:true,targets,execution:{id:ability.execution?.id??crypto.randomUUID(),phase:'resolving',option:'free',cost:1}})}/>{actionError?.abilityId===ability.id&&<p role="alert">{actionError.message}</p>}</div> : deferredPlan?.deferredSave&&running&&!ability.execution&&owner ? <div className="ability-use-controls wind-area-controls"><p role="status">In esecuzione{ability.timed!==false?` · ${ability.remainingTurns} round`:''}</p><SpellSaveNotice plan={deferredPlan}/>{onWindDirection&&<WindDirectionForm key={`${ability.id}:${combat?.round}:${combat?.activeId}`} direct choice={{effectId:ability.id,selected:targets.map(t=>t.id),canUse:!windDirectionReason,reason:windDirectionReason}} candidates={participants.filter(p=>!!p.sheet).map(p=>({id:p.id,name:p.description}))} ownerId={ability.ownerId} onSubmit={(selected,id)=>onWindDirection(ability,selected,id)}/>}<p className="library-help">Aggiorna liberamente le creature nella linea quando entrano o escono. Non consuma azioni o slot. Il TS si risolve dalla riga della creatura all’inizio del suo turno.</p><AbilityTargets candidates={participants.filter(p=>!!p.sheet).map(p=>({id:p.id,name:p.description}))} ownerId={ability.ownerId} selectedIds={targets.map(t=>t.id)} maximum={null} label="Creature nella linea di vento" onChange={(id,checked)=>patch(ability.id,{targets:checked?[...targets,{id,damage:'0',resolved:true}]:targets.filter(t=>t.id!==id)})}/></div> : deferredPlan?.deferredSave&&onActivate ? <div className="ability-use-controls"><form className="action-roll-form master-action-form" aria-label={`Lancio: ${ability.name}`} onSubmit={event=>{event.preventDefault();onActivate({...ability,requirementsConfirmed:true,damageEnabled:false,instantaneous:false})}}><fieldset aria-label={`Parametri di ${ability.name}`}>
                             <details className="player-action-description" open><summary>Descrizione dell’azione</summary><p className="combat-request-description">{ability.description??info.entry?.description}</p></details>
                             <label>Risorsa<select aria-label="Risorsa" required disabled={running} value={option?.id??''} onChange={event=>patch(ability.id,{useOption:event.target.value})}>{options.map(o=><option value={o.id} key={o.id} disabled={o.remaining!==null&&o.remaining<(o.cost??ability.resourceCost??1)}>{o.label}{o.remaining===null?'':` · ${o.remaining} rimasti`}</option>)}</select></label>
                             <SpellSaveNotice plan={deferredPlan}/>

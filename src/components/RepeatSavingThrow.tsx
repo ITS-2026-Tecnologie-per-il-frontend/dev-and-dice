@@ -6,7 +6,7 @@ import { conditionEffectName } from '../domain/dnd/CombatConditions'
 import { defenseProfile, resolveTarget, type ResolutionPlan, type ResolutionRolls } from '../domain/dnd/CombatResolution'
 import { ResolutionDetails, MasterSavingRolls, type ResolutionReview } from './CombatRolls'
 
-export function RepeatSavingThrow({effect,target,abilities,data,onResolve}:{effect:Ability;target:{id:number;description:string;sheet:CharacterSheet};abilities:Ability[];data?:CreationData;onResolve:(success:boolean,consumed:number[],dc:number|undefined)=>boolean|void}) {
+export function RepeatSavingThrow({effect,target,abilities,data,onResolve,timing='end'}:{timing?:'start'|'end';effect:Ability;target:{id:number;description:string;sheet:CharacterSheet};abilities:Ability[];data?:CreationData;onResolve:(success:boolean,consumed:number[],dc:number|undefined)=>boolean|void}) {
     const save=effect.repeatSaveRoll!,working=useRef(false)
     const [rolls,setRolls]=useState<ResolutionRolls>({}),[dc,setDC]=useState(save.dc===undefined?'':String(save.dc))
     const validDC=/^\d+$/.test(dc)&&Number.isSafeInteger(Number(dc))
@@ -20,7 +20,7 @@ export function RepeatSavingThrow({effect,target,abilities,data,onResolve}:{effe
     }
     const request:ResolutionReview={id:String(effect.id),status:'pending',mode:'save',damageEnabled:false,resolution:plan,targets:[{id:target.id,name:target.description,roll:'',hit:false,damageRoll:'',damage:'0',resolution:result}]}
     return <section className="combat-request combat-request--review master-spell-review">
-        <p>{conditionEffectName(effect,abilities)} · TS di fine turno. Un successo termina questo effetto sul bersaglio.</p>
+        <p>{conditionEffectName(effect,abilities)} · {timing==='start'?'TS di inizio turno. Se fallisce, spingi la creatura di 4,5 m lontano dal lanciatore lungo la linea. Il vento rimane attivo.':'TS di fine turno. Un successo termina questo effetto sul bersaglio.'}</p>
         {save.dc===undefined&&<label>CD dell’incantesimo<input aria-label="CD del tiro salvezza ripetuto" type="number" min="0" step="1" value={dc} onChange={event=>setDC(event.target.value)}/></label>}
         <ResolutionDetails request={request} review renderTarget={()=>null} renderSave={target=><MasterSavingRolls request={request} target={target} disabled={!validDC} onDecide={async(id,decision,body)=>{
             if(id!==request.id||decision!=='roll'||!body||typeof body!=='object')throw new Error('Tiro non valido.')
@@ -34,6 +34,6 @@ export function RepeatSavingThrow({effect,target,abilities,data,onResolve}:{effe
             else throw new Error('Tiro non previsto.')
         }}/>}/>
         <button className="play-primary" type="button" disabled={!validDC||result.save?.success===undefined||!!result.save.needsSecondDie||!!result.save.needsBonusDice?.length} onClick={()=>finish(result.save!.success!,profile.saveDice?.filter(d=>d.consume&&(rolls.saveBonuses?.[d.id]??0)>0).map(d=>d.id)??[])}>Conferma tiro salvezza</button>
-        <button className="play-secondary" type="button" onClick={()=>finish(false,[])}>Non ripetere il TS: mantieni l’effetto</button>
+        {timing==='end'&&<button className="play-secondary" type="button" onClick={()=>finish(false,[])}>Non ripetere il TS: mantieni l’effetto</button>}
     </section>
 }

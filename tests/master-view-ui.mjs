@@ -59,6 +59,9 @@ try {
     assert.equal(await page.locator('.turn-row').count(),3)
     await page.locator('.combat-tracker').getByText('Caricamento del catalogo…',{exact:true}).waitFor({state:'hidden'})
     await page.getByText('Sessione sincronizzata',{exact:true}).waitFor()
+    // The ability list finishes in a deferred render after the catalog loading label disappears.
+    await page.locator('.participant-ability:enabled').first().waitFor({state:'visible'})
+    await page.getByText('Sessione sincronizzata',{exact:true}).waitFor()
     const before = await api(context, `/play/games/${game.id}`)
     await changeView(page, 'Rinnovata')
     await page.locator('.master-renewed').waitFor()

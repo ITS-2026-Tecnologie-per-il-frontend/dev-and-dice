@@ -1,3 +1,4 @@
+import { validWindSave } from '../src/domain/dnd/WindTurns.ts'
 import {assertReactionAction,validReactionWindows,visibleReactions,reactionWindow,reactionOpen,openReactions,finishReaction,requestReactionEvent} from './reactions.mjs'
 import { settleCombatEffects } from '../src/domain/dnd/CombatConditions.ts'
 import { activeEffects, saveNames, validEffectSpecs, validWeaponEnchantments } from '../src/domain/dnd/CombatResolution.ts'
@@ -9,7 +10,7 @@ import { resolve } from 'node:path'
 import express from 'express'
 import { rateLimit } from 'express-rate-limit'
 import { isDeepStrictEqual } from 'node:util'
-import { combatRules, actionContext, actionChoices, requestProposal, validCombatRequest, requestStatus, visibleRequests, prepareAction, applyCombatRequest, createRequestResolution, pendingSavingThrows, recordResolutionRoll, recoverRepeatSaveDCs } from './combat-requests.mjs'
+import { combatRules, actionContext, actionChoices, requestProposal, validCombatRequest, requestStatus, visibleRequests, prepareAction, applyCombatRequest, createRequestResolution, pendingSavingThrows, recordResolutionRoll, recoverRepeatSaveDCs, createWindDirectionRequest } from './combat-requests.mjs'
 
 const fields = 'name kind race characterClass level hitPoints armorClass initiative speed strength dexterity constitution intelligence wisdom charisma notes'.split(' ')
 const numeric = 'hitPoints armorClass initiative strength dexterity constitution intelligence wisdom charisma'.split(' ')
@@ -74,6 +75,7 @@ export function validateState(state) {
     && (ability.weaponEffects===undefined||validWeaponEnchantments(ability.weaponEffects))
     && (ability.temporaryHitPointsSource===undefined||typeof ability.temporaryHitPointsSource==='string'&&idPattern.test(ability.temporaryHitPointsSource))
     && (ability.sourceEffectId===undefined||integer(ability.sourceEffectId)&&ability.sourceEffectId!==ability.id)
+    && (ability.windSave===undefined||ability.ruleId==='phb2014:spell:gust-of-wind'&&validWindSave(ability.windSave))
     && (ability.repeatSaveRoll===undefined||object(ability.repeatSaveRoll)&&Object.hasOwn(saveNames,ability.repeatSaveRoll.ability)&&ability.repeatSaveRoll.timing==='end'&&(ability.repeatSaveRoll.dc===undefined||Number.isSafeInteger(ability.repeatSaveRoll.dc))&&(ability.repeatSaveRoll.lastRound===undefined||integer(ability.repeatSaveRoll.lastRound)))
     && (ability.resolutionEffects===undefined||validEffectSpecs(ability.resolutionEffects))
     && (ability.useOption===undefined || typeof ability.useOption==='string' && ability.useOption.length<=250)
@@ -215,6 +217,35 @@ export async function gamesRouter({ dataDir, authenticate }) {
     const rules=await combatRules(),db=await read(),game=gameFor(db,req.params.id,req.userId)
     res.json(actionChoices(actionContext(db,game,req.userId,rules,req.query.preview==='1'),game,db))
   })
+  router.post('/games/:id/wind-direction',async(req,res)=>{
+    gameFor(await read(),req.params.id,req.userId)
+    const rules=await combatRules()
+    res.json(await write(db=>{
+      const game=gameFor(db,req.params.id,req.userId)
+      if((game.reactionWindows??[]).some(reactionOpen))fail(409,'Attendi che siano risolte le reazioni.')
+      const master=game.masterId===req.userId
+      if(!object(req.body)||Object.keys(req.body).some(k=>!['id','revision','effectId','selected','saves'].includes(k)))fail(400,'Cambio direzione non valido.')
+      if(!master&&req.body.saves!==undefined)fail(403,'Solo il Master può inserire i tiri salvezza.')
+      const {saves,...command}=req.body
+      const entry=createWindDirectionRequest(db,game,req.userId,command,rules,req.username)
+      const existing=game.combatRequests?.some(e=>e.id===entry.id)
+      if(master&&existing){
+        if(entry.status!=='approved'||!isDeepStrictEqual(entry.resolution.wind.saves,saves??{}))fail(409,'Identificativo già usato: il cambio direzione è già stato registrato.')
+      }else if(master){
+        const result=applyCombatRequest(db,game,entry,rules,{confirmed:true,wind:{selected:command.selected,saves:saves??{}},targets:command.selected.map(id=>({id,damage:'0'}))})
+        const state=validateState(result.state)
+        for(const sheet of result.sheets){
+          const record=db.characters.find(r=>r.id===sheet.id&&r.gameId===game.id)
+          if(!record)fail(409,'Personaggio non più disponibile.')
+          saveSheet(game,record,validateSheet(sheet),req)
+        }
+        game.state=state;game.revision++
+        entry.resolution.wind=result.wind;entry.status='approved';entry.resolvedAt=new Date().toISOString()
+      }
+      if(!existing){(game.combatRequests??=[]).push(entry);game.requestsRevision=(game.requestsRevision??0)+1}
+      return view(db,game,req.userId)
+    }))
+  })
   router.post('/games/:id/reactions',async(req,res)=>{
     const rules=await combatRules()
     res.json(await write(db=>{
@@ -230,7 +261,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
   router.get('/games/:id/reactions/:windowId/actions',async(req,res)=>{
     const rules=await combatRules(),db=await read(),game=gameFor(db,req.params.id,req.userId)
     const window=reactionWindow(game,req.userId,req.params.windowId)
-    const context=actionContext(db,game,window.ownerId,rules,true,window.characterId)
+    const context=actionContext(db,game,window.ownerId,rules,true,window.characterId,{keys:new Set(window.actionKeys)})
     if(context.record.id!==window.characterId)fail(409,'Personaggio non più disponibile.')
     const choices=actionChoices(context,game,db)
     res.json({...choices,actions:choices.actions.filter(a=>window.actionKeys.includes(a.key))})

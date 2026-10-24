@@ -46,6 +46,8 @@ try {
   const save=review.getByLabel('Tiro salvezza Saggezza di '+name,{exact:true})
   await save.fill('1');await save.locator('xpath=ancestor::form[1]').getByRole('button',{name:'Registra tiro',exact:true}).click();await save.waitFor({state:'detached'})
  }
+ // Initial sheet normalization can still be saving while the local rolls are configured.
+ await page.getByText('Sessione sincronizzata',{exact:true}).waitFor()
  await review.getByRole('button',{name:'Applica esiti',exact:true}).click()
  await review.waitFor({state:'detached'});await page.getByText('Sessione sincronizzata',{exact:true}).waitFor()
  const guardRow=page.locator('.turn-row[data-reorder-id="1"]'),immuneRow=page.locator('.turn-row[data-reorder-id="2"]')

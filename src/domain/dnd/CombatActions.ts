@@ -43,7 +43,7 @@ export function combatAbilityInfo(ability:Pick<Ability,'catalogId'|'duration'|'r
     const prolonged=casting.unit==='minute' || casting.unit==='hour' || !casting.unit && /\bminut|\bor[ae]\b|\bhours?\b/i.test(castingText)
     const ritual=m.ritual===true || entry?.data.ritual===true
     const concentration=m.concentration===true || object(entry?.data.durationInfo).concentration===true
-    const unit=typeof casting.unit==='string' ? casting.unit : m.activation==='reaction'||object(m.activation).unit==='reaction' ? 'reaction' : /bonus/i.test(castingText) ? 'bonus-action' : /reazion|reaction/i.test(castingText) ? 'reaction' : prolonged ? 'minute' : 'action'
+    const unit=typeof casting.unit==='string' ? casting.unit : ['action','bonus-action','reaction'].includes(String(m.activation)) ? String(m.activation) : ['action','bonus-action','reaction'].includes(String(object(m.activation).unit)) ? String(object(m.activation).unit) : /bonus/i.test(castingText) ? 'bonus-action' : /reazion|reaction/i.test(castingText) ? 'reaction' : prolonged ? 'minute' : 'action'
     return {entry,level,instantaneous,damage,prolonged,ritual,concentration,unit,alternatives,repairsObject,passive,attack}
 }
 
@@ -126,10 +126,26 @@ export function combatAbilityStatus(sheet:CharacterSheet|undefined,ability:Abili
 export function spendCombatUse(sheet:CharacterSheet,ability:Ability,catalog:Catalog,data:CreationData|undefined,optionId:string,cost=1):CharacterSheet {
     // PHB 2014 PDF 191, Reactions: refresh at the START of the owner's next turn.
     // Revised rule verified separately: D&D_5.5_manuale_compatto_italiano.pdf, PDF 211, Reazione.
-    const reaction=combatAbilityInfo(ability,catalog).unit==='reaction'
+    const unit=combatAbilityInfo(ability,catalog).unit,reaction=unit==='reaction'
     if(reaction&&sheet.playerDetails?.['combat.reactionUsed']==='true')throw new Error('Hai già usato la reazione: torna disponibile all’inizio del tuo prossimo turno.')
+    if(unit==='bonus-action')spendBonusAction(sheet)
     const next=spendCombatUseUnchecked(sheet,ability,catalog,data,optionId,cost)
-    return reaction?{...next,playerDetails:{...next.playerDetails,'combat.reactionUsed':'true'}}:next
+    return reaction||unit==='bonus-action'?{...next,playerDetails:{...next.playerDetails,[reaction?'combat.reactionUsed':'combat.bonusActionUsed']:'true'}}:next
+}
+
+// D&D_5_Player_Original_Handbook.pdf, PDF 190, Bonus Actions: one per own turn.
+// Redirecting Gust of Wind is not a new cast (SRD 5.1 IT, PDF 160).
+export function bonusActionUsed(sheet:CharacterSheet):boolean {
+    if(sheet.playerDetails?.['combat.bonusActionUsed']==='true')return true
+    return ['combat.spellsThisTurn','rules2014.spellsThisTurn'].some(key=>{
+        const history:unknown=JSON.parse(sheet.playerDetails?.[key]??'[]')
+        return Array.isArray(history)&&history.some(cast=>cast?.unit==='bonus-action')
+    })
+}
+
+export function spendBonusAction(sheet:CharacterSheet):CharacterSheet {
+    if(bonusActionUsed(sheet))throw new Error('Hai già usato l’azione bonus in questo turno.')
+    return {...sheet,playerDetails:{...sheet.playerDetails,'combat.bonusActionUsed':'true'}}
 }
 
 function spendCombatUseUnchecked(sheet:CharacterSheet,ability:Ability,catalog:Catalog,data:CreationData|undefined,optionId:string,cost=1):CharacterSheet {

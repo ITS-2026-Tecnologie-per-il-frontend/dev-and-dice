@@ -262,7 +262,17 @@ function SessionPage() {
         try{localStorage.setItem(cacheKey,JSON.stringify({...next,revision:gameRef.current?.revision}))}catch{setError('Bozza non salvata nel browser. Lascia aperta la pagina fino al salvataggio sul server.')}
     },[cacheKey])
     const remove=useCallback(async(sheet:CharacterSheet)=>{const current=gameRef.current;if(!current)return;const next=await playApi<MasterGame>('/games/'+id+'/characters/'+sheet.id+'/remove','POST',{revision:current.revision});gameRef.current=next;setGame(next)},[id])
-    const workspace=useMemo(()=>game?.role==='master' ? {state:game.state,sheets:game.characters.map(character=>character.sheet),storageKey:cacheKey+'.library',onChange:change,remove,canRemove:(sheet:CharacterSheet)=>!draft&&!saving&&game.characters.some(character=>character.id===sheet.id&&character.ownerId===user!.id)} : undefined,[game,cacheKey,change,remove,draft,saving,user])
+    const redirectWind=useCallback(async(effectId:number,selected:number[],requestId:string)=>{
+        if(draftRef.current||savingRef.current||blocked)throw new Error('Attendi il salvataggio della sessione prima di cambiare direzione.')
+        savingRef.current=true;setSaving(true)
+        try{
+            const next=await playApi<MasterGame>('/games/'+id+'/wind-direction','POST',{id:requestId,revision:gameRef.current?.revision,effectId,selected})
+            gameRef.current=next
+            if(draftRef.current){setBlocked(true);setError('Cambio direzione confermato. La bozza locale è conservata: ricarica i dati prima di continuare.')}
+            else setGame(next)
+        }finally{savingRef.current=false;setSaving(false)}
+    },[id,blocked])
+    const workspace=useMemo(()=>game?.role==='master' ? {onWindDirection:redirectWind,windDirectionPending:game.combatRequests.filter(r=>r.status==='pending'&&r.windDirection).flatMap(r=>game.state.abilities.filter(a=>a.ownerId===game.state.turns.find(t=>t.sheet?.id===r.characterId)?.id&&a.ruleId==='phb2014:spell:gust-of-wind').map(a=>a.id)),state:game.state,sheets:game.characters.map(character=>character.sheet),storageKey:cacheKey+'.library',onChange:change,remove,canRemove:(sheet:CharacterSheet)=>!draft&&!saving&&game.characters.some(character=>character.id===sheet.id&&character.ownerId===user!.id)} : undefined,[game,cacheKey,change,remove,draft,saving,user,redirectWind])
     useEffect(()=>{
         if(!draft||blocked||savingRef.current)return
         const timer=setTimeout(async()=>{

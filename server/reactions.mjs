@@ -34,8 +34,13 @@ export function openReactions(db,game,rules,event,groupId=randomUUID()){
   if(!game.state.combat)return groupId
   if((game.reactionWindows??[]).some(w=>w.groupId===groupId))return groupId
   for(const record of db.characters.filter(r=>r.gameId===game.id&&(r.ownerId===game.masterId||game.players.some(p=>p.userId===r.ownerId&&p.characterId===r.id)))){
-    const context=actionContext(db,game,record.ownerId,rules,true,record.id)
-    if(!context.owner||game.state.turns.filter(t=>t.sheet?.id===context.record.id).length!==1||context.blockedReason||context.record.sheet.playerDetails?.['combat.reactionUsed']==='true')continue
+    const owners=game.state.turns.filter(t=>t.sheet?.id===record.id)
+    if(owners.length!==1||record.sheet.playerDetails?.['combat.reactionUsed']==='true')continue
+    // These events can only trigger a reaction from the attacked/damaged participant.
+    if(['hit','magic-missile','damage'].includes(event.kind)&&!event.targetIds.includes(owners[0].id))continue
+    if(event.kind==='spell'&&owners[0].id===event.actorId)continue
+    const context=actionContext(db,game,record.ownerId,rules,true,record.id,{unit:'reaction'})
+    if(context.blockedReason)continue
     const keys=context.actions.filter(action=>matches(action,event,context.owner.id)&&action.options.some(option=>{
       try{spendCombatUse(context.record.sheet,{...action.ability,requirementsConfirmed:true,targets:[]},context.catalog,rules.data,option.id,option.cost??1);return true}catch{return false}
     })).map(a=>a.key)
