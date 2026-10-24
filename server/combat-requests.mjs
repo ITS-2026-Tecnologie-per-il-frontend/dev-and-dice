@@ -480,6 +480,13 @@ export function recordResolutionRoll(db,game,user,entry,body,rules) {
     if(!windEditable(game,entry))fail(409,'L’effetto non è più attivo o la richiesta è stata superata.')
     if(Object.keys(body).some(k=>!['revision','kind','wind'].includes(k)))fail(400,'Correzione dell’area non valida.')
     entry.resolution.wind=reviewWind(db,game,entry,rules,body.wind)
+    if(entry.status==='approved'){
+      const selected=entry.resolution.wind.selected,owner=game.state.turns.find(t=>t.sheet?.id===entry.characterId)?.id
+      const source=activeEffects(game.state.abilities).find(a=>a.ownerId===owner&&a.ruleId===entry.resolution.plan.ruleId)
+      if(source&&(source.targets?.length!==selected.length||source.targets.some(t=>!selected.includes(t.id)))){
+        source.targets=selected.map(id=>({id,damage:'0',resolved:true}));game.revision++
+      }
+    }
     entry.rollsRevision=(entry.rollsRevision??0)+1;game.requestsRevision=(game.requestsRevision??0)+1
     return
   }

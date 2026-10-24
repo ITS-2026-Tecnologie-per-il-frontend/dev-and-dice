@@ -79,13 +79,14 @@ export function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDe
                 {effectTargets.map(target=><label className="combat-request-check" key={target.id}><input type="checkbox" checked={effectOverrides[target.id]!==false} onChange={event=>setEffectOverrides(current=>({...current,[target.id]:event.target.checked}))}/>Applica gli effetti aggiuntivi a {target.name}</label>)}
                 {request.resolution&&request.targets.some(t=>t.resolution?.damage===null)&&<label className="combat-request-check"><input type="checkbox" checked={manual} onChange={event=>setManual(event.target.checked)}/>Confermo una risoluzione manuale per i dati mancanti</label>}
                 </>}
-                <div className="play-actions">{stale&&(request.wind||directBenefit(request.resolution))&&<button type="button" onClick={()=>void saveWind(true)}>Aggiorna richiesta</button>}{pending&&<button disabled={!!request.additionalActionRequired&&!additionalActionConfirmed||missingWind||missingWeapon||!!request.resolution&&request.targets.some(t=>t.resolution?.damage===null)&&!manual} type="submit">Approva azione</button>}{!pending&&request.wind?.editable&&<button type="submit" disabled={missingWind}>Salva bersagli e tiri salvezza</button>}{(pending||stale)&&<button type="button" className="play-secondary" onClick={()=>void decide('reject')}>Rifiuta azione</button>}</div>
+                <div className="play-actions">{stale&&(request.wind||directBenefit(request.resolution))&&<button type="button" onClick={()=>void saveWind(true)}>Aggiorna richiesta</button>}{pending&&<button disabled={!!request.additionalActionRequired&&!additionalActionConfirmed||missingWind||missingWeapon||!!request.resolution&&request.targets.some(t=>t.resolution?.damage===null)&&!manual} type="submit">Approva azione</button>}{!pending&&request.wind?.editable&&<button type="submit" disabled={missingWind}>{busy?'Salvataggio…':'Salva bersagli e tiri salvezza'}</button>}{(pending||stale)&&<button type="button" className="play-secondary" onClick={()=>void decide('reject')}>Rifiuta azione</button>}</div>
             </fieldset>
         </form>}{error&&<p role="alert">{error}</p>}</article>
 }
 
 export const MasterCombatRequests=memo(function MasterCombatRequests({game,disabled,onDecide}:{game:Game;disabled:boolean;onDecide:(id:string,decision:RequestDecision,body:unknown)=>Promise<void>}) {
     const [open,setOpen]=useState(false)
+    const [lastWindSave,setLastWindSave]=useState<{id:string;at:number}>()
     const [database,setDatabase]=useState<Awaited<ReturnType<typeof loadActiveDatabase>>>()
     const [catalogError,setCatalogError]=useState('')
     useEffect(()=>{let active=true;loadActiveDatabase().then(value=>{if(active)setDatabase(value)}).catch(error=>{if(active)setCatalogError(`Catalogo non disponibile: ${message(error)} Ricarica la pagina per riprovare.`)});return()=>{active=false}},[])
@@ -102,7 +103,10 @@ export const MasterCombatRequests=memo(function MasterCombatRequests({game,disab
             const ability=candidates.length===1?candidates[0]:undefined
             const entries=catalog?.abilities.filter(entry=>ability?.catalogId?entry.id===ability.catalogId:request.resolution?.ruleId?entry.data.referenceId===request.resolution.ruleId:entry.name===request.actionName)??[]
             const entry=entries.length===1?entries[0]:undefined
-            return <li key={request.id} data-unread={request.status==='pending'}><ReviewRequest key={request.rollsRevision} request={request} ability={ability} entry={entry} catalogStatus={database?undefined:catalogError||'Caricamento dei dettagli…'} disabled={disabled} onDecide={onDecide}/></li>
+            return <li key={request.id} data-unread={request.status==='pending'}><ReviewRequest key={request.rollsRevision} request={request} ability={ability} entry={entry} catalogStatus={database?undefined:catalogError||'Caricamento dei dettagli…'} disabled={disabled} onDecide={async(id,decision,body)=>{
+                await onDecide(id,decision,body)
+                if(decision==='roll'&&(body as {kind?:string}).kind==='wind')setLastWindSave({id,at:Date.now()})
+            }}/>{lastWindSave?.id===request.id&&<p role="status">Bersagli e tiri salvezza salvati alle {new Date(lastWindSave.at).toLocaleTimeString('it-IT')}.</p>}</li>
         })}</ol>
         {disabled&&<p>Concludi il salvataggio della sessione prima di approvare o rifiutare un’azione.</p>}
     </NotificationPopover>

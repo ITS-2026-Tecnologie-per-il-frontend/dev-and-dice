@@ -57,6 +57,7 @@ assert(validCombatRequest(JSON.parse(JSON.stringify(entry))))
 const body={kind:'wind',wind:{selected:[2,3],saves:{2:{mode:'dice',die:11},3:{mode:'manual',success:true}}}}
 assert.throws(()=>recordResolutionRoll(db,game,playerId,entry,body,rules),e=>e.status===403)
 recordResolutionRoll(db,game,masterId,entry,body,rules)
+assert.deepEqual(game.state.abilities.find(a=>a.ruleId===spell.ruleId&&a.active).targets.map(t=>t.id),[2,3],'Saving new recipients updates the active effect too')
 const source=entry.resolution.plan,profile=entry.resolution.wind.candidates.find(c=>c.id===2).profile
 const plan={...source,kind:'save',save:{ability:'strength',dc:source.deferredSave.dc,onSuccess:'none'}}
 assert.equal(resolveTarget(plan,[{targetId:2,damage:[]}],profile,{save:12}).save.success,true,'A total equal to the caster DC succeeds, with the Strength bonus added')
@@ -66,6 +67,7 @@ assert.equal(resolveTarget(plan,[{targetId:2,damage:[]}],{...profile,saveBonus:3
 assert.equal(resolveTarget(plan,[{targetId:2,damage:[]}],{...profile,automaticSaveFailure:true},{saveOutcome:true}).save.success,true,'Explicit Master decisions override dice requirements')
 recordResolutionRoll(db,game,masterId,entry,{...body,wind:{selected:[2],saves:{2:{mode:'dice',die:4}}}},rules)
 assert.equal(entry.resolution.wind.saves[2].die,4,'A later turn can replace the previous save')
+assert.deepEqual(game.state.abilities.find(a=>a.ruleId===spell.ruleId&&a.active).targets.map(t=>t.id),[2],'Removing a recipient removes it from the active effect')
 assert.equal(db.characters[0].sheet.playerDetails['slots.2.used'],'1','Updating saves never spends a second slot')
 assert(validCombatRequest(JSON.parse(JSON.stringify(entry))));assert.equal(game.state.turns[1].hitPoints,'30')
 game.state.abilities[0].active=false
