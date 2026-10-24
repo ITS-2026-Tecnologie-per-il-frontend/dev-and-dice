@@ -72,4 +72,32 @@ game.state.abilities[0].active=false
 assert.equal(visibleRequests(game,masterId)[0].wind.editable,false)
 assert.throws(()=>recordResolutionRoll(db,game,masterId,entry,body,rules),e=>e.status===409)
 assert.throws(()=>recordResolutionRoll(db,game,masterId,entry,refresh,rules),e=>e.status===409,'Reopening never reactivates an approved or expired cast')
-console.log('PASS Gust review: stale preview normalization, corrected recipients, Master-only dice/manual outcomes, strict validation, save bonuses, no slot/HP duplication, persistence and effect expiry')
+// Reproduce an approved wind notification retaining the caster's ended Bless die.
+const copy=structuredClone({db,game}),testDb=copy.db,testGame=copy.game
+testDb.characters[0].sheet=structuredClone(mage)
+const bless=templateFromCatalog(rules.catalog.abilities.find(a=>a.data.referenceId==='phb2014:spell:bless'))
+const blessing={...bless,id:80,ownerId:1,active:true,concentration:true,remainingTurns:10,targets:[{id:2,damage:'0',resolved:true}],resolutionEffects:[{kind:'roll-bonus',rolls:['save','attack'],sides:4,trigger:'always'}]}
+testGame.state.abilities=[blessing];testGame.state.combat.activeId=1
+const testContext=actionContext(testDb,testGame,casterId,rules),testAction=testContext.actions.find(a=>a.ability.ruleId===spell.ruleId)
+const testProposal={...proposal,id:crypto.randomUUID(),revision:testGame.revision}
+const testEntry={...entry,id:testProposal.id,status:'pending',proposal:testProposal,reviewedRevision:testGame.revision,resolution:createRequestResolution(testDb,testGame,testContext,testAction,testProposal,rules)}
+testGame.combatRequests=[testEntry]
+assert.equal(testEntry.resolution.wind.candidates.find(c=>c.id===2).profile.saveDice,undefined,'A caster replacing their own Bless with wind must not preview the ended d4')
+blessing.ownerId=3
+testEntry.resolution=createRequestResolution(testDb,testGame,testContext,testAction,testProposal,rules)
+assert.equal(testEntry.resolution.wind.candidates.find(c=>c.id===2).profile.saveDice[0].id,80,'Bless from another caster remains available')
+const savedWind={selected:[2],saves:{2:{mode:'dice',die:12,bonuses:{80:2}}}}
+const withBless=applyCombatRequest(testDb,testGame,testEntry,rules,{confirmed:true,wind:savedWind,targets:[{id:2,damage:'0'}],effects:[]})
+testEntry.resolution.wind=withBless.wind;testEntry.status='approved';testGame.state=withBless.state
+for(const sheet of withBless.sheets)testDb.characters.find(r=>r.id===sheet.id).sheet=sheet
+assert(testGame.state.abilities.find(a=>a.id===80).active,'Casting wind preserves another caster’s Bless')
+testGame.state.abilities.find(a=>a.id===80).active=false
+recordResolutionRoll(testDb,testGame,masterId,testEntry,{kind:'wind',wind:savedWind},rules)
+assert.equal(testEntry.resolution.wind.candidates.find(c=>c.id===2).profile.saveDice,undefined,'Saving an older review refreshes effects that have ended')
+assert.deepEqual(testEntry.resolution.wind.saves[2].bonuses,{},'An expired known d4 is removed without rejecting the remaining valid save')
+assert.equal(savedWind.saves[2].bonuses[80],2,'Normalization does not mutate the submitted input')
+assert.equal(testEntry.resolution.wind.saves[2].die,12,'The actual d20 is retained')
+const currentProfile=testEntry.resolution.wind.candidates.find(c=>c.id===2).profile
+assert.equal(resolveTarget({...testEntry.resolution.plan,kind:'save',save:{ability:'strength',dc:14,onSuccess:'none'}},[{targetId:2,damage:[]}],currentProfile,{save:12,saveBonuses:testEntry.resolution.wind.saves[2].bonuses}).save.total,15,'The new total is d20 12 + Strength 3, without the expired +2')
+assert.throws(()=>recordResolutionRoll(testDb,testGame,masterId,testEntry,{kind:'wind',wind:{selected:[2],saves:{2:{mode:'dice',die:12,bonuses:{666:2}}}}},rules),e=>e.status===400,'Unknown bonus IDs still cannot be injected')
+console.log('PASS Gust review: concentration replacement, other-caster Bless, expired bonus cleanup, stale preview normalization, strict validation, no slot/HP duplication and persistence')

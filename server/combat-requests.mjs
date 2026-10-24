@@ -217,13 +217,17 @@ function reviewWind(db,game,entry,rules,input) {
   const context=actionContext(db,game,entry.ownerId,rules,true),action=context.actions.find(a=>a.ability.ruleId===entry.resolution.plan.ruleId)
   if(!action)fail(409,'L’incantesimo non è più disponibile.')
   const candidates=createRequestResolution(db,game,context,action,entry.proposal,rules).wind.candidates
-  const wind={candidates,selected:input.selected,saves:input.saves}
+  const wind={candidates,selected:input.selected,saves:structuredClone(input.saves)}
   if(!validateWind(wind))fail(400,'Controlla bersagli, d20 da 1 a 20 ed esiti manuali.')
   if(new Set(wind.selected.map(id=>candidates.find(c=>c.id===id).sheetId)).size!==wind.selected.length)fail(400,'La stessa scheda compare in più bersagli.')
   for(const id of wind.selected){
     const profile=candidates.find(c=>c.id===id).profile,rolls=windRolls(wind.saves[id])
     if(rolls.saveSecond!==undefined&&(!profile.saveMode||profile.saveMode==='normal'||rolls.save===undefined))fail(400,'Non è richiesto un secondo d20 per questo bersaglio.')
-    if(Object.keys(rolls.saveBonuses??{}).some(key=>!profile.saveDice?.some(d=>String(d.id)===key)))fail(400,'Dado bonus non previsto dal bersaglio.')
+    for(const key of Object.keys(rolls.saveBonuses??{}))if(!profile.saveDice?.some(d=>String(d.id)===key)){
+      // Previously displayed dice can expire between turns; invented dice remain invalid.
+      if(!entry.resolution.wind.candidates.find(c=>c.id===id)?.profile.saveDice?.some(d=>String(d.id)===key))fail(400,'Il dado bonus inserito non appartiene agli effetti attivi del bersaglio.')
+      delete rolls.saveBonuses[key]
+    }
     try{resolveTarget({...entry.resolution.plan,kind:'save',save:{...entry.resolution.plan.deferredSave,onSuccess:'none'}},[{targetId:id,damage:[]}],profile,rolls)}catch(error){fail(400,error.message)}
   }
   // ponytail: keep the latest TS for each creature. A round-by-round log can be
@@ -408,6 +412,8 @@ export function createRequestResolution(db,game,context,action,proposal,rules) {
   if(plan.effectChoices?.length)plan.effects=plan.effects.map(e=>e.kind==='resistance'?{...e,types:[proposal.effectChoice]}:e)
   // Reuse catalog effects activated through either the player or Master interface.
   const active=game.state.abilities.map(ability=>{
+    // D&D_5_Player_Original_Handbook.pdf, PDF 204 (Concentration): deferred saves follow the end of the caster's previous concentration.
+    if(plan.deferredSave&&ability.ownerId===context.owner.id&&ability.concentration)return {...ability,active:false,execution:undefined,remainingTurns:0}
     if(ability.resolutionEffects)return ability
     const owner=game.state.turns.find(t=>t.id===ability.ownerId),record=db.characters.find(r=>r.id===owner?.sheet?.id&&r.gameId===game.id)
     if(!record)return ability
