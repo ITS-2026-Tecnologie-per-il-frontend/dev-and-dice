@@ -44,7 +44,7 @@ export function NotificationPopover({id,title,label,closeLabel,iconPath,count,ne
             {count!==undefined&&<span className="play-notification-count" data-unread={count>0} aria-hidden="true">{count}</span>}
         </button>
         <dialog ref={dialog} id={id} className="play-notification-dialog" aria-labelledby={id+'-title'} onClose={()=>{onOpenChange(false);trigger.current?.focus({preventScroll:true})}} {...dismiss}>
-            <div className="play-notification-heading"><h2 id={id+'-title'}>{title}</h2><button type="button" className="play-secondary" aria-label={closeLabel} onClick={()=>dialog.current?.close()}>×</button></div>
+            <div className="play-notification-heading"><h2 id={id+'-title'}>{title}</h2><button type="button" className="play-secondary play-notification-close" aria-label={closeLabel} onClick={()=>dialog.current?.close()}><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
             <div className="play-notifications-body">{children}</div>
         </dialog>
     </div>

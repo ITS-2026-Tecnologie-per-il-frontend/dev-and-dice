@@ -35,11 +35,18 @@
 .play-notification-dialog { position:absolute; inset:auto; top:var(--notification-top,100px); left:var(--notification-left,16px); box-sizing:border-box; width:min(680px,calc(100vw - 32px)); max-width:none; max-height:var(--notification-height); margin:0; padding:0; overflow:visible; color:var(--text); background:var(--bg); border:1px solid var(--border); border-radius:12px; box-shadow:0 16px 48px #0004; }
 .play-notification-dialog[open] { display:flex; flex-direction:column; }
 .play-notification-dialog::before { content:""; position:absolute; top:-8px; left:clamp(18px,calc(var(--notification-arrow,36px) - 8px),calc(100% - 34px)); width:14px; height:14px; transform:rotate(45deg); border-top:1px solid var(--border); border-left:1px solid var(--border); background:var(--bg); }
-.play-notification-dialog::backdrop { background:#0004; backdrop-filter:blur(6px); }
+/* Blur the table in its own compositing surface. Native modal dialogs live
+   in the top layer, outside this filter, so their scrolling content stays sharp. */
+:root:not([data-notification-blur="off"]) #root:has(.play-notification-dialog:modal) { filter:blur(6px); will-change:filter; }
+.play-notification-dialog::backdrop { background:#0004; }
 .play-notification-heading { display:flex; flex-shrink:0; align-items:center; gap:16px; padding:12px 20px; border-bottom:1px solid var(--border); }
 .play-notification-heading h2 { flex:1; margin:0; color:var(--text-h); font-size:20px; line-height:1.3; }
-.play-notification-heading button { flex-shrink:0; width:44px; height:44px; padding:0; font-size:24px; }
+.play-notification-heading .play-notification-close { display:grid; place-items:center; flex-shrink:0; box-sizing:border-box; width:44px; height:44px; padding:0; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); cursor:pointer; }
+.play-notification-heading .play-notification-close:hover { color:var(--text-h); background:color-mix(in srgb,var(--border) 24%,var(--bg)); }
+.play-notification-heading .play-notification-close:focus-visible { outline:3px solid var(--ui-accent, #147d72); outline-offset:3px; }
 .play-notifications-body { position:relative; min-height:0; padding:0 20px 20px; overflow:auto; overscroll-behavior:contain; border-radius:0 0 12px 12px; }
+/* Give the open feed a composited scrolling layer, separate from the blurred table. */
+.play-notification-dialog:modal > .play-notifications-body { will-change:transform; }
 .play-notifications-body > p { font-size:14px; }
 .play-notification-list summary { cursor:pointer; color:var(--text-h); }
 .play-notification-list { display:grid; gap:20px; list-style:none; margin:16px 0; padding:0; }
@@ -107,7 +114,9 @@
 .combat-request-check input { flex-shrink:0; margin-top:4px; }
 .combat-request-description { white-space:pre-wrap; overflow-wrap:anywhere; }
 .combat-request-history { max-height:650px; overflow:auto; }
-.play-notification-list.combat-request-feed > li { padding:0; }
+.play-notification-list.combat-request-feed { grid-template-columns:minmax(0,1fr); }
+/* Keep offscreen action cards out of layout/paint; retain measured heights when revisiting them. */
+.play-notification-list.combat-request-feed > li { min-width:0; padding:0; content-visibility:auto; contain-intrinsic-block-size:auto 450px; }
 .play-notification-list .combat-request--review,.master-spell-review {
     --request-muted:color-mix(in srgb,var(--text-h) 72%,var(--bg));
     --request-good:light-dark(#12695f,#86dacb);
@@ -193,7 +202,7 @@
 .combat-request--review .combat-result-details ul { margin:8px 0; padding-left:20px; }
 .combat-request--review .combat-result-details li { padding:3px 0; color:var(--request-muted); font-size:13px; }
 .combat-request--review .combat-request-decision { margin-top:20px; padding-top:16px; border-top:1px solid var(--border); }
-.combat-request--review .combat-request-decision > fieldset { display:grid; gap:12px; margin:0; padding:0; border:0; }
+.combat-request--review .combat-request-decision > fieldset { min-width:0; display:grid; gap:12px; margin:0; padding:0; border:0; }
 .combat-request-decision legend { margin-bottom:12px; padding:0; color:var(--text-h); font-size:14px; font-weight:650; }
 .combat-request--review .combat-request-decision label { margin:0; font-size:15px; line-height:1.5; }
 .combat-request--review .combat-request-decision label:not(.combat-request-check) { display:grid; grid-template-columns:minmax(0,1fr) 104px; align-items:center; gap:12px; }

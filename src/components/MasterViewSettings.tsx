@@ -3,6 +3,7 @@ import { useDialogDismiss } from '../utils/Dialog'
 import type { MasterView } from '../utils/MasterView'
 import '../MasterView.css'
 import { ThemeSettings } from './ThemeSettings'
+import { NotificationSettings } from './NotificationSettings'
 
 export function MasterViewSettings({ view, onChange, error, children, role = 'master' }: {
     view: MasterView; onChange: (view: MasterView) => void; error: string; children?: ReactNode; role?: 'master' | 'player'
@@ -24,6 +25,7 @@ export function MasterViewSettings({ view, onChange, error, children, role = 'ma
             <p className="master-settings-note">La scelta si applica subito ed è ricordata per questo account in questo browser.</p>
             {error && <p role="status">{error}</p>}
             <ThemeSettings/>
+            <NotificationSettings/>
             {children && <div className="master-settings-extra">{children}</div>}
             <footer><button type="button" className="sort-turns" onClick={() => dialog.current?.close()}>Torna al tavolo</button></footer>
         </dialog>
