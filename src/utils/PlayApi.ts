@@ -1,5 +1,5 @@
 import type { SpellEffectDetails, WeaponEffectDetails, ResolutionPlan, RollPacket, TargetResolution, SaveAbility, DefenseProfile } from '../domain/dnd/CombatResolution'
-import type { SleepTarget } from '../domain/dnd/Sleep'
+import type { SleepReviewData } from '../domain/dnd/Sleep'
 import type { AttackAssessment } from '../domain/dnd/CombatActions'
 import type { CharacterSheet } from './CharacterSheets'
 import type { TrackerState } from '../components/TurnsTracker'
@@ -15,7 +15,7 @@ export type CombatTarget = {asleep?:boolean;id:number;name:string;roll:string;hi
 export type WindSave={mode:'dice'|'manual';die?:number;secondDie?:number;bonuses?:Record<string,number>;success?:boolean}
 export type WindReview={candidates:{id:number;name:string;sheetId:string;profile:DefenseProfile}[];selected:number[];saves:Record<string,WindSave>;editable:boolean}
 export type WindDirectionChoice={effectId:number;selected:number[];canUse:boolean;reason?:string}
-export type CombatRequest = {sleepReview?:{candidates:SleepTarget[];selected:number[]};sleepRoll?:number;windDirection?:boolean;additionalActionRequired?:boolean;wind?:WindReview;id:string;characterId?:string;characterName:string;actorName:string;actionName:string;createdAt:string;status:'pending'|'approved'|'rejected'|'stale';optionLabel:string;cost:number;spendsResources:boolean;mode:'attack'|'save'|'automatic'|'none';attackDie?:number;packets?:RollPacket[];weaponChoices?:{targetId:number;items:{id:string;name:string;quantity:number}[]}[];resolution?:ResolutionPlan;rollsRevision?:number;damageEnabled:boolean;prolonged:boolean;targets:CombatTarget[];resolvedAt?:string}
+export type CombatRequest = {sleepReview?:SleepReviewData;sleepRoll?:number;windDirection?:boolean;additionalActionRequired?:boolean;wind?:WindReview;id:string;characterId?:string;characterName:string;actorName:string;actionName:string;createdAt:string;status:'pending'|'approved'|'rejected'|'stale';optionLabel:string;cost:number;spendsResources:boolean;mode:'attack'|'save'|'automatic'|'none';attackDie?:number;packets?:RollPacket[];weaponChoices?:{targetId:number;items:{id:string;name:string;quantity:number}[]}[];resolution?:ResolutionPlan;rollsRevision?:number;damageEnabled:boolean;prolonged:boolean;targets:CombatTarget[];resolvedAt?:string}
 export type ReactionEvent={kind:'hit'|'magic-missile'|'spell'|'damage'|'fall'|'other';label:string;targetIds:number[];actorId?:number;requestId?:string}
 export type ReactionWindow={id:string;groupId:string;characterId:string;characterName:string;event:ReactionEvent;actionKeys:string[];expiresAt:number;serverNow:number;status:'pending'|'submitted'|'used'|'declined'|'expired';requestId?:string}
 type Requests = {reactionWindows?:ReactionWindow[];requestsRevision:number;combatRequests:CombatRequest[];newestPendingRequest?:number}

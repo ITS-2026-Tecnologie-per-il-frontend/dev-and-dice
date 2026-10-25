@@ -96,6 +96,7 @@ export function validateState(state) {
 }
 
 export async function gamesRouter({ dataDir, authenticate }) {
+  const reviewRules=await combatRules()
   const file = resolve(dataDir, 'games.json')
   try { await writeFile(file, JSON.stringify({ version: 1, characters: [], games: [] }), { flag: 'wx', mode: 0o600 }) }
   catch (error) { if (error.code !== 'EEXIST') throw error }
@@ -171,7 +172,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
     record.sheet=sheet;record.revision++
   }
   function view(db,game,user) {
-    const result = {...summary(game,user),notifications:notificationSummary(game,user),requestsRevision:game.requestsRevision??0,combatRequests:visibleRequests(game,user),reactionWindows:visibleReactions(game,user)}
+    const result = {...summary(game,user),notifications:notificationSummary(game,user),requestsRevision:game.requestsRevision??0,combatRequests:visibleRequests(game,user,db,reviewRules),reactionWindows:visibleReactions(game,user)}
     const records=db.characters.filter(character=>character.gameId===game.id)
     const state=structuredClone(game.state)
     state.abilities=recoverRepeatSaveDCs(game)

@@ -9,7 +9,7 @@ import { withWizardCatalog } from '../src/utils/PlayerCreation.ts'
 import { spellEdition } from '../src/utils/Spellcasting.ts'
 import { resolutionPlan, directBenefit, weaponDisplayName, weaponEffectDetails, spellEffectDetails, weaponCandidates as availableWeapons, enchantWeapon, spellAttackAbility, damageNames, conditionNames, defenseProfile, validPackets, assertPacketPlan, packetTargets, resolveTarget, activeEffects, validEffectSpecs, saveNames, validWeaponEffect } from '../src/domain/dnd/CombatResolution.ts'
 import { conditionsFor, endIncapacitatedConcentration, settleCombatEffects } from '../src/domain/dnd/CombatConditions.ts'
-import { sleepDice, validSleepRoll, sleepTargetReason } from '../src/domain/dnd/Sleep.ts'
+import { sleepDice, validSleepRoll, sleepAllocation } from '../src/domain/dnd/Sleep.ts'
 import { combatTargeting, creatureType, wearingArmor, assertTargetTypes } from '../src/domain/dnd/CombatTargets.ts'
 
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status})}
@@ -168,7 +168,9 @@ function sleepTargets(context) {
 }
 
 export function createSleepReview(context,proposal) {
-  return {candidates:sleepTargets(context).filter(target=>proposal.targets.some(t=>t.id===target.id)),selected:[]}
+  const names=new Map(context.targets.map(t=>[t.id,t.sheet?.name??t.description]))
+  const candidates=sleepTargets(context).map(t=>({...t,name:names.get(t.id)})),area=proposal.targets.map(t=>t.id)
+  return {candidates,area,selected:sleepAllocation(candidates,area,proposal.sleepRoll).selected}
 }
 
 export function actionChoices(context,game,db) {
@@ -211,7 +213,10 @@ export function validCombatRequest(entry) {
     || !Array.isArray(entry.targets) || entry.targets.length!==entry.proposal?.targets?.length
     || !entry.targets.every(target=>object(target) && text(target.name,20000) && (target.armorClass===undefined||Number.isSafeInteger(target.armorClass)) && damage(target.damage)
       && entry.proposal.targets.some(original=>original.id===target.id && original.roll===target.roll && original.hit===target.hit && original.damageRoll===target.damageRoll))) return false
-  if(entry?.sleepReview!==undefined&&(!object(entry.sleepReview)||!Array.isArray(entry.sleepReview.candidates)||entry.proposal?.sleepRoll===undefined||entry.sleepReview.candidates.length!==entry.proposal.targets.length||!entry.sleepReview.candidates.every(t=>object(t)&&integer(t.id)&&entry.proposal.targets.some(p=>p.id===t.id)&&(t.hitPoints===undefined||integer(t.hitPoints))&&(t.unavailableReason===undefined||text(t.unavailableReason,500)))||!Array.isArray(entry.sleepReview.selected)||new Set(entry.sleepReview.selected).size!==entry.sleepReview.selected.length||!entry.sleepReview.selected.every(id=>entry.proposal.targets.some(t=>t.id===id))))return false
+  if(entry.sleepReview!==undefined) {
+    const review=entry.sleepReview,area=review?.area??entry.proposal.targets.map(t=>t.id)
+    if(!object(review)||entry.proposal.sleepRoll===undefined||!Array.isArray(review.candidates)||review.candidates.length>1000||new Set(review.candidates.map(t=>t?.id)).size!==review.candidates.length||!review.candidates.every(t=>object(t)&&integer(t.id)&&(t.hitPoints===undefined||integer(t.hitPoints))&&(t.name===undefined||text(t.name,20000))&&(t.unavailableReason===undefined||text(t.unavailableReason,500)))||!Array.isArray(area)||new Set(area).size!==area.length||!area.every(id=>review.candidates.some(t=>t.id===id))||!Array.isArray(review.selected)||new Set(review.selected).size!==review.selected.length||!review.selected.every(id=>area.includes(id)))return false
+  }
   if (entry.proposal.attackDie!==undefined && (!object(entry.weaponAttack)||!['2014','2024'].includes(entry.weaponAttack.edition)||entry.weaponAttack.modifier!==undefined&&!Number.isSafeInteger(entry.weaponAttack.modifier))) return false
   if(entry.proposal.packets!==undefined&&!validResolutionSnapshot(entry))return false
   if(entry.proposal.windDirection!==undefined&&entry.resolution?.plan.ruleId!=='phb2014:spell:gust-of-wind')return false
@@ -302,14 +307,16 @@ function reviewWind(db,game,entry,rules,input) {
   // added when the table needs to retain every repeated save instead of replacing it.
   return wind
 }
-export function visibleRequests(game,user) {
+export function visibleRequests(game,user,db,rules) {
   const entries=(game.combatRequests??[]).filter(entry=>game.masterId===user || entry.ownerId===user && game.players.some(player=>player.userId===user && player.characterId===entry.characterId))
   // ponytail: like the sheet journal, persisted requests grow for one session; move both journals to paginated DB storage together.
-  return [...entries].reverse().filter((entry,index)=>index<20 || requestStatus(game,entry)==='pending').map(entry=>({id:entry.id,characterId:entry.characterId,characterName:entry.characterName,actorName:entry.actorName,actionName:entry.actionName,
+  return [...entries].reverse().filter((entry,index)=>index<20 || requestStatus(game,entry)==='pending').map(original=>{
+    const entry=game.masterId===user&&original.status==='pending'&&original.proposal.sleepRoll!==undefined&&db&&rules?{...original,sleepReview:createSleepReview({targets:game.state.turns.map(t=>({...t,sheet:db.characters.find(r=>r.id===t.sheet?.id&&r.gameId===game.id)?.sheet??t.sheet})),weaponContext:{active:game.state.abilities,data:rules.data}},original.proposal)}:original
+    return ({id:entry.id,characterId:entry.characterId,characterName:entry.characterName,actorName:entry.actorName,actionName:entry.actionName,
     createdAt:entry.createdAt,status:requestStatus(game,entry),additionalActionRequired:entry.resolution?.additionalActionRequired??false,optionLabel:entry.optionLabel,cost:entry.proposal.cost,windDirection:entry.proposal.windDirection!==undefined,spendsResources:!['free','cantrip','ritual'].includes(entry.proposal.option),mode:entry.proposal.mode,damageEnabled:entry.proposal.damageEnabled,prolonged:entry.prolonged,
-    ...(entry.proposal.attackDie!==undefined?{attackDie:entry.proposal.attackDie}:{}),...(entry.proposal.sleepRoll!==undefined?{sleepRoll:entry.proposal.sleepRoll}:{}),...(game.masterId===user&&entry.sleepReview?{sleepReview:entry.sleepReview}:{}),
+    ...(entry.proposal.attackDie!==undefined?{attackDie:entry.proposal.attackDie}:{}),...(entry.proposal.sleepRoll!==undefined?{sleepRoll:entry.proposal.sleepRoll}:{}),...(game.masterId===user&&entry.sleepReview?{sleepReview:{...entry.sleepReview,candidates:entry.sleepReview.candidates.map(c=>({...c,name:c.name??entry.targets.find(t=>t.id===c.id)?.name??'Creatura'}))}}:{}),
     ...(entry.resolution?{packets:entry.proposal.packets,rollsRevision:entry.rollsRevision??0,...(game.masterId===user?{resolution:{...entry.resolution.plan,attackAbility:entry.resolution.plan.attackAbility??(entry.resolution.plan.kind==='attack'&&!entry.resolution.plan.weaponName&&!/^sheet-attack:/.test(entry.resolution.plan.ruleId??'')?spellAttackAbility(game.state?.turns.find(t=>t.sheet?.id===entry.characterId)?.sheet):undefined)},weaponChoices:entry.resolution.weaponChoices,...(entry.resolution.wind?{wind:{...entry.resolution.wind,editable:windEditable(game,entry)}}:{})}: {})}:{}),
-    targets:(entry.resolution?.wind?entry.resolution.wind.selected.map(id=>{const c=entry.resolution.wind.candidates.find(c=>c.id===id);return {id,name:c.name,roll:'',damageRoll:'',damage:'0'}}):entry.targets).map(({id,name,roll,hit,damageRoll,damage,armorClass})=>{
+    targets:(entry.sleepReview&&entry.status==='approved'?entry.sleepReview.candidates.filter(c=>(entry.sleepReview.area??entry.proposal.targets.map(t=>t.id)).includes(c.id)).map(c=>({id:c.id,name:c.name??entry.targets.find(t=>t.id===c.id)?.name??'Creatura',roll:'',damageRoll:'',damage:'0'})):entry.resolution?.wind?entry.resolution.wind.selected.map(id=>{const c=entry.resolution.wind.candidates.find(c=>c.id===id);return {id,name:c.name,roll:'',damageRoll:'',damage:'0'}}):entry.targets).map(({id,name,roll,hit,damageRoll,damage,armorClass})=>{
       const base={id,name,roll,damageRoll,...(entry.sleepReview&&entry.status==='approved'?{asleep:entry.sleepReview.selected.includes(id)}:{}),damage:(entry.weaponAttack||entry.resolution)&&game.masterId!==user?(entry.proposal.targets.find(target=>target.id===id)?.damage??'0'):damage}
       if(entry.resolution?.wind)return base
       if(entry.resolution){
@@ -324,7 +331,7 @@ export function visibleRequests(game,user) {
       if (!entry.weaponAttack) return {...base,hit}
       if (game.masterId!==user) return base
       return {...base,attack:assessAttack(entry.weaponAttack.edition,entry.proposal.attackDie,entry.weaponAttack.modifier,armorClass)}
-    }),...(entry.resolvedAt ? {resolvedAt:entry.resolvedAt} : {})}))
+    }),...(entry.resolvedAt ? {resolvedAt:entry.resolvedAt} : {})})})
 }
 
 export function prepareAction(context,proposal,rules) {
@@ -371,16 +378,14 @@ export function applyCombatRequest(db,game,entry,rules,body) {
   const {action,ability,sheet,rage}=prepareAction(context,proposal,rules)
   let sleepReview
   if(proposal.sleepRoll!==undefined) {
-    const selected=body.sleepTargets
-    if(!Array.isArray(selected)||new Set(selected).size!==selected.length||!selected.every(id=>proposal.targets.some(t=>t.id===id)))fail(400,'Conferma i bersagli da addormentare.')
-    sleepReview={...createSleepReview(context,proposal),selected}
-    let remaining=proposal.sleepRoll
-    for(const target of sleepReview.candidates.filter(t=>selected.includes(t.id)).sort((a,b)=>(a.hitPoints??Infinity)-(b.hitPoints??Infinity))) {
-      const reason=sleepTargetReason(target,remaining)
-      if(reason)fail(400,reason)
-      remaining-=target.hitPoints
-    }
-  } else if(body.sleepTargets!==undefined)fail(400,'Questa azione non prevede bersagli di Sonno.')
+    const review=createSleepReview(context,proposal),area=body.sleepArea??proposal.targets.map(t=>t.id),selected=body.sleepTargets
+    if(!Array.isArray(area)||new Set(area).size!==area.length||!area.every(id=>review.candidates.some(t=>t.id===id)))fail(400,'Conferma le creature nell’area di Sonno.')
+    if(!Array.isArray(selected)||new Set(selected).size!==selected.length||!selected.every(id=>area.includes(id)))fail(400,'Conferma i bersagli da addormentare.')
+    if(review.candidates.some(t=>area.includes(t.id)&&t.hitPoints===undefined&&!t.unavailableReason))fail(400,'Completa i PF delle creature nell’area prima di approvare Sonno.')
+    const expected=sleepAllocation(review.candidates,area,proposal.sleepRoll,selected).selected
+    if(expected.length!==selected.length||expected.some(id=>!selected.includes(id)))fail(400,'Sonno deve influenzare le creature nell’area dai PF più bassi, fino a esaurire la riserva. Puoi scegliere la priorità a parità di PF.')
+    sleepReview={...review,area,selected}
+  } else if(body.sleepTargets!==undefined||body.sleepArea!==undefined)fail(400,'Questa azione non prevede bersagli di Sonno.')
   if(proposal.windDirection!==undefined){
     if(!Array.isArray(body.targets)||body.targets.length!==wind.selected.length||new Set(body.targets.map(t=>t?.id)).size!==wind.selected.length||!body.targets.every(t=>wind.selected.includes(t.id)&&t.damage==='0'))fail(400,'Conferma i bersagli della nuova direzione.')
     return {state:{...game.state,turns:game.state.turns.map(t=>t.sheet?.id===sheet.id?{...t,sheet:{...sheet,abilities:t.sheet.abilities}}:t),abilities:game.state.abilities.map(a=>a.id===ability.id?{...a,targets:wind.selected.map(id=>({id,damage:'0',resolved:true}))}:a)},sheets:[sheet],targets:wind.selected.map(id=>({id,damage:'0'})),wind}
@@ -402,7 +407,7 @@ export function applyCombatRequest(db,game,entry,rules,body) {
     const canonical=record?.id===context.record.id ? sheet : record?.sheet
     return canonical ? {...turn,sheet:{...canonical,abilities:turn.sheet.abilities},hitPoints:canonical.hitPoints,temporaryHitPoints:canonical.playerDetails?.temporaryHitPoints ?? ''} : turn
   })
-  const resolving={...ability,...(entry.resolution?.plan.deferredSave?{windSave:{dc:entry.resolution.plan.deferredSave.dc}}:{}),useOption:entry.proposal.option,damageEnabled:entry.proposal.damageEnabled,execution:{id:entry.id,phase:'resolving',option:entry.proposal.option,cost:entry.proposal.cost},targets:body.targets.filter(t=>!sleepReview||sleepReview.selected.includes(t.id)).map(({id,damage})=>({id,damage,resolved:true}))}
+  const resolving={...ability,...(entry.resolution?.plan.deferredSave?{windSave:{dc:entry.resolution.plan.deferredSave.dc}}:{}),useOption:entry.proposal.option,damageEnabled:entry.proposal.damageEnabled,execution:{id:entry.id,phase:'resolving',option:entry.proposal.option,cost:entry.proposal.cost},targets:sleepReview?sleepReview.selected.map(id=>({id,damage:'0',resolved:true})):body.targets.map(({id,damage})=>({id,damage,resolved:true}))}
   let updated
   try {updated=resolveCombatDamage(resolving,turns,context.catalog)} catch(error) {fail(409,error.message)}
   const sheets=new Map([[sheet.id,sheet]])

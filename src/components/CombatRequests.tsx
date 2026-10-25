@@ -8,7 +8,8 @@ import { InfoButton } from './InfoButton'
 import { HelpTooltip } from './HelpTooltip'
 import { damageNames, directBenefit, type WeaponChoice } from '../domain/dnd/CombatResolution'
 import { integerValue, signedBonus } from '../utils/CharacterSheets'
-import { sleepDice, validSleepRoll, sleepTargetReason } from '../domain/dnd/Sleep'
+import { sleepDice, validSleepRoll, sleepAllocation } from '../domain/dnd/Sleep'
+import { SleepReview } from './SleepReview'
 import { WindReview, WindSummary } from './WindReview'
 import { WindDirectionForm } from './WindDirectionForm'
 import { catalogForSheet, loadActiveDatabase } from '../domain/dnd/ActiveRules'
@@ -24,7 +25,7 @@ function RequestDescription({request,review=false}:{request:CombatRequest;review
         <p className="combat-request-author"><strong>{request.characterName}</strong><span>Giocato da {request.actorName}</span><time dateTime={request.createdAt}>{new Date(request.createdAt).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</time></p>
         <p className="combat-request-mode"><span>{request.resolution?.temporaryHitPoints?'PF temporanei':request.resolution?.healing?'Guarigione':modeLabels[request.mode]}</span><span>{request.optionLabel}{request.spendsResources?` · costo ${request.cost}`:''}</span></p>
         {request.prolonged&&<p className="combat-request-notice">Tempo di lancio prolungato: approva dopo il completamento.</p>}
-        {request.sleepRoll!==undefined&&<p className="ability-casting-summary">Riserva di Sonno: <strong>{request.sleepRoll} PF</strong> · totale dei d8, nessun danno.</p>}
+        {request.sleepRoll!==undefined&&!request.sleepReview&&<p className="ability-casting-summary">Riserva di Sonno: <strong>{request.sleepRoll} PF</strong> · totale dei d8, nessun danno.</p>}
     </>
     // Critical damage dice: PHB 2014 PDF 197; SRD 5.2.1 (2024) PDF 18, Colpi critici.
     return <><p>{request.characterName} · {request.actorName} · <time dateTime={request.createdAt}>{new Date(request.createdAt).toLocaleString('it-IT')}</time></p>
@@ -43,8 +44,9 @@ export function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDe
     const missingWind=!!request.wind&&wind.selected.some(id=>wind.saves[id]?.mode==='manual'&&wind.saves[id]?.success===undefined)
     const [weapons,setWeapons]=useState<Record<number,WeaponChoice>>({})
     const [additionalActionConfirmed,setAdditionalActionConfirmed]=useState(false)
-    const [sleepSelected,setSleepSelected]=useState<number[]>(request.sleepReview?.selected??[])
-    const sleepRemaining=(request.sleepRoll??0)-(request.sleepReview?.candidates.filter(t=>sleepSelected.includes(t.id)).reduce((sum,t)=>sum+(t.hitPoints??0),0)??0)
+    const [sleepArea,setSleepArea]=useState<number[]>(request.sleepReview?.area??request.targets.map(t=>t.id))
+    const [sleepSelected,setSleepSelected]=useState<number[]>(()=>request.sleepReview?(request.status==='pending'?sleepAllocation(request.sleepReview.candidates,request.sleepReview.area??request.targets.map(t=>t.id),request.sleepRoll??0,request.sleepReview.selected).selected:request.sleepReview.selected):[])
+    const missingSleep=!!request.sleepReview&&request.sleepReview.candidates.some(t=>sleepArea.includes(t.id)&&t.hitPoints===undefined&&!t.unavailableReason)
     const [damages,setDamages]=useState<Record<number,string>>({}),[manual,setManual]=useState(false),[effectOverrides,setEffectOverrides]=useState<Record<number,boolean>>({}),[busy,setBusy]=useState(false),[error,setError]=useState('')
     const calculatedDamageFor=(target:CombatTarget)=>target.resolution?target.resolution.damage===null?'':String(target.resolution.damage):target.attack?.hit===false?'0':target.damage
     const damageFor=(target:CombatTarget)=>damages[target.id]??calculatedDamageFor(target)
@@ -56,7 +58,7 @@ export function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDe
     async function decide(decision:'approve'|'reject') {
         if (working.current) return
         working.current=true;setBusy(true);setError('')
-        try {await onDecide(request.id,decision,{confirmed:decision==='approve',additionalActionConfirmed,manualResolution:manual,...(request.sleepReview?{sleepTargets:sleepSelected}:{}),...(request.wind?{wind}:{}),...(weaponEffect?{weapons:request.targets.map(t=>({targetId:t.id,...weapons[t.id]}))}:{}),targets:request.wind?wind.selected.map(id=>({id,damage:'0'})):request.targets.map(target=>({id:target.id,damage:damageFor(target)})),...(request.resolution?{effects:effectTargets.filter(t=>effectOverrides[t.id]!==false).map(t=>t.id)}:{})})} catch(error) {setError(message(error))} finally {working.current=false;setBusy(false)}
+        try {await onDecide(request.id,decision,{confirmed:decision==='approve',additionalActionConfirmed,manualResolution:manual,...(request.sleepReview?{sleepArea,sleepTargets:sleepSelected}:{}),...(request.wind?{wind}:{}),...(weaponEffect?{weapons:request.targets.map(t=>({targetId:t.id,...weapons[t.id]}))}:{}),targets:request.wind?wind.selected.map(id=>({id,damage:'0'})):request.targets.map(target=>({id:target.id,damage:damageFor(target)})),...(request.resolution?{effects:effectTargets.filter(t=>effectOverrides[t.id]!==false).map(t=>t.id)}:{})})} catch(error) {setError(message(error))} finally {working.current=false;setBusy(false)}
     }
     async function refreshRequest(){
         if(working.current)return
@@ -65,14 +67,7 @@ export function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDe
     }
     const pending=request.status==='pending',stale=request.status==='stale'
     return <article className="combat-request combat-request--review" aria-busy={busy}><header className="combat-request-heading"><div className="combat-request-title"><h3>{request.actionName}</h3><InfoButton label="Dettagli" name={request.actionName} entry={entry} description={ability?.description||catalogStatus||request.resolution?.notes.join('\n')||'Descrizione non disponibile. Consulta la scheda del personaggio.'} fields={ability?{duration:ability.duration}:{}}/></div><p className="combat-request-state" data-state={request.status} role="status">{statusLabels[request.status]}</p></header><RequestDescription request={request} review/>
-        {request.sleepReview&&<fieldset className="ability-targets" aria-label="Creature da addormentare" disabled={disabled||busy||!pending}><legend>Creature da addormentare</legend>
-            <p className="library-help">Le creature indicate dal giocatore sono una proposta dell’area. Verifica chi è presente e seleziona chi si addormenta, dai PF attuali più bassi ai più alti; risolvi tu le parità.</p>
-            <p className="ability-casting-summary" role="status">Riserva: <strong>{request.sleepRoll} PF</strong> · restanti: <strong>{sleepRemaining} PF</strong></p>
-            {request.sleepReview.candidates.slice().sort((a,b)=>(a.hitPoints??Infinity)-(b.hitPoints??Infinity)).map(target=>{
-                const picked=sleepSelected.includes(target.id),reason=sleepTargetReason(target,picked?request.sleepRoll??0:sleepRemaining)
-                return <div className="ability-target" key={target.id}><label className="combat-request-check"><input type="checkbox" checked={picked} disabled={!picked&&!!reason} onChange={event=>setSleepSelected(current=>event.target.checked?[...current,target.id]:current.filter(id=>id!==target.id))}/>{request.targets.find(t=>t.id===target.id)?.name}{target.hitPoints!==undefined&&` · ${target.hitPoints} PF`}{!pending&&` · ${picked?'Addormentato':'Non addormentato'}`}</label>{pending&&reason&&<span className="library-help">{reason}</span>}</div>
-            })}
-        </fieldset>}
+        {request.sleepReview&&<SleepReview review={request.sleepReview} total={request.sleepRoll??0} area={sleepArea} selected={sleepSelected} disabled={disabled||busy||!pending} onChange={(area,selected)=>{setSleepArea(area);setSleepSelected(selected)}}/>}
         {!request.sleepReview&&<ResolutionDetails request={request} review renderSave={target=><MasterSavingRolls request={request} target={target} disabled={disabled||busy} onDecide={onDecide}/>} renderPacket={(target,index)=><MasterCriticalRolls request={request} target={target} index={index} disabled={disabled||busy} onDecide={onDecide}/>} renderTarget={target=>{
             if(!pending||!request.damageEnabled)return null
             const original=calculatedDamageFor(target),value=damageFor(target)
@@ -93,7 +88,7 @@ export function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDe
                 {effectTargets.map(target=><label className="combat-request-check" key={target.id}><input type="checkbox" checked={effectOverrides[target.id]!==false} onChange={event=>setEffectOverrides(current=>({...current,[target.id]:event.target.checked}))}/>Applica gli effetti aggiuntivi a {target.name}</label>)}
                 {request.resolution&&request.targets.some(t=>t.resolution?.damage===null)&&<label className="combat-request-check"><input type="checkbox" checked={manual} onChange={event=>setManual(event.target.checked)}/>Confermo una risoluzione manuale per i dati mancanti</label>}
                 </>}
-                <div className="play-actions">{stale&&(request.wind||directBenefit(request.resolution))&&<button type="button" onClick={()=>void refreshRequest()}>Aggiorna richiesta</button>}{pending&&<button disabled={!!request.additionalActionRequired&&!additionalActionConfirmed||missingWind||missingWeapon||!!request.resolution&&request.targets.some(t=>t.resolution?.damage===null)&&!manual} type="submit">Approva azione</button>}{(pending||stale)&&<button type="button" className="play-secondary" onClick={()=>void decide('reject')}>Rifiuta azione</button>}</div>
+                <div className="play-actions">{stale&&(request.wind||directBenefit(request.resolution))&&<button type="button" onClick={()=>void refreshRequest()}>Aggiorna richiesta</button>}{pending&&<button disabled={!!request.additionalActionRequired&&!additionalActionConfirmed||missingWind||missingWeapon||missingSleep||!!request.resolution&&request.targets.some(t=>t.resolution?.damage===null)&&!manual} type="submit">Approva azione</button>}{(pending||stale)&&<button type="button" className="play-secondary" onClick={()=>void decide('reject')}>Rifiuta azione</button>}</div>
             </fieldset>
         </form>}{!pending&&!stale&&request.wind&&request.resolution&&<WindSummary review={request.wind} plan={request.resolution} casterName={request.characterName}/>}{error&&<p role="alert">{error}</p>}</article>
 }

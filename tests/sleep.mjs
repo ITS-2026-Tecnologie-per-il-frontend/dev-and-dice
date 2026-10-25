@@ -1,7 +1,7 @@
 // Run: node tests/sleep.mjs — isolated 2014 Sleep targeting and proposal checks.
 import assert from 'node:assert/strict'
 import {combatRules,actionContext,actionChoices,requestProposal,prepareAction,createSleepReview,applyCombatRequest,validCombatRequest,visibleRequests} from '../server/combat-requests.mjs'
-import {sleepDice,validSleepRoll,sleepTargetReason} from '../src/domain/dnd/Sleep.ts'
+import {sleepDice,validSleepRoll,sleepTargetReason,sleepAllocation} from '../src/domain/dnd/Sleep.ts'
 import {newCharacterSheet} from '../src/utils/CharacterSheets.ts'
 import {templateFromCatalog} from '../src/utils/Catalog.ts'
 assert.equal(sleepDice('slot:1'),5)
@@ -39,18 +39,36 @@ const entry={id:draft.id,ownerId:casterId,characterId:mage.id,characterName:mage
 game.combatRequests=[entry]
 assert(validCombatRequest(entry));assert(validCombatRequest(JSON.parse(JSON.stringify(entry))))
 assert.equal(visibleRequests(game,casterId)[0].sleepReview,undefined)
-assert.equal(visibleRequests(game,game.masterId)[0].sleepReview.candidates.length,8)
-const body={confirmed:true,targets:draft.targets.map(t=>({id:t.id,damage:'0'}))}
+assert.equal(visibleRequests(game,game.masterId)[0].sleepReview.candidates.length,9)
+assert.deepEqual(review.area,[1,2,3,4,5,6,7,8])
+assert.deepEqual(review.selected,[1,2])
+const originalReview=entry.sleepReview
+entry.sleepReview={candidates:review.candidates.filter(t=>draft.targets.some(p=>p.id===t.id)),selected:[]}
+assert(validCombatRequest(entry),'Legacy pending receipts remain readable')
+assert.equal(visibleRequests(game,game.masterId,db,rules)[0].sleepReview.candidates.length,9,'Existing pending notifications expand to all current participants')
+entry.sleepReview=originalReview
+const body={confirmed:true,sleepArea:[1,2,3,4,5,6,7],targets:draft.targets.map(t=>({id:t.id,damage:'0'}))}
 assert.throws(()=>applyCombatRequest(db,game,entry,rules,body),/Conferma i bersagli/)
 for(const selected of [[1,2,3],[4],[5],[6],[7],[8],[999],[1,1]])assert.throws(()=>applyCombatRequest(db,game,entry,rules,{...body,sleepTargets:selected}))
 const applied=applyCombatRequest(db,game,entry,rules,{...body,sleepTargets:[1,2]})
 assert.deepEqual(applied.sleepReview.selected,[1,2])
 assert.deepEqual(applied.state.abilities.find(a=>a.ruleId===spell.ruleId).targets.map(t=>t.id),[1,2])
 assert(applied.state.turns.every((turn,i)=>turn.hitPoints===game.state.turns[i].hitPoints),'Sleep never deals damage')
-const empty=applyCombatRequest(db,game,entry,rules,{...body,sleepTargets:[]})
+assert.throws(()=>applyCombatRequest(db,game,entry,rules,{...body,sleepTargets:[]}),/PF più bassi/)
+assert.throws(()=>applyCombatRequest(db,game,entry,rules,{...body,sleepTargets:[3]}),/PF più bassi/)
+assert.throws(()=>applyCombatRequest(db,game,entry,rules,{...body,sleepArea:[8],sleepTargets:[]}),/Completa i PF/)
+const added=applyCombatRequest(db,game,entry,rules,{...body,sleepArea:[0],sleepTargets:[0]})
+assert.deepEqual(added.state.abilities.find(a=>a.ruleId===spell.ruleId).targets.map(t=>t.id),[0])
+const empty=applyCombatRequest(db,game,entry,rules,{...body,sleepArea:[],sleepTargets:[]})
 assert(!empty.state.abilities.some(a=>a.ruleId===spell.ruleId),'No active cast with no sleepers')
 entry.sleepReview=applied.sleepReview;entry.status='approved'
 assert(validCombatRequest(JSON.parse(JSON.stringify(entry))))
 assert.deepEqual(visibleRequests(game,casterId)[0].targets.filter(t=>t.asleep).map(t=>t.id),[1,2])
 assert.equal(visibleRequests(game,casterId)[0].sleepReview,undefined)
+const tied=[{id:1,hitPoints:6},{id:2,hitPoints:13},{id:3,hitPoints:13},{id:4,hitPoints:20},{id:5,hitPoints:1,unavailableReason:'Immune'}]
+assert.deepEqual(sleepAllocation(tied,[1,2,3,4,5],22),{selected:[1,2],remaining:3})
+assert.deepEqual(sleepAllocation(tied,[1,2,3,4,5],22,[3,1]),{selected:[1,3],remaining:3})
+assert.deepEqual(sleepAllocation(tied,[2,3],13,[3]),{selected:[3],remaining:0})
+assert.deepEqual(sleepAllocation(tied,[4],19),{selected:[],remaining:19})
+assert.deepEqual(sleepAllocation(tied,[],22),{selected:[],remaining:22})
 console.log('PASS Sleep 2014: private Master defenses, unrestricted player area, Master budget/immunity validation, persisted selections and active targets')

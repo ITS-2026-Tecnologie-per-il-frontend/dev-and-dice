@@ -297,6 +297,35 @@
 .play-saving-throws label { display:grid; gap:6px; }
 .play-saving-throws input { box-sizing:border-box; width:100%; min-height:44px; font:inherit; color:var(--text-h); background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:8px; }
 .combat-resolution-rolls fieldset { min-width:0; }
+.combat-request--review .sleep-review { display:grid; gap:14px; margin-top:16px; text-align:left; }
+.sleep-budget { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:0; padding:14px 16px; border:1px solid var(--border); border-radius:6px; background:var(--bg); }
+.sleep-budget dt { color:var(--request-muted); font-size:12px; line-height:1.4; }
+.sleep-budget dd { margin:4px 0 0; font-size:26px; font-weight:700; line-height:1.15; color:var(--text-h); font-variant-numeric:tabular-nums; }
+.sleep-budget dd small { font-size:14px; font-weight:400; }
+.combat-request--review .sleep-guidance { margin:0; color:var(--request-muted); font-size:13px; }
+.combat-request--review .sleep-review fieldset { margin:0; padding:0; border:0; }
+.sleep-review legend { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+.sleep-table-heading,.sleep-creature { display:grid; grid-template-columns:minmax(0,1fr) 84px 112px; gap:10px; align-items:center; }
+.sleep-table-heading { padding:0 12px 8px; color:var(--request-muted); font-size:12px; }
+.sleep-table-heading > :not(:first-child) { text-align:center; }
+.sleep-creature { padding:10px 12px; border-top:1px solid var(--border); }
+.sleep-creature[data-asleep] { background:color-mix(in srgb,#147d72 10%,var(--bg)); }
+.sleep-creature-name { display:grid; gap:3px; min-width:0; overflow-wrap:anywhere; }
+.sleep-creature-name > strong { font-size:15px; color:var(--text-h); }
+.sleep-creature-name > span,.sleep-creature-name > small { color:var(--request-muted); font-size:12px; line-height:1.4; }
+.combat-request--review .sleep-creature > label { display:flex; flex-direction:row; justify-content:center; align-items:center; gap:8px; min-height:44px; margin:0; }
+.combat-request--review .sleep-creature input { width:18px; height:18px; min-height:0; margin:0; accent-color:var(--ui-accent,#137d74); }
+.sleep-mobile-label { display:none; }
+.combat-request--review .sleep-outcome { margin:0; padding-top:10px; border-top:1px solid var(--border); font-size:13px; color:var(--text-h); }
+@media (max-width:480px) {
+    .sleep-budget { gap:8px; padding:12px; }
+    .sleep-budget dd { font-size:24px; }
+    .sleep-table-heading { display:none; }
+    .sleep-creature { grid-template-columns:1fr 1fr; gap:6px 12px; }
+    .sleep-creature-name { grid-column:1/-1; }
+    .combat-request--review .sleep-creature > label { justify-content:flex-start; font-size:12px; }
+    .sleep-mobile-label { display:inline; }
+}
 .combat-request--review:has(.wind-review) .combat-request-mode { margin:8px 0; }
 .combat-request--review:has(.wind-review) .combat-request-decision { margin-top:12px; padding-top:12px; }
 .combat-request--review:has(.wind-review) .combat-request-decision > fieldset > legend { margin-bottom:8px; }

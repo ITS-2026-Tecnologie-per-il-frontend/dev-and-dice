@@ -1,7 +1,7 @@
 // Run: node tests/sleep-delivery-ui.mjs — real browser/API delivery, isolated accounts/archive.
 import assert from 'node:assert/strict'
 import {once} from 'node:events'
-import {mkdtemp,writeFile,rm,mkdir} from 'node:fs/promises'
+import {mkdtemp,writeFile,readFile,rm,mkdir} from 'node:fs/promises'
 import {join,relative} from 'node:path'
 import {tmpdir} from 'node:os'
 import {chromium} from 'playwright'
@@ -55,11 +55,17 @@ try{
  await page.getByText('In attesa del Master',{exact:true}).first().waitFor()
  const masterView=(await api(master,path)).json,request=masterView.combatRequests.find(r=>r.actionName==='Sonno')
  assert(request,'The real Master receives the request')
- assert.equal(request.sleepRoll,40);assert.equal(request.sleepReview.candidates[0].hitPoints,6)
- const approved=(await api(master,path+'/requests/'+request.id+'/approve','POST',{revision:masterView.revision,confirmed:true,sleepTargets:[1],targets:[{id:1,damage:'0'}]})).json
- assert.deepEqual(approved.combatRequests.find(r=>r.id===request.id).sleepReview.selected,[1])
- assert.deepEqual(approved.state.abilities.find(a=>a.ruleId===spell.ruleId).targets.map(t=>t.id),[1])
+ assert.equal(request.sleepRoll,40);assert.equal(request.sleepReview.candidates.find(t=>t.id===1).hitPoints,6)
+ assert.equal(request.sleepReview.candidates.length,2);assert.deepEqual(request.sleepReview.area,[1]);assert.deepEqual(request.sleepReview.selected,[1])
+ const approved=(await api(master,path+'/requests/'+request.id+'/approve','POST',{revision:masterView.revision,confirmed:true,sleepArea:[0,1],sleepTargets:[1,0],targets:[{id:1,damage:'0'}]})).json
+ assert.deepEqual(approved.combatRequests.find(r=>r.id===request.id).sleepReview.selected,[1,0])
+ assert.deepEqual(approved.state.abilities.find(a=>a.ruleId===spell.ruleId).targets.map(t=>t.id),[1,0])
  assert.equal(approved.state.turns[0].sheet.playerDetails['slots.2.used'],'3')
+ const after=(await api(player,path)).json
+ assert.equal(after.combatRequests[0].sleepReview,undefined)
+ assert.deepEqual(after.combatRequests[0].targets.filter(t=>t.asleep).map(t=>t.id),[0,1])
+ const archived=JSON.parse(await readFile(join(dataDir,'games.json'),'utf8')).games[0].combatRequests[0]
+ assert.deepEqual(archived.sleepReview.area,[0,1]);assert.deepEqual(archived.sleepReview.selected,[1,0])
  assert.deepEqual(errors,[])
  console.log('PASS Sleep real browser/API: preserved legacy form, slot 2/40, visible retry error, request delivery, private Master review, approval, one slot spent and saved active targets')
 }finally{await page.unrouteAll({behavior:'wait'});await browser.close();await frontend.close();await new Promise(r=>backend.close(r));await rm(dir,{recursive:true,force:true});await rm(dataDir,{recursive:true,force:true})}
