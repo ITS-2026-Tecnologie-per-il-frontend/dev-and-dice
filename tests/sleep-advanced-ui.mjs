@@ -72,7 +72,7 @@ try{
  await dm.waitForFunction(()=>document.activeElement?.id==='readied-actions')
  await masterReady.getByLabel('Sonno preparato di Aster',{exact:true}).waitFor()
  assert.equal(await masterReady.getByLabel('Personaggio dell’azione preparata',{exact:true}).count(),0)
- assert(await masterReady.evaluate(el=>{const aside=el.closest('aside'),abilities=aside.querySelector('.abilities-tracker');return !!(abilities.compareDocumentPosition(el)&Node.DOCUMENT_POSITION_FOLLOWING)&&!aside.querySelector('.master-active-effects')}),'Prepared actions follow abilities; the combat overview belongs to the all-abilities tab')
+ assert(await masterReady.evaluate(el=>{const aside=el.closest('aside'),abilities=aside.querySelector('.abilities-tracker');return !!(el.compareDocumentPosition(abilities)&Node.DOCUMENT_POSITION_FOLLOWING)&&!aside.querySelector('.master-active-effects')}),'Prepared actions precede abilities; the combat overview belongs to the all-abilities tab')
  const spellPill=dm.getByRole('button',{name:'Apri azione preparata di Aster',exact:true}).locator('..')
  assert(await spellPill.getByRole('button',{name:'Concentrazione',exact:true}).isVisible())
  await screenshot(dm,spellPill,'sleep-prepared-concentration-pill-master')
