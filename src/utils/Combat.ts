@@ -70,7 +70,7 @@ export type Ability = {
     expiryOwnerId?:number
     expiryRound?:number
     repeatSave?:string
-    windSave?:{dc?:number;turn?:{targetId:number;round:number;inLine:boolean;success?:boolean}}
+    windSave?:{dc?:number;turn?:{targetId:number;round:number;inLine:boolean;success?:boolean;automaticFailure?:string|false}}
     repeatSaveRoll?:{ability:import('../domain/dnd/CombatResolution.ts').SaveAbility;dc?:number;timing:'end';lastRound?:number}
     ruleId?:string
     concentration?:boolean

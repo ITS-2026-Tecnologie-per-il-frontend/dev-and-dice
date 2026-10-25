@@ -1,6 +1,6 @@
 // node tests/wind-turns.mjs — rule timing and persisted outcomes, no live data.
 import assert from 'node:assert/strict'
-import {beginWindTurn,pendingWindSaves,resolveWindSave,windSaveResults,validWindSave} from '../src/domain/dnd/WindTurns.ts'
+import {beginWindTurn,resolveAutomaticWindSaves,pendingWindSaves,resolveWindSave,windSaveResults,validWindSave} from '../src/domain/dnd/WindTurns.ts'
 import {validateState} from '../server/games.mjs'
 const wind={id:8,ruleId:'phb2014:spell:gust-of-wind',name:'Folata di Vento',ownerId:1,active:true,concentration:true,duration:'1 minuto',remainingTurns:9,windSave:{dc:19},targets:[{id:2,damage:'0',resolved:true}]}
 let abilities=[structuredClone(wind)],combat={activeId:1,round:1}
@@ -48,3 +48,26 @@ const turns=[1,2,3].map(id=>({id,description:'Creatura '+id,initiative:'10',hitP
 assert.doesNotThrow(()=>validateState({turns,abilities:forced,combat:{activeId:2,round:1}}))
 assert.throws(()=>validateState({turns,abilities:[{...forced[0],ruleId:'custom'}],combat:{activeId:2,round:1}}),e=>e.status===400)
 console.log('PASS Wind turn timing: start snapshot, no entry/cast/redirect save, repeated turns, outcomes/reload, multiple casters, expiry, schema validation')
+
+// Conditions are sampled at turn start; waking later never rerolls the already failed save.
+for(const condition of ['unconscious','paralyzed','stunned','petrified']) {
+ const status={id:20,name:condition==='unconscious'?'Sonno':'Condizione',...(condition==='unconscious'?{ruleId:'phb2014:spell:sleep'}:{}),ownerId:3,active:true,duration:'1 minuto',remainingTurns:10,targets:[{id:2,damage:'0',resolved:true}],resolutionEffects:[{kind:'condition',condition,trigger:'always'}]}
+ const start={activeId:2,round:5},failed=beginWindTurn([wind,status],start)
+ assert.equal(pendingWindSaves(failed,start).length,0)
+ assert.equal(windSaveResults(failed,start)[0].windSave.turn.success,false)
+ assert(failed[0].windSave.turn.automaticFailure)
+ assert(validWindSave(failed[0].windSave))
+ assert.doesNotThrow(()=>validateState({turns,abilities:failed,combat:start}))
+ const awake=failed.filter(a=>a.id!==20)
+ assert.deepEqual(beginWindTurn(awake,start),awake,'Waking in the same turn does not reopen the save')
+ assert.equal(pendingWindSaves(beginWindTurn(awake,{...start,round:6}),{...start,round:6}).length,1,'Awake on the next turn: roll normally')
+ const pending=beginWindTurn([wind],start)
+ const oldPending=pending.map(a=>({...a,windSave:{...a.windSave,turn:{targetId:2,round:5,inLine:true}}}))
+ const legacy=resolveAutomaticWindSaves([...oldPending,status],start)
+ assert.equal(legacy[0].windSave.turn.success,false,'Old unresolved prompts are upgraded when opening the tracker')
+ assert.deepEqual(beginWindTurn([...pending,status],start),[...pending,status],'A condition acquired after turn start does not change its snapshot')
+ assert.deepEqual(resolveAutomaticWindSaves([...pending,status],start),[...pending,status],'Reloading cannot turn a later condition into a start-turn automatic failure')
+}
+assert(!validWindSave({turn:{targetId:2,round:1,inLine:true,success:true,automaticFailure:'Sonno'}}))
+assert(!validWindSave({turn:{targetId:2,round:1,inLine:true,success:false,automaticFailure:23}}))
+console.log('PASS Wind automatic failures: unconscious, paralyzed, stunned, petrified, legacy prompts, waking before/after start and validation')

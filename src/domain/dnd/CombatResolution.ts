@@ -14,7 +14,7 @@ import { assessAttack } from './CombatActions.ts'
 export const damageNames={acid:'Acido',bludgeoning:'Contundente',cold:'Freddo',fire:'Fuoco',force:'Forza',lightning:'Fulmine',necrotic:'Necrotico',piercing:'Perforante',poison:'Veleno',psychic:'Psichico',radiant:'Radioso',slashing:'Tagliente',thunder:'Tuono',untyped:'Tipo da verificare'} as const
 export type DamageType=keyof typeof damageNames
 export const saveNames={strength:'Forza',dexterity:'Destrezza',constitution:'Costituzione',intelligence:'Intelligenza',wisdom:'Saggezza',charisma:'Carisma'} as const
-export const conditionNames={paralyzed:'Paralizzato',restrained:'Trattenuto',frightened:'Spaventato',blinded:'Accecato',poisoned:'Avvelenato',prone:'Prono',unconscious:'Privo di sensi'} as const
+export const conditionNames={paralyzed:'Paralizzato',restrained:'Trattenuto',frightened:'Spaventato',blinded:'Accecato',poisoned:'Avvelenato',prone:'Prono',unconscious:'Privo di sensi',stunned:'Stordito',petrified:'Pietrificato'} as const
 export type SaveAbility=keyof typeof saveNames
 const classCastingAbilities:Record<string,SaveAbility>={druid:'wisdom',ranger:'wisdom',cleric:'wisdom',wizard:'intelligence',sorcerer:'charisma',bard:'charisma',warlock:'charisma',paladin:'charisma'}
 export function spellAttackAbility(sheet:CharacterSheet|undefined,data?:CreationData):SaveAbility|undefined {
@@ -297,6 +297,15 @@ export function damageBonusText(plan:ResolutionPlan,type:DamageType,bonus=plan.d
         : bonus?`${bonus<0?'−':'+'} ${Math.abs(bonus)}`:''
 }
 
+// PHB 2014, PDF 291–293: these conditions automatically fail Strength/Dexterity saves.
+export function automaticSaveFailureReason(abilities:Ability[],targetId:number,ability:SaveAbility):string|undefined {
+    if(!['strength','dexterity'].includes(ability))return undefined
+    const effect=activeEffects(abilities).find(a=>(a.targets?.length?a.targets.some(t=>t.id===targetId):a.ownerId===targetId)&&a.resolutionEffects?.some(e=>e.kind==='condition'&&['unconscious','paralyzed','stunned','petrified'].includes(e.condition??'')))
+    if(!effect)return undefined
+    const condition=effect.resolutionEffects!.find(e=>e.kind==='condition'&&['unconscious','paralyzed','stunned','petrified'].includes(e.condition??''))!.condition!
+    return effect.ruleId==='phb2014:spell:sleep'?'Addormentato · '+effect.name:`${conditionNames[condition as keyof typeof conditionNames]??condition} · ${effect.name}`
+}
+
 export function defenseProfile(sheet:CharacterSheet,ability:SaveAbility|undefined,active:Ability[],targetId:number,heavyArmor?:boolean,data?:CreationData):DefenseProfile {
     const d=sheet.playerDetails??{},notes:string[]=[],profile:DefenseProfile={armorClass:integerValue(sheet.armorClass),resistances:[],immunities:[],vulnerabilities:[],conditionImmunities:[],notes,hitPoints:integerValue(sheet.hitPoints),maxHitPoints:integerValue(d.maxHitPoints)}
     const temporary=integerValue(d[d['temporaryAC.source']==='effects'?'temporaryAC.previous':'temporaryAC'])
@@ -330,6 +339,7 @@ export function defenseProfile(sheet:CharacterSheet,ability:SaveAbility|undefine
         }
     }
     profile.conditionImmunities=(d['combat.conditionImmunities']??d['monster.conditionImmunities']??'').split(/[,;]/).map(normalized).filter(Boolean)
+    if(ability&&automaticSaveFailureReason(active,targetId,ability))profile.automaticSaveFailure=true
     const acBonuses=new Map<string,number>()
     for(const effect of activeEffects(active)) {
         const applies=effect.targets?.length?effect.targets.some(t=>t.id===targetId):effect.ownerId===targetId
@@ -348,7 +358,6 @@ export function defenseProfile(sheet:CharacterSheet,ability:SaveAbility|undefine
                 const condition=modifier.condition
                 if(['poisoned','blinded','restrained','prone'].includes(condition??''))profile.attackDisadvantage=true
                 if(['blinded','restrained','paralyzed','unconscious'].includes(condition??''))profile.grantsAttackAdvantage=true
-                if(['paralyzed','unconscious'].includes(condition??'')&&['strength','dexterity'].includes(ability??''))profile.automaticSaveFailure=true
                 if(condition==='unconscious'){notes.push('Privo di sensi: verifica distanza e critico degli attacchi entro 1,5 m.');profile.reviewAttack=true}
                 if(condition==='paralyzed'){notes.push('Paralisi: verifica distanza e critico degli attacchi entro 1,5 m.');profile.reviewAttack=true}
                 if(condition==='prone'||condition==='frightened'){notes.push('Condizione '+condition+': verifica distanza e visibilità prima di risolvere.');profile.reviewAttack=true}

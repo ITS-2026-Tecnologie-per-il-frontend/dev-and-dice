@@ -148,6 +148,25 @@ try{
  await masterPage.getByRole('button',{name:'Termina combattimento',exact:true}).click()
  await targetRow.getByRole('button',{name:'Rialza (metà movimento)',exact:true}).click()
  await targetRow.getByRole('button',{name:'Prono',exact:true}).waitFor({state:'detached'})
+ // Start-turn wind failures must remain resolved even if later damage wakes the sleeper.
+ await masterPage.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.includes('.library')))
+ latest=(await api(master,path)).json
+ const wind={id:1000,name:'Folata di Vento',ruleId:'phb2014:spell:gust-of-wind',ownerId:0,active:true,concentration:true,duration:'1 minuto',remainingTurns:8,targets:[{id:1,damage:'0',resolved:true}],windSave:{dc:15,turn:{targetId:0,round:3,inLine:false}}}
+ const windy={...restored,combat:{activeId:0,round:3},abilities:[...restored.abilities,wind]}
+ await api(master,path+'/state','PUT',{revision:latest.revision,state:windy,sheets:windy.turns.map(t=>t.sheet)})
+ await masterPage.reload();await asleep.waitFor()
+ await masterPage.getByRole('button',{name:'Turno successivo →',exact:true}).click()
+ const automatic=targetRow.getByText(/TS Forza fallito automaticamente \(Addormentato/)
+ await automatic.waitFor()
+ assert.equal(await targetRow.getByRole('button',{name:'Tira TS Forza',exact:true}).count(),0)
+ await masterPage.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.includes('.library')))
+ await masterPage.getByLabel('Danni o cura per Goblin',{exact:true}).fill('2')
+ await masterPage.getByRole('button',{name:'Applica danni a Goblin',exact:true}).click()
+ await asleep.waitFor({state:'detached'});assert(await automatic.isVisible(),'Waking does not undo the failed start-turn save')
+ await masterPage.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.includes('.library')))
+ latest=(await api(master,path)).json
+ assert.equal(latest.state.abilities.find(a=>a.id===1000).windSave.turn.success,false)
+ await masterPage.reload();await automatic.waitFor()
  assert.deepEqual(errors,[])
  console.log('PASS Sleep real browser/API: preserved legacy form, slot 2/40, visible retry error, request delivery, same-revision Master review refresh, legacy names, approval, one slot spent and saved active targets')
 }finally{await masterContext?.close();await page.unrouteAll({behavior:'wait'});await browser.close();await frontend.close();await new Promise(r=>backend.close(r));await rm(dir,{recursive:true,force:true});await rm(dataDir,{recursive:true,force:true})}

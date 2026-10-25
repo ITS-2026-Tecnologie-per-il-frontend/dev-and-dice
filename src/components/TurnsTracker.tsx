@@ -1,5 +1,5 @@
 import { wakeSleep, wakeWithAction } from '../domain/dnd/Sleep'
-import { beginWindTurn, pendingWindSaves, resolveWindSave as resolveWindSaveState } from '../domain/dnd/WindTurns'
+import { beginWindTurn, resolveAutomaticWindSaves, pendingWindSaves, resolveWindSave as resolveWindSaveState } from '../domain/dnd/WindTurns'
 import {ReactionContext} from './ReactionContext'
 import { lazy, memo, Suspense, useContext, useLayoutEffect, useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type DragEvent, type ReactNode } from 'react'
 import type { MasterView } from '../utils/MasterView'
@@ -88,7 +88,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
     const [abilityError,setAbilityError]=useState<{abilityId:number;message:string}|null>(null)
     const handledExecutions=useRef(new Set<string>())
     const [turns, setTurns] = useState<Turn[]>(workspace?.state.turns ?? [])
-    const [abilities, setAbilities] = useState<Ability[]>(workspace?.state.abilities ?? [])
+    const [abilities, setAbilities] = useState<Ability[]>(()=>resolveAutomaticWindSaves(workspace?.state.abilities ?? [],workspace?.state.combat ?? null))
     const [combat, setCombat] = useState<Combat | null>(workspace?.state.combat ?? null)
     const selectedTurn = turns.find(turn => turn.id === selectedId) ?? turns.find(turn => turn.id === combat?.activeId) ?? turns[0]
     const activeEffects = effectiveAbilities(abilities).concat(abilities.filter(a=>!!a.execution))
@@ -142,7 +142,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
         lastIncoming.current=incoming;lastSnapshot.current=incoming;hydrating.current=true
         // eslint-disable-next-line react/set-state-in-effect -- Follow turn changes polled from the shared session.
         if (workspace.state.combat && (workspace.state.combat.activeId!==combat?.activeId || workspace.state.combat.round!==combat?.round)) selectParticipant(workspace.state.combat.activeId)
-        setTurns(workspace.state.turns);setAbilities(workspace.state.abilities);setCombat(workspace.state.combat);setSessionSheets(workspace.sheets)
+        setTurns(workspace.state.turns);setAbilities(resolveAutomaticWindSaves(workspace.state.abilities,workspace.state.combat));setCombat(workspace.state.combat);setSessionSheets(workspace.sheets)
         nextId.current=Math.max(nextId.current,...workspace.state.turns.map(turn=>turn.id+1))
         nextAbilityId.current=Math.max(nextAbilityId.current,...workspace.state.abilities.map(ability=>ability.id+1))
     },[incoming,workspace,combat])
