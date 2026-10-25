@@ -1,3 +1,4 @@
+import {turnActionCapacity} from '../src/domain/dnd/TurnEconomy.ts'
 import {validReadyCommand} from '../src/domain/dnd/Readied.ts'
 import { inventoryEquipment, referencedInventoryItem, inventoryFieldValue } from '../src/utils/Inventory.ts'
 import { readFile } from 'node:fs/promises'
@@ -108,7 +109,7 @@ export function actionContext(db,game,user,rules,preview=false,characterId,selec
 // Folata di vento: SRD 5.1 IT (D&D_5e_manuale_compatto_italiano.pdf), PDF 160.
 function windDirectionChoice(context,game,ability) {
   if(spellEdition(context.record.sheet)!=='2014'||ability.ruleId!=='phb2014:spell:gust-of-wind'||!activeEffects(game.state.abilities).some(a=>a.id===ability.id&&a.ownerId===context.owner?.id&&a.ruleId===ability.ruleId))return undefined
-  const reason=!context.canPropose?context.blockedReason??'Puoi cambiare direzione soltanto durante il tuo turno.':bonusActionUsed(context.record.sheet)?'Hai già usato l’azione bonus in questo turno.':game.combatRequests?.some(e=>e.characterId===context.record.id&&requestStatus(game,e)==='pending')?'Hai un’azione in attesa del Master.':undefined
+  const reason=!context.canPropose?context.blockedReason??'Puoi cambiare direzione soltanto durante il tuo turno.':bonusActionUsed(context.record.sheet,turnActionCapacity(context.record.sheet,game.state.abilities,context.owner?.id,'bonus-action'))?'Hai già usato l’azione bonus in questo turno.':game.combatRequests?.some(e=>e.characterId===context.record.id&&requestStatus(game,e)==='pending')?'Hai un’azione in attesa del Master.':undefined
   return {effectId:ability.id,selected:(ability.targets??[]).map(t=>t.id),canUse:!reason,reason}
 }
 
@@ -118,7 +119,7 @@ function prepareWindDirection(context,proposal) {
   if(!action||action.ability.ruleId!=='phb2014:spell:gust-of-wind'||action.ability.id!==proposal.windDirection||!activeEffects([action.ability]).length||spellEdition(context.record.sheet)!=='2014')fail(409,'Folata di Vento non è più attiva.')
   if(!proposal.targets.every(t=>context.targets.some(c=>c.id===t.id&&c.sheet)))fail(400,'Bersaglio non disponibile.')
   let sheet
-  try{sheet=spendBonusAction(context.record.sheet)}catch(error){fail(409,error.message)}
+  try{sheet=spendBonusAction(context.record.sheet,turnActionCapacity(context.record.sheet,game.state.abilities,context.owner?.id,'bonus-action'))}catch(error){fail(409,error.message)}
   return {action,ability:action.ability,sheet,rage:false,option:{id:'free',label:'Cambio direzione · azione bonus',remaining:null}}
 }
 
@@ -362,7 +363,7 @@ export function prepareAction(context,proposal,rules) {
   const rage=ability.ruleId==='phb2014:class-feature:barbarian-1-rage',info=action.info
   if ((info.concentration || ability.concentration) && context.record.sheet.playerDetails?.['rules2014.raging']==='true') fail(409,'Durante l’ira non puoi mantenere concentrazione.')
   let sheet
-  try {sheet=spendCombatUse(context.record.sheet,ability,context.catalog,rules.data,option.id,proposal.cost)} catch(error) {fail(409,error.message)}
+  try {sheet=spendCombatUse(context.record.sheet,ability,context.catalog,rules.data,option.id,proposal.cost,{abilities:context.weaponContext.active,ownerId:context.owner.id})} catch(error) {fail(409,error.message)}
   if (rage) sheet={...sheet,playerDetails:{...sheet.playerDetails,'rules2014.raging':'true','rules2014.concentration':''}}
   if (info.concentration || ability.concentration) sheet={...sheet,playerDetails:{...sheet.playerDetails,'rules2014.concentration':ability.ruleId ?? ability.catalogId ?? ability.name}}
   return {action,ability,sheet,rage,option}

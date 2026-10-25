@@ -1,3 +1,4 @@
+import {turnActionCapacity,turnActionUses} from '../src/domain/dnd/TurnEconomy.ts'
 import {randomUUID} from 'node:crypto'
 import {spendCombatUse} from '../src/domain/dnd/CombatActions.ts'
 import {actionContext, createRequestResolution, resolveRequestTarget} from './combat-requests.mjs'
@@ -35,14 +36,14 @@ export function openReactions(db,game,rules,event,groupId=randomUUID()){
   if((game.reactionWindows??[]).some(w=>w.groupId===groupId))return groupId
   for(const record of db.characters.filter(r=>r.gameId===game.id&&(r.ownerId===game.masterId||game.players.some(p=>p.userId===r.ownerId&&p.characterId===r.id)))){
     const owners=game.state.turns.filter(t=>t.sheet?.id===record.id)
-    if(owners.length!==1||record.sheet.playerDetails?.['combat.reactionUsed']==='true')continue
+    if(owners.length!==1||turnActionUses(record.sheet,'reaction')>=turnActionCapacity(record.sheet,game.state.abilities,owners[0]?.id,'reaction'))continue
     // These events can only trigger a reaction from the attacked/damaged participant.
     if(['hit','magic-missile','damage'].includes(event.kind)&&!event.targetIds.includes(owners[0].id))continue
     if(event.kind==='spell'&&owners[0].id===event.actorId)continue
     const context=actionContext(db,game,record.ownerId,rules,true,record.id,{unit:'reaction'})
     if(context.blockedReason)continue
     const keys=context.actions.filter(action=>matches(action,event,context.owner.id)&&action.options.some(option=>{
-      try{spendCombatUse(context.record.sheet,{...action.ability,requirementsConfirmed:true,targets:[]},context.catalog,rules.data,option.id,option.cost??1);return true}catch{return false}
+      try{spendCombatUse(context.record.sheet,{...action.ability,requirementsConfirmed:true,targets:[]},context.catalog,rules.data,option.id,option.cost??1,{abilities:context.weaponContext.active,ownerId:context.owner.id});return true}catch{return false}
     })).map(a=>a.key)
     if(!keys.length)continue
     ;(game.reactionWindows??=[]).push({id:randomUUID(),groupId,ownerId:record.ownerId,characterId:context.record.id,characterName:context.record.sheet.name,event,actionKeys:keys,actionIds:Object.fromEntries(context.actions.filter(a=>keys.includes(a.key)).map(a=>[a.key,a.ability.ruleId??a.ability.catalogId??a.ability.name])),status:'pending',expiresAt:Date.now()+30000})

@@ -1,3 +1,4 @@
+import {turnActionCapacity} from '../domain/dnd/TurnEconomy'
 import { useContext, useLayoutEffect, useRef, useState, type Dispatch, type SetStateAction, type DragEvent } from 'react'
 import { durationTurns, activateAbility, type Ability, type Combat } from '../utils/Combat'
 import { getDropIndex, getDropTargetId, reorderByDrop, reorderById } from '../utils/Reorder'
@@ -141,7 +142,7 @@ export function AbilitiesTracker({ compactActive=false,configurationId,onConfigu
                     if(info.passive||compactActive&&!running&&ability.id!==configurationId)return null
                     let options:UseOption[]=[],option:UseOption|undefined,status='Usa',error=''
                     try {options=combatUseOptions(owner,ability,catalog,creationData);option=selectedUseOption(owner,ability,catalog,creationData);status=combatAbilityStatus(owner,ability,catalog,creationData)} catch(cause) {error=cause instanceof Error ? cause.message : 'Verifica le risorse nella scheda.'}
-                    if(!running&&info.unit==='bonus-action'&&owner&&bonusActionUsed(owner))error='Hai già usato l’azione bonus in questo turno.'
+                    if(!running&&info.unit==='bonus-action'&&owner&&bonusActionUsed(owner,turnActionCapacity(owner,abilities,ability.ownerId??undefined,'bonus-action')))error='Hai già usato l’azione bonus in questo turno.'
                     if(!running&&info.unit==='bonus-action'&&combat&&combat.activeId!==ability.ownerId)error='L’azione bonus richiede il turno del personaggio.'
                     if(!running&&ability.ownerId!==null&&conditionsFor(abilities,ability.ownerId).includes('Paralizzato'))error='Il personaggio non può agire mentre è paralizzato.'
                     const sleepForm=ability.ruleId==='phb2014:spell:sleep'&&!!owner&&!!onResolve&&!ability.execution
@@ -157,7 +158,7 @@ export function AbilitiesTracker({ compactActive=false,configurationId,onConfigu
                     const spellRolls=(recasting===ability.id||!ability.active||ability.timed!==false&&ability.remainingTurns===0)&&!!onResolve&&(spellPlan?.kind==='attack'||spellPlan?.kind==='save'||spellPlan?.kind==='automatic'||!!spellPlan?.healing||!!spellPlan?.temporaryHitPoints||directBenefit(spellPlan))&&(info.damage||!!spellPlan?.healing||!!spellPlan?.temporaryHitPoints||ability.ruleId==='phb2014:spell:hold-person'||directBenefit(spellPlan))&&!!creationData
                     const activeTemporaryEffect=running&&!ability.execution&&(!!spellPlan?.temporaryHitPoints||directBenefit(spellPlan))&&recasting!==ability.id
                     const deferredPlan=owner&&ability.ruleId==='phb2014:spell:gust-of-wind'?resolutionPlan(owner,ability,catalog,option?.id):undefined
-                    const windDirectionReason=combat?.activeId!==ability.ownerId?'Puoi cambiare direzione soltanto durante il turno del lanciatore.':owner&&bonusActionUsed(owner)?'Hai già usato l’azione bonus in questo turno.':windDirectionPending?.includes(ability.id)?'Cambio direzione in attesa del Master.':conditionsFor(abilities,ability.ownerId??-1).some(c=>['Paralizzato','Incapacitato','Stordito','Privo di sensi'].includes(c))?'Il personaggio non può agire.':undefined
+                    const windDirectionReason=combat?.activeId!==ability.ownerId?'Puoi cambiare direzione soltanto durante il turno del lanciatore.':owner&&bonusActionUsed(owner,turnActionCapacity(owner,abilities,ability.ownerId??undefined,'bonus-action'))?'Hai già usato l’azione bonus in questo turno.':windDirectionPending?.includes(ability.id)?'Cambio direzione in attesa del Master.':conditionsFor(abilities,ability.ownerId??-1).some(c=>['Paralizzato','Incapacitato','Stordito','Privo di sensi'].includes(c))?'Il personaggio non può agire.':undefined
                     const timingControls=<>
                         <label className="ability-duration">
                             <span>Durata</span>

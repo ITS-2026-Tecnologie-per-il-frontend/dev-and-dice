@@ -1,3 +1,5 @@
+import {turnActionSlots} from '../domain/dnd/TurnEconomy'
+import {TurnActionBudget} from './TurnActionBudget'
 import {HelpTooltip} from './HelpTooltip'
 import {ReadiedActions} from './ReadiedActions'
 import {ReactionProvider,MasterReactionControls} from './ReactionPrompt'
@@ -354,7 +356,7 @@ function SessionPage() {
             {playerRenewed&&playerTurns}
             <PlayerSidebar className="play-player-sidebar" id="player-inspector" aria-label={playerRenewed?'Azioni ed effetti del tuo personaggio':'Combattimento ed effetti'}>
                 {playerRenewed&&<>
-                    <header className="master-inspector-header"><InspectorNavigation name={game.character.sheet.name||'Il tuo personaggio'} mode={playerInspectorMode} onChange={setPlayerInspectorMode}/>{playerInspectorMode==='participant'&&<h2>{game.character.sheet.name||'Personaggio da nominare'}</h2>}</header>
+                    <header className="master-inspector-header"><InspectorNavigation name={game.character.sheet.name||'Il tuo personaggio'} mode={playerInspectorMode} onChange={setPlayerInspectorMode}/>{playerInspectorMode==='participant'&&<><h2>{game.character.sheet.name||'Personaggio da nominare'}</h2><TurnActionBudget slots={game.actionSlots??turnActionSlots(game.character.sheet,[],undefined,game.turns.some(t=>t.current))} inCombat={game.turns.some(t=>t.current)}/></>}</header>
                     <div hidden={playerInspectorMode!=='participant'}><p className="master-detail-label">Il tuo personaggio</p>
                     <ParticipantStats hitPoints={game.character.sheet.hitPoints} maximum={game.character.sheet.playerDetails?.maxHitPoints} armorClass={currentArmorClass(game.character.sheet)} initiative={game.character.sheet.initiative}/>
                     {game.character.sheet.playerDetails?.temporaryHitPoints&&<p className="master-detail-label">PF temporanei: {game.character.sheet.playerDetails.temporaryHitPoints}</p>}

@@ -1,3 +1,4 @@
+import {recordTurnAction,turnActionCapacity,turnActionUses} from '../src/domain/dnd/TurnEconomy.ts'
 import {actionContext,validCombatRequest} from './combat-requests.mjs'
 import {validReadyCommand} from '../src/domain/dnd/Readied.ts'
 import {activeEffects} from '../src/domain/dnd/CombatResolution.ts'
@@ -22,7 +23,7 @@ export function readyChoices(db,game,user,rules){
   if(!record||user!==game.masterId&&(record.ownerId!==user||!game.players.some(p=>p.userId===user&&p.characterId===record.id))||spellEdition(record.sheet)!=='2014')return []
   const {context}=actorContext(db,game,turn.id,user,rules),sleep=context.actions.find(a=>a.ability.ruleId===sleepId)
   const prepareBlockedReason=context.canPropose?undefined:context.blockedReason??(game.state.combat?`È il turno di ${game.state.turns.find(t=>t.id===game.state.combat.activeId)?.description??'un’altra creatura'}. Puoi preparare l’azione quando inizia il turno di ${record.sheet.name}.`:'Il Master deve avviare il combattimento prima di preparare un’azione.')
-  return [{id:turn.id,name:record.sheet.name,canPrepare:!!game.state.combat&&context.canPropose,prepareBlockedReason,additionalActionRequired:actionUsed(record.sheet),canReact:!!game.state.combat&&!isIncapacitated(active,turn.id)&&record.sheet.playerDetails?.['combat.reactionUsed']!=='true',options:sleep?.options.filter(o=>/^slot:[1-9]$/.test(o.id))??[],targets:game.state.turns.map(t=>({id:t.id,name:t.description})),sleepers:sleepingTargets(active).filter(id=>id!==turn.id),held:active.filter(a=>a.ownerId===turn.id&&a.readied).map(a=>({id:a.id,name:a.name,readied:a.readied,option:a.useOption,targetName:game.state.turns.find(t=>t.id===a.readied.targetId)?.description})),...(user===game.masterId?{candidates:sleepCandidates(game.state.turns,active,rules.data).map((t,i)=>({...t,name:game.state.turns[i].description}))}:{})}]
+  return [{id:turn.id,name:record.sheet.name,canPrepare:!!game.state.combat&&context.canPropose,prepareBlockedReason,additionalActionRequired:actionUsed(record.sheet),canReact:!!game.state.combat&&!isIncapacitated(active,turn.id)&&turnActionUses(record.sheet,'reaction')<turnActionCapacity(record.sheet,active,turn.id,'reaction'),options:sleep?.options.filter(o=>/^slot:[1-9]$/.test(o.id))??[],targets:game.state.turns.map(t=>({id:t.id,name:t.description})),sleepers:sleepingTargets(active).filter(id=>id!==turn.id),held:active.filter(a=>a.ownerId===turn.id&&a.readied).map(a=>({id:a.id,name:a.name,readied:a.readied,option:a.useOption,targetName:game.state.turns.find(t=>t.id===a.readied.targetId)?.description})),...(user===game.masterId?{candidates:sleepCandidates(game.state.turns,active,rules.data).map((t,i)=>({...t,name:game.state.turns[i].description}))}:{})}]
  })}
 }
 function actionUsed(sheet){
@@ -84,11 +85,12 @@ export function applyReadyCommand(db,game,entry,rules,body={},preview=false){
   if(abilities.length>=2000)fail('Limite degli effetti raggiunto.')
   const id=Math.max(-1,...abilities.map(a=>a.id))+1
   abilities.push({...template,id,ownerId:turn.id,active:true,execution:undefined,targets:[],resolutionEffects:[],duration:'Personalizzata',remainingTurns:1,timed:true,concentration,useOption:c.option??'free',expiresAt:'start',expiryOwnerId:turn.id,expiryRound:combat.round+1,readied:{kind:concentration?'sleep':'wake',trigger:c.trigger.trim(),...(!concentration&&c.targetId!==undefined?{targetId:c.targetId}:{})}})
+  if(!concentration)sheet=recordTurnAction(sheet,'action')
   sheet={...sheet,playerDetails:{...sheet.playerDetails,'combat.actionUsed':'true',...(concentration?{'rules2014.concentration':'phb2014:readied:sleep'}:{})}}
   return finish()
  }
  if(!held)fail('L’azione preparata è scaduta o è stata interrotta.')
- if(sheet.playerDetails?.['combat.reactionUsed']==='true')fail('Hai già usato la reazione.')
+ if(turnActionUses(sheet,'reaction')>=turnActionCapacity(sheet,abilities,turn.id,'reaction'))fail('Hai già usato la reazione.')
  if(held.readied.kind==='sleep'){
   if(c.targetId!==undefined)fail('Sonno richiede la selezione dell’area, non un bersaglio di risveglio.',400)
   if(sheet.playerDetails?.['rules2014.concentration']!=='phb2014:readied:sleep'||!held.concentration)fail('La concentrazione su Sonno preparato è terminata.')
@@ -116,6 +118,7 @@ export function applyReadyCommand(db,game,entry,rules,body={},preview=false){
   abilities=wakeSleep(abilities,[targetId])
  }
  abilities=abilities.map(a=>a.id===held.id?close(a):a)
+ sheet=recordTurnAction(sheet,'reaction')
  sheet={...sheet,playerDetails:{...sheet.playerDetails,'combat.reactionUsed':'true',...(held.concentration?{'rules2014.concentration':''}:{})}}
  return finish()
 }

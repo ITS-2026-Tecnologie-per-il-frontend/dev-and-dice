@@ -31,6 +31,14 @@ Usare una partita di prova, con due finestre separate: Master e giocatore. L’i
 5. Nella sidebar del Master le card attive sono compatte: titolo, frecce di riordino, lanciatore/utilizzatore, durata residua, bersagli e benefici applicati. **Descrizione** apre i dettagli; **Lancia di nuovo** apre una nuova configurazione; **Termina effetto** rimuove solo quel beneficio. Per Folata di Vento aprire **Gestisci direzione e bersagli**; la durata resta modificabile da **Gestisci durata**.
 6. Aprire Sonno e inserire un totale senza usarlo, poi scegliere Vita Falsata dalle abilità disponibili: deve restare soltanto la configurazione di Vita Falsata. Nessuno slot deve essere consumato e gli effetti già attivi devono restare intatti. Ripetere partendo da **Lancia di nuovo** di una card attiva. Dopo un lancio confermato la configurazione diventa una card compatta.
 
+## Indicatori delle azioni
+
+Sotto il nome, nelle sidebar rinnovate di Master e giocatore, **Azione**, **Bonus** e **Reazione** sono spenti quando disponibili e colorati quando consumati. Calcolare o inviare una proposta non li consuma: si aggiornano con l’applicazione o l’approvazione. Preparare Sonno consuma l’azione; rilasciarlo consuma la reazione. Attacco Extra condivide l’azione tra i suoi attacchi.
+
+Gli indicatori tornano spenti all’inizio del turno del proprietario, anche se la reazione è stata usata nel turno altrui. Un effetto che concede azioni aggiunge i rettangoli a destra del relativo tipo; l’hover indica provenienza e restrizioni. Velocità 2014 concede un’azione limitata, non un altro lancio di incantesimo. Gli effetti strutturati possono dichiarare `action-grant` / `actionGrants` con tipo, quantità e limiti.
+
+Verifiche: `node tests/turn-economy.mjs` e `node tests/sidebar-abilities-ui.mjs`.
+
 ## Immunità dichiarata dal Master
 
 1. Inserire Baldur e Noryn nell’area con riserva 20 PF: può addormentarsi una sola delle due creature.

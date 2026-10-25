@@ -26,11 +26,15 @@ const aliases:Record<string,DamageType>={acido:'acid',contundente:'bludgeoning',
 const damageType=(v:unknown):DamageType|undefined=>typeof v==='string'?(Object.hasOwn(damageNames,normalized(v))?normalized(v) as DamageType:aliases[normalized(v)]):undefined
 export type DamageRoll={type:DamageType;amount:number}
 export type RollPacket={targetId:number;die?:number;healingRoll?:number;temporaryHitPointsRoll?:number;keepTemporaryHitPoints?:boolean;damage:DamageRoll[]}
-export type EffectSpec={kind:'resistance'|'nonmagical-resistance'|'ac'|'ac-base'|'condition'|'speed'|'spell-immunity'|'roll-bonus';types?:DamageType[];amount?:number;condition?:string;ruleId?:string;rolls?:('attack'|'save')[];sides?:number;sign?:1|-1;consume?:boolean;trigger:'always'|'hit'|'failed-save';repeatSave?:boolean}
+export type EffectSpec={kind:'resistance'|'nonmagical-resistance'|'ac'|'ac-base'|'condition'|'speed'|'spell-immunity'|'roll-bonus'|'action-grant';unit?:'action'|'bonus-action'|'reaction';restriction?:string;types?:DamageType[];amount?:number;condition?:string;ruleId?:string;rolls?:('attack'|'save')[];sides?:number;sign?:1|-1;consume?:boolean;trigger:'always'|'hit'|'failed-save';repeatSave?:boolean}
+export const hasteActionRestriction='Solo un attacco con arma, Scattare, Disimpegnarsi, Nascondersi o Usare un oggetto. Non permette di lanciare incantesimi.'
 export function validEffectSpecs(value:unknown):value is EffectSpec[] {
     return Array.isArray(value)&&value.length<=30&&value.every(v=>{
         const e=object(v)
-        return Object.keys(e).every(k=>['kind','types','amount','condition','ruleId','rolls','sides','sign','consume','trigger','repeatSave'].includes(k))&&['resistance','nonmagical-resistance','ac','ac-base','condition','speed','spell-immunity','roll-bonus'].includes(String(e.kind))&&['always','hit','failed-save'].includes(String(e.trigger))
+        return Object.keys(e).every(k=>['kind','types','amount','condition','ruleId','rolls','sides','sign','consume','trigger','repeatSave','unit','restriction'].includes(k))&&['resistance','nonmagical-resistance','ac','ac-base','condition','speed','spell-immunity','roll-bonus','action-grant'].includes(String(e.kind))&&['always','hit','failed-save'].includes(String(e.trigger))
+            &&(e.kind!=='action-grant'||['action','bonus-action','reaction'].includes(String(e.unit))&&Number.isInteger(e.amount)&&Number(e.amount)>=1&&Number(e.amount)<=10)
+            &&(e.unit===undefined||['action','bonus-action','reaction'].includes(String(e.unit)))
+            &&(e.restriction===undefined||typeof e.restriction==='string'&&e.restriction.length<=500)
             &&(e.amount===undefined||Number.isSafeInteger(e.amount))&&(e.repeatSave===undefined||typeof e.repeatSave==='boolean')
             &&(e.ruleId===undefined||typeof e.ruleId==='string'&&e.ruleId.length<=250)&&(e.sides===undefined||Number.isInteger(e.sides)&&Number(e.sides)>=2&&Number(e.sides)<=100)
             &&(e.sign===undefined||e.sign===1||e.sign===-1)&&(e.consume===undefined||typeof e.consume==='boolean')
@@ -54,6 +58,7 @@ export function spellEffectDetails(ability:Pick<Ability,'targets'|'resolutionEff
             if(effect.kind==='roll-bonus')return [`${effect.sign===-1?'−':'+'} 1d${effect.sides} ${(effect.rolls??[]).map(roll=>roll==='attack'?'ai tiri per colpire':'ai tiri salvezza').join(' e ')}.`]
             if(effect.kind==='resistance'||effect.kind==='nonmagical-resistance')return [`Resistenza: ${(effect.types??[]).map(type=>damageNames[type]).join(', ')}${effect.kind==='nonmagical-resistance'?' da attacchi non magici':''}.`]
             if(effect.kind==='spell-immunity')return ['Immunità a Dardo Incantato.']
+            if(effect.kind==='action-grant')return [`${effect.amount??1} ${effect.unit==='reaction'?'reazione':effect.unit==='bonus-action'?'azione bonus':'azione'} aggiuntiva per turno.${effect.restriction?' '+effect.restriction:''}`]
             return []
         })
         if(ability.ruleId==='phb2014:spell:shield')description.push('Fino all’inizio del prossimo turno del bersaglio, incluso l’attacco scatenante.')
@@ -138,9 +143,16 @@ export function resolutionPlan(sheet:CharacterSheet,ability:Ability,catalog:Cata
     const condition=e.failedSave
     if(typeof condition==='string'&&['paralyzed','restrained','frightened','blinded','poisoned','prone'].includes(condition))effects.push({kind:'condition',condition,trigger:'failed-save',repeatSave:!!e.repeatSave})
     if(e.onHit==='speed-minus-ten-ft-until-start-caster-next-turn')effects.push({kind:'speed',amount:-10,trigger:'hit'})
+    if(Array.isArray(e.actionGrants)){
+        const grants=e.actionGrants.map(grant=>({...object(grant),kind:'action-grant',trigger:'always'}))
+        if(validEffectSpecs(grants))effects.push(...grants)
+        else notes.push('Azioni aggiuntive da verificare con il Master.')
+    }
     // PHB 2014, D&D_5_Player_Original_Handbook.pdf, PDF 257, Mage Armor.
     const mageArmor=edition==='2014'&&ability.ruleId==='phb2014:spell:mage-armor'&&e.baseArmorClass==='13+dexterityModifier'
     if(mageArmor)effects.push({kind:'ac-base',amount:13,trigger:'always'})
+    // PHB 2014, PDF 251, Haste: the extra action has a restricted purpose.
+    if(edition==='2014'&&ability.ruleId==='phb2014:spell:haste')effects.push({kind:'action-grant',unit:'action',amount:1,restriction:hasteActionRestriction,trigger:'always'})
     if(typeof e.armorClassBonus==='number')effects.push({kind:'ac',amount:e.armorClassBonus,trigger:'always'})
     if(e.preventsDamageFrom==='magic-missile'&&edition==='2014')effects.push({kind:'spell-immunity',ruleId:'phb2014:spell:magic-missile',trigger:'always'})
     if(e.bonusDie==='1d4'&&Array.isArray(e.rollTypes))effects.push({kind:'roll-bonus',sides:4,sign:1,rolls:e.rollTypes.flatMap(t=>t==='attack-roll'?['attack' as const]:t==='saving-throw'?['save' as const]:[]),trigger:'always'})
@@ -151,7 +163,7 @@ export function resolutionPlan(sheet:CharacterSheet,ability:Ability,catalog:Cata
     if(choices?.length)effects.push({kind:'resistance',types:[],trigger:'always'})
     // ponytail: only explicit, verified immediate effects are automated. New mechanics are
     // added here with a rules citation and a check; conditional prose stays visible to the Master.
-    const known=new Set(['attack','target','targets','maximumTargets','area','damage','failureDamage','damagePerHit','damagePerDart','damageType','save','successfulSave','successDamage','automaticHit','rays','darts','simultaneous','canSplitTargets','damageRollInterpretation','beamsByCharacterLevel','armorClassBonus','resistanceChooseOne','resistanceToNonmagicalDamageTypes','failedSave','repeatSave','successfulRepeatSave','onHit','bonusDie','rollTypes','bonus','decision','ends','failure','affectsAbilityChecks','preventsDamageFrom','damageDiceByCharacterLevel','excludedCreatureTypes',...(mageArmor?['baseArmorClass','endsWhen']:[]),...(edition==='2014'&&ability.ruleId==='phb2014:spell:shield'?['triggerChoice','includesTriggeringAttack','expires']:[]),...(edition==='2014'&&ability.ruleId==='phb2014:spell:cure-wounds'?['healing']:[]),...(edition==='2014'&&ability.ruleId==='phb2014:spell:false-life'?['temporaryHitPoints']:[])])
+    const known=new Set(['actionGrants','attack','target','targets','maximumTargets','area','damage','failureDamage','damagePerHit','damagePerDart','damageType','save','successfulSave','successDamage','automaticHit','rays','darts','simultaneous','canSplitTargets','damageRollInterpretation','beamsByCharacterLevel','armorClassBonus','resistanceChooseOne','resistanceToNonmagicalDamageTypes','failedSave','repeatSave','successfulRepeatSave','onHit','bonusDie','rollTypes','bonus','decision','ends','failure','affectsAbilityChecks','preventsDamageFrom','damageDiceByCharacterLevel','excludedCreatureTypes',...(mageArmor?['baseArmorClass','endsWhen']:[]),...(edition==='2014'&&ability.ruleId==='phb2014:spell:shield'?['triggerChoice','includesTriggeringAttack','expires']:[]),...(edition==='2014'&&ability.ruleId==='phb2014:spell:cure-wounds'?['healing']:[]),...(edition==='2014'&&ability.ruleId==='phb2014:spell:false-life'?['temporaryHitPoints']:[])])
     if(Object.keys(e).some(key=>!known.has(key)))notes.push('La descrizione contiene effetti o vincoli aggiuntivi da verificare con il Master.')
     const onSuccess=e.successfulSave==='half'||e.successDamage==='half'?'half':['no-damage','none'].includes(String(e.successfulSave))||e.successDamage===0||e.successDamage==='none'||!types.length?'none':'review'
     // PHB 2014, D&D_5_Player_Original_Handbook.pdf, PDF 231, Cure Wounds.

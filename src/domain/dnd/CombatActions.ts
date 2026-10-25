@@ -1,3 +1,5 @@
+import {validEffectSpecs} from './CombatResolution.ts'
+import {recordTurnAction,turnActionUses,turnActionCapacity,grantTurnActions} from './TurnEconomy.ts'
 import { castSheetSpell, sheetClassLevels, sheetRuleResources } from './ActiveRules.ts'
 import { wildShapeResources } from './VerifiedDatabase.ts'
 import { integerValue, type CharacterSheet } from '../../utils/CharacterSheets.ts'
@@ -43,7 +45,7 @@ export function combatAbilityInfo(ability:Pick<Ability,'catalogId'|'duration'|'r
     const prolonged=casting.unit==='minute' || casting.unit==='hour' || !casting.unit && /\bminut|\bor[ae]\b|\bhours?\b/i.test(castingText)
     const ritual=m.ritual===true || entry?.data.ritual===true
     const concentration=m.concentration===true || object(entry?.data.durationInfo).concentration===true
-    const unit=typeof casting.unit==='string' ? casting.unit : ['action','bonus-action','reaction'].includes(String(m.activation)) ? String(m.activation) : ['action','bonus-action','reaction'].includes(String(object(m.activation).unit)) ? String(object(m.activation).unit) : /bonus/i.test(castingText) ? 'bonus-action' : /reazion|reaction/i.test(castingText) ? 'reaction' : prolonged ? 'minute' : 'action'
+    const unit=typeof casting.unit==='string' ? casting.unit : ['action','bonus-action','reaction'].includes(String(m.activation)) ? String(m.activation) : ['action','bonus-action','reaction'].includes(String(object(m.activation).unit)) ? String(object(m.activation).unit) : /bonus/i.test(castingText) ? 'bonus-action' : /reazion|reaction/i.test(castingText) ? 'reaction' : prolonged ? 'minute' : ability.section==='bonus'?'bonus-action':ability.section==='reaction'?'reaction':'action'
     return {entry,level,instantaneous,damage,prolonged,ritual,concentration,unit,alternatives,repairsObject,passive,attack}
 }
 
@@ -123,19 +125,26 @@ export function combatAbilityStatus(sheet:CharacterSheet|undefined,ability:Abili
     return options.every(option=>option.remaining!==null && option.remaining<(option.cost ?? cost)) ? 'Esauriti utilizzi' : 'Usa'
 }
 
-export function spendCombatUse(sheet:CharacterSheet,ability:Ability,catalog:Catalog,data:CreationData|undefined,optionId:string,cost=1):CharacterSheet {
+export function spendCombatUse(sheet:CharacterSheet,ability:Ability,catalog:Catalog,data:CreationData|undefined,optionId:string,cost=1,context?:{abilities:Ability[];ownerId:number}):CharacterSheet {
     // PHB 2014 PDF 191, Reactions: refresh at the START of the owner's next turn.
     // Revised rule verified separately: D&D_5.5_manuale_compatto_italiano.pdf, PDF 211, Reazione.
-    const unit=combatAbilityInfo(ability,catalog).unit,reaction=unit==='reaction'
-    if(reaction&&sheet.playerDetails?.['combat.reactionUsed']==='true')throw new Error('Hai già usato la reazione: torna disponibile all’inizio del tuo prossimo turno.')
-    if(unit==='bonus-action')spendBonusAction(sheet)
-    const next=spendCombatUseUnchecked(sheet,ability,catalog,data,optionId,cost)
-    return reaction||unit==='bonus-action'?{...next,playerDetails:{...next.playerDetails,[reaction?'combat.reactionUsed':'combat.bonusActionUsed']:'true'}}:next
+    const info=combatAbilityInfo(ability,catalog),unit=info.unit,reaction=unit==='reaction'
+    if(reaction&&turnActionUses(sheet,'reaction')>=(context?turnActionCapacity(sheet,context.abilities,context.ownerId,'reaction'):1))throw new Error('Hai già usato la reazione: torna disponibile all’inizio del tuo prossimo turno.')
+    if(unit==='bonus-action')spendBonusAction(sheet,context?turnActionCapacity(sheet,context.abilities,context.ownerId,'bonus-action'):1)
+    let next=spendCombatUseUnchecked(sheet,ability,catalog,data,optionId,cost)
+    const effect=object(object(info.entry?.data.mechanics).effect)
+    if(info.instantaneous&&effect.target==='self'&&Array.isArray(effect.actionGrants)){
+        const grants=effect.actionGrants.map(g=>({...object(g),kind:'action-grant',trigger:'always'}))
+        if(!validEffectSpecs(grants))throw new Error('Azioni aggiuntive non valide nella definizione dell’abilità.')
+        next=grantTurnActions(next,grants.map(g=>({unit:g.unit!,amount:g.amount!,source:ability.name,restriction:g.restriction})))
+    }
+    return unit==='action'||unit==='bonus-action'||unit==='reaction'?recordTurnAction(next,unit,sheet,/^sheet-attack:[0-5]$/.test(ability.ruleId??'')):next
 }
 
 // D&D_5_Player_Original_Handbook.pdf, PDF 190, Bonus Actions: one per own turn.
 // Redirecting Gust of Wind is not a new cast (SRD 5.1 IT, PDF 160).
-export function bonusActionUsed(sheet:CharacterSheet):boolean {
+export function bonusActionUsed(sheet:CharacterSheet,capacity=1):boolean {
+    if(capacity>1)return turnActionUses(sheet,'bonus-action')>=capacity
     if(sheet.playerDetails?.['combat.bonusActionUsed']==='true')return true
     return ['combat.spellsThisTurn','rules2014.spellsThisTurn'].some(key=>{
         const history:unknown=JSON.parse(sheet.playerDetails?.[key]??'[]')
@@ -143,9 +152,9 @@ export function bonusActionUsed(sheet:CharacterSheet):boolean {
     })
 }
 
-export function spendBonusAction(sheet:CharacterSheet):CharacterSheet {
-    if(bonusActionUsed(sheet))throw new Error('Hai già usato l’azione bonus in questo turno.')
-    return {...sheet,playerDetails:{...sheet.playerDetails,'combat.bonusActionUsed':'true'}}
+export function spendBonusAction(sheet:CharacterSheet,capacity=1):CharacterSheet {
+    if(bonusActionUsed(sheet,capacity))throw new Error('Hai già usato l’azione bonus in questo turno.')
+    return recordTurnAction(sheet,'bonus-action')
 }
 
 function spendCombatUseUnchecked(sheet:CharacterSheet,ability:Ability,catalog:Catalog,data:CreationData|undefined,optionId:string,cost=1):CharacterSheet {

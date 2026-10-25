@@ -1,3 +1,5 @@
+import {resetTurnEconomy,turnActionSlots,turnActionCapacity} from '../domain/dnd/TurnEconomy'
+import {TurnActionBudget} from './TurnActionBudget'
 import { wakeSleep, wakeWithAction } from '../domain/dnd/Sleep'
 import { beginWindTurn, resolveAutomaticWindSaves, pendingWindSaves, resolveWindSave as resolveWindSaveState } from '../domain/dnd/WindTurns'
 import {ReactionContext} from './ReactionContext'
@@ -379,7 +381,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
         if(isIncapacitated(abilities,source.ownerId!))throw new Error('Il personaggio non può agire.')
         const owner=turns.find(t=>t.id===source.ownerId)?.sheet
         if(!owner)throw new Error('Scheda del lanciatore non disponibile.')
-        const spent=spendBonusAction(owner)
+        const spent=spendBonusAction(owner,turnActionCapacity(owner,abilities,ability.ownerId??undefined,'bonus-action'))
         if(workspace?.onWindDirection){await workspace.onWindDirection(source.id,selected,id);return}
         if(!patchAbilityOwner(source,spent.playerDetails??{}))throw new Error('Salvataggio dell’azione bonus non riuscito.')
         setAbilities(current=>current.map(a=>a.id===source.id?{...a,targets:selected.map(id=>({id,damage:'0',resolved:true}))}:a))
@@ -419,8 +421,8 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
         if (owner&&spellEdition(owner)==='2024'&&ability.ruleId?.includes('2014:')) throw new Error('Questa voce usa regole 2014: scegli la voce dell’edizione corretta.')
         if (info.unit==='bonus-action' && combat && ability.ownerId!==combat.activeId) throw new Error('L’azione bonus richiede il turno del personaggio.')
         if ((ability.concentration || info.concentration) && owner?.playerDetails?.['rules2014.raging']==='true') throw new Error('Durante l’ira non puoi mantenere concentrazione.')
-        const castingOwner=owner && !combat ? {...owner,playerDetails:{...owner.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]','combat.bonusActionUsed':'false','combat.actionUsed':'false'}} : owner
-        const spent=castingOwner ? spendCombatUse(castingOwner,ability,ownerCatalog,creationData,ability.execution.option,ability.execution.cost) : undefined
+        const castingOwner=owner && !combat ? {...owner,playerDetails:{...owner.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]',...resetTurnEconomy}} : owner
+        const spent=castingOwner ? spendCombatUse(castingOwner,ability,ownerCatalog,creationData,ability.execution.option,ability.execution.cost,{abilities,ownerId:ability.ownerId!}) : undefined
         const details={...spent?.playerDetails,...(rage ? {'rules2014.raging':'true','rules2014.concentration':''} : {}),
             ...(ability.concentration || info.concentration ? {'rules2014.concentration':ability.ruleId ?? ability.catalogId ?? ability.name} : {}),
             ...(ability.execution.phase==='casting' && !info.concentration ? {'rules2014.concentration':''} : {})}
@@ -448,10 +450,10 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
                 const turn=refreshParticipantAbilities(turns.find(turn=>turn.id===ability.ownerId)!)
                 if(turn.availableAbilityIndexes&&ability.sheetAbilityIndex!==undefined&&!turn.availableAbilityIndexes.includes(ability.sheetAbilityIndex))throw new Error('Questa abilità non è più disponibile nella scheda.')
                 if(spellEdition(owner)==='2024'&&ability.ruleId?.includes('2014:'))throw new Error('Questa voce usa regole 2014: scegli la voce dell’edizione corretta.')
-                const castingOwner=combat?owner:{...owner,playerDetails:{...owner.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]','combat.bonusActionUsed':'false','combat.actionUsed':'false'}}
+                const castingOwner=combat?owner:{...owner,playerDetails:{...owner.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]',...resetTurnEconomy}}
                 if(info.unit==='bonus-action'&&combat&&ability.ownerId!==combat.activeId)throw new Error('L’azione bonus richiede il turno del personaggio.')
                 if(combat&&requiresAdditionalSpellAction(castingOwner,ability,ownerCatalog)&&!additionalActionConfirmed)throw new Error('Conferma un’altra azione valida per lanciare questo incantesimo.')
-                const spent=spendCombatUse(castingOwner,ability,ownerCatalog,creationData,ability.execution.option,ability.execution.cost)
+                const spent=spendCombatUse(castingOwner,ability,ownerCatalog,creationData,ability.execution.option,ability.execution.cost,{abilities,ownerId:ability.ownerId!})
                 resolvingTurns=turns.map(turn=>turn.id===ability.ownerId?{...turn,sheet:spent}:turn)
             }
             const resolving=info.repairsObject ? {...ability,targets:[]} : ability
@@ -576,7 +578,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
             return
         }
         setCombatRuleError('')
-        const orderedTurns = sortByInitiative(turns).map(turn=>turn.sheet ? {...turn,sheet:{...turn.sheet,playerDetails:{...turn.sheet.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]','combat.reactionUsed':'false','combat.bonusActionUsed':'false','combat.actionUsed':'false'}}} : turn)
+        const orderedTurns = sortByInitiative(turns).map(turn=>turn.sheet ? {...turn,sheet:{...turn.sheet,playerDetails:{...turn.sheet.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]',...resetTurnEconomy}}} : turn)
         if (orderedTurns.length === 0) return
         if (sheetEditor.current?.patchMany(orderedTurns.flatMap(turn=>turn.sheet ? [turn.sheet] : []))===false) {setCombatRuleError('Salvataggio dell’inizio del combattimento non riuscito.');return}
         setTurns(orderedTurns)
@@ -605,7 +607,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
             const expiredConcentration=new Set(advanced.filter(a=>a.active&&a.concentration&&a.remainingTurns===0&&a.timed!==false&&(currentAbilities.find(previous=>previous.id===a.id)?.remainingTurns??0)>0).map(a=>a.ownerId))
             const reset=settled.turns.map(turn=>{
                 if(!turn.sheet)return turn
-                const patch={'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]',...(turn.id===next.activeId?{'combat.reactionUsed':'false','combat.bonusActionUsed':'false','combat.actionUsed':'false'}:{}),...(expiredConcentration.has(turn.id)?{'rules2014.concentration':''}:{})}
+                const patch={'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]',...(turn.id===next.activeId?{...resetTurnEconomy}:{}),...(expiredConcentration.has(turn.id)?{'rules2014.concentration':''}:{})}
                 if(Object.entries(patch).every(([key,value])=>turn.sheet!.playerDetails?.[key]===value))return turn
                 return {...turn,sheet:{...turn.sheet,playerDetails:{...turn.sheet.playerDetails,...patch}}}
             })
@@ -795,7 +797,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
                     <button type="button" className="master-back-to-table" onClick={() => { tableHeading.current?.scrollIntoView({ block: 'start' }); tableHeading.current?.focus({ preventScroll: true }) }}>Torna ai partecipanti</button>
                     <div className="master-inspector-header">
                     <InspectorNavigation mode={inspectorMode} onChange={setInspectorMode}/>
-                    {inspectorMode === 'participant' && selectedTurn && <h2 id="master-detail-name">{selectedTurn.description || 'Partecipante da nominare'}</h2>}
+                    {inspectorMode === 'participant' && selectedTurn && <><h2 id="master-detail-name">{selectedTurn.description || 'Partecipante da nominare'}</h2><TurnActionBudget slots={selectedTurn.sheet?turnActionSlots(selectedTurn.sheet,abilities,selectedTurn.id,!!combat):[]} inCombat={!!combat}/></>}
                     </div>
                     {inspectorMode === 'participant' && (selectedTurn ? <section className="master-participant-detail" aria-labelledby="master-detail-name">
                         <p className="master-detail-label">Partecipante selezionato</p>

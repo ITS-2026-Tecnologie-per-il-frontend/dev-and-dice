@@ -36,7 +36,7 @@ for(const edition of ['2014','2024']) {
     assert(info.attack && info.instantaneous && info.damage,edition+': a sheet weapon opens as an instant damaging attack')
     assert.equal(combatTargeting(action,catalog,armed).maximum,1)
     assert.throws(()=>assertCombatTargets({...action,targets:[{id:1},{id:2}]},catalog,armed),/Troppi bersagli/)
-    assert.deepEqual(spendCombatUse(armed,action,catalog,data,'free').playerDetails,armed.playerDetails,'Weapon attacks do not consume spell slots or inventory quantity')
+    assert.deepEqual(spendCombatUse(armed,action,catalog,data,'free').playerDetails,{...armed.playerDetails,'combat.actionUsed':'true','combat.actionUses':'1','combat.attackActionRemaining':'0'},'Weapon attacks record the action without consuming spell slots or inventory quantity')
     const unavailable={...armed,playerDetails:{...armed.playerDetails,'inventory.0.2':'0'}}
     assert(!sheetWithCombatAbilities(unavailable,catalog).abilities.some(ability=>ability.ruleId==='sheet-attack:0'))
     assert.throws(()=>spendCombatUse(unavailable,action,catalog,data,'free'),/Arma non più disponibile/,'Old cards cannot use a removed weapon')

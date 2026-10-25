@@ -1,3 +1,4 @@
+import {recordTurnAction,turnActionCapacity,turnActionUses} from './TurnEconomy.ts'
 import type { Ability, Combat } from '../../utils/Combat.ts'
 import { integerValue, type CharacterSheet } from '../../utils/CharacterSheets.ts'
 import type { CreationData } from '../../utils/PlayerCreation.ts'
@@ -94,7 +95,7 @@ export function wakeWithAction<T extends {id:number;sheet?:CharacterSheet}>(abil
     if(sleepingTargets(abilities).includes(actorId)||activeEffects(abilities).some(a=>(a.targets?.length?a.targets.some(t=>t.id===actorId):a.ownerId===actorId)&&a.resolutionEffects?.some(e=>e.kind==='condition'&&['unconscious','paralyzed','stunned','incapacitated'].includes(e.condition??''))))throw new Error('Chi è incapacitato non può svegliare un’altra creatura.')
     const details=actor.sheet.playerDetails??{},history=JSON.parse(details['rules2014.spellsThisTurn']??details['combat.spellsThisTurn']??'[]')
     if(!Array.isArray(history))throw new Error('Cronologia del turno non valida.')
-    if(details['combat.actionUsed']==='true'||history.some(c=>c.unit==='action'))throw new Error('L’azione di questo turno è già utilizzata.')
-    const sheet={...actor.sheet,playerDetails:{...details,'combat.actionUsed':'true'}}
+    if(turnActionUses(actor.sheet,'action')>=turnActionCapacity(actor.sheet,abilities,actorId,'action'))throw new Error('L’azione di questo turno è già utilizzata.')
+    const sheet=recordTurnAction(actor.sheet,'action')
     return {abilities:wakeSleep(abilities,[targetId]),turns:turns.map(t=>t.id===actorId?{...t,sheet}:t),sheet}
 }

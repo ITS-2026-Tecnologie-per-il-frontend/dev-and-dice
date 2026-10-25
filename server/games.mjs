@@ -1,3 +1,4 @@
+import {turnActionSlots} from '../src/domain/dnd/TurnEconomy.ts'
 import {validReadiedAction} from '../src/domain/dnd/Readied.ts'
 import {readyChoices,readyEntry,applyReadyCommand} from './readied-actions.mjs'
 import { validWindSave } from '../src/domain/dnd/WindTurns.ts'
@@ -197,7 +198,8 @@ export async function gamesRouter({ dataDir, authenticate }) {
       return {...result,inviteToken:game.inviteToken,characters,state}
     }
     const participant = game.players.find(player => player.userId === user)
-    return { ...result, rollRequests:pendingSavingThrows(db,game,user), character:characters.find(character => character.id === participant.characterId),
+    const actionOwner=state.turns.find(turn=>turn.sheet?.id===participant.characterId)
+    return { ...result, actionSlots:turnActionSlots(characters.find(c=>c.id===participant.characterId).sheet,state.abilities,actionOwner?.id,!!state.combat), rollRequests:pendingSavingThrows(db,game,user), character:characters.find(character => character.id === participant.characterId),
       notes:participant.notes ?? {text:'',revision:0},
       effects:activeEffects(state.abilities).filter(ability => !ability.readied && ability.active && (ability.timed === false || ability.remainingTurns > 0)
         && state.turns.some(turn => (turn.id === ability.ownerId || ability.targets?.some(target=>target.id===turn.id)) && turn.sheet?.id === participant.characterId)).map(ability => ({

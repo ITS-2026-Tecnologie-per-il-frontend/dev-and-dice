@@ -1,3 +1,4 @@
+import type {turnActionSlots} from '../domain/dnd/TurnEconomy'
 import type { SpellEffectDetails, WeaponEffectDetails, ResolutionPlan, RollPacket, TargetResolution, SaveAbility, DefenseProfile } from '../domain/dnd/CombatResolution'
 import type { SleepReviewData } from '../domain/dnd/Sleep'
 import type { AttackAssessment } from '../domain/dnd/CombatActions'
@@ -23,7 +24,7 @@ export type ActionChoices = {revision:number;canPropose:boolean;blockedReason?:s
 export type MasterGame = GameSummary & Requests & { role:'master'; notifications:NotificationSummary;inviteToken:string; characters:OwnedCharacter[]; state:TrackerState }
 export type PrivateNotes = {text:string;revision:number}
 export type PlayerEffect = {name:string;duration:string;remainingTurns:number;timed:boolean;concentration:boolean;description?:string;expiresAt?:'start'|'end';repeatSave?:string}
-export type PlayerGame = GameSummary & Requests & { role:'player'; rollRequests?:{requestId:string;targetId:number;actionName:string;kind:'save'|'save-second'|'attack'|'bonus-save'|'bonus-attack';label?:string;sides?:number;optional?:boolean;effectId?:number;ability?:SaveAbility;bonus?:number;packet?:number;revision:number}[];notifications:NotificationSummary;character:OwnedCharacter; turns:{name:string;current:boolean;prepared?:{name:string;concentration:boolean}}[]; effects:PlayerEffect[]; notes:PrivateNotes }
+export type PlayerGame = GameSummary & Requests & { role:'player';actionSlots?:ReturnType<typeof turnActionSlots>; rollRequests?:{requestId:string;targetId:number;actionName:string;kind:'save'|'save-second'|'attack'|'bonus-save'|'bonus-attack';label?:string;sides?:number;optional?:boolean;effectId?:number;ability?:SaveAbility;bonus?:number;packet?:number;revision:number}[];notifications:NotificationSummary;character:OwnedCharacter; turns:{name:string;current:boolean;prepared?:{name:string;concentration:boolean}}[]; effects:PlayerEffect[]; notes:PrivateNotes }
 export type Game = MasterGame | PlayerGame
 export type HomeData = { characters:OwnedCharacter[]; games:GameSummary[] }
 export class PlayApiError extends Error {
