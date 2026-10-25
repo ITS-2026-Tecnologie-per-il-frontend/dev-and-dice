@@ -434,7 +434,9 @@
 .readied-actions input:not([type=checkbox]),.readied-actions select { width:100%; box-sizing:border-box; }
 .readied-actions .play-actions { display:flex; flex-wrap:wrap; gap:8px; }
 .readied-held { display:grid; gap:8px; padding:12px; border:1px solid var(--border); border-radius:6px; }
-.readied-prepare > summary { cursor:pointer; margin-bottom:12px; }
+.readied-prepare > summary { box-sizing:border-box; min-height:44px; margin:0; list-style:none; }
+.readied-prepare > summary::-webkit-details-marker { display:none; }
+.readied-prepare[open] > summary { margin-bottom:12px; }
 
 .readied-held p { overflow-wrap:anywhere; }
 

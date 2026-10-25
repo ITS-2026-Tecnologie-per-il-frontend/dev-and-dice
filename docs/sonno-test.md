@@ -12,7 +12,7 @@ Usare una partita di prova, con due finestre separate: Master e giocatore. L’i
 
 ## Preparare Sonno e rilasciarlo fuori turno
 
-1. Nel turno dell’incantatore aprire **Azioni preparate → Prepara Sonno o un risveglio**. Il collegamento **Prepara Sonno come reazione** nel form normale porta a questa sezione.
+1. Nel turno dell’incantatore aprire **Azioni preparate → +** (pulsante con bordo tratteggiato). Il collegamento **Prepara Sonno come reazione** nel form normale porta a questa sezione.
 2. Scegliere Sonno, uno slot di 2° e un evento percepibile, ad esempio «quando il goblin attraversa la porta». Il Master può scegliere il personaggio per cui agisce; il giocatore usa il proprio.
 3. Se il pulsante è disabilitato, il messaggio indica chi sta agendo: attendere il turno dell’incantatore (o rimuovere un eventuale stato che gli impedisce di agire). Il giocatore preme **Invia preparazione al Master** e il Master approva la notifica. Se agisce direttamente il Master, preme **Prepara**.
 4. Verificare: si consuma uno slot di 2°, inizia la concentrazione, nessuno si addormenta. Non si tirano ancora i d8.
