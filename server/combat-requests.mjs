@@ -167,11 +167,15 @@ function sleepTargets(context) {
   })
 }
 
+export function createSleepReview(context,proposal) {
+  return {candidates:sleepTargets(context).filter(target=>proposal.targets.some(t=>t.id===target.id)),selected:[]}
+}
+
 export function actionChoices(context,game,db) {
   return {revision:game.revision,canPropose:context.canPropose,blockedReason:context.blockedReason,ownerId:context.owner?.id ?? null,actions:context.actions.map(({key,ability,options,error,info,mode,attackBonus})=>({key,windDirection:windDirectionChoice(context,game,ability),attackBonus,effects:spellEffectDetails({...ability,resolutionEffects:ability.resolutionEffects??resolutionPlan(context.record.sheet,ability,context.catalog,ability.useOption,context.weaponContext)?.effects},context.targets.map(target=>({...target,name:target.sheet?.name??target.description})),game.state.abilities,context.weaponContext.data),weaponEffects:weaponEffectDetails(ability.weaponEffects??[],game.state.turns.flatMap(turn=>{const sheet=db.characters.find(record=>record.id===turn.sheet?.id)?.sheet??turn.sheet;return sheet?[sheet]:[]})),lastCast:castReceipt(context,game,ability),additionalActionRequired:requiresAdditionalSpellAction(context.record.sheet,ability,context.catalog),displayName:weaponDisplayName(resolutionPlan(context.record.sheet,ability,context.catalog,undefined,context.weaponContext),context.targets.map(caster=>({id:caster.id,name:caster.sheet?.name??caster.description}))),name:ability.name,entry:info.entry,description:ability.description ?? info.entry?.description ?? '',options:options.map(option=>({...option,targeting:combatTargeting(ability,context.catalog,context.record.sheet,option.id),resolution:resolutionPlan(context.record.sheet,ability,context.catalog,option.id,context.weaponContext)})),error,
     spellLevel:info.level,group:info.level!==undefined ? 'Incantesimi' : catalogAbilityKind(info.entry,ability.section,ability.description ?? info.entry?.description).weaponAttack ? 'Attacchi fisici' : 'Abilità attivabili',
     duration:info.instantaneous ? 'Istantanea' : ability.duration==='Personalizzata' ? `${ability.remainingTurns} turni` : ability.duration,remainingTurns:ability.remainingTurns,active:!!ability.execution || ability.active && (ability.timed===false || ability.remainingTurns>0),
-    ...(info.entry?.data.edition==='2014'&&ability.ruleId==='phb2014:spell:sleep'?{sleepTargets:sleepTargets(context)}:{}),cost:ability.resourceCost ?? 1,resolution:resolutionPlan(context.record.sheet,ability,context.catalog,undefined,context.weaponContext),damageEnabled:info.damage,mode,prolonged:info.prolonged,ritual:info.ritual})),
+    cost:ability.resourceCost ?? 1,resolution:resolutionPlan(context.record.sheet,ability,context.catalog,undefined,context.weaponContext),damageEnabled:info.damage,mode,prolonged:info.prolonged,ritual:info.ritual})),
     targets:context.targets.map(turn=>({id:turn.id,name:turn.sheet?.name??turn.description,creatureType:creatureType(turn.sheet),wearingArmor:turn.sheet?wearingArmor(turn.sheet):undefined}))}
 
 }
@@ -207,6 +211,7 @@ export function validCombatRequest(entry) {
     || !Array.isArray(entry.targets) || entry.targets.length!==entry.proposal?.targets?.length
     || !entry.targets.every(target=>object(target) && text(target.name,20000) && (target.armorClass===undefined||Number.isSafeInteger(target.armorClass)) && damage(target.damage)
       && entry.proposal.targets.some(original=>original.id===target.id && original.roll===target.roll && original.hit===target.hit && original.damageRoll===target.damageRoll))) return false
+  if(entry?.sleepReview!==undefined&&(!object(entry.sleepReview)||!Array.isArray(entry.sleepReview.candidates)||entry.proposal?.sleepRoll===undefined||entry.sleepReview.candidates.length!==entry.proposal.targets.length||!entry.sleepReview.candidates.every(t=>object(t)&&integer(t.id)&&entry.proposal.targets.some(p=>p.id===t.id)&&(t.hitPoints===undefined||integer(t.hitPoints))&&(t.unavailableReason===undefined||text(t.unavailableReason,500)))||!Array.isArray(entry.sleepReview.selected)||new Set(entry.sleepReview.selected).size!==entry.sleepReview.selected.length||!entry.sleepReview.selected.every(id=>entry.proposal.targets.some(t=>t.id===id))))return false
   if (entry.proposal.attackDie!==undefined && (!object(entry.weaponAttack)||!['2014','2024'].includes(entry.weaponAttack.edition)||entry.weaponAttack.modifier!==undefined&&!Number.isSafeInteger(entry.weaponAttack.modifier))) return false
   if(entry.proposal.packets!==undefined&&!validResolutionSnapshot(entry))return false
   if(entry.proposal.windDirection!==undefined&&entry.resolution?.plan.ruleId!=='phb2014:spell:gust-of-wind')return false
@@ -302,10 +307,10 @@ export function visibleRequests(game,user) {
   // ponytail: like the sheet journal, persisted requests grow for one session; move both journals to paginated DB storage together.
   return [...entries].reverse().filter((entry,index)=>index<20 || requestStatus(game,entry)==='pending').map(entry=>({id:entry.id,characterId:entry.characterId,characterName:entry.characterName,actorName:entry.actorName,actionName:entry.actionName,
     createdAt:entry.createdAt,status:requestStatus(game,entry),additionalActionRequired:entry.resolution?.additionalActionRequired??false,optionLabel:entry.optionLabel,cost:entry.proposal.cost,windDirection:entry.proposal.windDirection!==undefined,spendsResources:!['free','cantrip','ritual'].includes(entry.proposal.option),mode:entry.proposal.mode,damageEnabled:entry.proposal.damageEnabled,prolonged:entry.prolonged,
-    ...(entry.proposal.attackDie!==undefined?{attackDie:entry.proposal.attackDie}:{}),...(entry.proposal.sleepRoll!==undefined?{sleepRoll:entry.proposal.sleepRoll}:{}),
+    ...(entry.proposal.attackDie!==undefined?{attackDie:entry.proposal.attackDie}:{}),...(entry.proposal.sleepRoll!==undefined?{sleepRoll:entry.proposal.sleepRoll}:{}),...(game.masterId===user&&entry.sleepReview?{sleepReview:entry.sleepReview}:{}),
     ...(entry.resolution?{packets:entry.proposal.packets,rollsRevision:entry.rollsRevision??0,...(game.masterId===user?{resolution:{...entry.resolution.plan,attackAbility:entry.resolution.plan.attackAbility??(entry.resolution.plan.kind==='attack'&&!entry.resolution.plan.weaponName&&!/^sheet-attack:/.test(entry.resolution.plan.ruleId??'')?spellAttackAbility(game.state?.turns.find(t=>t.sheet?.id===entry.characterId)?.sheet):undefined)},weaponChoices:entry.resolution.weaponChoices,...(entry.resolution.wind?{wind:{...entry.resolution.wind,editable:windEditable(game,entry)}}:{})}: {})}:{}),
     targets:(entry.resolution?.wind?entry.resolution.wind.selected.map(id=>{const c=entry.resolution.wind.candidates.find(c=>c.id===id);return {id,name:c.name,roll:'',damageRoll:'',damage:'0'}}):entry.targets).map(({id,name,roll,hit,damageRoll,damage,armorClass})=>{
-      const base={id,name,roll,damageRoll,damage:(entry.weaponAttack||entry.resolution)&&game.masterId!==user?(entry.proposal.targets.find(target=>target.id===id)?.damage??'0'):damage}
+      const base={id,name,roll,damageRoll,...(entry.sleepReview&&entry.status==='approved'?{asleep:entry.sleepReview.selected.includes(id)}:{}),damage:(entry.weaponAttack||entry.resolution)&&game.masterId!==user?(entry.proposal.targets.find(target=>target.id===id)?.damage??'0'):damage}
       if(entry.resolution?.wind)return base
       if(entry.resolution){
         if(game.masterId!==user)return base
@@ -330,13 +335,7 @@ export function prepareAction(context,proposal,rules) {
   const sleep=action.info.entry?.data.edition==='2014'&&action.ability.ruleId==='phb2014:spell:sleep'
   if(sleep) {
     if(!validSleepRoll(proposal.sleepRoll,sleepDice(proposal.option))||proposal.mode!=='none'||proposal.damageEnabled||proposal.packets!==undefined||proposal.cost!==1)fail(400,'Inserisci il totale dei d8 di Sonno per lo slot scelto, senza danni e con costo 1.')
-    let remaining=proposal.sleepRoll
-    const candidates=new Map(sleepTargets(context).map(target=>[target.id,target]))
-    for(const target of proposal.targets.map(t=>candidates.get(t.id)).sort((a,b)=>(a?.hitPoints??Infinity)-(b?.hitPoints??Infinity))) {
-      const reason=target?sleepTargetReason(target,remaining):'Bersaglio non disponibile.'
-      if(reason)fail(400,reason)
-      remaining-=target.hitPoints
-    }
+    if(proposal.targets.some(target=>!context.targets.some(t=>t.id===target.id)))fail(400,'Bersaglio non disponibile.')
   } else if(proposal.sleepRoll!==undefined)fail(400,'Questa azione non prevede i dadi di Sonno.')
   if (proposal.attackDie!==undefined && (!/^sheet-attack:[0-5]$/.test(action.ability.ruleId??'')||proposal.mode!=='attack'||!proposal.damageEnabled||proposal.targets.length!==1)) fail(400,'Il d20 separato richiede un attacco con arma e un bersaglio.')
   if(proposal.packets!==undefined) {
@@ -351,7 +350,7 @@ export function prepareAction(context,proposal,rules) {
   if(proposal.packets===undefined){const plan=resolutionPlan(context.record.sheet,action.ability,context.catalog,proposal.option,context.weaponContext);if(plan?.healing||plan?.temporaryHitPoints)fail(400,'Aggiorna le azioni e inserisci i dadi richiesti prima di inviare la richiesta.')}
   const option=action.options.find(option=>option.id===proposal.option)
   if (!option || option.cost!==undefined && option.cost!==proposal.cost) fail(400,'Modalità o costo non valido per questa azione.')
-  try {assertTargetTypes(combatTargeting(action.ability,context.catalog,context.record.sheet,proposal.option),context.targets??[],proposal.targets.map(t=>t.id))}catch(error){fail(400,error.message)}
+  if(!sleep)try {assertTargetTypes(combatTargeting(action.ability,context.catalog,context.record.sheet,proposal.option),context.targets??[],proposal.targets.map(t=>t.id))}catch(error){fail(400,error.message)}
   // Validate resources and spell restrictions without persisting any spend during the proposal.
   const ability={...action.ability,requirementsConfirmed:true,targets:proposal.targets.map(target=>({id:target.id,damage:target.damage,resolved:false}))}
   const rage=ability.ruleId==='phb2014:class-feature:barbarian-1-rage',info=action.info
@@ -370,6 +369,18 @@ export function applyCombatRequest(db,game,entry,rules,body) {
   if(body.wind!==undefined&&!wind)fail(400,'Questa azione non prevede correzioni dell’area.')
   const proposal=wind?{...entry.proposal,packets:wind.selected.map(targetId=>({targetId,damage:[]})),targets:packetTargets(wind.selected.map(targetId=>({targetId,damage:[]})))}:entry.proposal
   const {action,ability,sheet,rage}=prepareAction(context,proposal,rules)
+  let sleepReview
+  if(proposal.sleepRoll!==undefined) {
+    const selected=body.sleepTargets
+    if(!Array.isArray(selected)||new Set(selected).size!==selected.length||!selected.every(id=>proposal.targets.some(t=>t.id===id)))fail(400,'Conferma i bersagli da addormentare.')
+    sleepReview={...createSleepReview(context,proposal),selected}
+    let remaining=proposal.sleepRoll
+    for(const target of sleepReview.candidates.filter(t=>selected.includes(t.id)).sort((a,b)=>(a.hitPoints??Infinity)-(b.hitPoints??Infinity))) {
+      const reason=sleepTargetReason(target,remaining)
+      if(reason)fail(400,reason)
+      remaining-=target.hitPoints
+    }
+  } else if(body.sleepTargets!==undefined)fail(400,'Questa azione non prevede bersagli di Sonno.')
   if(proposal.windDirection!==undefined){
     if(!Array.isArray(body.targets)||body.targets.length!==wind.selected.length||new Set(body.targets.map(t=>t?.id)).size!==wind.selected.length||!body.targets.every(t=>wind.selected.includes(t.id)&&t.damage==='0'))fail(400,'Conferma i bersagli della nuova direzione.')
     return {state:{...game.state,turns:game.state.turns.map(t=>t.sheet?.id===sheet.id?{...t,sheet:{...sheet,abilities:t.sheet.abilities}}:t),abilities:game.state.abilities.map(a=>a.id===ability.id?{...a,targets:wind.selected.map(id=>({id,damage:'0',resolved:true}))}:a)},sheets:[sheet],targets:wind.selected.map(id=>({id,damage:'0'})),wind}
@@ -391,7 +402,7 @@ export function applyCombatRequest(db,game,entry,rules,body) {
     const canonical=record?.id===context.record.id ? sheet : record?.sheet
     return canonical ? {...turn,sheet:{...canonical,abilities:turn.sheet.abilities},hitPoints:canonical.hitPoints,temporaryHitPoints:canonical.playerDetails?.temporaryHitPoints ?? ''} : turn
   })
-  const resolving={...ability,...(entry.resolution?.plan.deferredSave?{windSave:{dc:entry.resolution.plan.deferredSave.dc}}:{}),useOption:entry.proposal.option,damageEnabled:entry.proposal.damageEnabled,execution:{id:entry.id,phase:'resolving',option:entry.proposal.option,cost:entry.proposal.cost},targets:body.targets.map(({id,damage})=>({id,damage,resolved:true}))}
+  const resolving={...ability,...(entry.resolution?.plan.deferredSave?{windSave:{dc:entry.resolution.plan.deferredSave.dc}}:{}),useOption:entry.proposal.option,damageEnabled:entry.proposal.damageEnabled,execution:{id:entry.id,phase:'resolving',option:entry.proposal.option,cost:entry.proposal.cost},targets:body.targets.filter(t=>!sleepReview||sleepReview.selected.includes(t.id)).map(({id,damage})=>({id,damage,resolved:true}))}
   let updated
   try {updated=resolveCombatDamage(resolving,turns,context.catalog)} catch(error) {fail(409,error.message)}
   const sheets=new Map([[sheet.id,sheet]])
@@ -431,7 +442,7 @@ export function applyCombatRequest(db,game,entry,rules,body) {
   const existing=game.state.abilities.find(item=>item.id===ability.id&&item.ownerId===context.owner.id && (ability.catalogId ? item.catalogId===ability.catalogId : item.name===ability.name))
   const keepPrevious=!!entry.resolution?.plan.temporaryHitPoints&&entry.proposal.packets[0].keepTemporaryHitPoints
   const abilities=game.state.abilities.filter(item=>keepPrevious||item!==existing).map(item=>((rage || action.info.concentration || ability.concentration) && item.ownerId===context.owner.id && (item.concentration || item.execution?.phase==='casting') || existing&&item.sourceEffectId===existing.id) ? {...item,active:false,execution:undefined,remainingTurns:0} : item)
-  if (!keepPrevious&&(!action.info.instantaneous || enchantments.length)) {
+  if (!keepPrevious&&(!action.info.instantaneous || enchantments.length)&&(!sleepReview||sleepReview.selected.length)) {
     if (abilities.length>=2000) fail(409,'Limite delle abilità in combattimento raggiunto.')
     const id=existing?.id ?? Math.max(-1,...abilities.map(item=>item.id))+1
     abilities.push(resolvedAbility({...resolving,id,...(entry.resolution?.plan.temporaryHitPoints?{temporaryHitPointsSource:entry.id}:{}),...(enchantments.length?{weaponEffects:enchantments.map(c=>c.effect)}:{}),concentration:ability.concentration || action.info.concentration,...(entry.resolution?{resolutionEffects:entry.resolution.plan.effects.filter(effect=>effect.trigger==='always')}: {})},context.catalog,game.state.combat,updated))
@@ -465,7 +476,7 @@ export function applyCombatRequest(db,game,entry,rules,body) {
   const incapacitated=endIncapacitatedConcentration(abilities,updated)
   const settled=settleCombatEffects(incapacitated.abilities,incapacitated.turns)
   for(const turn of settled.turns)if(turn.sheet&&turn.sheet!==updated.find(t=>t.id===turn.id)?.sheet)sheets.set(turn.sheet.id,turn.sheet)
-  return {targets:body.targets,state:{...game.state,turns:settled.turns,abilities:settled.abilities},sheets:[...sheets.values()],...(wind?{wind}:{})}
+  return {targets:body.targets,state:{...game.state,turns:settled.turns,abilities:settled.abilities},sheets:[...sheets.values()],...(wind?{wind}:{}),...(sleepReview?{sleepReview}:{})}
 }
 
 function weaponCandidates(db,game,targetId,rules,effect,casterId) {

@@ -31,7 +31,7 @@ function RequestDescription({request,review=false}:{request:CombatRequest;review
         <p>{request.resolution?.temporaryHitPoints?'PF temporanei':request.resolution?.healing?'Guarigione':modeLabels[request.mode]} · {request.optionLabel}{request.spendsResources?` · costo ${request.cost}`:''}</p>
         {request.sleepRoll!==undefined&&<p>Riserva di Sonno: <strong>{request.sleepRoll} PF</strong> · totale dei d8, nessun danno.</p>}
         {request.prolonged&&<p>Tempo di lancio prolungato: approvare soltanto dopo il completamento.</p>}
-        <ul>{request.targets.map(target=><li key={target.id}><strong>{target.name||'Partecipante'}</strong>{!target.attack&&target.roll&&<> · {request.mode==='save'?'TS':'Tiro'}: {target.roll}</>}{request.mode==='attack'&&target.hit!==undefined&&<> · {target.hit?'Colpito':'Mancato'}</>}{target.attack&&<p>Confronto base: d20 {target.attack.die}, modificatore {target.attack.modifier===undefined?'da verificare':signedBonus(target.attack.modifier)}, totale {target.attack.total??'da verificare'} · CA {target.attack.armorClass??'da verificare'} · {target.attack.critical?'Colpo critico':target.attack.hit===undefined?'Esito da verificare':target.attack.hit?'Colpito':'Mancato'}</p>}{request.damageEnabled&&<> · Danni tirati: {target.damageRoll||'—'}{request.packets===undefined&&target.damageRoll!==target.damage&&<> · Danni finali: {target.damage}</>}</>}</li>)}</ul>
+        <ul>{request.targets.map(target=><li key={target.id}><strong>{target.name||'Partecipante'}</strong>{target.asleep!==undefined&&<> · {target.asleep?'Addormentato':'Non addormentato'}</>}{!target.attack&&target.roll&&<> · {request.mode==='save'?'TS':'Tiro'}: {target.roll}</>}{request.mode==='attack'&&target.hit!==undefined&&<> · {target.hit?'Colpito':'Mancato'}</>}{target.attack&&<p>Confronto base: d20 {target.attack.die}, modificatore {target.attack.modifier===undefined?'da verificare':signedBonus(target.attack.modifier)}, totale {target.attack.total??'da verificare'} · CA {target.attack.armorClass??'da verificare'} · {target.attack.critical?'Colpo critico':target.attack.hit===undefined?'Esito da verificare':target.attack.hit?'Colpito':'Mancato'}</p>}{request.damageEnabled&&<> · Danni tirati: {target.damageRoll||'—'}{request.packets===undefined&&target.damageRoll!==target.damage&&<> · Danni finali: {target.damage}</>}</>}</li>)}</ul>
         {request.targets.some(target=>target.attack)&&<p>Verifica copertura, reazioni e altri effetti prima di confermare i danni finali.{request.targets.some(target=>target.attack?.critical)&&<> Per un critico si tirano due volte i dadi di danno, aggiungendo i modificatori una sola volta.</>}</p>}
         <ResolutionDetails request={request}/>
         <p role="status">{statusLabels[request.status]}</p></>
@@ -43,6 +43,8 @@ export function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDe
     const missingWind=!!request.wind&&wind.selected.some(id=>wind.saves[id]?.mode==='manual'&&wind.saves[id]?.success===undefined)
     const [weapons,setWeapons]=useState<Record<number,WeaponChoice>>({})
     const [additionalActionConfirmed,setAdditionalActionConfirmed]=useState(false)
+    const [sleepSelected,setSleepSelected]=useState<number[]>(request.sleepReview?.selected??[])
+    const sleepRemaining=(request.sleepRoll??0)-(request.sleepReview?.candidates.filter(t=>sleepSelected.includes(t.id)).reduce((sum,t)=>sum+(t.hitPoints??0),0)??0)
     const [damages,setDamages]=useState<Record<number,string>>({}),[manual,setManual]=useState(false),[effectOverrides,setEffectOverrides]=useState<Record<number,boolean>>({}),[busy,setBusy]=useState(false),[error,setError]=useState('')
     const calculatedDamageFor=(target:CombatTarget)=>target.resolution?target.resolution.damage===null?'':String(target.resolution.damage):target.attack?.hit===false?'0':target.damage
     const damageFor=(target:CombatTarget)=>damages[target.id]??calculatedDamageFor(target)
@@ -54,7 +56,7 @@ export function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDe
     async function decide(decision:'approve'|'reject') {
         if (working.current) return
         working.current=true;setBusy(true);setError('')
-        try {await onDecide(request.id,decision,{confirmed:decision==='approve',additionalActionConfirmed,manualResolution:manual,...(request.wind?{wind}:{}),...(weaponEffect?{weapons:request.targets.map(t=>({targetId:t.id,...weapons[t.id]}))}:{}),targets:request.wind?wind.selected.map(id=>({id,damage:'0'})):request.targets.map(target=>({id:target.id,damage:damageFor(target)})),...(request.resolution?{effects:effectTargets.filter(t=>effectOverrides[t.id]!==false).map(t=>t.id)}:{})})} catch(error) {setError(message(error))} finally {working.current=false;setBusy(false)}
+        try {await onDecide(request.id,decision,{confirmed:decision==='approve',additionalActionConfirmed,manualResolution:manual,...(request.sleepReview?{sleepTargets:sleepSelected}:{}),...(request.wind?{wind}:{}),...(weaponEffect?{weapons:request.targets.map(t=>({targetId:t.id,...weapons[t.id]}))}:{}),targets:request.wind?wind.selected.map(id=>({id,damage:'0'})):request.targets.map(target=>({id:target.id,damage:damageFor(target)})),...(request.resolution?{effects:effectTargets.filter(t=>effectOverrides[t.id]!==false).map(t=>t.id)}:{})})} catch(error) {setError(message(error))} finally {working.current=false;setBusy(false)}
     }
     async function refreshRequest(){
         if(working.current)return
@@ -63,14 +65,22 @@ export function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDe
     }
     const pending=request.status==='pending',stale=request.status==='stale'
     return <article className="combat-request combat-request--review" aria-busy={busy}><header className="combat-request-heading"><div className="combat-request-title"><h3>{request.actionName}</h3><InfoButton label="Dettagli" name={request.actionName} entry={entry} description={ability?.description||catalogStatus||request.resolution?.notes.join('\n')||'Descrizione non disponibile. Consulta la scheda del personaggio.'} fields={ability?{duration:ability.duration}:{}}/></div><p className="combat-request-state" data-state={request.status} role="status">{statusLabels[request.status]}</p></header><RequestDescription request={request} review/>
-        <ResolutionDetails request={request} review renderSave={target=><MasterSavingRolls request={request} target={target} disabled={disabled||busy} onDecide={onDecide}/>} renderPacket={(target,index)=><MasterCriticalRolls request={request} target={target} index={index} disabled={disabled||busy} onDecide={onDecide}/>} renderTarget={target=>{
+        {request.sleepReview&&<fieldset className="ability-targets" aria-label="Creature da addormentare" disabled={disabled||busy||!pending}><legend>Creature da addormentare</legend>
+            <p className="library-help">Le creature indicate dal giocatore sono una proposta dell’area. Verifica chi è presente e seleziona chi si addormenta, dai PF attuali più bassi ai più alti; risolvi tu le parità.</p>
+            <p className="ability-casting-summary" role="status">Riserva: <strong>{request.sleepRoll} PF</strong> · restanti: <strong>{sleepRemaining} PF</strong></p>
+            {request.sleepReview.candidates.slice().sort((a,b)=>(a.hitPoints??Infinity)-(b.hitPoints??Infinity)).map(target=>{
+                const picked=sleepSelected.includes(target.id),reason=sleepTargetReason(target,picked?request.sleepRoll??0:sleepRemaining)
+                return <div className="ability-target" key={target.id}><label className="combat-request-check"><input type="checkbox" checked={picked} disabled={!picked&&!!reason} onChange={event=>setSleepSelected(current=>event.target.checked?[...current,target.id]:current.filter(id=>id!==target.id))}/>{request.targets.find(t=>t.id===target.id)?.name}{target.hitPoints!==undefined&&` · ${target.hitPoints} PF`}{!pending&&` · ${picked?'Addormentato':'Non addormentato'}`}</label>{pending&&reason&&<span className="library-help">{reason}</span>}</div>
+            })}
+        </fieldset>}
+        {!request.sleepReview&&<ResolutionDetails request={request} review renderSave={target=><MasterSavingRolls request={request} target={target} disabled={disabled||busy} onDecide={onDecide}/>} renderPacket={(target,index)=><MasterCriticalRolls request={request} target={target} index={index} disabled={disabled||busy} onDecide={onDecide}/>} renderTarget={target=>{
             if(!pending||!request.damageEnabled)return null
             const original=calculatedDamageFor(target),value=damageFor(target)
             const locked=disabled||busy||!request.resolution&&request.attackDie===undefined&&request.mode==='attack'&&!target.hit
             return <FinalDamageField target={target} result={target.resolution} value={value} calculated={original} disabled={locked} formId={decisionId} onChange={nextValue=>setDamages(current=>{
                 const next={...current};if(original!==''&&nextValue!==''&&Number(nextValue)===Number(original))delete next[target.id];else next[target.id]=nextValue;return next
             })}/>
-        }}/>
+        }}/>}
         <MasterResolutionRolls request={request} disabled={disabled} onDecide={onDecide}/>
         {(pending||stale)&&<form id={decisionId} className="combat-request-decision" onSubmit={event=>{event.preventDefault();if(pending)void decide('approve')}}>
             <fieldset disabled={disabled||busy}><legend>{request.wind?'Bersagli e tiri salvezza':'Decisione del Master'}</legend>
@@ -143,9 +153,6 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
     const weapon=renewed&&action?.group==='Attacchi fisici'
     const sleep=action?.entry?.data.edition==='2014'&&action.entry.data.referenceId==='phb2014:spell:sleep'
     const sleepCount=sleepDice(optionId),sleepTotal=Number(sleepRoll),validSleep=validSleepRoll(sleepTotal,sleepCount)
-    const sleepById=new Map(action?.sleepTargets?.map(target=>[target.id,target]))
-    const sleepSpent=targets.reduce((sum,target)=>sum+(sleepById.get(target.id)?.hitPoints??0),0)
-    const sleepRemaining=sleepTotal-sleepSpent
     const die=integerValue(weaponRoll),modifier=integerValue(action?.attackBonus)
     const validDie=die!==undefined&&die>=1&&die<=20
     const total=validDie&&modifier!==undefined&&Number.isSafeInteger(die+modifier)?die+modifier:undefined
@@ -172,7 +179,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
     function changeMode(mode:CombatRequest['mode']) {setMode(mode);setTargets([]);if(mode==='none')setDamageEnabled(false)}
     async function submit(event:FormEvent) {
         event.preventDefault()
-        if (working.current||!choices||renewed&&!choices.canPropose||weapon&&!validDie||sleep&&(!validSleep||sleepRemaining<0)) return
+        if (working.current||!choices||renewed&&!choices.canPropose||weapon&&!validDie||sleep&&!validSleep) return
         working.current=true;setBusy(true);setError('')
         const proposal={...(sleep?{sleepRoll:sleepTotal}:{}),...(weapon?{attackDie:die}:{}),revision:choices.revision,key,option:optionId,cost:option?.cost??cost,mode,damageEnabled,targets:targets.map(({id,roll,hit,damageRoll,damage})=>({id,roll:weapon?weaponRollText:roll,hit:weapon?false:hit,damageRoll,damage}))}
         const signature=JSON.stringify(proposal)
@@ -212,15 +219,11 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
                     {sleep&&<div className="player-sleep-roll"><label htmlFor="player-sleep-total">Sonno · tira {sleepCount}d8 e inserisci la somma<input id="player-sleep-total" type="number" inputMode="numeric" min={sleepCount} max={sleepCount*8} step="1" required placeholder="Solo il totale dei dadi" value={sleepRoll} onChange={event=>{setSleepRoll(event.target.value);setTargets([])}}/></label>
                         <p className="library-help">Nessun modificatore da aggiungere. Non sono danni: il totale è la riserva di PF che puoi influenzare.</p>
                         {sleepRoll&&!validSleep&&<p role="status">Inserisci un numero intero tra {sleepCount} e {sleepCount*8}.</p>}
-                        {validSleep&&<p className="ability-casting-summary" role="status">Riserva: <strong>{sleepTotal} PF</strong> · utilizzati: {sleepSpent} · restanti: <strong>{sleepRemaining} PF</strong></p>}
+                        {validSleep&&<p className="ability-casting-summary" role="status">Riserva di Sonno: <strong>{sleepTotal} PF</strong></p>}
                     </div>}
-                    {sleep ? <fieldset className="ability-targets" aria-label="Bersagli di Sonno"><legend>Bersagli di Sonno</legend>
-                        <p className="library-help">Seleziona solo le creature nell’area, partendo dai PF attuali più bassi. Anche gli alleati sono coinvolti. Il Master verifica posizione e presenza di tutte le creature nell’area.</p>
-                        <div className="ability-target-list">{choices.targets.map(target=>({...target,...sleepById.get(target.id)})).sort((a,b)=>(a.hitPoints??Infinity)-(b.hitPoints??Infinity)).map(target=>{
-                            const picked=targets.some(selected=>selected.id===target.id)
-                            const reason=!validSleep?'Inserisci prima il totale dei d8.':sleepTargetReason(target,picked?sleepTotal:sleepRemaining)
-                            return <div className="ability-target" key={target.id}><label className="ability-check"><input type="checkbox" checked={picked} disabled={!picked&&!!reason} onChange={event=>setTargets(current=>event.target.checked?[...current,{...target,roll:'',hit:false,damageRoll:'',damage:'0'}]:current.filter(selected=>selected.id!==target.id))}/>{target.id===choices.ownerId?`Tu (${target.name})`:target.name}{target.hitPoints!==undefined&&` · ${target.hitPoints} PF`}</label>{reason&&<span className="library-help">{reason}</span>}</div>
-                        })}</div>
+                    {sleep ? <fieldset className="ability-targets" aria-label="Creature nell’area di Sonno"><legend>Creature nell’area di Sonno</legend>
+                        <p className="library-help">Indica le creature che si trovano nell’area, compresi gli alleati. Il Master confermerà quali si addormentano in base al totale dei dadi.</p>
+                        <div className="ability-target-list">{choices.targets.map(target=><div className="ability-target" key={target.id}><label className="ability-check"><input type="checkbox" checked={targets.some(selected=>selected.id===target.id)} onChange={event=>setTargets(current=>event.target.checked?[...current,{...target,roll:'',hit:false,damageRoll:'',damage:'0'}]:current.filter(selected=>selected.id!==target.id))}/>{target.id===choices.ownerId?`Tu (${target.name})`:target.name}</label></div>)}</div>
                     </fieldset> : renewed ? <AbilityTargets candidates={choices.targets.map(target=>({...target,name:target.name||'Partecipante'}))} ownerId={choices.ownerId} selectedIds={targets.map(target=>target.id)} maximum={targeting?.maximum??null} summary={targeting?.summary} label={mode==='none'?'Bersagli (facoltativi)':damageEnabled?'Bersagli del danno':'Bersagli'}
                         onChange={(id,checked)=>{const candidate=choices.targets.find(target=>target.id===id);if(!candidate)return;setTargets(current=>checked?[...current,{...candidate,roll:weapon?weaponRoll:'',hit:false,damageRoll:'',damage:'0'}]:current.filter(target=>target.id!==id))}}
                         renderSelected={candidate=>targetFields(targets.find(target=>target.id===candidate.id)!)}/> : <fieldset><legend>Bersagli{mode==='none'?' (facoltativi)':''}</legend>{targeting&&<p>{targeting.summary}{targeting.maximum!==null&&` Selezionati: ${targets.length}/${targeting.maximum}.`}</p>}{tooManyTargets&&<p role="alert">Troppi bersagli: correggi la selezione prima di procedere.</p>}{choices.targets.map(target=><label className="combat-request-check" key={target.id}><input type="checkbox" checked={targets.some(selected=>selected.id===target.id)} disabled={!targets.some(selected=>selected.id===target.id)&&targeting?.maximum!==null&&targeting?.maximum!==undefined&&targets.length>=targeting.maximum} onChange={event=>setTargets(current=>event.target.checked?[...current,{...target,roll:'',hit:false,damageRoll:'',damage:'0'}]:current.filter(selected=>selected.id!==target.id))}/>{target.name||'Partecipante'}</label>)}</fieldset>}

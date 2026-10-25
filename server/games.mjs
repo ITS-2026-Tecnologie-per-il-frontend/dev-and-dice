@@ -10,7 +10,7 @@ import { resolve } from 'node:path'
 import express from 'express'
 import { rateLimit } from 'express-rate-limit'
 import { isDeepStrictEqual } from 'node:util'
-import { combatRules, actionContext, actionChoices, requestProposal, validCombatRequest, requestStatus, visibleRequests, prepareAction, applyCombatRequest, createRequestResolution, pendingSavingThrows, recordResolutionRoll, recoverRepeatSaveDCs, createWindDirectionRequest } from './combat-requests.mjs'
+import { combatRules, actionContext, actionChoices, requestProposal, validCombatRequest, requestStatus, visibleRequests, prepareAction, applyCombatRequest, createRequestResolution, pendingSavingThrows, recordResolutionRoll, recoverRepeatSaveDCs, createWindDirectionRequest, createSleepReview } from './combat-requests.mjs'
 
 const fields = 'name kind race characterClass level hitPoints armorClass initiative speed strength dexterity constitution intelligence wisdom charisma notes'.split(' ')
 const numeric = 'hitPoints armorClass initiative strength dexterity constitution intelligence wisdom charisma'.split(' ')
@@ -307,6 +307,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
       const entry={id:proposal.id,ownerId:actorId,characterId:context.record.id,characterName:context.record.sheet.name,actorName:req.username,
         ...(proposal.attackDie!==undefined?{weaponAttack:{edition:spellEdition(context.record.sheet),modifier:integerValue(action.attackBonus)}}:{}),
         ...(proposal.packets!==undefined?{resolution:createRequestResolution(db,game,context,action,proposal,rules)}:{}),
+        ...(proposal.sleepRoll!==undefined?{sleepReview:createSleepReview(context,proposal)}:{}),
         actionName:action.ability.name,optionLabel:option.label,prolonged:action.info.prolonged || option.id==='ritual',createdAt:new Date().toISOString(),status:'pending',proposal,
         targets:proposal.targets.map(target=>{const turn=game.state.turns.find(turn=>turn.id===target.id),record=db.characters.find(record=>record.gameId===game.id&&record.id===turn.sheet?.id);return {...target,name:record?.sheet.name ?? turn.description,...(proposal.attackDie!==undefined?{armorClass:integerValue(record?record.sheet.armorClass:turn.armorClass)}:{})}})}
       if (!validCombatRequest(entry)) fail(400,'Testo dell’azione o dei bersagli troppo lungo.')
@@ -355,6 +356,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
         }
         game.state=state;game.revision++
         if(result.wind)entry.resolution.wind=result.wind
+        if(result.sleepReview)entry.sleepReview=result.sleepReview
         entry.targets=entry.targets.map(target=>({...target,damage:result.targets.find(final=>final.id===target.id)?.damage??target.damage}))
       }
       if(status==='rejected')for(const window of game.reactionWindows??[])if(window.event.requestId===entry.id){window.status='declined';const child=game.combatRequests.find(r=>r.id===window.requestId);if(child?.status==='pending'){child.status='rejected';child.resolvedAt=new Date().toISOString()}}
