@@ -41,8 +41,11 @@ try{
  assert.equal(await page.getByLabel('Risoluzione',{exact:true}).inputValue(),'automatic')
  assert(await page.getByRole('checkbox',{name:'L’azione può infliggere danni',exact:true}).isChecked())
  await page.evaluate(()=>window.refreshGame())
- await page.getByLabel('Sonno · tira 7d8 e inserisci la somma').fill('40')
  await page.getByRole('checkbox',{name:'Goblin',exact:true}).check()
+ for(const value of ['40','','41','40']){
+  await page.getByLabel('Sonno · tira 7d8 e inserisci la somma').fill(value)
+  assert(await page.getByRole('checkbox',{name:'Goblin',exact:true}).isChecked(),'Player keeps selected area when entering, clearing or changing the roll')
+ }
  let unavailable=true
  await page.route('**/api/play/games/*/requests',async route=>{if(unavailable){unavailable=false;await route.fulfill({status:503,json:{error:'Invio temporaneamente non disponibile.'}})}else await route.continue()})
  await page.getByRole('button',{name:'Invia al Master',exact:true}).click()
@@ -178,9 +181,12 @@ try{
  assert.equal(await masterForm.getByLabel('Risoluzione',{exact:true}).count(),0)
  assert.equal(await masterForm.getByRole('checkbox',{name:'Prevede danni',exact:true}).count(),0)
  await masterForm.getByRole('combobox',{name:'Risorsa',exact:true}).selectOption('slot:2')
- await masterForm.getByLabel('Sonno · tira 7d8 e inserisci la somma').fill('40')
  assert.equal(await masterForm.getByRole('group',{name:'Creature nell’area di Sonno',exact:true}).getByRole('checkbox').count(),2)
  await masterForm.getByRole('checkbox',{name:'Goblin',exact:true}).check()
+ for(const value of ['40','','41','40']){
+  await masterForm.getByLabel('Sonno · tira 7d8 e inserisci la somma').fill(value)
+  assert(await masterForm.getByRole('checkbox',{name:'Goblin',exact:true}).isChecked(),'Master keeps selected area when entering, clearing or changing the roll')
+ }
  await masterForm.getByRole('button',{name:'Calcola',exact:true}).click()
  const directReview=masterForm.getByRole('region',{name:'Risoluzione di Sonno',exact:true})
  await directReview.waitFor()

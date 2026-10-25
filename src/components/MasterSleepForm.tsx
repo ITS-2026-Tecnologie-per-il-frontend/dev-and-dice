@@ -32,7 +32,7 @@ export function MasterSleepForm({ability,owner,participants,abilities,data,catal
         </div>:<><details className="player-action-description" open><summary>Descrizione dell’azione</summary><p className="combat-request-description">{ability.description??combatAbilityInfo(ability,catalog).entry?.description}</p></details><label>Risorsa<select aria-label="Risorsa" required value={option?.id??''} onChange={event=>{setSelectedOption(event.target.value);setRoll('');setArea([])}}>
             {options.map(o=><option key={o.id} value={o.id} disabled={o.remaining!==null&&o.remaining<(o.cost??1)}>{o.label}{o.remaining!==null?` · ${o.remaining} rimasti`:''}</option>)}
         </select></label>
-        <div className="player-sleep-roll"><label htmlFor={id}>Sonno · tira {count}d8 e inserisci la somma<input id={id} type="number" inputMode="numeric" min={count} max={count*8} step="1" required placeholder="Solo il totale dei dadi" value={roll} onChange={event=>{setRoll(event.target.value);setArea([])}}/></label>
+        <div className="player-sleep-roll"><label htmlFor={id}>Sonno · tira {count}d8 e inserisci la somma<input id={id} type="number" inputMode="numeric" min={count} max={count*8} step="1" required placeholder="Solo il totale dei dadi" value={roll} onChange={event=>setRoll(event.target.value)}/></label>
             <p className="library-help">Nessun modificatore da aggiungere. Non sono danni: il totale è la riserva di PF che puoi influenzare.</p>
             {roll&&!valid&&<p role="status">Inserisci un numero intero tra {count} e {count*8}.</p>}
             {valid&&<p className="ability-casting-summary" role="status">Riserva di Sonno: <strong>{total} PF</strong></p>}
