@@ -30,7 +30,8 @@ function renderChoices({turn,abilities,catalog,creationData,search,renewed,catal
         catch {return 'Verifica scheda'}
     }
     const ownerCatalog=turn.sheet ? catalogForSheet(creationData,catalog,turn.sheet) ?? catalog : catalog
-    if (!(turn.availableAbilityIndexes?.length ?? turn.sheet?.abilities?.length ?? 0) && !abilities.some(ability => ability.ownerId === turn.id)) return renewed ? <p>Nessuna abilità associata. Puoi aggiungerne una qui sotto.</p> : null
+    const actionAbilities=abilities.filter(ability=>!ability.readied&&!ability.conditionOrigin&&ability.sourceEffectId===undefined)
+    if (!(turn.availableAbilityIndexes?.length ?? turn.sheet?.abilities?.length ?? 0) && !actionAbilities.some(ability => ability.ownerId === turn.id)) return renewed ? <p>Nessuna abilità associata. Puoi aggiungerne una qui sotto.</p> : null
     const controls:ReactNode[]=[],entries:{group:string;level?:number;control:ReactNode}[]=[]
     function add(ability:Ability,control:ReactNode) {
         const info=combatAbilityInfo(ability,ownerCatalog),query=renewed ? search.trim().toLocaleLowerCase() : ''
@@ -39,7 +40,7 @@ function renderChoices({turn,abilities,catalog,creationData,search,renewed,catal
         entries.push({group,level:info.level,control});controls.push(control)
     }
     turn.sheet?.abilities?.forEach((template, index) => {
-        const ability = findSheetCombatAbility(abilities,template,turn.id,index)
+        const ability = findSheetCombatAbility(actionAbilities,template,turn.id,index)
         const current=ability ?? {...template,id:-1,ownerId:turn.id,remainingTurns:template.remainingTurns ?? 0,active:false}
         if (turn.availableAbilityIndexes && !turn.availableAbilityIndexes.includes(index)) return
         const status=abilityStatus(turn,current)
@@ -49,7 +50,7 @@ function renderChoices({turn,abilities,catalog,creationData,search,renewed,catal
             {displayName||ownerCatalog.abilities.find((entry) => entry.id === current.catalogId)?.name || current.name} · {status}
         </button>)
     })
-    abilities.filter(ability => ability.ownerId === turn.id && ability.sheetAbilityIndex === undefined&&!turn.sheet?.abilities.some((template,index)=>(!turn.availableAbilityIndexes||turn.availableAbilityIndexes.includes(index))&&findSheetCombatAbility([ability],template,turn.id,index))).forEach(ability => add(ability,
+    actionAbilities.filter(ability => ability.ownerId === turn.id && ability.sheetAbilityIndex === undefined&&!turn.sheet?.abilities.some((template,index)=>(!turn.availableAbilityIndexes||turn.availableAbilityIndexes.includes(index))&&findSheetCombatAbility([ability],template,turn.id,index))).forEach(ability => add(ability,
         <a key={ability.id} data-ability-state={ability.active && (ability.remainingTurns > 0 || ability.timed === false) ? 'active' : 'inactive'} href={`#ability-${ability.id}`} onClick={(event) => { event.preventDefault(); actions.highlightAbility(ability.id) }}>
             {ownerCatalog.abilities.find(entry => entry.id === ability.catalogId)?.name || ability.name || 'Abilità senza nome'} · {abilityStatus(turn,ability)}
         </a>))

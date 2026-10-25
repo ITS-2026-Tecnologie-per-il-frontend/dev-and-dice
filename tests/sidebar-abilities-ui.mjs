@@ -24,7 +24,7 @@ try{
  const {catalog}=await combatRules(),spell=id=>templateFromCatalog(catalog.abilities.find(a=>a.data.referenceId==='phb2014:spell:'+id)),armor=spell('mage-armor'),sleep=spell('sleep'),life=spell('false-life')
  const caster={...newCharacterSheet(),name:'Aster',characterClass:'Mago',level:'5',hitPoints:'20',abilities:[armor,sleep,life],playerDetails:{'slots.1.total':'4'}},baldur={...newCharacterSheet(),name:'Baldur',dexterity:'14',hitPoints:'20',armorClass:'12'}
  let game=await api(ctx,'/play/games','POST',{name:'Sidebar abilities regression'});await api(pc,'/play/invites/'+game.inviteToken+'/join','POST',{sheet:caster});const path='/play/games/'+game.id;game=await api(ctx,path)
- const state={turns:[caster,baldur].map((sheet,id)=>({id,description:sheet.name,sheet,initiative:String(20-id),hitPoints:sheet.hitPoints,armorClass:sheet.armorClass,temporaryHitPoints:''})),abilities:[{...armor,id:10,ownerId:0,active:true,remainingTurns:4800,resolutionEffects:resolutionPlan(caster,armor,catalog,'slot:1').effects,targets:[{id:1,damage:'0',resolved:true}]},{...sleep,id:11,ownerId:0,active:true,remainingTurns:10,targets:[{id:1,damage:'0',resolved:true}]},{id:13,name:'Scatto improvvisato',ownerId:1,active:true,duration:'1 minuto',remainingTurns:10}],combat:{activeId:0,round:1}}
+ const state={turns:[caster,baldur].map((sheet,id)=>({id,description:sheet.name,sheet,initiative:String(20-id),hitPoints:sheet.hitPoints,armorClass:sheet.armorClass,temporaryHitPoints:''})),abilities:[{...armor,id:10,ownerId:0,active:true,remainingTurns:4800,resolutionEffects:resolutionPlan(caster,armor,catalog,'slot:1').effects,targets:[{id:1,damage:'0',resolved:true}]},{...sleep,id:11,ownerId:0,active:true,remainingTurns:10,targets:[{id:1,damage:'0',resolved:true}]},{id:13,name:'Scatto improvvisato',ownerId:1,active:true,duration:'1 minuto',remainingTurns:10},{id:15,name:'Risveglio preparato',ruleId:'phb2014:readied:wake',ownerId:1,active:false,duration:'Personalizzata',remainingTurns:0,readied:{kind:'wake',trigger:'Quando serve'}}],combat:{activeId:0,round:1}}
  game=await api(ctx,path+'/state','PUT',{revision:game.revision,state,sheets:[caster,baldur]})
  await page.goto(base+'/games/'+game.id);await page.getByRole('button',{name:'Impostazioni',exact:true}).click();await page.getByRole('radio',{name:/^Rinnovata/}).check();await page.getByRole('button',{name:'Torna al tavolo',exact:true}).click()
  const sidebar=page.getByRole('complementary',{name:'Dettagli e abilità del tavolo',exact:true}),armorCard=page.locator('#ability-10'),sleepCard=page.locator('#ability-11')
@@ -60,6 +60,9 @@ try{
  await sleepCard.getByRole('button',{name:'Termina effetto',exact:true}).click();await sleepCard.waitFor({state:'detached'});await synced()
  game=await api(ctx,path);assert(!game.state.abilities.some(a=>a.ruleId===sleep.ruleId&&a.active));assert(game.state.abilities.some(a=>a.conditionOrigin&&a.ownerId===1&&a.active),'Waking does not remove prone')
  await page.getByRole('button',{name:'Dettagli di Baldur',exact:true}).click()
+ const availableBaldur=sidebar.locator('.master-available-abilities')
+ for(const name of ['Prono','Risveglio preparato'])assert.equal(await availableBaldur.getByText(new RegExp('^'+name+' ·')).count(),0,'Conditions and preparations must not appear as usable abilities')
+ await availableBaldur.getByText('Scatto improvvisato · In esecuzione',{exact:true}).waitFor()
  await page.locator('#ability-13').getByRole('button',{name:'Lancia di nuovo',exact:true}).click()
  const custom=sidebar.locator('.ability-row:not([data-compact-active])')
  assert.equal(await custom.getByRole('combobox',{name:/^Nome abilità/}).inputValue(),'Scatto improvvisato','A custom ability must not become an unrelated catalog spell on recast')
