@@ -26,6 +26,11 @@ game.state.combat=undefined
 assert.match(readyChoices(db,game,user,rules).actors[0].prepareBlockedReason,/avviare il combattimento/)
 reset()
 const prep={kind:'prepare-sleep',actorId:0,option:'slot:2',trigger:'Quando il goblin entra'}
+db.characters[0].sheet.abilities=[]
+game.state.turns[0].sheet=db.characters[0].sheet
+assert.deepEqual(readyChoices(db,game,user,rules).actors[0].options,[],'Slots alone must not grant preparation of an unknown spell')
+assert.throws(()=>readyEntry(db,game,master,'Master',crypto.randomUUID(),prep,rules),/Sonno non è disponibile/)
+reset()
 const proposed=readyEntry(db,game,user,'Tester',crypto.randomUUID(),prep,rules)
 assert.equal(db.characters[0].sheet.playerDetails['slots.2.used'],undefined,'Proposal spends nothing')
 assert.deepEqual(sleepingTargets(game.state.abilities),[])

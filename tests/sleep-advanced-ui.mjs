@@ -23,7 +23,7 @@ try{
  await api(dmContext,'/register','POST',{username:'AdvancedMaster',password:'isolated-password'});await api(pcContext,'/register','POST',{username:'AdvancedPlayer',password:'isolated-password'})
  const {catalog}=await combatRules(),spell=templateFromCatalog(catalog.abilities.find(a=>a.data.referenceId==='phb2014:spell:sleep'))
  const caster={...newCharacterSheet(),name:'Aster',characterClass:'Mago',level:'5',hitPoints:'25',abilities:[spell],playerDetails:{'slots.1.total':'4','slots.2.total':'3','slots.4.total':'2'}}
- const baldur={...newCharacterSheet(),name:'Baldur',hitPoints:'13'},noryn={...newCharacterSheet(),name:'Noryn',hitPoints:'13'}
+ const baldur={...newCharacterSheet(),name:'Baldur',hitPoints:'13',playerDetails:{'slots.1.total':'2'}},noryn={...newCharacterSheet(),name:'Noryn',hitPoints:'13'}
  let game=await api(dmContext,'/play/games','POST',{name:'Sonno — casi avanzati'}),path='/play/games/'+game.id
  await api(pcContext,'/play/invites/'+game.inviteToken+'/join','POST',{sheet:caster});game=await api(dmContext,path)
  const state={turns:[caster,baldur,noryn].map((sheet,id)=>({id,description:sheet.name,sheet,initiative:String(20-id),hitPoints:sheet.hitPoints,armorClass:'12',temporaryHitPoints:''})),abilities:[],combat:{activeId:0,round:1}}
@@ -58,7 +58,11 @@ try{
  await dm.waitForFunction(()=>!document.querySelector('#readied-actions .readied-prepare'))
  assert.equal(await playerReady.getByRole('combobox',{name:'Azione da preparare',exact:true}).count(),0)
  await masterReady.getByLabel('Personaggio dell’azione preparata',{exact:true}).selectOption('1')
- await masterReady.getByText('Prepara Sonno o un risveglio',{exact:true}).waitFor()
+ await masterReady.getByText('Prepara un risveglio',{exact:true}).click()
+ assert.equal(await masterReady.getByRole('combobox',{name:'Azione da preparare',exact:true}).inputValue(),'prepare-wake')
+ assert.equal(await masterReady.locator('option[value="prepare-sleep"]').count(),0,'A character without Sonno must not be offered that spell, even with spell slots')
+ assert.equal(await masterReady.getByLabel('Risorsa preparazione',{exact:true}).count(),0)
+ await screenshot(dm,masterReady,'sleep-ready-without-spell-master')
  await masterReady.getByLabel('Personaggio dell’azione preparata',{exact:true}).selectOption('0')
  assert.equal(await masterReady.getByText('Prepara Sonno o un risveglio',{exact:true}).count(),0,'The preparation section follows the selected character’s held spell')
  assert.equal(game.state.abilities.filter(a=>a.ruleId===spell.ruleId&&a.active).length,0)
@@ -69,6 +73,10 @@ try{
  const forbidden=await pcContext.request.post(base+'/api'+path+'/readied-actions',{data:{id:crypto.randomUUID(),revision:game.revision,command:{kind:'prepare-wake',actorId:1,targetId:2,trigger:'Evento'}}})
  assert.equal(forbidden.status(),403,'Players cannot prepare actions for another owner')
  await dm.getByRole('button',{name:'Turno successivo →',exact:true}).click();await sync()
+ game=await api(dmContext,path)
+ const unavailableSpell=await dmContext.request.post(base+'/api'+path+'/readied-actions',{data:{id:crypto.randomUUID(),revision:game.revision,command:{kind:'prepare-sleep',actorId:1,option:'slot:1',trigger:'Evento'}}})
+ assert.equal(unavailableSpell.status(),409);assert.match((await unavailableSpell.json()).error,/Sonno non è disponibile/)
+ assert.equal((await api(dmContext,path)).revision,game.revision,'An unavailable spell must not consume resources or change the encounter')
  await held.getByRole('button',{name:'Rilascia Sonno',exact:true}).click()
  const release=playerReady.getByRole('form',{name:'Rilascia Sonno preparato',exact:true})
  const releaseRoll=release.getByLabel('Sonno · tira 11d8 e inserisci la somma'),releaseSend=release.getByRole('button',{name:'Invia reazione al Master',exact:true})
