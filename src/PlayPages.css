@@ -442,6 +442,8 @@
 .readied-prepare > summary { box-sizing:border-box; min-height:44px; margin:0; list-style:none; }
 .readied-prepare > summary::-webkit-details-marker { display:none; }
 .readied-prepare[open] > summary { margin-bottom:12px; }
+.readied-prepare > summary span::before { content:"+"; }
+.readied-prepare[open] > summary span::before { content:"−"; }
 
 .readied-held p { overflow-wrap:anywhere; }
 
