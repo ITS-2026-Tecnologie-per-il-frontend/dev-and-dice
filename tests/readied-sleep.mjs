@@ -18,6 +18,13 @@ function reset(){db={characters:[{id:caster.id,ownerId:user,gameId:gid,sheet:str
 function commit(result){game.state=validateState(result.state);for(const s of result.sheets){const r=db.characters.find(r=>r.id===s.id);if(r)r.sheet=s}game.revision++}
 function command(c,body={}){const entry=readyEntry(db,game,user,'Tester',crypto.randomUUID(),c,rules);const result=applyReadyCommand(db,game,entry,rules,body);commit(result);return result}
 reset()
+assert.equal(readyChoices(db,game,user,rules).actors[0].prepareBlockedReason,undefined)
+game.state.combat.activeId=1
+assert.equal(readyChoices(db,game,user,rules).actors[0].canPrepare,false)
+assert.match(readyChoices(db,game,user,rules).actors[0].prepareBlockedReason,/turno di Baldur/)
+game.state.combat=undefined
+assert.match(readyChoices(db,game,user,rules).actors[0].prepareBlockedReason,/avviare il combattimento/)
+reset()
 const prep={kind:'prepare-sleep',actorId:0,option:'slot:2',trigger:'Quando il goblin entra'}
 const proposed=readyEntry(db,game,user,'Tester',crypto.randomUUID(),prep,rules)
 assert.equal(db.characters[0].sheet.playerDetails['slots.2.used'],undefined,'Proposal spends nothing')

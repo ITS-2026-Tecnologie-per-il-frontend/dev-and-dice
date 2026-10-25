@@ -3,14 +3,14 @@ import {playApi,type Game} from '../utils/PlayApi'
 import type {ReadyCommand,ReadiedAction} from '../domain/dnd/Readied'
 import {sleepAllocation,sleepDice,validSleepRoll,type SleepReviewData} from '../domain/dnd/Sleep'
 import {SleepReview} from './SleepReview'
-type Actor={id:number;name:string;canPrepare:boolean;canReact:boolean;additionalActionRequired:boolean;options:{id:string;label:string;remaining:number|null;cost?:number}[];targets:{id:number;name:string}[];sleepers:number[];held:{id:number;name:string;readied:ReadiedAction;option:string;targetName?:string}[];candidates?:SleepReviewData['candidates']}
+type Actor={id:number;name:string;canPrepare:boolean;prepareBlockedReason?:string;canReact:boolean;additionalActionRequired:boolean;options:{id:string;label:string;remaining:number|null;cost?:number}[];targets:{id:number;name:string}[];sleepers:number[];held:{id:number;name:string;readied:ReadiedAction;option:string;targetName?:string}[];candidates?:SleepReviewData['candidates']}
 type Choices={revision:number;actors:Actor[]}
 export function ReadiedActions({game,onUpdate,disabled=false}:{game:Game;onUpdate:(game:Game)=>void;disabled?:boolean}){
  const [choices,setChoices]=useState<Choices>(),[actorId,setActorId]=useState<number>(),[kind,setKind]=useState<'prepare-sleep'|'prepare-wake'>('prepare-sleep'),[trigger,setTrigger]=useState(''),[option,setOption]=useState(''),[targetId,setTargetId]=useState(''),[confirmed,setConfirmed]=useState(false)
  const [release,setRelease]=useState<{actor:Actor;held:Actor['held'][number]}>(),[roll,setRoll]=useState(''),[area,setArea]=useState<number[]>([]),[review,setReview]=useState(false),[preferred,setPreferred]=useState<number[]>([]),[immune,setImmune]=useState<number[]>([])
- const [busy,setBusy]=useState(false),[error,setError]=useState(''),[retry,setRetry]=useState(0)
+ const [busy,setBusy]=useState(false),[error,setError]=useState(''),[loadError,setLoadError]=useState(''),[retry,setRetry]=useState(0)
  const attempt=useRef<{signature:string;id:string}|undefined>(undefined)
- useEffect(()=>{let active=true;playApi<Choices>('/games/'+game.id+'/readied-actions').then(c=>{if(active)setChoices(c)}).catch(e=>{if(active)setError(e.message)});return()=>{active=false}},[game.id,game.revision,game.requestsRevision,retry])
+ useEffect(()=>{let active=true;playApi<Choices>('/games/'+game.id+'/readied-actions').then(c=>{if(active){setChoices(c);setLoadError('')}}).catch(e=>{if(active)setLoadError(e.message)});return()=>{active=false}},[game.id,game.revision,game.requestsRevision,retry])
  const actor=choices?.actors.find(a=>a.id===actorId)??choices?.actors.find(a=>a.canPrepare)??choices?.actors[0]
  const chosenOption=actor?.options.find(o=>o.id===option)??actor?.options.find(o=>o.remaining===null||o.remaining>=(o.cost??1))
  const releaseActor=choices?.actors.find(a=>a.id===release?.actor.id)??release?.actor
@@ -39,10 +39,11 @@ export function ReadiedActions({game,onUpdate,disabled=false}:{game:Game;onUpdat
    {game.role==='master'&&<label>Personaggio<select aria-label="Personaggio dell’azione preparata" value={actor.id} onChange={e=>{setActorId(Number(e.target.value));setOption('');setTargetId('');setConfirmed(false)}}>{choices?.actors.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></label>}
    <label>Azione da preparare<select aria-label="Azione da preparare" value={kind} onChange={e=>setKind(e.target.value as typeof kind)}><option value="prepare-sleep">Sonno</option><option value="prepare-wake">Svegliare una creatura</option></select></label>
    {kind==='prepare-sleep'?<><label>Risorsa<select required aria-label="Risorsa preparazione" value={chosenOption?.id??''} onChange={e=>setOption(e.target.value)}>{actor.options.map(o=><option key={o.id} value={o.id} disabled={o.remaining!==null&&o.remaining<(o.cost??1)}>{o.label} · {o.remaining??'illimitati'} rimasti</option>)}</select></label><p className="library-help">Lo slot viene consumato ora. Trattenere Sonno richiede concentrazione e interrompe quella precedente. I dadi si tirano al rilascio.</p></>:<label>Creatura da svegliare<select aria-label="Creatura da svegliare" required value={targetId} onChange={e=>setTargetId(e.target.value)}><option value="">Scegli…</option>{actor.targets.filter(t=>t.id!==actor.id).map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>}
-   <label>Evento che attiva la reazione<input required maxLength={500} value={trigger} placeholder="Es. quando il goblin attraversa la porta" onChange={e=>setTrigger(e.target.value)}/></label>
+   <label>Evento che attiva la reazione<input aria-describedby="readied-trigger-help" required maxLength={500} value={trigger} placeholder="Es. quando il goblin attraversa la porta" onChange={e=>setTrigger(e.target.value)}/></label>
+   <p id="readied-trigger-help" className="library-help">Scrivi un evento percepibile. Questa frase non attiva un trigger automatico: quando l’evento avviene, premi «Rilascia Sonno» o «Evento avvenuto · Sveglia». Il Master verifica e approva.</p>
    {game.role==='master'&&actor.additionalActionRequired&&<label className="ability-check"><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>Confermo un’altra azione valida per preparare questa azione.</label>}
    <button disabled={!actor.canPrepare||!trigger.trim()||kind==='prepare-sleep'&&!chosenOption||kind==='prepare-wake'&&!targetId||game.role==='master'&&actor.additionalActionRequired&&!confirmed}>{game.role==='master'?'Prepara':'Invia preparazione al Master'}</button>
-  </fieldset></form>{!actor.canPrepare&&<p className="library-help">Puoi preparare un’azione soltanto nel tuo turno e se puoi agire.</p>}</details>}
-  {error&&<p role="alert">{error} <button type="button" className="sort-turns" onClick={()=>setRetry(n=>n+1)}>Aggiorna</button></p>}
+  </fieldset></form>{!actor.canPrepare&&<p role="status" className="library-help">{actor.prepareBlockedReason??'Puoi preparare un’azione soltanto nel tuo turno e se puoi agire.'}</p>}</details>}
+  {(loadError||error)&&<p role="alert">{loadError||error} <button type="button" className="sort-turns" onClick={()=>{setError('');setRetry(n=>n+1)}}>Aggiorna</button></p>}
  </section>
 }

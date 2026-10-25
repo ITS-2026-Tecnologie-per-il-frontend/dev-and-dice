@@ -6,7 +6,7 @@ Usare una partita di prova, con due finestre separate: Master e giocatore. L’i
 
 1. Nel turno dell’incantatore, lanciare Sonno con slot di 1°: selezionare Baldur nell’area e inserire 20 come totale dei 5d8.
 2. Dal giocatore inviare e far approvare la richiesta. Dal Master usare **Calcola**, verificare l’esito e premere **Usa**.
-3. Attendere il prossimo turno dell’incantatore. Con **Lancia di nuovo**, ripetere selezionando soltanto Noryn.
+3. **Lancia di nuovo** apre il form anche fuori turno, per consultarlo o compilarlo; l’invio resta bloccato fino al turno dell’incantatore. Attendere quel turno e ripetere selezionando soltanto Noryn.
 4. Entrambi devono avere la pillola **Addormentato**. Il secondo lancio non deve rimuovere il primo, rinnovarne la durata o richiedere concentrazione. Ogni lancio consuma uno slot.
 5. Infliggere 1 danno a Baldur: si sveglia e resta prono; Noryn continua a dormire. I PF temporanei che assorbono il danno non impediscono il risveglio.
 
@@ -14,7 +14,7 @@ Usare una partita di prova, con due finestre separate: Master e giocatore. L’i
 
 1. Nel turno dell’incantatore aprire **Azioni preparate → Prepara Sonno o un risveglio**. Il collegamento **Prepara Sonno come reazione** nel form normale porta a questa sezione.
 2. Scegliere Sonno, uno slot di 2° e un evento percepibile, ad esempio «quando il goblin attraversa la porta». Il Master può scegliere il personaggio per cui agisce; il giocatore usa il proprio.
-3. Il giocatore preme **Invia preparazione al Master** e il Master approva la notifica. Se agisce direttamente il Master, preme **Prepara**.
+3. Se il pulsante è disabilitato, il messaggio indica chi sta agendo: attendere il turno dell’incantatore (o rimuovere un eventuale stato che gli impedisce di agire). Il giocatore preme **Invia preparazione al Master** e il Master approva la notifica. Se agisce direttamente il Master, preme **Prepara**.
 4. Verificare: si consuma uno slot di 2°, inizia la concentrazione, nessuno si addormenta. Non si tirano ancora i d8.
 5. Passare al turno di un’altra creatura. Quando l’evento avviene, aprire **Rilascia Sonno** nella card dell’azione preparata.
 6. Inserire il totale dei 7d8 e le creature ora nell’area. Il giocatore invia la reazione; il Master può correggere l’area e confermare chi si addormenta. Se agisce direttamente il Master usa **Calcola → Usa reazione**.

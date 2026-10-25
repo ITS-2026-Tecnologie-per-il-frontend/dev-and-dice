@@ -28,7 +28,15 @@ try{
  await api(pcContext,'/play/invites/'+game.inviteToken+'/join','POST',{sheet:caster});game=await api(dmContext,path)
  const state={turns:[caster,baldur,noryn].map((sheet,id)=>({id,description:sheet.name,sheet,initiative:String(20-id),hitPoints:sheet.hitPoints,armorClass:'12',temporaryHitPoints:''})),abilities:[],combat:{activeId:0,round:1}}
  game=await api(dmContext,path+'/state','PUT',{revision:game.revision,state,sheets:[caster,baldur,noryn]})
+ let unavailable=true
+ await pc.route('**/readied-actions',route=>unavailable?route.fulfill({status:404,contentType:'text/html',body:'Not found'}):route.continue())
  await pc.goto(base+'/games/'+game.id);await dm.goto(base+'/games/'+game.id)
+ const failedReady=pc.getByRole('region',{name:'Azioni preparate',exact:true})
+ await failedReady.getByRole('alert').getByText(/Risposta del server non valida/).waitFor()
+ unavailable=false
+ await failedReady.getByRole('button',{name:'Aggiorna',exact:true}).click()
+ await failedReady.getByText('Prepara Sonno o un risveglio',{exact:true}).waitFor()
+ assert.equal(await failedReady.getByRole('alert').count(),0,'Successful retry clears a previous non-JSON response error')
  await pc.getByRole('button',{name:'Impostazioni',exact:true}).click();await pc.getByRole('radio',{name:/^Rinnovata/}).check();await pc.getByRole('button',{name:'Torna al tavolo',exact:true}).click()
  const playerReady=pc.getByRole('region',{name:'Azioni preparate',exact:true}),masterReady=dm.getByRole('region',{name:'Azioni preparate',exact:true})
  await playerReady.getByText('Prepara Sonno o un risveglio',{exact:true}).click()
@@ -77,6 +85,17 @@ try{
  assert.deepEqual(released.targets.map(t=>t.id),[2]);assert.equal(released.expiryOwnerId,1)
  assert.equal(game.characters.find(c=>c.sheet.name==='Aster').sheet.playerDetails['slots.2.used'],'1')
  assert.equal(game.characters.find(c=>c.sheet.name==='Aster').sheet.playerDetails['combat.reactionUsed'],'true')
+ await pc.getByRole('button',{name:'Sonno · In esecuzione',exact:true}).click()
+ const offTurnSummary=pc.getByLabel('Riepilogo: Sonno',{exact:true})
+ await offTurnSummary.getByText('Puoi aprire il form; potrai inviare il nuovo lancio durante il tuo turno.',{exact:true}).waitFor()
+ await offTurnSummary.getByRole('button',{name:'Lancia di nuovo',exact:true}).click()
+ const offTurnForm=pc.getByRole('form',{name:'Proposta: Sonno',exact:true})
+ await offTurnForm.getByLabel('Sonno · tira 5d8 e inserisci la somma').fill('20')
+ assert(await offTurnForm.getByRole('button',{name:'Invia al Master',exact:true}).isDisabled(),'Opening a recast out of turn must not allow sending it')
+ await playerReady.getByText(/È il turno di Baldur/).waitFor()
+ assert(await prepare.getByRole('button',{name:'Invia preparazione al Master',exact:true}).isDisabled())
+ await screenshot(pc,playerReady,'sleep-ready-blocked-player')
+ await pc.getByRole('button',{name:'Chiudi pannello Sonno',exact:true}).click()
  // A later ordinary cast coexists with the first one.
  await dm.getByRole('button',{name:'Turno successivo →',exact:true}).click();await sync()
  await dm.getByRole('button',{name:'Turno successivo →',exact:true}).click();await sync()

@@ -11,9 +11,10 @@ export function SleepReview({review,total,area,selected,disabled,onChange,immune
             <div><dt>PF restanti</dt><dd>{remaining}</dd></div>
         </dl>
         <p className="sleep-guidance">Correggi le creature nell’area. Chi si addormenta viene calcolato dai PF più bassi; puoi cambiare la scelta tra creature a pari PF.</p>
+        {onImmunityChange&&<p className="sleep-guidance">Per un’immunità non già rilevata dalla scheda, spunta «Immune a Sonno» nella riga della creatura. Vale per questo lancio: la creatura resta nell’area, ma non si addormenta e non consuma riserva.</p>}
         {missing&&<p role="alert">Completa i PF delle creature nell’area prima di approvare Sonno.</p>}
         <fieldset disabled={disabled}><legend>Area ed esito</legend>
-            <div className="sleep-table-heading" aria-hidden="true"><span>Creatura / PF attuali</span><span>Nell’area</span><span>Si addormenta</span>{onImmunityChange&&<span>Immunità</span>}</div>
+            <div className="sleep-table-heading" aria-hidden="true"><span>Creatura / PF attuali</span><span>Nell’area</span><span>Si addormenta</span>{onImmunityChange&&<span>Immune a Sonno</span>}</div>
             {review.candidates.slice().sort((a,b)=>Number(included.has(b.id))-Number(included.has(a.id))||(a.hitPoints??Infinity)-(b.hitPoints??Infinity)||a.id-b.id).map(target=>{
                 const inside=included.has(target.id),picked=sleepers.has(target.id)
                 const next=sleepAllocation(review.candidates,area,total,picked?[...selected.filter(id=>id!==target.id),...area.filter(id=>id!==target.id),target.id]:[target.id,...selected]).selected
