@@ -1,0 +1,148 @@
+// node tests/sleep-advanced-ui.mjs — real browser/API, isolated archive and accounts only.
+import assert from 'node:assert/strict'
+import {once} from 'node:events'
+import {mkdtemp,mkdir,rm} from 'node:fs/promises'
+import {join} from 'node:path'
+import {tmpdir} from 'node:os'
+import {chromium} from 'playwright'
+import {createServer} from 'vite'
+import {createApp} from '../server/index.mjs'
+import {combatRules} from '../server/combat-requests.mjs'
+import {newCharacterSheet} from '../src/utils/CharacterSheets.ts'
+import {templateFromCatalog} from '../src/utils/Catalog.ts'
+const root=join(import.meta.dirname,'..','.test-runtime.local');await mkdir(root,{recursive:true})
+const dir=await mkdtemp(join(tmpdir(),'sleep-advanced-'))
+const server=(await createApp({dataDir:dir,production:false,sessionSecret:'sleep-advanced-test-only-secret'})).listen(0,'127.0.0.1');await once(server,'listening')
+const frontend=await createServer({logLevel:'error',server:{host:'127.0.0.1',port:0,proxy:{'/api':{target:`http://127.0.0.1:${server.address().port}`}}}});await frontend.listen()
+const base=`http://127.0.0.1:${frontend.httpServer.address().port}`,browser=await chromium.launch({headless:true}),dmContext=await browser.newContext({viewport:{width:1440,height:1000}}),pcContext=await browser.newContext({viewport:{width:1440,height:1000}}),dm=await dmContext.newPage(),pc=await pcContext.newPage(),errors=[]
+for(const p of [dm,pc]){p.setDefaultTimeout(20000);p.on('pageerror',e=>errors.push(e.message))}
+async function api(ctx,path,method='GET',data){const r=await ctx.request.fetch(base+'/api'+path,{method,data});assert(r.ok(),await r.text());return r.json()}
+async function sync(){await dm.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.includes('.library')))}
+async function screenshot(page,locator,name){for(const width of [1440,390])for(const theme of ['light','dark']){await page.setViewportSize({width,height:1000});await page.emulateMedia({colorScheme:theme});await locator.scrollIntoViewIfNeeded();await locator.screenshot({path:join(root,`${name}-${theme}-${width}.png`)});const box=await locator.boundingBox();assert(box.width<=width&&box.x>=0,`${name} fits ${width}px`);assert(await locator.evaluate(el=>el.scrollWidth<=el.clientWidth+1),`${name} contents stay inside the card at ${width}px`)}await page.setViewportSize({width:1440,height:1000});await page.emulateMedia({colorScheme:'light'})}
+try{
+ await api(dmContext,'/register','POST',{username:'AdvancedMaster',password:'isolated-password'});await api(pcContext,'/register','POST',{username:'AdvancedPlayer',password:'isolated-password'})
+ const {catalog}=await combatRules(),spell=templateFromCatalog(catalog.abilities.find(a=>a.data.referenceId==='phb2014:spell:sleep'))
+ const caster={...newCharacterSheet(),name:'Aster',characterClass:'Mago',level:'5',hitPoints:'25',abilities:[spell],playerDetails:{'slots.1.total':'4','slots.2.total':'3'}}
+ const baldur={...newCharacterSheet(),name:'Baldur',hitPoints:'13'},noryn={...newCharacterSheet(),name:'Noryn',hitPoints:'13'}
+ let game=await api(dmContext,'/play/games','POST',{name:'Sonno — casi avanzati'}),path='/play/games/'+game.id
+ await api(pcContext,'/play/invites/'+game.inviteToken+'/join','POST',{sheet:caster});game=await api(dmContext,path)
+ const state={turns:[caster,baldur,noryn].map((sheet,id)=>({id,description:sheet.name,sheet,initiative:String(20-id),hitPoints:sheet.hitPoints,armorClass:'12',temporaryHitPoints:''})),abilities:[],combat:{activeId:0,round:1}}
+ game=await api(dmContext,path+'/state','PUT',{revision:game.revision,state,sheets:[caster,baldur,noryn]})
+ await pc.goto(base+'/games/'+game.id);await dm.goto(base+'/games/'+game.id)
+ await pc.getByRole('button',{name:'Impostazioni',exact:true}).click();await pc.getByRole('radio',{name:/^Rinnovata/}).check();await pc.getByRole('button',{name:'Torna al tavolo',exact:true}).click()
+ const playerReady=pc.getByRole('region',{name:'Azioni preparate',exact:true}),masterReady=dm.getByRole('region',{name:'Azioni preparate',exact:true})
+ await playerReady.getByText('Prepara Sonno o un risveglio',{exact:true}).click()
+ const prepare=playerReady.getByRole('form',{name:'Prepara un’azione',exact:true})
+ await prepare.getByLabel('Risorsa preparazione',{exact:true}).selectOption('slot:2')
+ await prepare.getByLabel('Evento che attiva la reazione',{exact:true}).fill('Quando il goblin attraversa la porta')
+ await screenshot(pc,playerReady,'sleep-ready-player')
+ await prepare.getByRole('button',{name:'Invia preparazione al Master',exact:true}).click()
+ await dm.getByRole('button',{name:/^Azioni dei giocatori:/}).click()
+ const prepNotice=dm.locator('.combat-request').filter({has:dm.getByRole('heading',{name:'Prepara Sonno',exact:true})})
+ await prepNotice.waitFor();game=await api(dmContext,path)
+ assert.equal(game.characters.find(c=>c.sheet.name==='Aster').sheet.playerDetails['slots.2.used'],undefined)
+ await prepNotice.getByRole('button',{name:'Approva azione',exact:true}).click()
+ await prepNotice.getByText('Approvata',{exact:true}).waitFor()
+ await dm.getByRole('button',{name:'Chiudi azioni',exact:true}).click()
+ const held=playerReady.getByLabel('Sonno preparato di Aster',{exact:true})
+ await held.waitFor();game=await api(dmContext,path)
+ assert.equal(game.state.abilities.filter(a=>a.ruleId===spell.ruleId&&a.active).length,0)
+ assert.equal(game.characters.find(c=>c.sheet.name==='Aster').sheet.playerDetails['slots.2.used'],'1')
+ const preparation=game.combatRequests.find(r=>r.actionName==='Prepara Sonno')
+ await api(pcContext,path+'/readied-actions','POST',{id:preparation.id,revision:0,command:preparation.readyCommand})
+ assert.equal((await api(dmContext,path)).characters.find(c=>c.sheet.name==='Aster').sheet.playerDetails['slots.2.used'],'1','Duplicate preparation never spends again')
+ const forbidden=await pcContext.request.post(base+'/api'+path+'/readied-actions',{data:{id:crypto.randomUUID(),revision:game.revision,command:{kind:'prepare-wake',actorId:1,targetId:2,trigger:'Evento'}}})
+ assert.equal(forbidden.status(),403,'Players cannot prepare actions for another owner')
+ await dm.getByRole('button',{name:'Turno successivo →',exact:true}).click();await sync()
+ await held.getByRole('button',{name:'Rilascia Sonno',exact:true}).click()
+ const release=playerReady.getByRole('form',{name:'Rilascia Sonno preparato',exact:true})
+ await release.getByLabel('Sonno · tira 7d8 e inserisci la somma').fill('20')
+ await release.getByRole('checkbox',{name:'Baldur',exact:true}).check();await release.getByRole('checkbox',{name:'Noryn',exact:true}).check()
+ await screenshot(pc,release,'sleep-ready-release-player')
+ const delivery=pc.waitForResponse(r=>r.request().method()==='POST'&&r.url().endsWith('/readied-actions'))
+ await release.getByRole('button',{name:'Invia reazione al Master',exact:true}).click()
+ const delivered=await delivery;assert.equal(delivered.status(),200,await delivered.text())
+ await dm.getByRole('button',{name:/^Azioni dei giocatori:/}).click()
+ const releaseNotice=dm.locator('.combat-request').filter({has:dm.getByRole('heading',{name:'Sonno · rilascio',exact:true})})
+ const review=releaseNotice.getByRole('region',{name:'Risoluzione di Sonno',exact:true});await review.waitFor()
+ assert(await review.getByRole('checkbox',{name:'Si addormenta: Baldur',exact:true}).isChecked())
+ await review.getByRole('checkbox',{name:'Immune a Sonno: Baldur',exact:true}).check()
+ assert(await review.getByRole('checkbox',{name:'Si addormenta: Noryn',exact:true}).isChecked())
+ await screenshot(dm,releaseNotice,'sleep-ready-review-master')
+ await releaseNotice.getByRole('button',{name:'Approva azione',exact:true}).click()
+ await releaseNotice.getByText('Approvata',{exact:true}).waitFor()
+ await dm.getByRole('button',{name:'Chiudi azioni',exact:true}).click()
+ game=await api(dmContext,path)
+ const released=game.state.abilities.find(a=>a.ruleId===spell.ruleId&&a.active)
+ assert.deepEqual(released.targets.map(t=>t.id),[2]);assert.equal(released.expiryOwnerId,1)
+ assert.equal(game.characters.find(c=>c.sheet.name==='Aster').sheet.playerDetails['slots.2.used'],'1')
+ assert.equal(game.characters.find(c=>c.sheet.name==='Aster').sheet.playerDetails['combat.reactionUsed'],'true')
+ // A later ordinary cast coexists with the first one.
+ await dm.getByRole('button',{name:'Turno successivo →',exact:true}).click();await sync()
+ await dm.getByRole('button',{name:'Turno successivo →',exact:true}).click();await sync()
+ await dm.getByRole('button',{name:'Lancia di nuovo',exact:true}).first().click()
+ const normal=dm.getByRole('form',{name:'Lancio: Sonno',exact:true})
+ await normal.getByRole('combobox',{name:'Risorsa',exact:true}).selectOption('slot:1')
+ await normal.getByLabel('Sonno · tira 5d8 e inserisci la somma').fill('20')
+ await normal.getByRole('checkbox',{name:'Baldur',exact:true}).check()
+ await normal.getByRole('button',{name:'Calcola',exact:true}).click()
+ await screenshot(dm,normal,'sleep-recast-master')
+ await normal.getByRole('button',{name:'Usa',exact:true}).click()
+ await dm.getByRole('form',{name:'Lancio: Sonno',exact:true}).waitFor({state:'detached'});await sync()
+ game=await api(dmContext,path);assert.equal(game.state.abilities.filter(a=>a.ruleId===spell.ruleId&&a.active).length,2)
+ await pc.getByRole('button',{name:'Sonno · In esecuzione',exact:true}).click()
+ const playerSummary=pc.getByLabel('Riepilogo: Sonno',{exact:true}),castList=playerSummary.getByLabel('Lanci di Sonno attivi',{exact:true})
+ await castList.getByText('Baldur',{exact:true}).waitFor();await castList.getByText('Noryn',{exact:true}).waitFor()
+ await screenshot(pc,playerSummary,'sleep-casts-player')
+ await playerSummary.getByRole('button',{name:'Lancia di nuovo',exact:true}).click()
+ await pc.getByLabel('Sonno · tira 5d8 e inserisci la somma').waitFor()
+ // Prepare an ally's wake, then use the reaction during the sleeping target's turn.
+ for(let i=0;i<3;i++){await dm.getByRole('button',{name:'Turno successivo →',exact:true}).click();await sync()}
+ await masterReady.getByText('Prepara Sonno o un risveglio',{exact:true}).click()
+ const wake=masterReady.getByRole('form',{name:'Prepara un’azione',exact:true})
+ await wake.getByLabel('Personaggio dell’azione preparata',{exact:true}).selectOption('0')
+ await wake.getByLabel('Azione da preparare',{exact:true}).selectOption('prepare-wake')
+ await wake.getByLabel('Creatura da svegliare',{exact:true}).selectOption('2')
+ await wake.getByLabel('Evento che attiva la reazione',{exact:true}).fill('Quando inizia il turno di Noryn')
+ await wake.getByRole('button',{name:'Prepara',exact:true}).click()
+ await masterReady.getByLabel('Risveglio preparato di Aster',{exact:true}).waitFor()
+ for(let i=0;i<2;i++){await dm.getByRole('button',{name:'Turno successivo →',exact:true}).click();await sync()}
+ await screenshot(dm,masterReady,'sleep-ready-wake-master')
+ await masterReady.getByRole('button',{name:'Evento avvenuto · Sveglia',exact:true}).click()
+ await masterReady.getByLabel('Risveglio preparato di Aster',{exact:true}).waitFor({state:'detached'})
+ game=await api(dmContext,path)
+ assert.equal(game.state.combat.activeId,2)
+ assert(!game.state.abilities.some(a=>a.ruleId===spell.ruleId&&a.active&&a.targets.some(t=>t.id===2)))
+ assert(game.state.abilities.some(a=>a.ruleId===spell.ruleId&&a.active&&a.targets.some(t=>t.id===1)))
+ assert(game.state.abilities.some(a=>a.name==='Prono'&&a.ownerId===2&&a.active))
+ assert.equal(game.characters.find(c=>c.sheet.name==='Aster').sheet.playerDetails['combat.reactionUsed'],'true')
+ await dm.reload();await masterReady.waitFor();assert.equal(await masterReady.getByLabel('Risveglio preparato di Aster',{exact:true}).count(),0)
+ // Cancel remains available while the release awaits approval; retries are idempotent.
+ await dm.getByRole('button',{name:'Turno successivo →',exact:true}).click();await sync()
+ game=await api(dmContext,path)
+ game=await api(dmContext,path+'/readied-actions','POST',{id:crypto.randomUUID(),revision:game.revision,command:{kind:'prepare-sleep',actorId:0,option:'slot:1',trigger:'Quando si apre la porta'}})
+ const cancelHeld=game.state.abilities.find(a=>a.readied&&a.active&&a.remainingTurns>0)
+ const pendingRelease=await api(pcContext,path+'/readied-actions','POST',{id:crypto.randomUUID(),revision:game.revision,command:{kind:'release',actorId:0,effectId:cancelHeld.id,sleepRoll:20,area:[]}})
+ const pendingId=pendingRelease.combatRequests.find(r=>r.status==='pending'&&r.readyCommand?.effectId===cancelHeld.id).id
+ const cancelCommand={kind:'cancel',actorId:0,effectId:cancelHeld.id},cancelId=crypto.randomUUID(),paid=game.characters.find(c=>c.sheet.name==='Aster').sheet.playerDetails['slots.1.used']
+ await api(pcContext,path+'/readied-actions','POST',{id:cancelId,revision:game.revision,command:cancelCommand})
+ await api(pcContext,path+'/readied-actions','POST',{id:cancelId,revision:game.revision,command:cancelCommand})
+ game=await api(dmContext,path)
+ assert.equal(game.combatRequests.find(r=>r.id===pendingId).status,'rejected')
+ assert.equal(game.characters.find(c=>c.sheet.name==='Aster').sheet.playerDetails['slots.1.used'],paid)
+ assert(!game.state.abilities.some(a=>a.readied&&a.active&&a.remainingTurns>0))
+ // An unknown HP value must not prevent the Master from declaring immunity in review.
+ const unknown={...game.state,turns:game.state.turns.map(t=>t.id===2?{...t,hitPoints:'',sheet:{...t.sheet,hitPoints:''}}:t)}
+ await api(dmContext,path+'/state','PUT',{revision:game.revision,state:unknown,sheets:unknown.turns.map(t=>t.sheet)})
+ await dm.reload()
+ await dm.getByRole('button',{name:'Lancia di nuovo',exact:true}).first().click()
+ const unknownForm=dm.getByRole('form',{name:'Lancio: Sonno',exact:true})
+ await unknownForm.getByRole('combobox',{name:'Risorsa',exact:true}).selectOption('slot:1')
+ await unknownForm.getByRole('checkbox',{name:'Noryn',exact:true}).check()
+ await unknownForm.getByLabel('Sonno · tira 5d8 e inserisci la somma').fill('20')
+ await unknownForm.getByRole('button',{name:'Calcola',exact:true}).click()
+ await unknownForm.getByRole('checkbox',{name:'Immune a Sonno: Noryn',exact:true}).check()
+ assert.equal(await unknownForm.getByRole('alert').count(),0,'Manual immunity permits review without inventing an immune target’s HP')
+ assert.deepEqual(errors,[])
+ console.log('PASS advanced Sonno browser/API: player preparation/approval, out-of-turn release, immunity override, independent Master recast, prepared wake on target turn, reload, desktop/mobile screenshots')
+}finally{await browser.close();await frontend.close();await new Promise(r=>server.close(r));await rm(dir,{recursive:true,force:true})}

@@ -44,7 +44,7 @@ const loadingCatalog='Caricamento del catalogo\u2026'
 export type TrackerState = {turns:Turn[];abilities:Ability[];combat:Combat|null}
 export type SessionWorkspace = {onWindDirection?:(effectId:number,selected:number[],id:string)=>Promise<void>;windDirectionPending?:number[];state:TrackerState;sheets:CharacterSheet[];storageKey:string;onChange:(state:TrackerState,sheets:CharacterSheet[])=>void;canRemove:(sheet:CharacterSheet)=>boolean;remove:(sheet:CharacterSheet)=>Promise<void>}
 
-export function TurnsTracker({ language, workspace, view = 'original', libraryTools, combatTools }: { language: 'it' | 'en'; workspace?:SessionWorkspace; view?: MasterView; libraryTools?: ReactNode; combatTools?:ReactNode }) {
+export function TurnsTracker({ language, workspace, view = 'original', libraryTools, combatTools, readiedTools }: { language: 'it' | 'en'; workspace?:SessionWorkspace; view?: MasterView; libraryTools?: ReactNode; combatTools?:ReactNode;readiedTools?:ReactNode }) {
     const renewed = view === 'renewed'
     const combatFormId=useId()
     const [section, setSection] = useState<'table' | 'library' | 'rules'>('table')
@@ -789,6 +789,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
                 <div hidden={renewed && inspectorMode === 'participant' && !selectedTurn}>
                 <AbilitiesTracker ownerFilter={renewed && inspectorMode === 'participant' ? selectedTurn?.id : undefined} heading={renewed ? inspectorMode === 'participant' ? 'Abilità in uso e da configurare' : 'Tutte le abilità' : undefined} onAdd={addAbility} abilities={abilities} setAbilities={setAbilities} participants={participants} catalog={catalog} catalogForOwner={(id)=>{const sheet=turns.find((turn)=>turn.id===id)?.sheet;return sheet ? catalogForSheet(creationData,catalog,sheet) ?? catalog : catalog}} combat={combat} onWindDirection={redirectWind} windDirectionPending={workspace?.windDirectionPending} onActivate={activateCombatAbility} onEnd={endCombatAbility} onResolve={finishCombatAbility} onCancelCast={cancelCombatCast} creationData={creationData} actionError={abilityError} />
                 </div>
+                {readiedTools}
                 </ParticipantInspector>
                 <dialog ref={windDialog} className="character-dialog repeat-save-dialog" aria-labelledby="wind-save-heading" {...dismissWindSave} onClose={()=>setWindSaveId(null)}>
                     <div className="dialog-header"><h2 id="wind-save-heading">Tiro salvezza di inizio turno</h2><button type="button" aria-label="Chiudi tiro salvezza di inizio turno" onClick={()=>windDialog.current?.close()}>×</button></div>

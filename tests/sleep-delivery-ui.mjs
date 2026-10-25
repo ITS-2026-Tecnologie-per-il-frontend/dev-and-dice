@@ -149,6 +149,7 @@ try{
  assert.equal(latest.state.turns[0].sheet.playerDetails['combat.actionUsed'],'true','Waking consumes the acting ally’s action')
  assert(await targetRow.getByRole('button',{name:'Prono',exact:true}).isVisible())
  await masterPage.getByRole('button',{name:'Termina combattimento',exact:true}).click()
+ await masterPage.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.includes('.library')))
  await targetRow.getByRole('button',{name:'Rialza (metà movimento)',exact:true}).click()
  await targetRow.getByRole('button',{name:'Prono',exact:true}).waitFor({state:'detached'})
  // Start-turn wind failures must remain resolved even if later damage wakes the sleeper.

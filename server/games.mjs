@@ -1,3 +1,5 @@
+import {validReadiedAction} from '../src/domain/dnd/Readied.ts'
+import {readyChoices,readyEntry,applyReadyCommand} from './readied-actions.mjs'
 import { validWindSave } from '../src/domain/dnd/WindTurns.ts'
 import {assertReactionAction,validReactionWindows,visibleReactions,reactionWindow,reactionOpen,openReactions,finishReaction,requestReactionEvent} from './reactions.mjs'
 import { settleCombatEffects } from '../src/domain/dnd/CombatConditions.ts'
@@ -74,6 +76,7 @@ export function validateState(state) {
     && ['damageEnabled','instantaneous','requirementsConfirmed','timed','concentration'].every(key=>ability[key]===undefined||typeof ability[key]==='boolean')
     && (ability.weaponEffects===undefined||validWeaponEnchantments(ability.weaponEffects))
     && (ability.temporaryHitPointsSource===undefined||typeof ability.temporaryHitPointsSource==='string'&&idPattern.test(ability.temporaryHitPointsSource))
+    && (ability.readied===undefined||validReadiedAction(ability.readied)&&ability.ruleId===`phb2014:readied:${ability.readied.kind}`)
     && (ability.conditionOrigin===undefined||typeof ability.conditionOrigin==='string'&&ability.conditionOrigin.length<=2000)
     && (ability.sourceEffectId===undefined||integer(ability.sourceEffectId)&&ability.sourceEffectId!==ability.id)
     && (ability.windSave===undefined||ability.ruleId==='phb2014:spell:gust-of-wind'&&validWindSave(ability.windSave))
@@ -248,6 +251,32 @@ export async function gamesRouter({ dataDir, authenticate }) {
       return view(db,game,req.userId)
     }))
   })
+  router.get('/games/:id/readied-actions',async(req,res)=>{
+    const rules=await combatRules(),db=await read(),game=gameFor(db,req.params.id,req.userId)
+    res.json(readyChoices(db,game,req.userId,rules))
+  })
+  router.post('/games/:id/readied-actions',async(req,res)=>{
+    const rules=await combatRules()
+    res.json(await write(db=>{
+      const game=gameFor(db,req.params.id,req.userId),{id,revision,command,decision}=req.body??{}
+      if(typeof id!=='string'||!idPattern.test(id))fail(400,'Identificativo non valido.')
+      const previous=game.combatRequests?.find(e=>e.id===id)
+      if(previous){if(!isDeepStrictEqual(previous.proposal.readyCommand,command)||req.userId!==game.masterId&&previous.ownerId!==req.userId)fail(409,'Identificativo già usato.');return view(db,game,req.userId)}
+      checkRevision(game,revision)
+      if((game.reactionWindows??[]).some(reactionOpen))fail(409,'Risolvi prima le reazioni in attesa.')
+      const entry=readyEntry(db,game,req.userId,req.username,id,command,rules)
+      if(command.kind==='cancel')for(const pending of game.combatRequests??[]){if(pending.status==='pending'&&pending.characterId===entry.characterId&&pending.proposal.readyCommand?.effectId===command.effectId){pending.status='rejected';pending.resolvedAt=new Date().toISOString()}}
+      else if(game.combatRequests?.some(e=>e.characterId===entry.characterId&&requestStatus(game,e)==='pending'))fail(409,'Hai già un’azione in attesa di approvazione.')
+      if(game.masterId===req.userId||command.kind==='cancel'){
+        const result=applyReadyCommand(db,game,entry,rules,decision)
+        const state=validateState(result.state)
+        for(const sheet of result.sheets){const record=db.characters.find(r=>r.id===sheet.id&&r.gameId===game.id);if(!record)fail(409,'Personaggio non disponibile.');saveSheet(game,record,validateSheet(sheet),req)}
+        game.state=state;game.revision++;entry.status='approved';entry.resolvedAt=new Date().toISOString();if(result.sleepReview)entry.sleepReview=result.sleepReview
+      }
+      ;(game.combatRequests??=[]).push(entry);game.requestsRevision=(game.requestsRevision??0)+1
+      return view(db,game,req.userId)
+    }))
+  })
   router.post('/games/:id/reactions',async(req,res)=>{
     const rules=await combatRules()
     res.json(await write(db=>{
@@ -284,6 +313,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
   router.post('/games/:id/requests', async (req,res)=>{
     gameFor(await read(),req.params.id,req.userId)
     const proposal=requestProposal(req.body),rules=await combatRules()
+    if(proposal.readyCommand)fail(400,'Usa il percorso delle azioni preparate.')
     res.json(await write(db=>{
       const game=gameFor(db,req.params.id,req.userId)
       const duplicate=game.combatRequests?.find(entry=>entry.id===proposal.id)
@@ -327,7 +357,11 @@ export async function gamesRouter({ dataDir, authenticate }) {
       const game=gameFor(db,req.params.id,req.userId),entry=game.combatRequests?.find(e=>e.id===req.params.requestId)
       if(!entry)fail(404,'Richiesta non disponibile.')
       checkRevision(game,req.body?.revision)
-      recordResolutionRoll(db,game,req.userId,entry,req.body,rules)
+      if(entry.proposal.readyCommand){
+        if(game.masterId!==req.userId||entry.status!=='pending'||req.body?.kind!=='refresh')fail(403,'Solo il Master può aggiornare questa richiesta.')
+        const refreshed=readyEntry(db,game,entry.ownerId,entry.actorName,entry.id,entry.proposal.readyCommand,rules)
+        entry.proposal=refreshed.proposal;entry.targets=refreshed.targets;entry.sleepReview=refreshed.sleepReview;entry.rollsRevision=(entry.rollsRevision??0)+1
+      }else recordResolutionRoll(db,game,req.userId,entry,req.body,rules)
       return view(db,game,req.userId)
     }))
   })
@@ -349,7 +383,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
         if(entry.proposal.reactionId&&!game.reactionWindows?.some(w=>w.id===entry.proposal.reactionId&&w.requestId===entry.id&&w.ownerId===entry.ownerId&&w.status==='submitted'))fail(409,'La reazione non è più valida.')
         if(!entry.proposal.reactionId&&(game.reactionWindows??[]).some(reactionOpen))fail(409,'Attendi la scelta delle reazioni prima di applicare questa azione.')
         if (requestStatus(game,entry)!=='pending') fail(409,'Turno o dati della sessione cambiati: chiedi al giocatore una nuova richiesta.')
-        const result=applyCombatRequest(db,game,entry,rules,req.body)
+        const result=entry.proposal.readyCommand?applyReadyCommand(db,game,entry,rules,req.body):applyCombatRequest(db,game,entry,rules,req.body)
         const state=validateState(result.state)
         for (const sheet of result.sheets) {
           const record=db.characters.find(record=>record.id===sheet.id && record.gameId===game.id)

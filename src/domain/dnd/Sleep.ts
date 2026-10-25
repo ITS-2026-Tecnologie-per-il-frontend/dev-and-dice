@@ -5,7 +5,7 @@ import { creatureType } from './CombatTargets.ts'
 import { activeEffects, defenseProfile } from './CombatResolution.ts'
 
 export type SleepTarget = { id:number; hitPoints?:number; unavailableReason?:string }
-export type SleepReviewData = { candidates:(SleepTarget&{name?:string})[]; area?:number[]; selected:number[] }
+export type SleepReviewData = { candidates:(SleepTarget&{name?:string})[]; area?:number[]; immuneIds?:number[]; selected:number[] }
 
 // D&D_5_Player_Original_Handbook.pdf, PDF 277, Sleep (2014).
 export function sleepDice(option:string):number {

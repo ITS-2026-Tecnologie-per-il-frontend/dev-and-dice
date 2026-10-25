@@ -69,6 +69,8 @@ assert(applied.state.turns.every((turn,i)=>turn.hitPoints===game.state.turns[i].
 assert.throws(()=>applyCombatRequest(db,game,entry,rules,{...body,sleepTargets:[]}),/PF più bassi/)
 assert.throws(()=>applyCombatRequest(db,game,entry,rules,{...body,sleepTargets:[3]}),/PF più bassi/)
 assert.throws(()=>applyCombatRequest(db,game,entry,rules,{...body,sleepArea:[8],sleepTargets:[]}),/Completa i PF/)
+const immuneMissing=applyCombatRequest(db,game,entry,rules,{...body,sleepArea:[8,1],sleepTargets:[1],sleepImmune:[8]})
+assert.deepEqual(immuneMissing.sleepReview.selected,[1],'A Master-declared immune creature needs no HP value and spends no pool')
 const added=applyCombatRequest(db,game,entry,rules,{...body,sleepArea:[0],sleepTargets:[0]})
 assert.deepEqual(added.state.abilities.find(a=>a.ruleId===spell.ruleId).targets.map(t=>t.id),[0])
 const empty=applyCombatRequest(db,game,entry,rules,{...body,sleepArea:[],sleepTargets:[]})

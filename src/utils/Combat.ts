@@ -55,6 +55,7 @@ export const durationTurns = {
 } as const
 
 export type Ability = {
+    readied?:import('../domain/dnd/Readied.ts').ReadiedAction
     id: number
     name: string
     duration: keyof typeof durationTurns
