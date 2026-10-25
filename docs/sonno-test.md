@@ -33,10 +33,11 @@ Usare una partita di prova, con due finestre separate: Master e giocatore. L’i
 ## Svegliare tramite un’azione preparata
 
 1. Lasciare Noryn addormentato. Nel turno di un alleato sveglio, aprire **Azioni preparate** e scegliere **Svegliare una creatura**.
-2. Selezionare Noryn e scrivere un evento, ad esempio «quando inizia il turno di Noryn». È possibile prepararsi anche prima che il bersaglio si addormenti.
+2. Il bersaglio è facoltativo. Lasciare **Sceglierò quando uso la reazione** e scrivere un evento percepibile, ad esempio «quando un alleato accanto a me comincia il turno mentre dorme». È possibile prepararsi prima che qualcuno si addormenti. In alternativa, selezionare Noryn e dichiarare un evento riferito a lui: la preparazione resterà vincolata a Noryn.
 3. Preparare e, per il giocatore, ottenere l’approvazione: viene impegnata l’azione dell’alleato, senza slot e senza concentrazione.
-4. Quando l’evento si verifica, anche durante il turno di Noryn, premere **Evento avvenuto · Sveglia**. Il giocatore invia la reazione al Master; il Master può eseguirla direttamente.
+4. Quando l’evento si verifica, anche durante il turno di Noryn, premere **Evento avvenuto · Sveglia**. Se il bersaglio era aperto, selezionare Noryn nel pannello di rilascio: compaiono soltanto le altre creature ancora addormentate da Sonno. Il giocatore invia la reazione al Master; il Master può eseguirla direttamente. Senza una scelta valida l’invio resta bloccato. Se Noryn era già stato indicato nella preparazione, il rilascio usa quel bersaglio e non permette di sostituirlo.
 5. Noryn si sveglia e resta prono. Si consuma la reazione dell’alleato, non l’azione o la reazione di Noryn. Il Master verifica che l’alleato sia a portata.
+6. Nella notifica di preparazione senza bersaglio il Master deve leggere che la scelta avverrà al rilascio; nella richiesta di rilascio deve vedere il nome scelto. Nessuno si sveglia e la reazione non viene consumata prima dell’approvazione. Se nel frattempo il bersaglio si sveglia o la preparazione scade, il server deve rifiutare il rilascio senza consumare la reazione. Ricaricare la pagina tra preparazione e rilascio per verificare che la scelta aperta sia conservata.
 
 ## Scadenza, interruzione e annullamento
 

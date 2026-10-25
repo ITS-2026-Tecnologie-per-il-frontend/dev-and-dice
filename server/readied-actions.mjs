@@ -35,7 +35,8 @@ export function readyEntry(db,game,user,actorName,id,command,rules){
  const {turn,record,context}=actorContext(db,game,command.actorId,user,rules)
  const held=activeEffects(game.state.abilities).find(a=>a.id===command.effectId&&a.ownerId===turn.id&&a.readied)
  const releaseSleep=command.kind==='release'&&held?.readied.kind==='sleep'
- const area=command.kind==='cancel'?[]:releaseSleep?command.area??[]:command.kind==='prepare-wake'?[command.targetId]:held?.readied.kind==='wake'?[held.readied.targetId]:[]
+ const wakeTarget=command.targetId??held?.readied.targetId
+ const area=command.kind==='cancel'?[]:releaseSleep?command.area??[]:command.kind==='prepare-wake'||held?.readied.kind==='wake'?wakeTarget===undefined?[]:[wakeTarget]:[]
  if(!area.every(id=>game.state.turns.some(t=>t.id===id)))fail('Bersaglio non disponibile.',400)
  const targets=area.map(id=>({id,roll:'',hit:false,damageRoll:'',damage:'0'}))
  const entry={id,ownerId:record.ownerId,characterId:record.id,characterName:record.sheet.name,actorName,actionName:command.kind==='prepare-sleep'?'Prepara Sonno':command.kind==='prepare-wake'?'Prepara risveglio':command.kind==='cancel'?'Abbandona azione preparata':releaseSleep?'Sonno · rilascio':'Risveglio · reazione',optionLabel:command.kind==='prepare-sleep'?context.actions.find(a=>a.ability.ruleId===sleepId)?.options.find(o=>o.id===command.option)?.label??'Slot incantesimo':command.kind==='release'?'Reazione · nessun altro slot':'Azione',createdAt:new Date().toISOString(),status:'pending',prolonged:false,proposal:{id,revision:game.revision,key:'0',option:command.kind==='prepare-sleep'?command.option:'free',cost:1,mode:'none',damageEnabled:false,targets,readyCommand:command,...(releaseSleep?{sleepRoll:command.sleepRoll}:{})},targets:targets.map(t=>({...t,name:game.state.turns.find(p=>p.id===t.id).description}))}
@@ -79,16 +80,17 @@ export function applyReadyCommand(db,game,entry,rules,body={},preview=false){
    sheet=spendCombatUse(sheet,{...action.ability,requirementsConfirmed:true,targets:[]},context.catalog,rules.data,c.option,1)
    concentration=true
    abilities=abilities.map(a=>a.ownerId===turn.id&&(a.concentration||a.execution?.phase==='casting')?{...close(a),execution:undefined}:a)
-  }else if(c.targetId===turn.id||!game.state.turns.some(t=>t.id===c.targetId))fail('Scegli un’altra creatura addormentata.')
+  }else if(c.targetId!==undefined&&(c.targetId===turn.id||!game.state.turns.some(t=>t.id===c.targetId)))fail('Scegli un’altra creatura presente nel combattimento.')
   if(abilities.length>=2000)fail('Limite degli effetti raggiunto.')
   const id=Math.max(-1,...abilities.map(a=>a.id))+1
-  abilities.push({...template,id,ownerId:turn.id,active:true,execution:undefined,targets:[],resolutionEffects:[],duration:'Personalizzata',remainingTurns:1,timed:true,concentration,useOption:c.option??'free',expiresAt:'start',expiryOwnerId:turn.id,expiryRound:combat.round+1,readied:{kind:concentration?'sleep':'wake',trigger:c.trigger.trim(),...(concentration?{}:{targetId:c.targetId})}})
+  abilities.push({...template,id,ownerId:turn.id,active:true,execution:undefined,targets:[],resolutionEffects:[],duration:'Personalizzata',remainingTurns:1,timed:true,concentration,useOption:c.option??'free',expiresAt:'start',expiryOwnerId:turn.id,expiryRound:combat.round+1,readied:{kind:concentration?'sleep':'wake',trigger:c.trigger.trim(),...(!concentration&&c.targetId!==undefined?{targetId:c.targetId}:{})}})
   sheet={...sheet,playerDetails:{...sheet.playerDetails,'combat.actionUsed':'true',...(concentration?{'rules2014.concentration':'phb2014:readied:sleep'}:{})}}
   return finish()
  }
  if(!held)fail('L’azione preparata è scaduta o è stata interrotta.')
  if(sheet.playerDetails?.['combat.reactionUsed']==='true')fail('Hai già usato la reazione.')
  if(held.readied.kind==='sleep'){
+  if(c.targetId!==undefined)fail('Sonno richiede la selezione dell’area, non un bersaglio di risveglio.',400)
   if(sheet.playerDetails?.['rules2014.concentration']!=='phb2014:readied:sleep'||!held.concentration)fail('La concentrazione su Sonno preparato è terminata.')
   const dice=sleepDice(held.useOption??'')
   if(!validSleepRoll(c.sleepRoll,dice)||!Array.isArray(c.area)||!c.area.every(id=>game.state.turns.some(t=>t.id===id)))fail('Inserisci totale dei d8 e creature nell’area.',400)
@@ -107,8 +109,11 @@ export function applyReadyCommand(db,game,entry,rules,body={},preview=false){
   }
  }else{
   if(c.area!==undefined||c.sleepRoll!==undefined)fail('Il risveglio non richiede dadi.',400)
-  if(held.readied.targetId===turn.id||!sleepingTargets(abilities).includes(held.readied.targetId))fail('Il bersaglio non è più addormentato.')
-  abilities=wakeSleep(abilities,[held.readied.targetId])
+  const targetId=c.targetId??held.readied.targetId
+  if(held.readied.targetId!==undefined&&targetId!==held.readied.targetId)fail('Il risveglio è stato preparato per un’altra creatura.')
+  if(targetId===undefined)fail('Scegli la creatura da svegliare quando usi la reazione.',400)
+  if(targetId===turn.id||!game.state.turns.some(t=>t.id===targetId)||!sleepingTargets(abilities).includes(targetId))fail('Il bersaglio non è più addormentato o non è disponibile.')
+  abilities=wakeSleep(abilities,[targetId])
  }
  abilities=abilities.map(a=>a.id===held.id?close(a):a)
  sheet={...sheet,playerDetails:{...sheet.playerDetails,'combat.reactionUsed':'true',...(held.concentration?{'rules2014.concentration':''}:{})}}

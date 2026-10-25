@@ -5,7 +5,7 @@ import {readyChoices,readyEntry,applyReadyCommand} from '../server/readied-actio
 import {validReadyCommand,validReadiedAction} from '../src/domain/dnd/Readied.ts'
 import {newCharacterSheet} from '../src/utils/CharacterSheets.ts'
 import {templateFromCatalog} from '../src/utils/Catalog.ts'
-import {sleepingTargets} from '../src/domain/dnd/Sleep.ts'
+import {sleepingTargets,wakeSleep} from '../src/domain/dnd/Sleep.ts'
 import {settleCombatEffects} from '../src/domain/dnd/CombatConditions.ts'
 import {advanceCombatAbilities} from '../src/utils/Combat.ts'
 import {validateState} from '../server/games.mjs'
@@ -69,9 +69,37 @@ assert.equal(interrupted.turns[0].sheet.playerDetails['slots.2.used'],'1')
 reset();game.state.abilities=settleCombatEffects([{...spell,id:10,ownerId:2,active:true,remainingTurns:10,targets:[{id:1,damage:'0',resolved:true}]}],game.state.turns,game.state.combat).abilities
 command({kind:'prepare-wake',actorId:0,targetId:1,trigger:'Quando inizia il turno di Baldur'});held=game.state.abilities.find(a=>a.readied)
 assert.equal(db.characters[0].sheet.playerDetails['combat.actionUsed'],'true')
-game.state.combat={activeId:1,round:1};command({kind:'release',actorId:0,effectId:held.id})
+game.state.combat={activeId:1,round:1};assert.throws(()=>command({kind:'release',actorId:0,effectId:held.id,targetId:2}),/preparato per un’altra creatura/);command({kind:'release',actorId:0,effectId:held.id})
 assert.deepEqual(sleepingTargets(game.state.abilities),[]);assert.equal(db.characters[0].sheet.playerDetails['combat.reactionUsed'],'true')
 assert(game.state.abilities.some(a=>a.name==='Prono'&&a.ownerId===1&&a.active))
+// Ready names the action and a perceivable trigger; the target can remain undecided (PHB PDF 194).
+reset()
+const flexible={kind:'prepare-wake',actorId:0,trigger:'Quando un alleato accanto a me si addormenta'}
+assert(validReadyCommand(flexible));assert(validReadiedAction({kind:'wake',trigger:flexible.trigger}))
+const wakeProposal=readyEntry(db,game,user,'Tester',crypto.randomUUID(),flexible,rules)
+assert.deepEqual(wakeProposal.targets,[])
+commit(applyReadyCommand(db,game,wakeProposal,rules));held=game.state.abilities.find(a=>a.readied)
+assert.equal(held.readied.targetId,undefined)
+assert.equal(db.characters[0].sheet.playerDetails['combat.actionUsed'],'true')
+assert.equal(db.characters[0].sheet.playerDetails['slots.1.used'],undefined)
+assert.equal(held.concentration,false)
+game.state.abilities=settleCombatEffects([...game.state.abilities,{...spell,id:100,ownerId:2,active:true,remainingTurns:10,targets:[1,2].map(id=>({id,damage:'0',resolved:true}))}],game.state.turns,game.state.combat).abilities
+game.state.combat={activeId:1,round:1}
+const wakeRelease={kind:'release',actorId:0,effectId:held.id}
+assert.throws(()=>command(wakeRelease),/Scegli la creatura/)
+assert.throws(()=>command({...wakeRelease,targetId:0}),/non è più addormentato|non è disponibile/)
+assert.throws(()=>command({...wakeRelease,targetId:99}),/Bersaglio non disponibile/)
+assert.notEqual(db.characters[0].sheet.playerDetails['combat.reactionUsed'],'true','Invalid release cannot consume the reaction')
+const selectedWake=readyEntry(db,game,user,'Tester',crypto.randomUUID(),{...wakeRelease,targetId:1},rules)
+assert.deepEqual(selectedWake.targets.map(t=>t.id),[1]);assert.deepEqual(sleepingTargets(game.state.abilities),[1,2],'A proposal does not wake anyone')
+const alreadyAwake=structuredClone(game);alreadyAwake.state.abilities=wakeSleep(alreadyAwake.state.abilities,[1])
+assert.throws(()=>applyReadyCommand(db,alreadyAwake,selectedWake,rules),/non è più addormentato|non è disponibile/)
+assert.notEqual(db.characters[0].sheet.playerDetails['combat.reactionUsed'],'true','Approval rechecks the target before spending the reaction')
+commit(applyReadyCommand(db,game,selectedWake,rules))
+assert.deepEqual(sleepingTargets(game.state.abilities),[2]);assert.equal(db.characters[0].sheet.playerDetails['combat.reactionUsed'],'true')
+assert.throws(()=>command({...wakeRelease,targetId:2}),/scaduta|interrotta/)
+for(const invalid of [{...flexible,targetId:null},{...flexible,targetId:-1},{...wakeRelease,targetId:'1'},{...wakeRelease,targetId:1,area:[1],sleepRoll:10},{kind:'cancel',actorId:0,effectId:1,targetId:1}])assert(!validReadyCommand(invalid))
+assert(!validReadiedAction({kind:'wake',trigger:'Evento',targetId:null}))
 // Independent normal casts do not replace existing sleepers or their duration.
 reset()
 function normal(target){const context=actionContext(db,game,user,rules),action=context.actions.find(a=>a.ability.ruleId===spell.ruleId);assert.equal(action.error,'');const proposal=requestProposal({id:crypto.randomUUID(),revision:game.revision,key:action.key,option:'slot:1',cost:1,mode:'none',damageEnabled:false,sleepRoll:10,targets:[{id:target,roll:'',hit:false,damageRoll:'',damage:'0'}]});prepareAction(context,proposal,rules);const entry={id:proposal.id,ownerId:user,characterId:caster.id,proposal,sleepReview:createSleepReview(context,proposal)};commit(applyCombatRequest(db,game,entry,rules,{confirmed:true,targets:[{id:target,damage:'0'}],sleepArea:[target],sleepTargets:[target],additionalActionConfirmed:true}));}
