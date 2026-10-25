@@ -764,6 +764,7 @@ html { scroll-behavior: smooth; }
 .master-attack-form .ability-target-list,.master-spell-form .ability-target-list { max-height:none; overflow:visible; }
 .master-action-form > fieldset { border:0; padding:0; }
 .wind-direction-controls { display:grid; gap:12px; min-width:0; }
+.wind-area-controls:has(> .wind-direction-controls > form) > :is(.library-help,.ability-targets) { display:none; }
 .wind-direction-controls > p { margin:0; }
 .ability-row .wind-direction-controls .sort-turns:hover:not(:disabled) { background:var(--ui-action-hover, var(--ui-accent-hover, #10675f)); }
 .master-action-form > fieldset > legend { padding:0; margin-bottom:12px; }
