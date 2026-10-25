@@ -14,7 +14,7 @@ export function SleepReview({review,total,area,selected,disabled,onChange}:{revi
         {missing&&<p role="alert">Completa i PF delle creature nell’area prima di approvare Sonno.</p>}
         <fieldset disabled={disabled}><legend>Area ed esito</legend>
             <div className="sleep-table-heading" aria-hidden="true"><span>Creatura / PF attuali</span><span>Nell’area</span><span>Si addormenta</span></div>
-            {review.candidates.slice().sort((a,b)=>(a.hitPoints??Infinity)-(b.hitPoints??Infinity)||a.id-b.id).map(target=>{
+            {review.candidates.slice().sort((a,b)=>Number(included.has(b.id))-Number(included.has(a.id))||(a.hitPoints??Infinity)-(b.hitPoints??Infinity)||a.id-b.id).map(target=>{
                 const inside=included.has(target.id),picked=sleepers.has(target.id)
                 const next=sleepAllocation(review.candidates,area,total,picked?[...selected.filter(id=>id!==target.id),...area.filter(id=>id!==target.id),target.id]:[target.id,...selected]).selected
                 const changeable=inside&&next.includes(target.id)!==picked
