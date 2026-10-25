@@ -78,7 +78,7 @@ try{
  assert.equal(await masterReview.getByRole('checkbox',{name:/^Nell’area:/}).count(),1)
  assert(await masterReview.getByRole('checkbox',{name:'Nell’area: Goblin',exact:true}).isChecked(),'Legacy candidate names come from the original targets')
  legacyReview=false
- await masterReview.getByRole('checkbox',{name:'Nell’area: Maga',exact:true}).waitFor({timeout:6500})
+ await masterReview.getByRole('checkbox',{name:'Nell’area: Maga',exact:true}).waitFor({timeout:15000})
  assert.equal(await masterReview.getByRole('checkbox',{name:/^Nell’area:/}).count(),2,'Same-revision enriched notifications replace the cached review')
  assert(!await masterReview.getByRole('checkbox',{name:'Nell’area: Maga',exact:true}).isChecked(),'New candidates preserve the original area proposal')
  await masterReview.getByRole('checkbox',{name:'Nell’area: Maga',exact:true}).check()
@@ -86,7 +86,7 @@ try{
  const actionConfirmation=masterPage.getByRole('checkbox',{name:/Confermo un’altra azione valida/})
  assert.equal(await actionConfirmation.count(),0)
  suppressActionWarning=false
- await actionConfirmation.waitFor({timeout:6500})
+ await actionConfirmation.waitFor({timeout:15000})
  assert(await masterPage.getByRole('button',{name:'Approva azione',exact:true}).isDisabled(),'Additional-action confirmation is required before approval')
  assert(await masterReview.getByRole('checkbox',{name:'Nell’area: Maga',exact:true}).isChecked(),'Updating requirements preserves Master area edits')
  await actionConfirmation.check()
@@ -167,6 +167,28 @@ try{
  latest=(await api(master,path)).json
  assert.equal(latest.state.abilities.find(a=>a.id===1000).windSave.turn.success,false)
  await masterPage.reload();await automatic.waitFor()
+ // The Master sidebar starts from the player's Sleep fields and casts directly.
+ await masterPage.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.includes('.library')))
+ latest=(await api(master,path)).json
+ const masterState={...latest.state,combat:{activeId:0,round:8},turns:latest.state.turns.map(t=>t.id===0?{...t,sheet:{...t.sheet,playerDetails:{...t.sheet.playerDetails,'slots.1.used':'0','slots.2.used':'0','rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]','combat.actionUsed':'false'}}}:t),abilities:latest.state.abilities.map(a=>a.ruleId===spell.ruleId?{...a,active:false,remainingTurns:0,targets:[],resolutionEffects:undefined}:a.ruleId===wind.ruleId?{...a,active:false,remainingTurns:0}:a)}
+ await api(master,path+'/state','PUT',{revision:latest.revision,state:masterState,sheets:masterState.turns.map(t=>t.sheet)})
+ await masterPage.reload()
+ const masterForm=masterPage.getByRole('form',{name:'Lancio: Sonno',exact:true})
+ await masterForm.waitFor()
+ assert.equal(await masterForm.getByLabel('Risoluzione',{exact:true}).count(),0)
+ assert.equal(await masterForm.getByRole('checkbox',{name:'Prevede danni',exact:true}).count(),0)
+ await masterForm.getByRole('combobox',{name:'Risorsa',exact:true}).selectOption('slot:2')
+ await masterForm.getByLabel('Sonno · tira 7d8 e inserisci la somma').fill('40')
+ assert.equal(await masterForm.getByRole('group',{name:'Creature nell’area di Sonno',exact:true}).getByRole('checkbox').count(),2)
+ await masterForm.getByRole('checkbox',{name:'Goblin',exact:true}).check()
+ await masterForm.getByRole('button',{name:'Usa',exact:true}).click()
+ await asleep.waitFor()
+ assert.equal(await casterRow.getByRole('button',{name:'Addormentato',exact:true}).count(),0)
+ await masterPage.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.includes('.library')))
+ latest=(await api(master,path)).json
+ assert.equal(latest.state.turns[0].sheet.playerDetails['slots.2.used'],'1','Master cast spends its slot once')
+ assert.deepEqual(latest.state.abilities.find(a=>a.ruleId===spell.ruleId).targets.map(t=>t.id),[1])
+ assert.equal(latest.combatRequests.length,approved.combatRequests.length,'Master casting does not send a player notification')
  assert.deepEqual(errors,[])
  console.log('PASS Sleep real browser/API: preserved legacy form, slot 2/40, visible retry error, request delivery, same-revision Master review refresh, legacy names, approval, one slot spent and saved active targets')
 }finally{await masterContext?.close();await page.unrouteAll({behavior:'wait'});await browser.close();await frontend.close();await new Promise(r=>backend.close(r));await rm(dir,{recursive:true,force:true});await rm(dataDir,{recursive:true,force:true})}

@@ -1,6 +1,8 @@
 import type { Ability, Combat } from '../../utils/Combat.ts'
-import type { CharacterSheet } from '../../utils/CharacterSheets.ts'
-import { activeEffects } from './CombatResolution.ts'
+import { integerValue, type CharacterSheet } from '../../utils/CharacterSheets.ts'
+import type { CreationData } from '../../utils/PlayerCreation.ts'
+import { creatureType } from './CombatTargets.ts'
+import { activeEffects, defenseProfile } from './CombatResolution.ts'
 
 export type SleepTarget = { id:number; hitPoints?:number; unavailableReason?:string }
 export type SleepReviewData = { candidates:(SleepTarget&{name?:string})[]; area?:number[]; selected:number[] }
@@ -20,6 +22,23 @@ export function sleepTargetReason(target:SleepTarget,remaining:number):string|un
     if(target.hitPoints===undefined)return 'PF attuali mancanti: il Master deve completare la scheda.'
     if(target.hitPoints<=0)return 'Creatura già a 0 PF: non viene considerata da Sonno.'
     if(target.hitPoints>remaining)return 'PF attuali superiori alla riserva disponibile.'
+}
+
+export function sleepCandidates(participants:{id:number;sheet?:CharacterSheet;hitPoints?:string}[],abilities:Ability[],data?:CreationData):SleepTarget[] {
+    const active=activeEffects(abilities)
+    return participants.map(turn=>{
+        const sheet=turn.sheet,profile=sheet?defenseProfile(sheet,undefined,active,turn.id,undefined,data):undefined
+        const race=sheet&&data?.verified?.reviewedEntities.find(e=>e.id==='phb2014:race:'+sheet.playerDetails?.['creation.race']||e.id.startsWith('phb2014:race:')&&[e.name,e.nameIt].some(name=>name?.toLowerCase()===sheet.race?.toLowerCase()))
+        const traits=Array.isArray(race?.mechanics.traits)?race.mechanics.traits:[]
+        const magicalSleep=traits.some(trait=>{
+            const mechanics=trait&&typeof trait==='object'&&!Array.isArray(trait)?trait.mechanics:undefined
+            return mechanics&&typeof mechanics==='object'&&!Array.isArray(mechanics)&&Array.isArray(mechanics.immuneTo)&&mechanics.immuneTo.includes('magical-sleep')
+        })
+        const immune=profile?.conditionImmunities.some(c=>['charmed','affascinato','affascinata','unconscious','privo di sensi','magical-sleep','sonno magico'].includes(c))||profile?.spellImmunities?.includes('phb2014:spell:sleep')
+        const unconscious=active.some(a=>(a.targets?.length?a.targets.some(t=>t.id===turn.id):a.ownerId===turn.id)&&(isSleep(a)||a.resolutionEffects?.some(e=>e.kind==='condition'&&e.condition==='unconscious')))
+        const hp=integerValue(turn.hitPoints??sheet?.hitPoints)
+        return {id:turn.id,hitPoints:hp!==undefined&&hp>=0?hp:undefined,unavailableReason:creatureType(sheet)==='undead'?'I non morti non sono influenzati da Sonno.':magicalSleep||immune?'Immune a Sonno.':unconscious?'Creatura già priva di sensi.':undefined}
+    })
 }
 
 // Equal-PF priority is a Master's ruling: PHB 2014 does not specify a tie-breaker.

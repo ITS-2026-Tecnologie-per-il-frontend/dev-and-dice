@@ -8,8 +8,8 @@ import { catalogAbilityKind, parseCatalog, sheetWithCombatAbilities } from '../s
 import { withWizardCatalog } from '../src/utils/PlayerCreation.ts'
 import { spellEdition } from '../src/utils/Spellcasting.ts'
 import { resolutionPlan, directBenefit, weaponDisplayName, weaponEffectDetails, spellEffectDetails, weaponCandidates as availableWeapons, enchantWeapon, spellAttackAbility, damageNames, conditionNames, defenseProfile, validPackets, assertPacketPlan, packetTargets, resolveTarget, activeEffects, validEffectSpecs, saveNames, validWeaponEffect } from '../src/domain/dnd/CombatResolution.ts'
-import { conditionsFor, isIncapacitated, endIncapacitatedConcentration, settleCombatEffects } from '../src/domain/dnd/CombatConditions.ts'
-import { sleepDice, validSleepRoll, sleepAllocation, wakeSleep } from '../src/domain/dnd/Sleep.ts'
+import { isIncapacitated, endIncapacitatedConcentration, settleCombatEffects } from '../src/domain/dnd/CombatConditions.ts'
+import { sleepDice, validSleepRoll, sleepAllocation, sleepCandidates, wakeSleep } from '../src/domain/dnd/Sleep.ts'
 import { combatTargeting, creatureType, wearingArmor, assertTargetTypes } from '../src/domain/dnd/CombatTargets.ts'
 
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status})}
@@ -154,22 +154,9 @@ function castReceipt(context,game,ability) {
     ...(benefit&&packet?{temporaryHitPoints:{roll:packet.temporaryHitPointsRoll,bonus:benefit.bonus,total:packet.temporaryHitPointsRoll+benefit.bonus,keptPrevious:packet.keepTemporaryHitPoints}}:{})}
 }
 
-function sleepTargets(context) {
-  return context.targets.map(turn=>{
-    const sheet=turn.sheet,profile=sheet?defenseProfile(sheet,undefined,context.weaponContext.active,turn.id,undefined,context.weaponContext.data):undefined
-    const race=sheet&&context.weaponContext.data.verified?.reviewedEntities.find(e=>e.id==='phb2014:race:'+sheet.playerDetails?.['creation.race']||e.id.startsWith('phb2014:race:')&&[e.name,e.nameIt].some(name=>name?.toLowerCase()===sheet.race?.toLowerCase()))
-    const traits=Array.isArray(race?.mechanics.traits)?race.mechanics.traits:[]
-    const magicalSleep=traits.some(trait=>trait.mechanics?.immuneTo?.includes('magical-sleep'))
-    const immune=profile?.conditionImmunities.some(c=>['charmed','affascinato','affascinata','unconscious','privo di sensi','magical-sleep','sonno magico'].includes(c))||profile?.spellImmunities?.includes('phb2014:spell:sleep')
-    const unconscious=conditionsFor(context.weaponContext.active,turn.id).some(c=>['unconscious','Privo di sensi','Addormentato'].includes(c))
-    const hp=turn.hitPoints??sheet?.hitPoints
-    return {id:turn.id,hitPoints:damage(hp)?Number(hp):undefined,unavailableReason:creatureType(sheet)==='undead'?'I non morti non sono influenzati da Sonno.':magicalSleep||immune?'Immune a Sonno.':unconscious?'Creatura già priva di sensi.':undefined}
-  })
-}
-
 export function createSleepReview(context,proposal) {
   const names=new Map(context.targets.map(t=>[t.id,t.sheet?.name??t.description]))
-  const candidates=sleepTargets(context).map(t=>({...t,name:names.get(t.id)})),area=proposal.targets.map(t=>t.id)
+  const candidates=sleepCandidates(context.targets,context.weaponContext.active,context.weaponContext.data).map(t=>({...t,name:names.get(t.id)})),area=proposal.targets.map(t=>t.id)
   return {candidates,area,selected:sleepAllocation(candidates,area,proposal.sleepRoll).selected}
 }
 
