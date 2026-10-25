@@ -181,7 +181,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
         event.preventDefault()
         if (working.current||!choices||renewed&&!choices.canPropose||weapon&&!validDie||sleep&&!validSleep) return
         working.current=true;setBusy(true);setError('')
-        const proposal={...(sleep?{sleepRoll:sleepTotal}:{}),...(weapon?{attackDie:die}:{}),revision:choices.revision,key,option:optionId,cost:option?.cost??cost,mode,damageEnabled,targets:targets.map(({id,roll,hit,damageRoll,damage})=>({id,roll:weapon?weaponRollText:roll,hit:weapon?false:hit,damageRoll,damage}))}
+        const proposal={...(sleep?{sleepRoll:sleepTotal}:{}),...(weapon?{attackDie:die}:{}),revision:choices.revision,key,option:optionId,cost:sleep?1:option?.cost??cost,mode:sleep?'none':mode,damageEnabled:sleep?false:damageEnabled,targets:targets.map(({id,roll,hit,damageRoll,damage})=>sleep?{id,roll:'',hit:false,damageRoll:'',damage:'0'}:{id,roll:weapon?weaponRollText:roll,hit:weapon?false:hit,damageRoll,damage})}
         const signature=JSON.stringify(proposal)
         if (attempt.current?.signature!==signature) attempt.current={signature,body:{id:crypto.randomUUID(),...proposal}}
         try {onUpdate(await playApi<Game>('/games/'+game.id+'/requests','POST',attempt.current.body));attempt.current=undefined;if(renewed){setPanel('summary');setRetry(current=>current+1)}else setKey('');setTargets([])} catch(error) {setError(message(error))} finally {working.current=false;setBusy(false)}
@@ -229,7 +229,8 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
                         renderSelected={candidate=>targetFields(targets.find(target=>target.id===candidate.id)!)}/> : <fieldset><legend>Bersagli{mode==='none'?' (facoltativi)':''}</legend>{targeting&&<p>{targeting.summary}{targeting.maximum!==null&&` Selezionati: ${targets.length}/${targeting.maximum}.`}</p>}{tooManyTargets&&<p role="alert">Troppi bersagli: correggi la selezione prima di procedere.</p>}{choices.targets.map(target=><label className="combat-request-check" key={target.id}><input type="checkbox" checked={targets.some(selected=>selected.id===target.id)} disabled={!targets.some(selected=>selected.id===target.id)&&targeting?.maximum!==null&&targeting?.maximum!==undefined&&targets.length>=targeting.maximum} onChange={event=>setTargets(current=>event.target.checked?[...current,{...target,roll:'',hit:false,damageRoll:'',damage:'0'}]:current.filter(selected=>selected.id!==target.id))}/>{target.name||'Partecipante'}</label>)}</fieldset>}
                     {!renewed&&targets.map(target=><fieldset key={target.id}><legend>{target.name||'Partecipante'}</legend>{targetFields(target)}</fieldset>)}
                     {(action.prolonged||optionId==='ritual')&&<p>Il Master potrà approvare solo dopo il completamento del lancio. Un lancio interrotto va rifiutato e non consuma risorse.</p>}
-                    <button className="play-primary" disabled={sleep&&!validSleep||renewed&&!choices.canPropose||!option||tooManyTargets||weapon&&!validDie||!targets.length&&(damageEnabled||mode==='attack'||mode==='save')||option?.remaining!==null&&(option?.remaining??0)<(option?.cost??cost)}>Invia al Master</button>
+                    {sleep&&error&&<p role="alert">{error}</p>}
+                    <button className="play-primary" disabled={sleep&&!validSleep||renewed&&!choices.canPropose||!option||tooManyTargets||weapon&&!validDie||!sleep&&!targets.length&&(damageEnabled||mode==='attack'||mode==='save')||option?.remaining!==null&&(option?.remaining??0)<(option?.cost??cost)}>{busy?'Invio in corso…':'Invia al Master'}</button>
                 </>}
             </fieldset></form>
     const proposal=choices&&action?.resolution&&(renewed||!!action.resolution.healing||!!action.resolution.temporaryHitPoints)?<PlayerActionRolls key={action.key} game={game} choices={choices} action={action} formRef={form} onUpdate={onUpdate} onSubmitted={()=>{setPanel('summary');setTargets([]);setRetry(current=>current+1)}}/>:legacyProposal
@@ -280,7 +281,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
                 {inspectorMode==='participant'&&!key&&!choices.actions.some(item=>item.active)&&<p className="ability-help">Scegli un’abilità del personaggio per consultarne la card e proporne l’utilizzo.</p>}
             </section>}
 
-        </>}{error&&<p role="alert">{error}</p>}
+        </>}{error&&(!sleep||panel==='summary')&&<p role="alert">{error}</p>}
         {!renewed&&<PlayerCombatHistory requests={game.combatRequests}/>}
     </section>
 }
