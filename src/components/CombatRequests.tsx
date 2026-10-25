@@ -8,6 +8,7 @@ import { InfoButton } from './InfoButton'
 import { HelpTooltip } from './HelpTooltip'
 import { damageNames, directBenefit, type WeaponChoice } from '../domain/dnd/CombatResolution'
 import { integerValue, signedBonus } from '../utils/CharacterSheets'
+import { sleepDice, validSleepRoll, sleepTargetReason } from '../domain/dnd/Sleep'
 import { WindReview, WindSummary } from './WindReview'
 import { WindDirectionForm } from './WindDirectionForm'
 import { catalogForSheet, loadActiveDatabase } from '../domain/dnd/ActiveRules'
@@ -23,10 +24,12 @@ function RequestDescription({request,review=false}:{request:CombatRequest;review
         <p className="combat-request-author"><strong>{request.characterName}</strong><span>Giocato da {request.actorName}</span><time dateTime={request.createdAt}>{new Date(request.createdAt).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</time></p>
         <p className="combat-request-mode"><span>{request.resolution?.temporaryHitPoints?'PF temporanei':request.resolution?.healing?'Guarigione':modeLabels[request.mode]}</span><span>{request.optionLabel}{request.spendsResources?` · costo ${request.cost}`:''}</span></p>
         {request.prolonged&&<p className="combat-request-notice">Tempo di lancio prolungato: approva dopo il completamento.</p>}
+        {request.sleepRoll!==undefined&&<p className="ability-casting-summary">Riserva di Sonno: <strong>{request.sleepRoll} PF</strong> · totale dei d8, nessun danno.</p>}
     </>
     // Critical damage dice: PHB 2014 PDF 197; SRD 5.2.1 (2024) PDF 18, Colpi critici.
     return <><p>{request.characterName} · {request.actorName} · <time dateTime={request.createdAt}>{new Date(request.createdAt).toLocaleString('it-IT')}</time></p>
         <p>{request.resolution?.temporaryHitPoints?'PF temporanei':request.resolution?.healing?'Guarigione':modeLabels[request.mode]} · {request.optionLabel}{request.spendsResources?` · costo ${request.cost}`:''}</p>
+        {request.sleepRoll!==undefined&&<p>Riserva di Sonno: <strong>{request.sleepRoll} PF</strong> · totale dei d8, nessun danno.</p>}
         {request.prolonged&&<p>Tempo di lancio prolungato: approvare soltanto dopo il completamento.</p>}
         <ul>{request.targets.map(target=><li key={target.id}><strong>{target.name||'Partecipante'}</strong>{!target.attack&&target.roll&&<> · {request.mode==='save'?'TS':'Tiro'}: {target.roll}</>}{request.mode==='attack'&&target.hit!==undefined&&<> · {target.hit?'Colpito':'Mancato'}</>}{target.attack&&<p>Confronto base: d20 {target.attack.die}, modificatore {target.attack.modifier===undefined?'da verificare':signedBonus(target.attack.modifier)}, totale {target.attack.total??'da verificare'} · CA {target.attack.armorClass??'da verificare'} · {target.attack.critical?'Colpo critico':target.attack.hit===undefined?'Esito da verificare':target.attack.hit?'Colpito':'Mancato'}</p>}{request.damageEnabled&&<> · Danni tirati: {target.damageRoll||'—'}{request.packets===undefined&&target.damageRoll!==target.damage&&<> · Danni finali: {target.damage}</>}</>}</li>)}</ul>
         {request.targets.some(target=>target.attack)&&<p>Verifica copertura, reazioni e altri effetti prima di confermare i danni finali.{request.targets.some(target=>target.attack?.critical)&&<> Per un critico si tirano due volte i dadi di danno, aggiungendo i modificatori una sola volta.</>}</p>}
@@ -133,11 +136,16 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
     const selectedIdentity=useRef('')
     const form=useRef<HTMLFormElement>(null)
     const [weaponRoll,setWeaponRoll]=useState('')
+    const [sleepRoll,setSleepRoll]=useState('')
     const [key,setKey]=useState(''),[optionId,setOptionId]=useState(''),[cost,setCost]=useState(1),[mode,setMode]=useState<CombatRequest['mode']>('none'),[damageEnabled,setDamageEnabled]=useState(false),[targets,setTargets]=useState<CombatTarget[]>([])
     const working=useRef(false),attempt=useRef<{signature:string;body:unknown}>(undefined)
     const action=choices?.actions.find(action=>action.key===key),option=action?.options.find(option=>option.id===optionId)
     const weapon=renewed&&action?.group==='Attacchi fisici'
     const sleep=action?.entry?.data.edition==='2014'&&action.entry.data.referenceId==='phb2014:spell:sleep'
+    const sleepCount=sleepDice(optionId),sleepTotal=Number(sleepRoll),validSleep=validSleepRoll(sleepTotal,sleepCount)
+    const sleepById=new Map(action?.sleepTargets?.map(target=>[target.id,target]))
+    const sleepSpent=targets.reduce((sum,target)=>sum+(sleepById.get(target.id)?.hitPoints??0),0)
+    const sleepRemaining=sleepTotal-sleepSpent
     const die=integerValue(weaponRoll),modifier=integerValue(action?.attackBonus)
     const validDie=die!==undefined&&die>=1&&die<=20
     const total=validDie&&modifier!==undefined&&Number.isSafeInteger(die+modifier)?die+modifier:undefined
@@ -158,15 +166,15 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
         // SRD 5.2.1, D&D_5.5_manuale_compatto_italiano.pdf, PDF 16, Effettuare un attacco.
         selectedIdentity.current=action?.entry?.id??action?.name??''
         const sleep=action?.entry?.data.edition==='2014'&&action.entry.data.referenceId==='phb2014:spell:sleep'
-        setKey(key);setOptionId(option?.id??'');setCost(option?.cost??action?.cost??1);setMode(sleep?'none':renewed&&action?.group==='Attacchi fisici'?'attack':action?.mode??'none');setDamageEnabled(!sleep&&(action?.damageEnabled??false));setWeaponRoll('');setTargets([]);setError('')
+        setKey(key);setOptionId(option?.id??'');setCost(option?.cost??action?.cost??1);setMode(sleep?'none':renewed&&action?.group==='Attacchi fisici'?'attack':action?.mode??'none');setDamageEnabled(!sleep&&(action?.damageEnabled??false));setWeaponRoll('');setSleepRoll('');setTargets([]);setError('')
     }
     function patch(id:number,values:Partial<CombatTarget>) {setTargets(current=>current.map(target=>target.id===id?{...target,...values}:target))}
     function changeMode(mode:CombatRequest['mode']) {setMode(mode);setTargets([]);if(mode==='none')setDamageEnabled(false)}
     async function submit(event:FormEvent) {
         event.preventDefault()
-        if (working.current||!choices||renewed&&!choices.canPropose||weapon&&!validDie) return
+        if (working.current||!choices||renewed&&!choices.canPropose||weapon&&!validDie||sleep&&(!validSleep||sleepRemaining<0)) return
         working.current=true;setBusy(true);setError('')
-        const proposal={...(weapon?{attackDie:die}:{}),revision:choices.revision,key,option:optionId,cost:option?.cost??cost,mode,damageEnabled,targets:targets.map(({id,roll,hit,damageRoll,damage})=>({id,roll:weapon?weaponRollText:roll,hit:weapon?false:hit,damageRoll,damage}))}
+        const proposal={...(sleep?{sleepRoll:sleepTotal}:{}),...(weapon?{attackDie:die}:{}),revision:choices.revision,key,option:optionId,cost:option?.cost??cost,mode,damageEnabled,targets:targets.map(({id,roll,hit,damageRoll,damage})=>({id,roll:weapon?weaponRollText:roll,hit:weapon?false:hit,damageRoll,damage}))}
         const signature=JSON.stringify(proposal)
         if (attempt.current?.signature!==signature) attempt.current={signature,body:{id:crypto.randomUUID(),...proposal}}
         try {onUpdate(await playApi<Game>('/games/'+game.id+'/requests','POST',attempt.current.body));attempt.current=undefined;if(renewed){setPanel('summary');setRetry(current=>current+1)}else setKey('');setTargets([])} catch(error) {setError(message(error))} finally {working.current=false;setBusy(false)}
@@ -196,17 +204,29 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
                 {!choices.actions.length&&<p>Nessuna azione disponibile: controlla attacchi, abilità e incantesimi salvati nella scheda.</p>}
                 {action&&<><details className="player-action-description" open={renewed?true:undefined}><summary>Descrizione dell’azione</summary><p className="combat-request-description">{action.description||'Risoluzione da confermare con il Master.'}</p></details>
                     {!renewed&&<InfoButton label="Descrizione" entry={action.entry} name={action.name} description={action.description} fields={{duration:action.duration,remainingTurns:action.remainingTurns,active:action.active,owner:game.character.sheet.name}}/>}
-                    {(!weapon||action.options.length!==1||optionId!=='free')&&<label>Risorsa<select aria-label="Risorsa" required value={optionId} onChange={event=>{const option=action.options.find(option=>option.id===event.target.value);setOptionId(event.target.value);setCost(option?.cost??action.cost)}}>{action.options.map(option=><option key={option.id} value={option.id} disabled={option.remaining!==null&&option.remaining<(option.cost??cost)}>{option.label}{option.remaining!==null?` · ${option.remaining} rimasti`:''}</option>)}</select></label>}
+                    {(!weapon||action.options.length!==1||optionId!=='free')&&<label>Risorsa<select aria-label="Risorsa" required value={optionId} onChange={event=>{const option=action.options.find(option=>option.id===event.target.value);setOptionId(event.target.value);setCost(option?.cost??action.cost);if(sleep){setSleepRoll('');setTargets([])}}}>{action.options.map(option=><option key={option.id} value={option.id} disabled={option.remaining!==null&&option.remaining<(option.cost??cost)}>{option.label}{option.remaining!==null?` · ${option.remaining} rimasti`:''}</option>)}</select></label>}
                     {!sleep&&option&&!['free','cantrip','ritual'].includes(option.id)&&<label>Costo<input type="number" min="1" step="1" required readOnly={option.cost!==undefined} value={option.cost??cost} onChange={event=>setCost(Number(event.target.value))}/></label>}
                     {!sleep&&!weapon&&<label>Risoluzione<select aria-label="Risoluzione" value={mode} onChange={event=>changeMode(event.target.value as CombatRequest['mode'])}>{Object.entries(modeLabels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>}
                     {!sleep&&mode!=='none'&&!(weapon&&action.damageEnabled)&&<label className="combat-request-check"><input type="checkbox" checked={damageEnabled} onChange={event=>{setDamageEnabled(event.target.checked);setTargets(current=>current.map(target=>({...target,damage:'0',damageRoll:''})))}}/>L’azione può infliggere danni</label>}
                     {!sleep&&!weapon&&<p>Per più attacchi allo stesso bersaglio, indica tutti i tiri e somma i danni. Il Master conferma esiti, resistenze e altri effetti.</p>}
-                    {renewed ? <AbilityTargets candidates={choices.targets.map(target=>({...target,name:target.name||'Partecipante'}))} ownerId={choices.ownerId} selectedIds={targets.map(target=>target.id)} maximum={targeting?.maximum??null} summary={targeting?.summary} label={mode==='none'?'Bersagli (facoltativi)':damageEnabled?'Bersagli del danno':'Bersagli'}
+                    {sleep&&<div className="player-sleep-roll"><label htmlFor="player-sleep-total">Sonno · tira {sleepCount}d8 e inserisci la somma<input id="player-sleep-total" type="number" inputMode="numeric" min={sleepCount} max={sleepCount*8} step="1" required placeholder="Solo il totale dei dadi" value={sleepRoll} onChange={event=>{setSleepRoll(event.target.value);setTargets([])}}/></label>
+                        <p className="library-help">Nessun modificatore da aggiungere. Non sono danni: il totale è la riserva di PF che puoi influenzare.</p>
+                        {sleepRoll&&!validSleep&&<p role="status">Inserisci un numero intero tra {sleepCount} e {sleepCount*8}.</p>}
+                        {validSleep&&<p className="ability-casting-summary" role="status">Riserva: <strong>{sleepTotal} PF</strong> · utilizzati: {sleepSpent} · restanti: <strong>{sleepRemaining} PF</strong></p>}
+                    </div>}
+                    {sleep ? <fieldset className="ability-targets" aria-label="Bersagli di Sonno"><legend>Bersagli di Sonno</legend>
+                        <p className="library-help">Seleziona solo le creature nell’area, partendo dai PF attuali più bassi. Anche gli alleati sono coinvolti. Il Master verifica posizione e presenza di tutte le creature nell’area.</p>
+                        <div className="ability-target-list">{choices.targets.map(target=>({...target,...sleepById.get(target.id)})).sort((a,b)=>(a.hitPoints??Infinity)-(b.hitPoints??Infinity)).map(target=>{
+                            const picked=targets.some(selected=>selected.id===target.id)
+                            const reason=!validSleep?'Inserisci prima il totale dei d8.':sleepTargetReason(target,picked?sleepTotal:sleepRemaining)
+                            return <div className="ability-target" key={target.id}><label className="ability-check"><input type="checkbox" checked={picked} disabled={!picked&&!!reason} onChange={event=>setTargets(current=>event.target.checked?[...current,{...target,roll:'',hit:false,damageRoll:'',damage:'0'}]:current.filter(selected=>selected.id!==target.id))}/>{target.id===choices.ownerId?`Tu (${target.name})`:target.name}{target.hitPoints!==undefined&&` · ${target.hitPoints} PF`}</label>{reason&&<span className="library-help">{reason}</span>}</div>
+                        })}</div>
+                    </fieldset> : renewed ? <AbilityTargets candidates={choices.targets.map(target=>({...target,name:target.name||'Partecipante'}))} ownerId={choices.ownerId} selectedIds={targets.map(target=>target.id)} maximum={targeting?.maximum??null} summary={targeting?.summary} label={mode==='none'?'Bersagli (facoltativi)':damageEnabled?'Bersagli del danno':'Bersagli'}
                         onChange={(id,checked)=>{const candidate=choices.targets.find(target=>target.id===id);if(!candidate)return;setTargets(current=>checked?[...current,{...candidate,roll:weapon?weaponRoll:'',hit:false,damageRoll:'',damage:'0'}]:current.filter(target=>target.id!==id))}}
                         renderSelected={candidate=>targetFields(targets.find(target=>target.id===candidate.id)!)}/> : <fieldset><legend>Bersagli{mode==='none'?' (facoltativi)':''}</legend>{targeting&&<p>{targeting.summary}{targeting.maximum!==null&&` Selezionati: ${targets.length}/${targeting.maximum}.`}</p>}{tooManyTargets&&<p role="alert">Troppi bersagli: correggi la selezione prima di procedere.</p>}{choices.targets.map(target=><label className="combat-request-check" key={target.id}><input type="checkbox" checked={targets.some(selected=>selected.id===target.id)} disabled={!targets.some(selected=>selected.id===target.id)&&targeting?.maximum!==null&&targeting?.maximum!==undefined&&targets.length>=targeting.maximum} onChange={event=>setTargets(current=>event.target.checked?[...current,{...target,roll:'',hit:false,damageRoll:'',damage:'0'}]:current.filter(selected=>selected.id!==target.id))}/>{target.name||'Partecipante'}</label>)}</fieldset>}
                     {!renewed&&targets.map(target=><fieldset key={target.id}><legend>{target.name||'Partecipante'}</legend>{targetFields(target)}</fieldset>)}
                     {(action.prolonged||optionId==='ritual')&&<p>Il Master potrà approvare solo dopo il completamento del lancio. Un lancio interrotto va rifiutato e non consuma risorse.</p>}
-                    <button className="play-primary" disabled={renewed&&!choices.canPropose||!option||tooManyTargets||weapon&&!validDie||!targets.length&&(damageEnabled||mode==='attack'||mode==='save')||option?.remaining!==null&&(option?.remaining??0)<(option?.cost??cost)}>Invia al Master</button>
+                    <button className="play-primary" disabled={sleep&&!validSleep||renewed&&!choices.canPropose||!option||tooManyTargets||weapon&&!validDie||!targets.length&&(damageEnabled||mode==='attack'||mode==='save')||option?.remaining!==null&&(option?.remaining??0)<(option?.cost??cost)}>Invia al Master</button>
                 </>}
             </fieldset></form>
     const proposal=choices&&action?.resolution&&(renewed||!!action.resolution.healing||!!action.resolution.temporaryHitPoints)?<PlayerActionRolls key={action.key} game={game} choices={choices} action={action} formRef={form} onUpdate={onUpdate} onSubmitted={()=>{setPanel('summary');setTargets([]);setRetry(current=>current+1)}}/>:legacyProposal
@@ -222,6 +242,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
         </dl>}
         {action.lastCast?<details className="player-cast-details"><summary>Dettagli del lancio</summary>
             <time dateTime={action.lastCast.createdAt}>{new Date(action.lastCast.createdAt).toLocaleString('it-IT')}</time>
+            {action.lastCast.sleepRoll!==undefined&&<p>Riserva di Sonno: <strong>{action.lastCast.sleepRoll} PF</strong> · totale dei d8.</p>}
             {action.lastCast.temporaryHitPoints&&<><p>Tiro originale: <strong>{action.lastCast.temporaryHitPoints.roll} sul d4 + {action.lastCast.temporaryHitPoints.bonus} = {action.lastCast.temporaryHitPoints.total} PF temporanei</strong></p>
             <p>{action.lastCast.temporaryHitPoints.keptPrevious?'PF precedenti mantenuti, con la durata originale.':'Nuovo beneficio selezionato.'}</p></>}
             {!action.lastCast.temporaryHitPoints&&action.lastCast.packets?.map((packet,index)=><p key={index}>Tiro {index+1}: {packet.die!==undefined&&<>d20 <strong>{packet.die}</strong> · </>}{packet.healingRoll!==undefined&&<>Dadi di guarigione: <strong>{packet.healingRoll}</strong></>}{packet.damage.map(damage=>`${damage.amount} ${damageNames[damage.type]}`).join(' + ')||(!packet.die&&packet.healingRoll===undefined?'Nessun dado richiesto.':'')}</p>)}

@@ -8,7 +8,8 @@ import { catalogAbilityKind, parseCatalog, sheetWithCombatAbilities } from '../s
 import { withWizardCatalog } from '../src/utils/PlayerCreation.ts'
 import { spellEdition } from '../src/utils/Spellcasting.ts'
 import { resolutionPlan, directBenefit, weaponDisplayName, weaponEffectDetails, spellEffectDetails, weaponCandidates as availableWeapons, enchantWeapon, spellAttackAbility, damageNames, conditionNames, defenseProfile, validPackets, assertPacketPlan, packetTargets, resolveTarget, activeEffects, validEffectSpecs, saveNames, validWeaponEffect } from '../src/domain/dnd/CombatResolution.ts'
-import { endIncapacitatedConcentration, settleCombatEffects } from '../src/domain/dnd/CombatConditions.ts'
+import { conditionsFor, endIncapacitatedConcentration, settleCombatEffects } from '../src/domain/dnd/CombatConditions.ts'
+import { sleepDice, validSleepRoll, sleepTargetReason } from '../src/domain/dnd/Sleep.ts'
 import { combatTargeting, creatureType, wearingArmor, assertTargetTypes } from '../src/domain/dnd/CombatTargets.ts'
 
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status})}
@@ -149,15 +150,28 @@ function castReceipt(context,game,ability) {
     && ['pending','approved'].includes(requestStatus(game,entry)))
   if(!entry)return undefined
   const benefit=entry.resolution?.plan.temporaryHitPoints,packet=entry.proposal.packets?.[0]
-  return {id:entry.id,status:requestStatus(game,entry),createdAt:entry.createdAt,optionLabel:entry.optionLabel,packets:entry.proposal.packets,
+  return {id:entry.id,status:requestStatus(game,entry),createdAt:entry.createdAt,optionLabel:entry.optionLabel,packets:entry.proposal.packets,...(entry.proposal.sleepRoll!==undefined?{sleepRoll:entry.proposal.sleepRoll}:{}),
     ...(benefit&&packet?{temporaryHitPoints:{roll:packet.temporaryHitPointsRoll,bonus:benefit.bonus,total:packet.temporaryHitPointsRoll+benefit.bonus,keptPrevious:packet.keepTemporaryHitPoints}}:{})}
+}
+
+function sleepTargets(context) {
+  return context.targets.map(turn=>{
+    const sheet=turn.sheet,profile=sheet?defenseProfile(sheet,undefined,context.weaponContext.active,turn.id,undefined,context.weaponContext.data):undefined
+    const race=sheet&&context.weaponContext.data.verified?.reviewedEntities.find(e=>e.id==='phb2014:race:'+sheet.playerDetails?.['creation.race']||e.id.startsWith('phb2014:race:')&&[e.name,e.nameIt].some(name=>name?.toLowerCase()===sheet.race?.toLowerCase()))
+    const traits=Array.isArray(race?.mechanics.traits)?race.mechanics.traits:[]
+    const magicalSleep=traits.some(trait=>trait.mechanics?.immuneTo?.includes('magical-sleep'))
+    const immune=profile?.conditionImmunities.some(c=>['charmed','affascinato','affascinata','unconscious','privo di sensi','magical-sleep','sonno magico'].includes(c))||profile?.spellImmunities?.includes('phb2014:spell:sleep')
+    const unconscious=conditionsFor(context.weaponContext.active,turn.id).some(c=>['unconscious','Privo di sensi'].includes(c))
+    const hp=turn.hitPoints??sheet?.hitPoints
+    return {id:turn.id,hitPoints:damage(hp)?Number(hp):undefined,unavailableReason:creatureType(sheet)==='undead'?'I non morti non sono influenzati da Sonno.':magicalSleep||immune?'Immune a Sonno.':unconscious?'Creatura già priva di sensi.':undefined}
+  })
 }
 
 export function actionChoices(context,game,db) {
   return {revision:game.revision,canPropose:context.canPropose,blockedReason:context.blockedReason,ownerId:context.owner?.id ?? null,actions:context.actions.map(({key,ability,options,error,info,mode,attackBonus})=>({key,windDirection:windDirectionChoice(context,game,ability),attackBonus,effects:spellEffectDetails({...ability,resolutionEffects:ability.resolutionEffects??resolutionPlan(context.record.sheet,ability,context.catalog,ability.useOption,context.weaponContext)?.effects},context.targets.map(target=>({...target,name:target.sheet?.name??target.description})),game.state.abilities,context.weaponContext.data),weaponEffects:weaponEffectDetails(ability.weaponEffects??[],game.state.turns.flatMap(turn=>{const sheet=db.characters.find(record=>record.id===turn.sheet?.id)?.sheet??turn.sheet;return sheet?[sheet]:[]})),lastCast:castReceipt(context,game,ability),additionalActionRequired:requiresAdditionalSpellAction(context.record.sheet,ability,context.catalog),displayName:weaponDisplayName(resolutionPlan(context.record.sheet,ability,context.catalog,undefined,context.weaponContext),context.targets.map(caster=>({id:caster.id,name:caster.sheet?.name??caster.description}))),name:ability.name,entry:info.entry,description:ability.description ?? info.entry?.description ?? '',options:options.map(option=>({...option,targeting:combatTargeting(ability,context.catalog,context.record.sheet,option.id),resolution:resolutionPlan(context.record.sheet,ability,context.catalog,option.id,context.weaponContext)})),error,
     spellLevel:info.level,group:info.level!==undefined ? 'Incantesimi' : catalogAbilityKind(info.entry,ability.section,ability.description ?? info.entry?.description).weaponAttack ? 'Attacchi fisici' : 'Abilità attivabili',
     duration:info.instantaneous ? 'Istantanea' : ability.duration==='Personalizzata' ? `${ability.remainingTurns} turni` : ability.duration,remainingTurns:ability.remainingTurns,active:!!ability.execution || ability.active && (ability.timed===false || ability.remainingTurns>0),
-    cost:ability.resourceCost ?? 1,resolution:resolutionPlan(context.record.sheet,ability,context.catalog,undefined,context.weaponContext),damageEnabled:info.damage,mode,prolonged:info.prolonged,ritual:info.ritual})),
+    ...(info.entry?.data.edition==='2014'&&ability.ruleId==='phb2014:spell:sleep'?{sleepTargets:sleepTargets(context)}:{}),cost:ability.resourceCost ?? 1,resolution:resolutionPlan(context.record.sheet,ability,context.catalog,undefined,context.weaponContext),damageEnabled:info.damage,mode,prolonged:info.prolonged,ritual:info.ritual})),
     targets:context.targets.map(turn=>({id:turn.id,name:turn.sheet?.name??turn.description,creatureType:creatureType(turn.sheet),wearingArmor:turn.sheet?wearingArmor(turn.sheet):undefined}))}
 
 }
@@ -167,7 +181,8 @@ export function requestProposal(body) {
     if(!validPackets(body.packets)||body.attackDie!==undefined)fail(400,'Pacchetti di dadi non validi.')
     try {body={...body,targets:packetTargets(body.packets)}} catch(error){fail(400,error.message)}
   }
-  if (!object(body) || Object.keys(body).some(key=>!['id','revision','key','option','cost','mode','damageEnabled','targets','attackDie','packets','effectChoice','reactionId','windDirection'].includes(key))
+  if (!object(body) || Object.keys(body).some(key=>!['id','revision','key','option','cost','mode','damageEnabled','targets','attackDie','packets','effectChoice','reactionId','windDirection','sleepRoll'].includes(key))
+    || body.sleepRoll!==undefined&&!integer(body.sleepRoll)
     || body.windDirection!==undefined&&(!integer(body.windDirection)||body.option!=='free'||body.mode!=='none'||body.damageEnabled||body.reactionId!==undefined||!Array.isArray(body.packets)||body.packets.some(p=>p.die!==undefined||p.damage.length))
     || body.reactionId!==undefined&&!uuid(body.reactionId)
     || body.effectChoice!==undefined&&typeof body.effectChoice!=='string'
@@ -287,7 +302,7 @@ export function visibleRequests(game,user) {
   // ponytail: like the sheet journal, persisted requests grow for one session; move both journals to paginated DB storage together.
   return [...entries].reverse().filter((entry,index)=>index<20 || requestStatus(game,entry)==='pending').map(entry=>({id:entry.id,characterId:entry.characterId,characterName:entry.characterName,actorName:entry.actorName,actionName:entry.actionName,
     createdAt:entry.createdAt,status:requestStatus(game,entry),additionalActionRequired:entry.resolution?.additionalActionRequired??false,optionLabel:entry.optionLabel,cost:entry.proposal.cost,windDirection:entry.proposal.windDirection!==undefined,spendsResources:!['free','cantrip','ritual'].includes(entry.proposal.option),mode:entry.proposal.mode,damageEnabled:entry.proposal.damageEnabled,prolonged:entry.prolonged,
-    ...(entry.proposal.attackDie!==undefined?{attackDie:entry.proposal.attackDie}:{}),
+    ...(entry.proposal.attackDie!==undefined?{attackDie:entry.proposal.attackDie}:{}),...(entry.proposal.sleepRoll!==undefined?{sleepRoll:entry.proposal.sleepRoll}:{}),
     ...(entry.resolution?{packets:entry.proposal.packets,rollsRevision:entry.rollsRevision??0,...(game.masterId===user?{resolution:{...entry.resolution.plan,attackAbility:entry.resolution.plan.attackAbility??(entry.resolution.plan.kind==='attack'&&!entry.resolution.plan.weaponName&&!/^sheet-attack:/.test(entry.resolution.plan.ruleId??'')?spellAttackAbility(game.state?.turns.find(t=>t.sheet?.id===entry.characterId)?.sheet):undefined)},weaponChoices:entry.resolution.weaponChoices,...(entry.resolution.wind?{wind:{...entry.resolution.wind,editable:windEditable(game,entry)}}:{})}: {})}:{}),
     targets:(entry.resolution?.wind?entry.resolution.wind.selected.map(id=>{const c=entry.resolution.wind.candidates.find(c=>c.id===id);return {id,name:c.name,roll:'',damageRoll:'',damage:'0'}}):entry.targets).map(({id,name,roll,hit,damageRoll,damage,armorClass})=>{
       const base={id,name,roll,damageRoll,damage:(entry.weaponAttack||entry.resolution)&&game.masterId!==user?(entry.proposal.targets.find(target=>target.id===id)?.damage??'0'):damage}
@@ -312,6 +327,17 @@ export function prepareAction(context,proposal,rules) {
   const action=context.actions.find(action=>action.key===proposal.key)
   if(proposal.windDirection!==undefined)return prepareWindDirection(context,proposal)
   if (!action || action.error) fail(409,action?.error || 'Azione non più disponibile nella scheda.')
+  const sleep=action.info.entry?.data.edition==='2014'&&action.ability.ruleId==='phb2014:spell:sleep'
+  if(sleep) {
+    if(!validSleepRoll(proposal.sleepRoll,sleepDice(proposal.option))||proposal.mode!=='none'||proposal.damageEnabled||proposal.packets!==undefined||proposal.cost!==1)fail(400,'Inserisci il totale dei d8 di Sonno per lo slot scelto, senza danni e con costo 1.')
+    let remaining=proposal.sleepRoll
+    const candidates=new Map(sleepTargets(context).map(target=>[target.id,target]))
+    for(const target of proposal.targets.map(t=>candidates.get(t.id)).sort((a,b)=>(a?.hitPoints??Infinity)-(b?.hitPoints??Infinity))) {
+      const reason=target?sleepTargetReason(target,remaining):'Bersaglio non disponibile.'
+      if(reason)fail(400,reason)
+      remaining-=target.hitPoints
+    }
+  } else if(proposal.sleepRoll!==undefined)fail(400,'Questa azione non prevede i dadi di Sonno.')
   if (proposal.attackDie!==undefined && (!/^sheet-attack:[0-5]$/.test(action.ability.ruleId??'')||proposal.mode!=='attack'||!proposal.damageEnabled||proposal.targets.length!==1)) fail(400,'Il d20 separato richiede un attacco con arma e un bersaglio.')
   if(proposal.packets!==undefined) {
     const plan=resolutionPlan(context.record.sheet,action.ability,context.catalog,proposal.option,context.weaponContext)
