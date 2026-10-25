@@ -47,6 +47,18 @@ entry.sleepReview={candidates:review.candidates.filter(t=>draft.targets.some(p=>
 assert(validCombatRequest(entry),'Legacy pending receipts remain readable')
 assert.equal(visibleRequests(game,game.masterId,db,rules)[0].sleepReview.candidates.length,9,'Existing pending notifications expand to all current participants')
 entry.sleepReview=originalReview
+assert.equal(visibleRequests(game,game.masterId,db,rules)[0].additionalActionRequired,false,'First action spell needs no extra action')
+const initialDetails={...mage.playerDetails}
+mage.playerDetails['rules2014.spellsThisTurn']=JSON.stringify([{level:2,unit:'action'}])
+assert.equal(visibleRequests(game,game.masterId,db,rules)[0].additionalActionRequired,true,'Legacy Sleep reviews show the approval action requirement before clicking')
+const unchanged=JSON.stringify(db)
+const actionBody={confirmed:true,sleepArea:[1,2],sleepTargets:[1,2],targets:draft.targets.map(t=>({id:t.id,damage:'0'}))}
+assert.throws(()=>applyCombatRequest(db,game,entry,rules,actionBody),/altra azione valida/)
+assert.equal(JSON.stringify(db),unchanged,'Failed approval spends no slot and records no cast')
+const extraAction=applyCombatRequest(db,game,entry,rules,{...actionBody,additionalActionConfirmed:true})
+assert.equal(JSON.parse(extraAction.sheets.find(s=>s.id===mage.id).playerDetails['rules2014.spellsThisTurn']).length,2)
+assert.equal(JSON.stringify(db),unchanged,'Preview remains immutable even with an extra action confirmation')
+mage.playerDetails=initialDetails
 const body={confirmed:true,sleepArea:[1,2,3,4,5,6,7],targets:draft.targets.map(t=>({id:t.id,damage:'0'}))}
 assert.throws(()=>applyCombatRequest(db,game,entry,rules,body),/Conferma i bersagli/)
 for(const selected of [[1,2,3],[4],[5],[6],[7],[8],[999],[1,1]])assert.throws(()=>applyCombatRequest(db,game,entry,rules,{...body,sleepTargets:selected}))

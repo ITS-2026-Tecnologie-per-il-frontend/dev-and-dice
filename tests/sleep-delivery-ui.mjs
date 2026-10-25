@@ -21,7 +21,7 @@ let masterContext
 try{
  const master=(await api(null,'/api/register','POST',{username:'SleepMaster',password:'isolated-test-password'})).cookie,player=(await api(null,'/api/register','POST',{username:'SleepPlayer',password:'isolated-test-password'})).cookie
  const {catalog}=await combatRules(),spell=templateFromCatalog(catalog.abilities.find(e=>e.data.referenceId==='phb2014:spell:sleep'))
- const sheet={...newCharacterSheet(),name:'Maga',characterClass:'Mago',level:'9',hitPoints:'30',abilities:[spell],playerDetails:{'slots.1.total':'4','slots.1.used':'4','slots.2.total':'3','slots.2.used':'2'}}
+ const sheet={...newCharacterSheet(),name:'Maga',characterClass:'Mago',level:'9',hitPoints:'30',abilities:[spell],playerDetails:{'rules2014.spellsThisTurn':JSON.stringify([{level:2,unit:'action'}]),'slots.1.total':'4','slots.1.used':'4','slots.2.total':'3','slots.2.used':'2'}}
  const game=(await api(master,'/api/play/games','POST',{name:'Sleep delivery'})).json,path='/api/play/games/'+game.id
  await api(player,'/api/play/invites/'+game.inviteToken+'/join','POST',{sheet})
  const target={...newCharacterSheet(),name:'Goblin',kind:'Mostro',hitPoints:'6',armorClass:'12'}
@@ -56,15 +56,19 @@ try{
  await page.getByText('In attesa del Master',{exact:true}).first().waitFor()
  const masterView=(await api(master,path)).json,request=masterView.combatRequests.find(r=>r.actionName==='Sonno')
  assert(request,'The real Master receives the request')
+ assert.equal(request.additionalActionRequired,true,'Sleep shows a previously used action before approval')
+ assert.equal(masterView.state.turns[0].sheet.playerDetails['slots.2.used'],'2','A pending proposal spends no slot')
+ assert.equal(JSON.parse(masterView.state.turns[0].sheet.playerDetails['rules2014.spellsThisTurn']).length,1,'Pending Sleep is not counted as an executed cast')
  assert.equal(request.sleepRoll,40);assert.equal(request.sleepReview.candidates.find(t=>t.id===1).hitPoints,6)
  assert.equal(request.sleepReview.candidates.length,2);assert.deepEqual(request.sleepReview.area,[1]);assert.deepEqual(request.sleepReview.selected,[1])
  masterContext=await browser.newContext()
  await masterContext.addCookies([{name:master.split('=')[0],value:master.slice(master.indexOf('=')+1),domain:'127.0.0.1',path:'/'}])
  const masterPage=await masterContext.newPage();masterPage.on('pageerror',e=>errors.push(e.message))
- let legacyReview=true
+ let legacyReview=true,suppressActionWarning=true
  await masterPage.route('**/api/play/games/'+game.id,async route=>{
   const response=await route.fetch(),gameView=await response.json()
   if(legacyReview)for(const r of gameView.combatRequests)if(r.sleepReview)r.sleepReview={candidates:r.sleepReview.candidates.filter(t=>r.targets.some(p=>p.id===t.id)).map(({name:_name,...t})=>t),selected:[]}
+  if(suppressActionWarning)for(const r of gameView.combatRequests)r.additionalActionRequired=false
   await route.fulfill({response,json:gameView})
  })
  await masterPage.goto(`http://127.0.0.1:${frontend.httpServer.address().port}/games/${game.id}`)
@@ -79,15 +83,27 @@ try{
  assert(!await masterReview.getByRole('checkbox',{name:'Nell’area: Maga',exact:true}).isChecked(),'New candidates preserve the original area proposal')
  await masterReview.getByRole('checkbox',{name:'Nell’area: Maga',exact:true}).check()
  assert(await masterReview.getByRole('checkbox',{name:'Si addormenta: Maga',exact:true}).isChecked())
- const approved=(await api(master,path+'/requests/'+request.id+'/approve','POST',{revision:masterView.revision,confirmed:true,sleepArea:[0,1],sleepTargets:[1,0],targets:[{id:1,damage:'0'}]})).json
+ const actionConfirmation=masterPage.getByRole('checkbox',{name:/Confermo un’altra azione valida/})
+ assert.equal(await actionConfirmation.count(),0)
+ suppressActionWarning=false
+ await actionConfirmation.waitFor({timeout:6500})
+ assert(await masterPage.getByRole('button',{name:'Approva azione',exact:true}).isDisabled(),'Additional-action confirmation is required before approval')
+ assert(await masterReview.getByRole('checkbox',{name:'Nell’area: Maga',exact:true}).isChecked(),'Updating requirements preserves Master area edits')
+ await actionConfirmation.check()
+ const confirmation=masterPage.waitForResponse(r=>r.request().method()==='POST'&&r.url().endsWith('/approve'))
+ await masterPage.getByRole('button',{name:'Approva azione',exact:true}).click()
+ const confirmationResponse=await confirmation
+ assert.equal(confirmationResponse.status(),200,await confirmationResponse.text())
+ const approved=await confirmationResponse.json()
  assert.deepEqual(approved.combatRequests.find(r=>r.id===request.id).sleepReview.selected,[1,0])
  assert.deepEqual(approved.state.abilities.find(a=>a.ruleId===spell.ruleId).targets.map(t=>t.id),[1,0])
  assert.equal(approved.state.turns[0].sheet.playerDetails['slots.2.used'],'3')
+ assert.equal(JSON.parse(approved.state.turns[0].sheet.playerDetails['rules2014.spellsThisTurn']).length,2,'Only approval records the second cast')
  const after=(await api(player,path)).json
  assert.equal(after.combatRequests[0].sleepReview,undefined)
  assert.deepEqual(after.combatRequests[0].targets.filter(t=>t.asleep).map(t=>t.id),[0,1])
  const archived=JSON.parse(await readFile(join(dataDir,'games.json'),'utf8')).games[0].combatRequests[0]
- assert.deepEqual(archived.sleepReview.area,[0,1]);assert.deepEqual(archived.sleepReview.selected,[1,0])
+ assert.deepEqual(archived.sleepReview.area.slice().sort((a,b)=>a-b),[0,1]);assert.deepEqual(archived.sleepReview.selected,[1,0])
  assert.deepEqual(errors,[])
  console.log('PASS Sleep real browser/API: preserved legacy form, slot 2/40, visible retry error, request delivery, same-revision Master review refresh, legacy names, approval, one slot spent and saved active targets')
 }finally{await masterContext?.close();await page.unrouteAll({behavior:'wait'});await browser.close();await frontend.close();await new Promise(r=>backend.close(r));await rm(dir,{recursive:true,force:true});await rm(dataDir,{recursive:true,force:true})}
