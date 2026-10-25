@@ -51,6 +51,7 @@ export function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDe
     const calculatedDamageFor=(target:CombatTarget)=>target.resolution?target.resolution.damage===null?'':String(target.resolution.damage):target.attack?.hit===false?'0':target.damage
     const damageFor=(target:CombatTarget)=>damages[target.id]??calculatedDamageFor(target)
     const effectTargets=request.targets.filter(t=>t.resolution?.packets.some(p=>p.effects.some(e=>e.kind==='condition'||e.kind==='speed'||e.kind==='roll-bonus'&&e.trigger!=='always')))
+    const targetNames=new Map(request.targets.map(target=>[target.id,target.name]))
 
     const weaponEffect=request.resolution?.weaponEffect
     const missingWeapon=!!weaponEffect&&request.targets.some(t=>!weapons[t.id]?.itemId||!!weaponEffect.extraDamage&&!weapons[t.id]?.damageType||!!weaponEffect.damageDice&&weapons[t.id]?.useCastingAbility!==false&&weaponEffect.castingModifier===undefined)
@@ -67,7 +68,7 @@ export function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDe
     }
     const pending=request.status==='pending',stale=request.status==='stale'
     return <article className="combat-request combat-request--review" aria-busy={busy}><header className="combat-request-heading"><div className="combat-request-title"><h3>{request.actionName}</h3><InfoButton label="Dettagli" name={request.actionName} entry={entry} description={ability?.description||catalogStatus||request.resolution?.notes.join('\n')||'Descrizione non disponibile. Consulta la scheda del personaggio.'} fields={ability?{duration:ability.duration}:{}}/></div><p className="combat-request-state" data-state={request.status} role="status">{statusLabels[request.status]}</p></header><RequestDescription request={request} review/>
-        {request.sleepReview&&<SleepReview review={request.sleepReview} total={request.sleepRoll??0} area={sleepArea} selected={sleepSelected} disabled={disabled||busy||!pending} onChange={(area,selected)=>{setSleepArea(area);setSleepSelected(selected)}}/>}
+        {request.sleepReview&&<SleepReview review={{...request.sleepReview,candidates:request.sleepReview.candidates.map(target=>({...target,name:target.name||targetNames.get(target.id)||'Creatura'}))}} total={request.sleepRoll??0} area={sleepArea} selected={sleepSelected} disabled={disabled||busy||!pending} onChange={(area,selected)=>{setSleepArea(area);setSleepSelected(selected)}}/>}
         {!request.sleepReview&&<ResolutionDetails request={request} review renderSave={target=><MasterSavingRolls request={request} target={target} disabled={disabled||busy} onDecide={onDecide}/>} renderPacket={(target,index)=><MasterCriticalRolls request={request} target={target} index={index} disabled={disabled||busy} onDecide={onDecide}/>} renderTarget={target=>{
             if(!pending||!request.damageEnabled)return null
             const original=calculatedDamageFor(target),value=damageFor(target)

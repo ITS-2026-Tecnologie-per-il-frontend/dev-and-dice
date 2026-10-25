@@ -17,6 +17,7 @@ const base=`http://127.0.0.1:${backend.address().port}`
 const frontend=await createServer({logLevel:'error',server:{host:'127.0.0.1',port:0,proxy:{'/api':{target:base}}}});await frontend.listen()
 const browser=await chromium.launch({headless:true}),page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message))
 async function api(cookie,path,method='GET',body){const r=await fetch(base+path,{method,headers:{...(cookie?{Cookie:cookie}:{}),...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});const json=await r.json();assert(r.ok,`${method} ${path}: ${r.status} ${JSON.stringify(json)}`);return {json,cookie:r.headers.get('set-cookie')?.split(';')[0]}}
+let masterContext
 try{
  const master=(await api(null,'/api/register','POST',{username:'SleepMaster',password:'isolated-test-password'})).cookie,player=(await api(null,'/api/register','POST',{username:'SleepPlayer',password:'isolated-test-password'})).cookie
  const {catalog}=await combatRules(),spell=templateFromCatalog(catalog.abilities.find(e=>e.data.referenceId==='phb2014:spell:sleep'))
@@ -57,6 +58,27 @@ try{
  assert(request,'The real Master receives the request')
  assert.equal(request.sleepRoll,40);assert.equal(request.sleepReview.candidates.find(t=>t.id===1).hitPoints,6)
  assert.equal(request.sleepReview.candidates.length,2);assert.deepEqual(request.sleepReview.area,[1]);assert.deepEqual(request.sleepReview.selected,[1])
+ masterContext=await browser.newContext()
+ await masterContext.addCookies([{name:master.split('=')[0],value:master.slice(master.indexOf('=')+1),domain:'127.0.0.1',path:'/'}])
+ const masterPage=await masterContext.newPage();masterPage.on('pageerror',e=>errors.push(e.message))
+ let legacyReview=true
+ await masterPage.route('**/api/play/games/'+game.id,async route=>{
+  const response=await route.fetch(),gameView=await response.json()
+  if(legacyReview)for(const r of gameView.combatRequests)if(r.sleepReview)r.sleepReview={candidates:r.sleepReview.candidates.filter(t=>r.targets.some(p=>p.id===t.id)).map(({name:_name,...t})=>t),selected:[]}
+  await route.fulfill({response,json:gameView})
+ })
+ await masterPage.goto(`http://127.0.0.1:${frontend.httpServer.address().port}/games/${game.id}`)
+ await masterPage.getByRole('button',{name:/^Azioni dei giocatori:/}).click()
+ const masterReview=masterPage.getByRole('region',{name:'Risoluzione di Sonno',exact:true})
+ await masterReview.waitFor()
+ assert.equal(await masterReview.getByRole('checkbox',{name:/^Nell’area:/}).count(),1)
+ assert(await masterReview.getByRole('checkbox',{name:'Nell’area: Goblin',exact:true}).isChecked(),'Legacy candidate names come from the original targets')
+ legacyReview=false
+ await masterReview.getByRole('checkbox',{name:'Nell’area: Maga',exact:true}).waitFor({timeout:6500})
+ assert.equal(await masterReview.getByRole('checkbox',{name:/^Nell’area:/}).count(),2,'Same-revision enriched notifications replace the cached review')
+ assert(!await masterReview.getByRole('checkbox',{name:'Nell’area: Maga',exact:true}).isChecked(),'New candidates preserve the original area proposal')
+ await masterReview.getByRole('checkbox',{name:'Nell’area: Maga',exact:true}).check()
+ assert(await masterReview.getByRole('checkbox',{name:'Si addormenta: Maga',exact:true}).isChecked())
  const approved=(await api(master,path+'/requests/'+request.id+'/approve','POST',{revision:masterView.revision,confirmed:true,sleepArea:[0,1],sleepTargets:[1,0],targets:[{id:1,damage:'0'}]})).json
  assert.deepEqual(approved.combatRequests.find(r=>r.id===request.id).sleepReview.selected,[1,0])
  assert.deepEqual(approved.state.abilities.find(a=>a.ruleId===spell.ruleId).targets.map(t=>t.id),[1,0])
@@ -67,5 +89,5 @@ try{
  const archived=JSON.parse(await readFile(join(dataDir,'games.json'),'utf8')).games[0].combatRequests[0]
  assert.deepEqual(archived.sleepReview.area,[0,1]);assert.deepEqual(archived.sleepReview.selected,[1,0])
  assert.deepEqual(errors,[])
- console.log('PASS Sleep real browser/API: preserved legacy form, slot 2/40, visible retry error, request delivery, private Master review, approval, one slot spent and saved active targets')
-}finally{await page.unrouteAll({behavior:'wait'});await browser.close();await frontend.close();await new Promise(r=>backend.close(r));await rm(dir,{recursive:true,force:true});await rm(dataDir,{recursive:true,force:true})}
+ console.log('PASS Sleep real browser/API: preserved legacy form, slot 2/40, visible retry error, request delivery, same-revision Master review refresh, legacy names, approval, one slot spent and saved active targets')
+}finally{await masterContext?.close();await page.unrouteAll({behavior:'wait'});await browser.close();await frontend.close();await new Promise(r=>backend.close(r));await rm(dir,{recursive:true,force:true});await rm(dataDir,{recursive:true,force:true})}

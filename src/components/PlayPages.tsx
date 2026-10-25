@@ -251,7 +251,9 @@ function SessionPage() {
             if(current?.role==='player'&&next.role==='player'&&current.notes.revision>next.notes.revision)next.notes=current.notes
             if(current?.role==='player'&&next.role==='player'&&current.character.revision>next.character.revision)next.character=current.character
             if(current && current.notifications.revision>next.notifications.revision) next.notifications=current.notifications
-            if(JSON.stringify(current?.reactionWindows?.map(w=>[w.id,w.status,w.expiresAt]))!==JSON.stringify(next.reactionWindows?.map(w=>[w.id,w.status,w.expiresAt]))||current?.revision!==next.revision||current?.requestsRevision!==next.requestsRevision||current?.notifications.revision!==next.notifications.revision||current?.role==='player'&&next.role==='player'&&current.notes.revision!==next.notes.revision){gameRef.current=next;setGame(next)}setError('')
+            // Legacy reviews can gain names and candidates without a gameplay revision.
+            const sleepReviewsChanged=next.role==='master'&&JSON.stringify(current?.combatRequests.map(request=>request.sleepReview))!==JSON.stringify(next.combatRequests.map(request=>request.sleepReview))
+            if(sleepReviewsChanged||JSON.stringify(current?.reactionWindows?.map(w=>[w.id,w.status,w.expiresAt]))!==JSON.stringify(next.reactionWindows?.map(w=>[w.id,w.status,w.expiresAt]))||current?.revision!==next.revision||current?.requestsRevision!==next.requestsRevision||current?.notifications.revision!==next.notifications.revision||current?.role==='player'&&next.role==='player'&&current.notes.revision!==next.notes.revision){gameRef.current=next;setGame(next)}setError('')
         }catch(error){if(active)setError(message(error))}finally{inFlight=false}}
         void refresh()
         // ponytail: polling ogni 2 secondi per questa versione; migrazione a WebSocket pianificata nel README per ridurre la latenza.
