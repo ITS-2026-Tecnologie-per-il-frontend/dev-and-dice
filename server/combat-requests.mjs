@@ -8,8 +8,8 @@ import { catalogAbilityKind, parseCatalog, sheetWithCombatAbilities } from '../s
 import { withWizardCatalog } from '../src/utils/PlayerCreation.ts'
 import { spellEdition } from '../src/utils/Spellcasting.ts'
 import { resolutionPlan, directBenefit, weaponDisplayName, weaponEffectDetails, spellEffectDetails, weaponCandidates as availableWeapons, enchantWeapon, spellAttackAbility, damageNames, conditionNames, defenseProfile, validPackets, assertPacketPlan, packetTargets, resolveTarget, activeEffects, validEffectSpecs, saveNames, validWeaponEffect } from '../src/domain/dnd/CombatResolution.ts'
-import { conditionsFor, endIncapacitatedConcentration, settleCombatEffects } from '../src/domain/dnd/CombatConditions.ts'
-import { sleepDice, validSleepRoll, sleepAllocation } from '../src/domain/dnd/Sleep.ts'
+import { conditionsFor, isIncapacitated, endIncapacitatedConcentration, settleCombatEffects } from '../src/domain/dnd/CombatConditions.ts'
+import { sleepDice, validSleepRoll, sleepAllocation, wakeSleep } from '../src/domain/dnd/Sleep.ts'
 import { combatTargeting, creatureType, wearingArmor, assertTargetTypes } from '../src/domain/dnd/CombatTargets.ts'
 
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status})}
@@ -67,11 +67,11 @@ export function actionContext(db,game,user,rules,preview=false,characterId,selec
   const record=db.characters.find(record=>record.id===(user===game.masterId?characterId:member?.characterId) && record.ownerId===user && record.gameId===game.id)
   if (!record) fail(403,'Le richieste sono riservate al giocatore del personaggio.')
   const owners=game.state.turns.filter(turn=>turn.sheet?.id===record.id)
-  const blocked=owners.length===1&&activeEffects(game.state.abilities).some(a=>(a.targets?.length?a.targets.some(t=>t.id===owners[0].id):a.ownerId===owners[0].id)&&a.resolutionEffects?.some(e=>e.kind==='condition'&&['paralyzed','incapacitated','stunned','unconscious'].includes(e.condition)))
+  const blocked=owners.length===1&&isIncapacitated(game.state.abilities,owners[0].id)
   const canPropose=!blocked&&owners.length===1 && game.state.combat?.activeId===owners[0].id
   if (!preview && !canPropose) fail(409,blocked?'Il personaggio non può agire mentre è incapacitato.':'Puoi proporre un’azione soltanto durante il tuo turno.')
   const owner=owners[0],catalog=catalogForSheet(rules.data,rules.catalog,record.sheet)
-  const weaponContext={data:rules.data,active:game.state.abilities}
+  const weaponContext={data:rules.data,active:settleCombatEffects(game.state.abilities,game.state.turns,game.state.combat).abilities}
   const templates=sheetWithCombatAbilities(record.sheet,catalog).abilities
   const actions=templates.map((template,index)=>{
     // Preserve canonical keys while avoiding resolution/resource work for unrelated actions.
@@ -161,7 +161,7 @@ function sleepTargets(context) {
     const traits=Array.isArray(race?.mechanics.traits)?race.mechanics.traits:[]
     const magicalSleep=traits.some(trait=>trait.mechanics?.immuneTo?.includes('magical-sleep'))
     const immune=profile?.conditionImmunities.some(c=>['charmed','affascinato','affascinata','unconscious','privo di sensi','magical-sleep','sonno magico'].includes(c))||profile?.spellImmunities?.includes('phb2014:spell:sleep')
-    const unconscious=conditionsFor(context.weaponContext.active,turn.id).some(c=>['unconscious','Privo di sensi'].includes(c))
+    const unconscious=conditionsFor(context.weaponContext.active,turn.id).some(c=>['unconscious','Privo di sensi','Addormentato'].includes(c))
     const hp=turn.hitPoints??sheet?.hitPoints
     return {id:turn.id,hitPoints:damage(hp)?Number(hp):undefined,unavailableReason:creatureType(sheet)==='undead'?'I non morti non sono influenzati da Sonno.':magicalSleep||immune?'Immune a Sonno.':unconscious?'Creatura già priva di sensi.':undefined}
   })
@@ -412,13 +412,15 @@ export function applyCombatRequest(db,game,entry,rules,body) {
       && (entry.proposal.damageEnabled && (entry.proposal.mode!=='attack' || entry.proposal.attackDie!==undefined || entry.resolution || proposed.find(original=>original.id===target.id).hit) || target.damage==='0'))) fail(400,'Conferma i danni finali di ogni bersaglio.')
   const turns=game.state.turns.map(turn=>{
     const record=db.characters.find(record=>record.gameId===game.id && record.id===turn.sheet?.id)
-    const canonical=record?.id===context.record.id ? sheet : record?.sheet
+    const saved=record?.id===context.record.id ? sheet : record?.sheet
+    const canonical=saved&&isIncapacitated(context.weaponContext.active,turn.id)&&saved.playerDetails?.['rules2014.concentration']?{...saved,playerDetails:{...saved.playerDetails,'rules2014.concentration':''}}:saved
     return canonical ? {...turn,sheet:{...canonical,abilities:turn.sheet.abilities},hitPoints:canonical.hitPoints,temporaryHitPoints:canonical.playerDetails?.temporaryHitPoints ?? ''} : turn
   })
-  const resolving={...ability,...(entry.resolution?.plan.deferredSave?{windSave:{dc:entry.resolution.plan.deferredSave.dc}}:{}),useOption:entry.proposal.option,damageEnabled:entry.proposal.damageEnabled,execution:{id:entry.id,phase:'resolving',option:entry.proposal.option,cost:entry.proposal.cost},targets:sleepReview?sleepReview.selected.map(id=>({id,damage:'0',resolved:true})):body.targets.map(({id,damage})=>({id,damage,resolved:true}))}
+  const resolving={...ability,...(sleepReview?{resolutionEffects:undefined}:{}),...(entry.resolution?.plan.deferredSave?{windSave:{dc:entry.resolution.plan.deferredSave.dc}}:{}),useOption:entry.proposal.option,damageEnabled:entry.proposal.damageEnabled,execution:{id:entry.id,phase:'resolving',option:entry.proposal.option,cost:entry.proposal.cost},targets:sleepReview?sleepReview.selected.map(id=>({id,damage:'0',resolved:true})):body.targets.map(({id,damage})=>({id,damage,resolved:true}))}
   let updated
   try {updated=resolveCombatDamage(resolving,turns,context.catalog)} catch(error) {fail(409,error.message)}
   const sheets=new Map([[sheet.id,sheet]])
+  for(const turn of updated)if(turn.sheet&&db.characters.some(r=>r.id===turn.sheet.id&&r.gameId===game.id&&r.sheet.playerDetails?.['rules2014.concentration'])&&!turn.sheet.playerDetails?.['rules2014.concentration'])sheets.set(turn.sheet.id,turn.sheet)
   updated=updated.map(turn=>{
     if(entry.resolution?.plan.temporaryHitPoints&&proposed.some(t=>t.id===turn.id)){
       const amount=resolveRequestTarget(entry,turn.id).temporaryHitPoints
@@ -454,7 +456,7 @@ export function applyCombatRequest(db,game,entry,rules,body) {
   // A sheet action may not yet have a combat row; never reuse its placeholder ID.
   const existing=game.state.abilities.find(item=>item.id===ability.id&&item.ownerId===context.owner.id && (ability.catalogId ? item.catalogId===ability.catalogId : item.name===ability.name))
   const keepPrevious=!!entry.resolution?.plan.temporaryHitPoints&&entry.proposal.packets[0].keepTemporaryHitPoints
-  const abilities=game.state.abilities.filter(item=>keepPrevious||item!==existing).map(item=>((rage || action.info.concentration || ability.concentration) && item.ownerId===context.owner.id && (item.concentration || item.execution?.phase==='casting') || existing&&item.sourceEffectId===existing.id) ? {...item,active:false,execution:undefined,remainingTurns:0} : item)
+  const abilities=context.weaponContext.active.filter(item=>keepPrevious||item!==existing).map(item=>((rage || action.info.concentration || ability.concentration) && item.ownerId===context.owner.id && (item.concentration || item.execution?.phase==='casting') || existing&&item.sourceEffectId===existing.id) ? {...item,active:false,execution:undefined,remainingTurns:0} : item)
   if (!keepPrevious&&(!action.info.instantaneous || enchantments.length)&&(!sleepReview||sleepReview.selected.length)) {
     if (abilities.length>=2000) fail(409,'Limite delle abilità in combattimento raggiunto.')
     const id=existing?.id ?? Math.max(-1,...abilities.map(item=>item.id))+1
@@ -486,8 +488,9 @@ export function applyCombatRequest(db,game,entry,rules,body) {
     }
     if(abilities.length>2000)fail(409,'Limite degli effetti in combattimento raggiunto.')
   }
-  const incapacitated=endIncapacitatedConcentration(abilities,updated)
-  const settled=settleCombatEffects(incapacitated.abilities,incapacitated.turns)
+  const awake=wakeSleep(abilities,body.targets.filter(t=>Number(t.damage)>0).map(t=>t.id))
+  const incapacitated=endIncapacitatedConcentration(awake,updated)
+  const settled=settleCombatEffects(incapacitated.abilities,incapacitated.turns,game.state.combat)
   for(const turn of settled.turns)if(turn.sheet&&turn.sheet!==updated.find(t=>t.id===turn.id)?.sheet)sheets.set(turn.sheet.id,turn.sheet)
   return {targets:body.targets,state:{...game.state,turns:settled.turns,abilities:settled.abilities},sheets:[...sheets.values()],...(wind?{wind}:{}),...(sleepReview?{sleepReview}:{})}
 }
@@ -514,7 +517,7 @@ export function createRequestResolution(db,game,context,action,proposal,rules) {
   if(!plan.effectChoices?.length&&proposal.effectChoice!==undefined)fail(400,'Questa azione non richiede una scelta di protezione.')
   if(plan.effectChoices?.length)plan.effects=plan.effects.map(e=>e.kind==='resistance'?{...e,types:[proposal.effectChoice]}:e)
   // Reuse catalog effects activated through either the player or Master interface.
-  const active=game.state.abilities.map(ability=>{
+  const active=context.weaponContext.active.map(ability=>{
     // D&D_5_Player_Original_Handbook.pdf, PDF 204 (Concentration): deferred saves follow the end of the caster's previous concentration.
     if(proposal.windDirection===undefined&&plan.deferredSave&&ability.ownerId===context.owner.id&&ability.concentration)return {...ability,active:false,execution:undefined,remainingTurns:0}
     if(ability.resolutionEffects)return ability

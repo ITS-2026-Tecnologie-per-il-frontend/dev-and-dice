@@ -1,3 +1,4 @@
+import { wakeSleep, wakeWithAction } from '../domain/dnd/Sleep'
 import { beginWindTurn, pendingWindSaves, resolveWindSave as resolveWindSaveState } from '../domain/dnd/WindTurns'
 import {ReactionContext} from './ReactionContext'
 import { lazy, memo, Suspense, useContext, useLayoutEffect, useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type DragEvent, type ReactNode } from 'react'
@@ -14,7 +15,7 @@ import { getDropIndex, getDropTargetId, reorderByDrop, reorderById } from '../ut
 import { catalogAbilityKind, refreshCombatSheetAbilities, sheetFromCatalog, sheetWithCombatAbilities, type Catalog, type CatalogEntry } from '../utils/Catalog'
 import { RepeatSavingThrow } from './RepeatSavingThrow'
 import { activeEffects as effectiveAbilities, conditionNames, resolutionPlan, enchantWeapon, saveNames } from '../domain/dnd/CombatResolution'
-import { conditionEffectName, conditionsFor, pendingRepeatSaves, endIncapacitatedConcentration, settleCombatEffects } from '../domain/dnd/CombatConditions'
+import { conditionEffectName, conditionsFor, isIncapacitated, pendingRepeatSaves, endIncapacitatedConcentration, settleCombatEffects } from '../domain/dnd/CombatConditions'
 import { creatureType, creatureTypeNames, assertTargetTypes, combatTargeting, assertCombatTargets } from '../domain/dnd/CombatTargets'
 import { CatalogSearch } from './CatalogSearch'
 import { applyCreation, translatedCreationData, patchCalculatedSheetStats, type CreationData } from '../utils/PlayerCreation'
@@ -289,6 +290,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
                     : undefined } : turn,
             ),
         )
+        if(field==='hitPoints'&&Number(updatedValue)<Number(turn.hitPoints))setAbilities(current=>wakeSleep(current,[id]))
         return true
     }
 
@@ -308,11 +310,30 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
         if (!turn) return
         const temporaryHitPoints = turn.temporaryHitPoints
         const result = hitPointsAfterDamageWithTemporary(turn.hitPoints, temporaryHitPoints ?? '', turn.damage ?? '')
-        if (result !== null && updateTurn(id, 'hitPoints', result.hitPoints, 'damage', temporaryHitPoints === undefined ? undefined : result.temporaryHitPoints)
-            && creationData?.verified && turn.sheet && spellEdition(turn.sheet)==='2014' && turn.sheet.playerDetails?.['rules2014.concentration'] && Number(turn.damage)>0) {
+        if(result!==null&&Number(turn.damage)>0) {
+            if(!updateTurn(id,'hitPoints',result.hitPoints,'damage',temporaryHitPoints===undefined?undefined:result.temporaryHitPoints))return
+            setAbilities(current=>wakeSleep(current,[id]))
+        }
+        if (result !== null && creationData?.verified && turn.sheet && spellEdition(turn.sheet)==='2014' && turn.sheet.playerDetails?.['rules2014.concentration'] && Number(turn.damage)>0) {
             const save=concentrationSave(creationData.verified,Number(turn.damage))
             setTurns((turns)=>turns.map((turn)=>turn.id===id ? {...turn,concentrationChecks:[...(turn.concentrationChecks ?? []),save.dc]} : turn))
         }
+    }
+
+    function standUp(id:number) {
+        const turn=turns.find(t=>t.id===id)
+        if(combat&&combat.activeId!==id||isIncapacitated(abilities,id)||conditionsFor(abilities,id).includes('Trattenuto')||turn?.sheet&&parseFloat(turn.sheet.speed)===0){setCombatRuleError('Per rialzarti devi poter agire, avere velocità maggiore di 0 e spendere metà della tua velocità in movimento; in combattimento deve essere il tuo turno.');return}
+        setAbilities(current=>current.map(a=>a.ownerId===id&&!a.targets?.length&&a.resolutionEffects?.some(e=>e.kind==='condition'&&e.condition==='prone')?{...a,active:false,remainingTurns:0}:a))
+        setCombatRuleError('')
+    }
+
+    function wakeSleeper(id:number) {
+        try {
+            if(!combat){setAbilities(current=>wakeSleep(current,[id]));setCombatRuleError('');return}
+            const result=wakeWithAction(abilities,turns,combat.activeId,id)
+            if(sheetEditor.current?.patchMany([result.sheet])===false)throw new Error('Salvataggio dell’azione non riuscito.')
+            setAbilities(result.abilities);setTurns(result.turns);setCombatRuleError('')
+        }catch(error){setCombatRuleError(error instanceof Error?error.message:'Risveglio non riuscito.')}
     }
 
     function resolveConcentration(id:number,success:boolean) {
@@ -334,7 +355,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
     async function redirectWind(ability:Ability,selected:number[],id:string){
         const source=effectiveAbilities(abilities).find(a=>a.id===ability.id&&a.ruleId==='phb2014:spell:gust-of-wind')
         if(!source||combat?.activeId!==source.ownerId)throw new Error('Il cambio direzione richiede un effetto attivo e il turno del lanciatore.')
-        if(conditionsFor(abilities,source.ownerId!).some(c=>['Paralizzato','Incapacitato','Stordito','Privo di sensi'].includes(c)))throw new Error('Il personaggio non può agire.')
+        if(isIncapacitated(abilities,source.ownerId!))throw new Error('Il personaggio non può agire.')
         const owner=turns.find(t=>t.id===source.ownerId)?.sheet
         if(!owner)throw new Error('Scheda del lanciatore non disponibile.')
         const spent=spendBonusAction(owner)
@@ -351,7 +372,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
             if (!turn) throw new Error('Seleziona il proprietario dell’abilità.')
             if (turn.availableAbilityIndexes && ability.sheetAbilityIndex!==undefined && !turn.availableAbilityIndexes.includes(ability.sheetAbilityIndex)) throw new Error('Questa abilità non è più disponibile nella scheda.')
             const info=combatAbilityInfo(ability,ownerCatalog),option=selectedUseOption(owner,ability,ownerCatalog,creationData)
-            if(conditionsFor(abilities,ability.ownerId!).includes('Paralizzato'))throw new Error('Il personaggio non può agire mentre è paralizzato.')
+            if(isIncapacitated(abilities,ability.ownerId!))throw new Error('Il personaggio non può agire mentre è incapacitato.')
             assertCombatTargets(ability,ownerCatalog,owner,option?.id)
             assertTargetTypes(combatTargeting(ability,ownerCatalog,owner,option?.id),turns,ability.targets?.map(t=>t.id)??[])
             if (owner && spellEdition(owner)==='2024' && ability.ruleId?.includes('2014:')) throw new Error('Questa voce usa regole 2014: scegli la voce dell’edizione corretta.')
@@ -377,7 +398,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
         if (owner&&spellEdition(owner)==='2024'&&ability.ruleId?.includes('2014:')) throw new Error('Questa voce usa regole 2014: scegli la voce dell’edizione corretta.')
         if (info.unit==='bonus-action' && combat && ability.ownerId!==combat.activeId) throw new Error('L’azione bonus richiede il turno del personaggio.')
         if ((ability.concentration || info.concentration) && owner?.playerDetails?.['rules2014.raging']==='true') throw new Error('Durante l’ira non puoi mantenere concentrazione.')
-        const castingOwner=owner && !combat ? {...owner,playerDetails:{...owner.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]','combat.bonusActionUsed':'false'}} : owner
+        const castingOwner=owner && !combat ? {...owner,playerDetails:{...owner.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]','combat.bonusActionUsed':'false','combat.actionUsed':'false'}} : owner
         const spent=castingOwner ? spendCombatUse(castingOwner,ability,ownerCatalog,creationData,ability.execution.option,ability.execution.cost) : undefined
         const details={...spent?.playerDetails,...(rage ? {'rules2014.raging':'true','rules2014.concentration':''} : {}),
             ...(ability.concentration || info.concentration ? {'rules2014.concentration':ability.ruleId ?? ability.catalogId ?? ability.name} : {}),
@@ -401,11 +422,11 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
             const alreadyCast=abilities.some(item=>item.id===ability.id&&item.execution?.id===ability.execution?.id)
             let resolvingTurns=turns
             if(owner&&!alreadyCast) {
-                if(conditionsFor(abilities,ability.ownerId!).includes('Paralizzato'))throw new Error('Il personaggio non può agire mentre è paralizzato.')
+                if(isIncapacitated(abilities,ability.ownerId!))throw new Error('Il personaggio non può agire mentre è incapacitato.')
                 const turn=refreshParticipantAbilities(turns.find(turn=>turn.id===ability.ownerId)!)
                 if(turn.availableAbilityIndexes&&ability.sheetAbilityIndex!==undefined&&!turn.availableAbilityIndexes.includes(ability.sheetAbilityIndex))throw new Error('Questa abilità non è più disponibile nella scheda.')
                 if(spellEdition(owner)==='2024'&&ability.ruleId?.includes('2014:'))throw new Error('Questa voce usa regole 2014: scegli la voce dell’edizione corretta.')
-                const castingOwner=combat?owner:{...owner,playerDetails:{...owner.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]','combat.bonusActionUsed':'false'}}
+                const castingOwner=combat?owner:{...owner,playerDetails:{...owner.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]','combat.bonusActionUsed':'false','combat.actionUsed':'false'}}
                 if(info.unit==='bonus-action'&&combat&&ability.ownerId!==combat.activeId)throw new Error('L’azione bonus richiede il turno del personaggio.')
                 if(combat&&requiresAdditionalSpellAction(castingOwner,ability,ownerCatalog)&&!additionalActionConfirmed)throw new Error('Conferma un’altra azione valida per lanciare questo incantesimo.')
                 const spent=spendCombatUse(castingOwner,ability,ownerCatalog,creationData,ability.execution.option,ability.execution.cost)
@@ -454,8 +475,9 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
                 nextAbilities.push({id:Math.max(-1,...nextAbilities.map(a=>a.id))+1,name:(conditionNames[effect.condition as keyof typeof conditionNames]??effect.condition)+' - '+ability.name,ownerId:target.id,active:true,duration:'Personalizzata',remainingTurns:parent.remainingTurns,timed:true,sourceEffectId:parent.id,expiresAt:parent.expiresAt,expiryOwnerId:parent.expiryOwnerId,expiryRound:parent.expiryRound,resolutionEffects:[effect],
                     repeatSave:`Tiro salvezza su ${saveNames[plan.save!.ability]} a fine turno`,repeatSaveRoll:{ability:plan.save!.ability,dc:plan.save!.dc,timing:'end'}})
             }
+            nextAbilities=wakeSleep(nextAbilities,resolving.targets?.filter(t=>Number(t.damage)>0).map(t=>t.id)??[])
             const incapacitated=endIncapacitatedConcentration(nextAbilities,updated)
-            const settled=settleCombatEffects(incapacitated.abilities,incapacitated.turns)
+            const settled=settleCombatEffects(incapacitated.abilities,incapacitated.turns,combat)
             updated=settled.turns;nextAbilities=settled.abilities
             const sheets=updated.flatMap(turn=>turn.sheet && turn.sheet!==turns.find(previous=>previous.id===turn.id)?.sheet ? [turn.sheet] : [])
             if (sheets.length && sheetEditor.current?.patchMany(sheets)===false) throw new Error('Salvataggio dei danni non riuscito. Nessun danno applicato.')
@@ -530,7 +552,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
             return
         }
         setCombatRuleError('')
-        const orderedTurns = sortByInitiative(turns).map(turn=>turn.sheet ? {...turn,sheet:{...turn.sheet,playerDetails:{...turn.sheet.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]','combat.reactionUsed':'false','combat.bonusActionUsed':'false'}}} : turn)
+        const orderedTurns = sortByInitiative(turns).map(turn=>turn.sheet ? {...turn,sheet:{...turn.sheet,playerDetails:{...turn.sheet.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]','combat.reactionUsed':'false','combat.bonusActionUsed':'false','combat.actionUsed':'false'}}} : turn)
         if (orderedTurns.length === 0) return
         if (sheetEditor.current?.patchMany(orderedTurns.flatMap(turn=>turn.sheet ? [turn.sheet] : []))===false) {setCombatRuleError('Salvataggio dell’inizio del combattimento non riuscito.');return}
         setTurns(orderedTurns)
@@ -558,7 +580,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
             const expiredConcentration=new Set(advanced.filter(a=>a.active&&a.concentration&&a.remainingTurns===0&&a.timed!==false&&(currentAbilities.find(previous=>previous.id===a.id)?.remainingTurns??0)>0).map(a=>a.ownerId))
             const reset=settled.turns.map(turn=>{
                 if(!turn.sheet)return turn
-                const patch={'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]',...(turn.id===next.activeId?{'combat.reactionUsed':'false','combat.bonusActionUsed':'false'}:{}),...(expiredConcentration.has(turn.id)?{'rules2014.concentration':''}:{})}
+                const patch={'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]',...(turn.id===next.activeId?{'combat.reactionUsed':'false','combat.bonusActionUsed':'false','combat.actionUsed':'false'}:{}),...(expiredConcentration.has(turn.id)?{'rules2014.concentration':''}:{})}
                 if(Object.entries(patch).every(([key,value])=>turn.sheet!.playerDetails?.[key]===value))return turn
                 return {...turn,sheet:{...turn.sheet,playerDetails:{...turn.sheet.playerDetails,...patch}}}
             })
@@ -609,9 +631,11 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
         return <TurnAbilityChoices turn={turn} abilities={abilities} catalog={catalog} creationData={creationData} search={abilitySearch} renewed={renewed} catalogLoading={catalogStatus===loadingCatalog} participants={turnIdentities} actions={rowActions}/>
     }
 
-    const latestRowActions=useRef<TurnRowActions>({openTurnSheet,handleDragStart,reorderTurn,revealParticipant,updateTurn,selectCreature,applyDamage,applyHealing,resolveConcentration,removeTurn,openSheetAbility,highlightAbility,openWindSave,resolveWindSave})
-    useLayoutEffect(()=>{latestRowActions.current={openTurnSheet,handleDragStart,reorderTurn,revealParticipant,updateTurn,selectCreature,applyDamage,applyHealing,resolveConcentration,removeTurn,openSheetAbility,highlightAbility,openWindSave,resolveWindSave}})
+    const latestRowActions=useRef<TurnRowActions>({openTurnSheet,handleDragStart,reorderTurn,revealParticipant,updateTurn,selectCreature,applyDamage,applyHealing,resolveConcentration,removeTurn,openSheetAbility,highlightAbility,openWindSave,resolveWindSave,wakeSleeper,standUp})
+    useLayoutEffect(()=>{latestRowActions.current={openTurnSheet,handleDragStart,reorderTurn,revealParticipant,updateTurn,selectCreature,applyDamage,applyHealing,resolveConcentration,removeTurn,openSheetAbility,highlightAbility,openWindSave,resolveWindSave,wakeSleeper,standUp}})
     const rowActions=useMemo<TurnRowActions>(()=>({
+        standUp:(...args)=>latestRowActions.current.standUp(...args),
+        wakeSleeper:(...args)=>latestRowActions.current.wakeSleeper(...args),
         openWindSave:(...args)=>latestRowActions.current.openWindSave(...args),
         resolveWindSave:(...args)=>latestRowActions.current.resolveWindSave(...args),
         openTurnSheet:(...args)=>latestRowActions.current.openTurnSheet(...args),

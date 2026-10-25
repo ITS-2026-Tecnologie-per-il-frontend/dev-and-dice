@@ -74,6 +74,7 @@ export function validateState(state) {
     && ['damageEnabled','instantaneous','requirementsConfirmed','timed','concentration'].every(key=>ability[key]===undefined||typeof ability[key]==='boolean')
     && (ability.weaponEffects===undefined||validWeaponEnchantments(ability.weaponEffects))
     && (ability.temporaryHitPointsSource===undefined||typeof ability.temporaryHitPointsSource==='string'&&idPattern.test(ability.temporaryHitPointsSource))
+    && (ability.conditionOrigin===undefined||typeof ability.conditionOrigin==='string'&&ability.conditionOrigin.length<=2000)
     && (ability.sourceEffectId===undefined||integer(ability.sourceEffectId)&&ability.sourceEffectId!==ability.id)
     && (ability.windSave===undefined||ability.ruleId==='phb2014:spell:gust-of-wind'&&validWindSave(ability.windSave))
     && (ability.repeatSaveRoll===undefined||object(ability.repeatSaveRoll)&&Object.hasOwn(saveNames,ability.repeatSaveRoll.ability)&&ability.repeatSaveRoll.timing==='end'&&(ability.repeatSaveRoll.dc===undefined||Number.isSafeInteger(ability.repeatSaveRoll.dc))&&(ability.repeatSaveRoll.lastRound===undefined||integer(ability.repeatSaveRoll.lastRound)))
@@ -182,7 +183,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
         temporaryHitPoints:record.sheet.playerDetails?.temporaryHitPoints??'',sheet:{...record.sheet,abilities:turn.sheet.abilities}}:turn
     })
     // Project current effects on reads too: older casts may have no synchronized temporary stats.
-    const settled=settleCombatEffects(state.abilities,state.turns)
+    const settled=settleCombatEffects(state.abilities,state.turns,state.combat)
     state.abilities=settled.abilities;state.turns=settled.turns
     const characters=records.map(record=>{
       const sheet=state.turns.find(turn=>turn.sheet?.id===record.id)?.sheet
@@ -510,7 +511,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
       if (record && record.gameId !== game.id || !record && turn.sheet.kind === 'PG') fail(403, 'Personaggio estraneo alla sessione.')
       if (record) {turn.sheet = {...record.sheet,abilities:turn.sheet.abilities};turn.hitPoints=record.sheet.hitPoints;turn.armorClass=record.sheet.armorClass;turn.description=record.sheet.name}
     }
-    const settled=settleCombatEffects(state.abilities,state.turns)
+    const settled=settleCombatEffects(state.abilities,state.turns,state.combat)
     for(const turn of settled.turns)if(turn.sheet&&turn.sheet!==state.turns.find(t=>t.id===turn.id)?.sheet) {
       const record=db.characters.find(c=>c.id===turn.sheet.id&&c.gameId===game.id)
       if(record)saveSheet(game,record,turn.sheet,req)

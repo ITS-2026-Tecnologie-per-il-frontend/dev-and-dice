@@ -1,3 +1,4 @@
+import { isSleep } from '../domain/dnd/Sleep'
 import { pendingWindSaves, windSaveResults } from '../domain/dnd/WindTurns'
 import { memo, type DragEvent } from 'react'
 import { TurnAbilityChoices } from './TurnAbilityChoices'
@@ -15,6 +16,8 @@ import { conditionsFor, conditionHelp, pendingRepeatSaves } from '../domain/dnd/
 import { spellEdition } from '../utils/Spellcasting'
 
 export type TurnRowActions = {
+    wakeSleeper:(targetId:number)=>void
+    standUp:(targetId:number)=>void
     openWindSave:(effectId:number)=>void
     resolveWindSave:(effectId:number,success:boolean)=>boolean
     openTurnSheet:(turn:Turn)=>void
@@ -34,7 +37,7 @@ export type TurnRowActions = {
 type Props={turn:Turn;index:number;active:boolean;selected:boolean;combatStarted:boolean;round:number;renewed:boolean;abilities:Ability[];participants:{id:number;description:string}[];catalog:Catalog;actions:TurnRowActions;choiceTurn:Turn;creationData?:CreationData;catalogLoading:boolean}
 
 export const TurnParticipantRow=memo(function TurnParticipantRow({turn,index,active,selected,combatStarted,round,renewed,abilities,participants,catalog,actions,choiceTurn,creationData,catalogLoading}:Props) {
-    const {openTurnSheet,handleDragStart,reorderTurn,revealParticipant,updateTurn,selectCreature,applyDamage,applyHealing,resolveConcentration,removeTurn,openWindSave,resolveWindSave}=actions
+    const {openTurnSheet,handleDragStart,reorderTurn,revealParticipant,updateTurn,selectCreature,applyDamage,applyHealing,resolveConcentration,removeTurn,openWindSave,resolveWindSave,wakeSleeper,standUp}=actions
     const combat=combatStarted?{activeId:turn.id,round}:null
     const activeEffects=effectiveAbilities(abilities).concat(abilities.filter(a=>!!a.execution))
     const maximumHitPoints=(turn:Turn)=>turn.sheet?.playerDetails?.maxHitPoints?.trim() || String(catalog.creatures.find(entry=>entry.id===turn.sheet?.catalogId)?.data.hitPoints ?? '')
@@ -47,15 +50,18 @@ export const TurnParticipantRow=memo(function TurnParticipantRow({turn,index,act
     // Help summaries: PHB 2014 PDF 219 (Bless), 204 (Concentration);
     // revised concentration: D&D_5.5_manuale_compatto_italiano.pdf, PDF 206.
     const origin=(effect:Ability)=>{
+        if(effect.conditionOrigin)return <div className="turn-status-origin" key={effect.id}><p><strong>Origine:</strong> {effect.conditionOrigin}</p></div>
         const source=abilities.find(a=>a.id===effect.sourceEffectId)??effect
         const caster=participants.find(t=>t.id===source.ownerId)?.description
         return <div className="turn-status-origin" key={effect.id}><p><strong>Origine:</strong> {source.name}{caster?` · ${caster}`:''}</p>{effect.repeatSaveRoll&&<p>TS {saveNames[effect.repeatSaveRoll.ability]}{effect.repeatSaveRoll.dc===undefined?' · CD da verificare':` · CD ${effect.repeatSaveRoll.dc}`} a fine turno.</p>}</div>
     }
     const status=(conditions.length>0||due.length>0||windDue.length>0||windResults.length>0||!!concentration)&&<div className="turn-statuses">
         {(conditions.length>0||!!concentration)&&<div className="turn-condition-pills" aria-label={`Stati di ${turn.description}`}>{conditions.map(condition=>{
-            const sources=effectiveAbilities(abilities).filter(a=>!a.execution&&(a.targets?.length?a.targets.some(t=>t.id===turn.id):a.ownerId===turn.id)&&(condition==='Benedetto'?a.ruleId==='phb2014:spell:bless':a.resolutionEffects?.some(e=>e.kind==='condition'&&(conditionNames[e.condition as keyof typeof conditionNames]??e.condition)===condition)))
+            const sources=effectiveAbilities(abilities).filter(a=>!a.execution&&(a.targets?.length?a.targets.some(t=>t.id===turn.id):a.ownerId===turn.id)&&(condition==='Benedetto'?a.ruleId==='phb2014:spell:bless':condition==='Addormentato'?isSleep(a):a.resolutionEffects?.some(e=>e.kind==='condition'&&(conditionNames[e.condition as keyof typeof conditionNames]??e.condition)===condition)))
             return <HelpTooltip className="turn-condition-pill" label={condition} triggerContent={condition} key={condition}><div className="turn-status-help"><strong>{condition}</strong><ul>{(condition==='Benedetto'?['Aggiungi 1d4 ai tiri per colpire e ai tiri salvezza. Il bonus non si applica alle prove di caratteristica.']:conditionHelp(condition,edition)).map(text=><li key={text}>{text}</li>)}</ul>{sources.length?sources.map(origin):<p>Origine non disponibile.</p>}</div></HelpTooltip>
         })}{concentration&&<HelpTooltip className="turn-condition-pill" label="Concentrazione" triggerContent="Concentrazione"><div className="turn-status-help"><strong>Concentrazione</strong><ul><li>Mantieni la concentrazione su {concentration}.</li><li>Un altro effetto che richiede concentrazione interrompe quello attuale.</li><li>Se subisci danni, serve un TS su Costituzione per mantenerla.</li><li>Termina se diventi incapacitato, muori o decidi di interromperla.</li></ul>{concentrating?origin(concentrating):<p><strong>Origine:</strong> {concentration} · {turn.description}</p>}</div></HelpTooltip>}</div>}
+        {conditions.includes('Addormentato')&&<button type="button" className="sort-turns turn-wake-action" onClick={()=>wakeSleeper(turn.id)} title="Un’altra creatura a portata usa un’azione per scuoterlo o schiaffeggiarlo. In combattimento agisce il personaggio di turno.">Sveglia (un’azione)</button>}
+        {conditions.includes('Prono')&&!conditions.includes('Addormentato')&&<button type="button" className="sort-turns turn-wake-action" onClick={()=>standUp(turn.id)} title="Devi essere nel tuo turno e avere disponibile metà della tua velocità in movimento.">Rialza (metà movimento)</button>}
         {windDue.map(effect=><div key={effect.id} className="master-concentration-check wind-start-save" role="status"><strong>{effect.name} · inizio turno</strong><span>TS Forza{effect.windSave?.dc===undefined?' · CD da verificare':` · CD ${effect.windSave.dc}`}</span><div className="wind-start-save-actions"><button type="button" onClick={()=>openWindSave(effect.id)} aria-label={`Tira TS Forza di ${turn.description} per ${effect.name}`}>Tira TS Forza</button><button type="button" onClick={()=>resolveWindSave(effect.id,true)}>TS superato</button><button type="button" onClick={()=>resolveWindSave(effect.id,false)}>TS fallito</button></div></div>)}
         {windResults.map(effect=><p key={effect.id} className="turn-save-reminder" role="status">{effect.name}: {effect.windSave!.turn!.success?'TS superato · resiste alla spinta.':'TS fallito · spingi la creatura di 4,5 m lungo la linea, lontano dal lanciatore.'}</p>)}
         {due.length>0&&<p className="turn-save-reminder" role="status" title="Da risolvere a fine turno. Premi Turno successivo per risolvere.">{due.map(a=>`TS ${saveNames[a.repeatSaveRoll!.ability]}${a.repeatSaveRoll!.dc===undefined?'':` · CD ${a.repeatSaveRoll!.dc}`}`).join('; ')} · fine turno</p>}

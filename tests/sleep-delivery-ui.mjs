@@ -104,6 +104,48 @@ try{
  assert.deepEqual(after.combatRequests[0].targets.filter(t=>t.asleep).map(t=>t.id),[0,1])
  const archived=JSON.parse(await readFile(join(dataDir,'games.json'),'utf8')).games[0].combatRequests[0]
  assert.deepEqual(archived.sleepReview.area.slice().sort((a,b)=>a-b),[0,1]);assert.deepEqual(archived.sleepReview.selected,[1,0])
+ await masterPage.getByRole('button',{name:'Chiudi azioni',exact:true}).click()
+ const targetRow=masterPage.locator('.turn-row').filter({has:masterPage.getByLabel('PF di Goblin',{exact:true})}),casterRow=masterPage.locator('.turn-row').filter({has:masterPage.getByLabel('PF di Maga',{exact:true})})
+ const asleep=targetRow.getByRole('button',{name:'Addormentato',exact:true})
+ await asleep.waitFor()
+ assert(await casterRow.getByRole('button',{name:'Addormentato',exact:true}).isVisible(),'Both explicitly approved sleepers receive the condition')
+ for(const width of [1440,390]){
+  await masterPage.setViewportSize({width,height:1000});await asleep.scrollIntoViewIfNeeded();await asleep.dispatchEvent('click')
+  const help=masterPage.getByRole('tooltip');await help.waitFor()
+  await help.getByText('Sonno · Maga',{exact:false}).waitFor()
+  assert((await help.innerText()).includes('azioni bonus'))
+  await masterPage.screenshot({path:join(root,`sleep-status-hover-${width}.png`),fullPage:true})
+  const box=await help.boundingBox();assert(box.x>=0&&box.x+box.width<=width,'Sleep hover stays inside the screen')
+  await masterPage.keyboard.press('Escape')
+ }
+ await masterPage.setViewportSize({width:1440,height:1000})
+ await masterPage.getByLabel('Danni o cura per Goblin',{exact:true}).fill('2')
+ await masterPage.getByRole('button',{name:'Applica danni a Goblin',exact:true}).click()
+ await asleep.waitFor({state:'detached'})
+ assert(await targetRow.getByRole('button',{name:'Prono',exact:true}).isVisible())
+ assert(await casterRow.getByRole('button',{name:'Addormentato',exact:true}).isVisible(),'Damage wakes only its recipient')
+ await masterPage.getByLabel('Danni o cura per Maga',{exact:true}).fill('1')
+ await masterPage.getByRole('button',{name:'Applica danni a Maga',exact:true}).click()
+ await casterRow.getByRole('button',{name:'Addormentato',exact:true}).waitFor({state:'detached'})
+ await masterPage.getByRole('button',{name:'Turno successivo →',exact:true}).click()
+ await targetRow.getByRole('button',{name:'Rialza (metà movimento)',exact:true}).click()
+ await targetRow.getByRole('button',{name:'Prono',exact:true}).waitFor({state:'detached'})
+ await masterPage.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.includes('.library')))
+ // Simulate another approved sleeper at the start of an awake ally's turn.
+ let latest=(await api(master,path)).json
+ const restored={...approved.state,combat:{activeId:0,round:2},turns:approved.state.turns.map(t=>({...t,sheet:{...t.sheet,playerDetails:{...t.sheet.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]','combat.actionUsed':'false'}}})),abilities:approved.state.abilities.map(a=>a.ruleId===spell.ruleId?{...a,targets:[{id:1,damage:'0',resolved:true}]}:a)}
+ await api(master,path+'/state','PUT',{revision:latest.revision,state:restored,sheets:restored.turns.map(t=>t.sheet)})
+ await masterPage.reload()
+ await asleep.waitFor()
+ await targetRow.getByRole('button',{name:'Sveglia (un’azione)',exact:true}).click()
+ await asleep.waitFor({state:'detached'})
+ await masterPage.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.includes('.library')))
+ latest=(await api(master,path)).json
+ assert.equal(latest.state.turns[0].sheet.playerDetails['combat.actionUsed'],'true','Waking consumes the acting ally’s action')
+ assert(await targetRow.getByRole('button',{name:'Prono',exact:true}).isVisible())
+ await masterPage.getByRole('button',{name:'Termina combattimento',exact:true}).click()
+ await targetRow.getByRole('button',{name:'Rialza (metà movimento)',exact:true}).click()
+ await targetRow.getByRole('button',{name:'Prono',exact:true}).waitFor({state:'detached'})
  assert.deepEqual(errors,[])
  console.log('PASS Sleep real browser/API: preserved legacy form, slot 2/40, visible retry error, request delivery, same-revision Master review refresh, legacy names, approval, one slot spent and saved active targets')
 }finally{await masterContext?.close();await page.unrouteAll({behavior:'wait'});await browser.close();await frontend.close();await new Promise(r=>backend.close(r));await rm(dir,{recursive:true,force:true});await rm(dataDir,{recursive:true,force:true})}
