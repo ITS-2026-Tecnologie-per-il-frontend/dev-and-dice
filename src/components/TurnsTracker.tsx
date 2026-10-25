@@ -10,9 +10,9 @@ import { CharacterSheets, type CharacterSheetsHandle } from './CharacterSheets'
 import { currentArmorClass, clampHitPointsToMaximum, newCharacterSheet, findSheetCombatAbility, normalizeHitPoints, turnFromSheet, importSheetAbility, integerValue, syncTurnStats, type CharacterSheet } from '../utils/CharacterSheets'
 import { AbilitiesTracker } from './AbilitiesTracker'
 import type { ResolvedDamagePackets } from './MasterSpellRolls'
-import { nextCombatTurn, sortByInitiative, advanceCombatAbilities, removeParticipantAbilities, hitPointsAfterDamageWithTemporary, hitPointsAfterHealing, type Ability, type Combat } from '../utils/Combat'
+import { durationTurns, nextCombatTurn, sortByInitiative, advanceCombatAbilities, removeParticipantAbilities, hitPointsAfterDamageWithTemporary, hitPointsAfterHealing, type Ability, type Combat } from '../utils/Combat'
 import { getDropIndex, getDropTargetId, reorderByDrop, reorderById } from '../utils/Reorder'
-import { catalogAbilityKind, refreshCombatSheetAbilities, sheetFromCatalog, sheetWithCombatAbilities, type Catalog, type CatalogEntry } from '../utils/Catalog'
+import { templateFromCatalog, catalogAbilityKind, refreshCombatSheetAbilities, sheetFromCatalog, sheetWithCombatAbilities, type Catalog, type CatalogEntry } from '../utils/Catalog'
 import { RepeatSavingThrow } from './RepeatSavingThrow'
 import { activeEffects as effectiveAbilities, conditionNames, resolutionPlan, enchantWeapon, saveNames } from '../domain/dnd/CombatResolution'
 import { conditionEffectName, conditionsFor, isIncapacitated, pendingRepeatSaves, endIncapacitatedConcentration, settleCombatEffects } from '../domain/dnd/CombatConditions'
@@ -48,6 +48,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
     const renewed = view === 'renewed'
     const combatFormId=useId()
     const [section, setSection] = useState<'table' | 'library' | 'rules'>('table')
+    const [configuringId,setConfiguringId]=useState<number|null>(null)
     const [selectedId, setSelectedId] = useState<number | null>(null)
     const [inspectorMode, setInspectorMode] = useState<'participant' | 'all'>('participant')
     const [abilitySearch, setAbilitySearch] = useState('')
@@ -214,10 +215,20 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
         if(settled.abilities.some((ability,index)=>ability!==abilities[index]))setAbilities(settled.abilities)
     }
 
+    function replaceConfiguration(next?:Ability) {
+        setAbilities(current=>[...current.filter(a=>a.id!==configuringId||a.active&&(a.timed===false||a.remainingTurns>0)||!!a.execution||!!a.readied),...(next?[next]:[])])
+        setConfiguringId(next?.id??null)
+        if(next&&renewed)focusAbility(next.id)
+    }
+    function configureAgain(ability:Ability) {
+        if(ability.execution||ability.readied||ability.sourceEffectId!==undefined||ability.conditionOrigin)return
+        const turn=turns.find(t=>t.id===ability.ownerId),ownerCatalog=turn?.sheet?catalogForSheet(creationData,catalog,turn.sheet)??catalog:catalog,entry=ownerCatalog.abilities.find(a=>a.id===ability.catalogId||!!ability.ruleId&&a.data.referenceId===ability.ruleId),template=(ability.sheetAbilityIndex===undefined?undefined:turn?.sheet?.abilities[ability.sheetAbilityIndex])??(entry?templateFromCatalog(entry):ability)
+        replaceConfiguration({...template,id:nextAbilityId.current++,ownerId:ability.ownerId,sheetAbilityIndex:ability.sheetAbilityIndex,castingSource:ability.castingSource,castingAlternative:ability.castingAlternative,useOption:ability.useOption,resourceCost:ability.resourceCost,active:false,remainingTurns:template.duration==='Personalizzata'?template.remainingTurns??0:durationTurns[template.duration],timed:template.duration!=='Senza conteggio',targets:[],execution:undefined,resolutionEffects:undefined,weaponEffects:undefined,temporaryHitPointsSource:undefined,expiresAt:undefined,expiryOwnerId:undefined,expiryRound:undefined,windSave:undefined,repeatSaveRoll:undefined,requirementsConfirmed:false})
+    }
     function addAbility() {
-        const ability: Ability = { id: nextAbilityId.current++, name: '', duration: '1 minuto', remainingTurns: 10, ownerId: renewed && inspectorMode === 'participant' ? selectedTurn?.id ?? null : null, active: false }
-        setAbilities((current) => [...current, ability])
-        if (renewed) focusAbility(ability.id)
+        const ability:Ability={id:nextAbilityId.current++,name:'',duration:'1 minuto',remainingTurns:10,ownerId:renewed&&inspectorMode==='participant'?selectedTurn?.id??null:null,active:false}
+        if(renewed)replaceConfiguration(ability)
+        else setAbilities(current=>[...current,ability])
     }
 
     function highlightAbility(id: number) {
@@ -260,13 +271,18 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
         const sheet=turn.sheet!
         const template=sheet.abilities[index]
         if (!template || catalogAbilityKind(ownerCatalog.abilities.find(entry=>entry.id===template.catalogId),template.section,template.description).passive) return
-        const existing = findSheetCombatAbility(abilities,template,turn.id,index)
+        const existing = findSheetCombatAbility(abilities.filter(a=>!a.readied),template,turn.id,index)
         if (turn.availableAbilityIndexes && !turn.availableAbilityIndexes.includes(index)) return
-        if (existing) { highlightAbility(existing.id); return }
+        if(existing&&renewed){
+            if(existing.execution||existing.active&&(existing.timed===false||existing.remainingTurns>0)){highlightAbility(existing.id);return}
+            if(existing.id===configuringId&&!existing.active){focusAbility(existing.id);return}
+            configureAgain(existing);return
+        }
+        if(existing){highlightAbility(existing.id);return}
         const id = nextAbilityId.current++
         setTurns(current=>current.map(item=>item.id===turn.id ? {...item,sheet,availableAbilityIndexes:turn.availableAbilityIndexes} : item))
-        setAbilities((current) => importSheetAbility(current, sheet, turn.id, index, id))
-        if (renewed) focusAbility(id)
+        if(renewed)replaceConfiguration({...template,id,ownerId:turn.id,sheetAbilityIndex:index,remainingTurns:template.remainingTurns??durationTurns[template.duration],active:false})
+        else setAbilities(current=>importSheetAbility(current,sheet,turn.id,index,id))
     }
 
     function updateTurn(id: number, field: 'description' | 'initiative' | 'hitPoints' | 'armorClass' | 'temporaryHitPoints' | 'damage', value: string, clearAdjustment?: 'damage', temporaryHitPoints?: string) {
@@ -411,6 +427,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
             ...(ability.execution.phase==='casting' && !info.concentration ? {'rules2014.concentration':''} : {})}
         if (owner && !patchAbilityOwner(ability,details)) throw new Error('Salvataggio delle risorse non riuscito.')
         handledExecutions.current.add('cast:'+ability.execution.id)
+        setConfiguringId(current=>current===ability.id?null:current)
         const windDC=owner&&ability.ruleId==='phb2014:spell:gust-of-wind'?resolutionPlan(owner,ability,ownerCatalog,ability.execution.option)?.deferredSave?.dc:undefined
         const cast={...ability,...(ability.ruleId==='phb2014:spell:gust-of-wind'?{windSave:{dc:windDC}}:{}),concentration:ability.concentration || info.concentration,execution:{...ability.execution,phase:'resolving' as const}}
         setAbilities(abilities=>abilities.flatMap(item=>item.id===ability.id ? info.damage ? [cast] : info.instantaneous ? [] : [resolvedAbility(cast,ownerCatalog,combat,turns)]
@@ -488,6 +505,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
             const sheets=updated.flatMap(turn=>turn.sheet && turn.sheet!==turns.find(previous=>previous.id===turn.id)?.sheet ? [turn.sheet] : [])
             if (sheets.length && sheetEditor.current?.patchMany(sheets)===false) throw new Error('Salvataggio dei danni non riuscito. Nessun danno applicato.')
             handledExecutions.current.add('finish:'+ability.execution.id)
+            setConfiguringId(current=>current===ability.id?null:current)
             setTurns(updated)
             nextAbilityId.current=Math.max(nextAbilityId.current,...nextAbilities.map(a=>a.id+1))
             setAbilities(nextAbilities)
@@ -513,6 +531,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
         const changed=settled.turns.flatMap(t=>t.sheet&&t.sheet!==turns.find(old=>old.id===t.id)?.sheet?[t.sheet]:[])
         if(changed.length&&sheetEditor.current?.patchMany(changed)===false){setCombatRuleError('Salvataggio delle regole del personaggio non riuscito.');return false}
         setTurns(settled.turns);setAbilities(settled.abilities)
+        setConfiguringId(current=>current===ability.id?null:current)
         return true
     }
 
@@ -794,11 +813,14 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
                         <div className="master-available-abilities"><h3>Abilità e azioni disponibili</h3><input type="search" aria-label="Cerca abilità del partecipante" placeholder="Cerca un’abilità o un incantesimo…" value={abilitySearch} onChange={event => setAbilitySearch(event.target.value)}/>{participantAbilities(selectedTurn)}</div>
                     </section> : <div className="master-inspector-empty"><h2>Dettagli del partecipante</h2><p>Aggiungi un partecipante al tavolo per consultarne scheda e abilità.</p></div>)}
                 </>}
-                <div hidden={renewed && inspectorMode === 'participant' && !selectedTurn}>
-                <AbilitiesTracker ownerFilter={renewed && inspectorMode === 'participant' ? selectedTurn?.id : undefined} heading={renewed ? inspectorMode === 'participant' ? 'Abilità in uso e da configurare' : 'Tutte le abilità' : undefined} onAdd={addAbility} abilities={abilities} setAbilities={setAbilities} participants={participants} catalog={catalog} catalogForOwner={(id)=>{const sheet=turns.find((turn)=>turn.id===id)?.sheet;return sheet ? catalogForSheet(creationData,catalog,sheet) ?? catalog : catalog}} combat={combat} onWindDirection={redirectWind} windDirectionPending={workspace?.windDirectionPending} onActivate={activateCombatAbility} onEnd={endCombatAbility} onResolve={finishCombatAbility} onCancelCast={cancelCombatCast} creationData={creationData} actionError={abilityError} />
+                <div hidden={renewed&&(inspectorMode==='participant'?!selectedTurn:!abilities.some(a=>a.ownerId===null&&!a.readied))}>
+                <AbilitiesTracker compactActive={renewed} configurationId={configuringId} onConfigure={configureAgain} ownerFilter={renewed ? inspectorMode==='participant'?selectedTurn?.id:null : undefined} heading={renewed ? inspectorMode === 'participant' ? 'Abilità in uso e da configurare' : 'Abilità senza proprietario' : undefined} onAdd={addAbility} abilities={abilities} setAbilities={setAbilities} participants={participants} catalog={catalog} catalogForOwner={(id)=>{const sheet=turns.find((turn)=>turn.id===id)?.sheet;return sheet ? catalogForSheet(creationData,catalog,sheet) ?? catalog : catalog}} combat={combat} onWindDirection={redirectWind} windDirectionPending={workspace?.windDirectionPending} onActivate={activateCombatAbility} onEnd={endCombatAbility} onResolve={finishCombatAbility} onCancelCast={cancelCombatCast} creationData={creationData} actionError={abilityError} />
                 </div>
                 {selectedTurn&&(!renewed||inspectorMode==='participant')&&readiedTools?.(selectedTurn.id)}
-                    {renewed&&combatEffects.length > 0 && <section className="master-active-effects" aria-labelledby="master-effects-heading"><h3 id="master-effects-heading">Effetti del combattimento <span>{combatEffects.length}</span></h3><ul>{combatEffects.map(ability => <li key={ability.id}><button type="button" onClick={() => highlightAbility(ability.id)}><strong>{conditionEffectName(ability,abilities) || 'Effetto senza nome'}</strong><span>{turns.find(turn => turn.id === ability.ownerId)?.description || 'Senza proprietario'} · {ability.execution ? 'In esecuzione' : ability.timed === false ? 'Senza conteggio' : `${ability.remainingTurns} turni`}</span></button></li>)}</ul></section>}
+                {renewed&&inspectorMode==='all'&&<section className="master-active-effects" aria-labelledby="master-effects-heading"><h3 id="master-effects-heading">Effetti del combattimento <span>{combatEffects.length}</span></h3>
+                    {!combatEffects.length&&<p>Nessun effetto attivo nel combattimento.</p>}
+                    {[...turns.map(t=>({id:t.id,name:t.description})),{id:null,name:'Senza proprietario'}].map(group=>{const effects=combatEffects.filter(a=>a.ownerId===group.id);return effects.length>0&&<section className="combat-effect-group" aria-label={`Effetti di ${group.name}`} key={group.id??'unowned'}><h4>{group.name}</h4><ul>{effects.map(ability=><li key={ability.id}><button type="button" onClick={()=>highlightAbility(ability.id)}><strong>{conditionEffectName(ability,abilities)||'Effetto senza nome'}</strong><span>{ability.execution?'Lancio in corso':ability.timed===false?'Senza conteggio':`${ability.remainingTurns} round rimasti`}</span></button></li>)}</ul></section>})}
+                </section>}
 
                 </ParticipantInspector>
                 <dialog ref={windDialog} className="character-dialog repeat-save-dialog" aria-labelledby="wind-save-heading" {...dismissWindSave} onClose={()=>setWindSaveId(null)}>

@@ -20,6 +20,9 @@ import { WindDirectionForm } from './WindDirectionForm'
 import { SpellSaveNotice } from './AttackRollFields'
 
 type Props = {
+    compactActive?:boolean
+    configurationId?:number|null
+    onConfigure?:(ability:Ability)=>void
     ownerFilter?: number | null
     heading?: string
     onAdd: () => void
@@ -39,7 +42,7 @@ type Props = {
     actionError?:{abilityId:number;message:string}|null
 }
 
-export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities, participants, onAdd, catalog:baseCatalog,catalogForOwner,combat,onActivate,onEnd,onResolve,onCancelCast,creationData,actionError,onWindDirection,windDirectionPending }: Props) {
+export function AbilitiesTracker({ compactActive=false,configurationId,onConfigure,ownerFilter, heading, abilities, setAbilities, participants, onAdd, catalog:baseCatalog,catalogForOwner,combat,onActivate,onEnd,onResolve,onCancelCast,creationData,actionError,onWindDirection,windDirectionPending }: Props) {
     const [recasting,setRecasting]=useState<number|null>(null)
     const {before:beforeReaction}=useContext(ReactionContext),[manualHits,setManualHits]=useState<Record<string,string>>({}),[manualBusy,setManualBusy]=useState<number|null>(null),[manualNotice,setManualNotice]=useState<{id:number;text:string}>()
     const latest=useRef({abilities,participants,onResolve}),working=useRef(false)
@@ -135,7 +138,7 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                     const fixedOwner=!!participant && (ability.sheetAbilityIndex!==undefined || ownerFilter===ability.ownerId)
                     if(ability.sheetAbilityIndex!==undefined&&participant?.availableAbilityIndexes&&!participant.availableAbilityIndexes.includes(ability.sheetAbilityIndex)&&!ability.execution&&(!ability.active||ability.timed!==false&&ability.remainingTurns===0))return null
                     const info=combatAbilityInfo(ability,catalog),running=!!ability.execution || ability.active && (ability.timed===false || ability.remainingTurns>0)
-                    if (info.passive) return null
+                    if(info.passive||compactActive&&!running&&ability.id!==configurationId)return null
                     let options:UseOption[]=[],option:UseOption|undefined,status='Usa',error=''
                     try {options=combatUseOptions(owner,ability,catalog,creationData);option=selectedUseOption(owner,ability,catalog,creationData);status=combatAbilityStatus(owner,ability,catalog,creationData)} catch(cause) {error=cause instanceof Error ? cause.message : 'Verifica le risorse nella scheda.'}
                     if(!running&&info.unit==='bonus-action'&&owner&&bonusActionUsed(owner))error='Hai già usato l’azione bonus in questo turno.'
@@ -143,7 +146,7 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                     if(!running&&ability.ownerId!==null&&conditionsFor(abilities,ability.ownerId).includes('Paralizzato'))error='Il personaggio non può agire mentre è paralizzato.'
                     const sleepForm=ability.ruleId==='phb2014:spell:sleep'&&!!owner&&!!onResolve&&!ability.execution
                     const idleSleep=ability.ruleId==='phb2014:spell:sleep'?abilities.find(a=>a.ruleId===ability.ruleId&&a.ownerId===ability.ownerId&&!a.execution&&(!a.active||a.timed!==false&&a.remainingTurns===0)):undefined
-                    if(sleepForm&&!running&&idleSleep?.id!==ability.id)return null
+                    if(sleepForm&&!running&&!compactActive&&idleSleep?.id!==ability.id)return null
                     const simpleCantrip=info.level===0 && options.length===1 && option?.id==='cantrip'
                     const targets=ability.targets ?? []
                     const targeting=combatTargeting(ability,catalog,owner,option?.id),tooManyTargets=targeting.maximum!==null && targets.length>targeting.maximum
@@ -188,6 +191,20 @@ export function AbilitiesTracker({ ownerFilter, heading, abilities, setAbilities
                             />
                         </label>}
                     </>
+                    if(compactActive&&running&&!ability.execution){
+                        const sortable=visibleAbilities.filter(a=>!a.readied&&a.active&&(a.timed===false||a.remainingTurns>0)),position=sortable.findIndex(a=>a.id===ability.id)
+                        const seconds=ability.remainingTurns*6,remaining=[Math.floor(seconds/3600)?`${Math.floor(seconds/3600)} h`:'',Math.floor(seconds%3600/60)?`${Math.floor(seconds%3600/60)} min`:'',seconds%60?`${seconds%60} s`:''].filter(Boolean).join(' ')||'0 s'
+                        return <AbilityCard key={ability.id} id={`ability-${ability.id}`} tabIndex={-1} data-compact-active="true" data-reorder-item data-reorder-id={ability.id}>
+                            <div className="compact-active-heading"><div className="compact-active-order"><button type="button" draggable onDragStart={event=>handleDragStart(event,ability.id)} aria-label={`Sposta ${ability.name} su`} disabled={position<=0} onClick={()=>reorderAbility(ability.id,sortable[position-1].id)}>↑</button><button type="button" aria-label={`Sposta ${ability.name} giù`} disabled={position<0||position===sortable.length-1} onClick={()=>reorderAbility(ability.id,sortable[position+1].id)}>↓</button></div><h3>{ability.name||'Effetto senza nome'}</h3><InfoButton label="Descrizione" name={ability.name} description={ability.description} entry={info.entry} fields={{duration:ability.duration,remainingTurns:ability.remainingTurns,active:true,owner:participant?.description??'Nessuno'}}/></div>
+                            <AbilityMetadata duration={ability.timed===false?'Senza conteggio':`${remaining} · ${ability.remainingTurns} round`} owner={participant?.description??'Nessuno'} ownerLabel={info.level!==undefined?'Lanciatore':'Utilizzatore'}/>
+                            {targets.length>0&&<p className="compact-active-targets"><span>{sleepForm?'Addormentati':'Bersagli'}:</span> {targets.map(t=>participants.find(p=>p.id===t.id)?.description??'Creatura').join(', ')}</p>}
+                            <WeaponEffectSummary effects={weaponEffectDetails(ability.weaponEffects??[],participants.flatMap(p=>p.sheet?[p.sheet]:[]))}/><SpellEffectSummary effects={spellEffectDetails({...ability,resolutionEffects:ability.resolutionEffects??spellPlan?.effects},participants.map(p=>({...p,name:p.description})),abilities,creationData)}/>
+                            {deferredPlan?.deferredSave&&owner&&<details className="compact-active-details"><summary>Gestisci direzione e bersagli</summary><SpellSaveNotice plan={deferredPlan}/>{onWindDirection&&<WindDirectionForm key={`${ability.id}:${combat?.round}:${combat?.activeId}`} direct choice={{effectId:ability.id,selected:targets.map(t=>t.id),canUse:!windDirectionReason,reason:windDirectionReason}} candidates={participants.filter(p=>!!p.sheet).map(p=>({id:p.id,name:p.description}))} ownerId={ability.ownerId} onSubmit={(selected,id)=>onWindDirection(ability,selected,id)}/>}<AbilityTargets candidates={participants.filter(p=>!!p.sheet).map(p=>({id:p.id,name:p.description}))} ownerId={ability.ownerId} selectedIds={targets.map(t=>t.id)} maximum={null} label="Creature nella linea di vento" onChange={(id,checked)=>patch(ability.id,{targets:checked?[...targets,{id,damage:'0',resolved:true}]:targets.filter(t=>t.id!==id)})}/></details>}
+                            {!info.instantaneous&&<details className="compact-active-details"><summary>Gestisci durata</summary><div className="compact-active-timing">{timingControls}</div></details>}
+                            <div className="compact-active-actions"><button type="button" className="sort-turns" disabled={!onConfigure||ability.sourceEffectId!==undefined||!!ability.conditionOrigin||!owner} onClick={()=>onConfigure?.(ability)}>Lancia di nuovo</button><button type="button" className="end-combat" onClick={()=>onEnd?onEnd(ability):patch(ability.id,{active:false,remainingTurns:0})}>Termina effetto</button></div>
+                            {actionError?.abilityId===ability.id&&<p role="alert">{actionError.message}</p>}
+                        </AbilityCard>
+                    }
                     return (
                     <AbilityCard
                         id={`ability-${ability.id}`}

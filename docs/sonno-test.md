@@ -24,10 +24,12 @@ Usare una partita di prova, con due finestre separate: Master e giocatore. L’i
 
 ## Sidebar e pillole delle preparazioni
 
-1. Nella vista rinnovata del Master selezionare il personaggio dalla tabella. Il box **Azioni preparate** deve comparire dopo le abilità e prima degli **Effetti del combattimento**, con le sole preparazioni e richieste di quel personaggio. Selezionando un altro partecipante non devono restare visibili quelle del precedente.
+1. Nella vista rinnovata del Master selezionare il personaggio dalla tabella. Il box **Azioni preparate** deve comparire dopo le abilità, con le sole preparazioni e richieste di quel personaggio. Gli **Effetti del combattimento** compaiono soltanto nella tab **Tutte le abilità**, raggruppati per personaggio; selezionandone uno si torna alla sua card nella sidebar del proprietario. Selezionando un altro partecipante non devono restare visibili quelle del precedente.
 2. Con Sonno preparato, nella riga dell’incantatore deve esserci **Concentrazione | Prep**. Passando il mouse su Concentrazione si leggono effetto e provenienza. Con un risveglio preparato deve esserci **Azione preparata | Prep**, senza attribuirgli concentrazione.
 3. Selezionare un altro personaggio o **Tutte le abilità**, poi premere **Prep** sulla riga dell’incantatore: la sidebar deve tornare al personaggio corretto e scorrere fino al suo box, che riceve il focus. Ripetere con tastiera e su mobile.
 4. Anche il giocatore deve vedere il proprio box dopo le abilità e prima degli effetti. Premere **Prep** nell’ordine di combattimento deve raggiungerlo, anche dalla visualizzazione di tutte le abilità. Le preparazioni non devono comparire duplicate tra gli effetti già attivi.
+5. Nella sidebar del Master le card attive sono compatte: titolo, frecce di riordino, lanciatore/utilizzatore, durata residua, bersagli e benefici applicati. **Descrizione** apre i dettagli; **Lancia di nuovo** apre una nuova configurazione; **Termina effetto** rimuove solo quel beneficio. Per Folata di Vento aprire **Gestisci direzione e bersagli**; la durata resta modificabile da **Gestisci durata**.
+6. Aprire Sonno e inserire un totale senza usarlo, poi scegliere Vita Falsata dalle abilità disponibili: deve restare soltanto la configurazione di Vita Falsata. Nessuno slot deve essere consumato e gli effetti già attivi devono restare intatti. Ripetere partendo da **Lancia di nuovo** di una card attiva. Dopo un lancio confermato la configurazione diventa una card compatta.
 
 ## Immunità dichiarata dal Master
 
@@ -62,6 +64,7 @@ node tests/readied-sleep.mjs
 node tests/sleep.mjs
 node tests/sleep-state.mjs
 node tests/sleep-advanced-ui.mjs
+node tests/sidebar-abilities-ui.mjs
 node tests/sleep-delivery-ui.mjs
 ```
 

@@ -238,3 +238,24 @@
 .master-renewed .tracker-main .turn-row .turn-hitpoints input { width:auto; flex:0 1 auto; }
 .master-renewed .tracker-main .turn-row .turn-max-hitpoints { color:var(--text); font-family:var(--sans); font-size:12px; font-weight:400; }
 @media (pointer:coarse) { .master-renewed .tracker-main .turn-row :is(.initiative-field,.turn-pf,.turn-ca) input { min-height:44px; } }
+
+.master-renewed .ability-row[data-compact-active] { display:grid; grid-template-columns:minmax(0,1fr); grid-template-areas:none; gap:10px; padding:12px; }
+.master-renewed .ability-row[data-compact-active] > * { grid-area:auto; min-width:0; }
+.ability-row[data-compact-active] > .ability-metadata { display:flex; flex-wrap:wrap; gap:8px 20px; margin:0; }
+.compact-active-heading { display:grid; grid-template-columns:28px minmax(0,1fr) auto; gap:8px; align-items:center; min-width:0; }
+.compact-active-heading h3 { margin:0; color:var(--text-h); font-size:16px; line-height:1.35; overflow-wrap:anywhere; }
+.compact-active-order { display:grid; gap:2px; }
+.master-renewed .compact-active-order button { width:28px; height:28px; min-height:28px; padding:0; margin:0; border:1px solid var(--border); border-radius:4px; background:var(--bg); color:var(--text-h); font-size:16px; cursor:pointer; }
+.compact-active-heading .more-info { margin:0; min-height:36px; padding:6px 8px; font-size:12px; }
+.compact-active-targets { margin:0; font-size:13px; line-height:1.5; overflow-wrap:anywhere; }
+.compact-active-targets > span { color:var(--text); }
+.compact-active-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.master-renewed .compact-active-actions button { min-width:0; min-height:44px; margin:0; padding:8px; font-size:13px; line-height:1.4; white-space:normal; }
+.compact-active-details { min-width:0; font-size:13px; }
+.compact-active-details > summary { cursor:pointer; padding:6px 0; }
+.compact-active-details[open] { display:grid; gap:10px; }
+.compact-active-details:has(> .wind-direction-controls > form) > .ability-targets { display:none; }
+.compact-active-details .ability-target-list { max-height:none; overflow:visible; scrollbar-gutter:auto; }
+.combat-effect-group + .combat-effect-group { margin-top:18px; padding-top:16px; border-top:1px solid var(--border); }
+.combat-effect-group h4 { margin:0 0 10px; color:var(--text-h); font-size:14px; }
+@media(pointer:coarse){.compact-active-heading { grid-template-columns:44px minmax(0,1fr) auto; }.master-renewed .compact-active-order button { width:44px; height:44px; min-height:44px; }}
