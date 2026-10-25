@@ -109,6 +109,8 @@ try{
  const asleep=targetRow.getByRole('button',{name:'Addormentato',exact:true})
  await asleep.waitFor()
  assert(await casterRow.getByRole('button',{name:'Addormentato',exact:true}).isVisible(),'Both explicitly approved sleepers receive the condition')
+ assert.equal(await casterRow.getByRole('button',{name:'Sveglia (un’azione)',exact:true}).count(),0,'No wake action on the sleeper’s own turn')
+ assert(await targetRow.locator('.turn-sleep-pill').getByRole('button',{name:'Sveglia (un’azione)',exact:true}).isVisible(),'Wake action belongs inside the sleep pill on another creature’s turn')
  for(const width of [1440,390]){
   await masterPage.setViewportSize({width,height:1000});await asleep.scrollIntoViewIfNeeded();await asleep.dispatchEvent('click')
   const help=masterPage.getByRole('tooltip');await help.waitFor()
