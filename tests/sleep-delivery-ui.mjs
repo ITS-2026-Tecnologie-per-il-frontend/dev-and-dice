@@ -24,7 +24,7 @@ try{
  const sheet={...newCharacterSheet(),name:'Maga',characterClass:'Mago',level:'9',hitPoints:'30',abilities:[spell],playerDetails:{'rules2014.spellsThisTurn':JSON.stringify([{level:2,unit:'action'}]),'slots.1.total':'4','slots.1.used':'4','slots.2.total':'3','slots.2.used':'2'}}
  const game=(await api(master,'/api/play/games','POST',{name:'Sleep delivery'})).json,path='/api/play/games/'+game.id
  await api(player,'/api/play/invites/'+game.inviteToken+'/join','POST',{sheet})
- const target={...newCharacterSheet(),name:'Goblin',kind:'Mostro',hitPoints:'6',armorClass:'12'}
+ const target={...newCharacterSheet(),name:'Goblin',kind:'Mostro',hitPoints:'6',armorClass:'12',playerDetails:{'creature.type':'humanoid'}}
  const state={turns:[sheet,target].map((sheet,id)=>({id,sheet,description:sheet.name,hitPoints:sheet.hitPoints,armorClass:sheet.armorClass,temporaryHitPoints:'',initiative:'10'})),abilities:[],combat:{activeId:0,round:1}}
  const current=(await api(master,path)).json
  await api(master,path+'/state','PUT',{revision:current.revision,state,sheets:[sheet,target]})
@@ -167,7 +167,7 @@ try{
  latest=(await api(master,path)).json
  assert.equal(latest.state.abilities.find(a=>a.id===1000).windSave.turn.success,false)
  await masterPage.reload();await automatic.waitFor()
- // The Master sidebar starts from the player's Sleep fields and casts directly.
+ // The Master calculates and reviews Sleep before spending a slot and applying effects.
  await masterPage.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.includes('.library')))
  latest=(await api(master,path)).json
  const masterState={...latest.state,combat:{activeId:0,round:8},turns:latest.state.turns.map(t=>t.id===0?{...t,sheet:{...t.sheet,playerDetails:{...t.sheet.playerDetails,'slots.1.used':'0','slots.2.used':'0','rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]','combat.actionUsed':'false'}}}:t),abilities:latest.state.abilities.map(a=>a.ruleId===spell.ruleId?{...a,active:false,remainingTurns:0,targets:[],resolutionEffects:undefined}:a.ruleId===wind.ruleId?{...a,active:false,remainingTurns:0}:a)}
@@ -181,6 +181,21 @@ try{
  await masterForm.getByLabel('Sonno · tira 7d8 e inserisci la somma').fill('40')
  assert.equal(await masterForm.getByRole('group',{name:'Creature nell’area di Sonno',exact:true}).getByRole('checkbox').count(),2)
  await masterForm.getByRole('checkbox',{name:'Goblin',exact:true}).check()
+ await masterForm.getByRole('button',{name:'Calcola',exact:true}).click()
+ const directReview=masterForm.getByRole('region',{name:'Risoluzione di Sonno',exact:true})
+ await directReview.waitFor()
+ assert(await directReview.getByRole('checkbox',{name:'Si addormenta: Goblin',exact:true}).isChecked())
+ assert(!await directReview.getByRole('checkbox',{name:'Nell’area: Maga',exact:true}).isChecked())
+ latest=(await api(master,path)).json
+ assert.equal(latest.state.turns[0].sheet.playerDetails['slots.2.used'],'0','Calculating spends no slot')
+ assert.equal(await asleep.count(),0,'Calculating applies no condition')
+ await directReview.getByRole('checkbox',{name:'Nell’area: Maga',exact:true}).check()
+ assert(await directReview.getByRole('checkbox',{name:'Si addormenta: Maga',exact:true}).isChecked(),'Master can correct the area before applying')
+ await directReview.getByRole('checkbox',{name:'Nell’area: Maga',exact:true}).uncheck()
+ await masterForm.getByRole('button',{name:'Modifica lancio',exact:true}).click()
+ assert.equal(await masterForm.getByLabel('Sonno · tira 7d8 e inserisci la somma').inputValue(),'40')
+ assert(await masterForm.getByRole('checkbox',{name:'Goblin',exact:true}).isChecked())
+ await masterForm.getByRole('button',{name:'Calcola',exact:true}).click()
  await masterForm.getByRole('button',{name:'Usa',exact:true}).click()
  await asleep.waitFor()
  assert.equal(await casterRow.getByRole('button',{name:'Addormentato',exact:true}).count(),0)
