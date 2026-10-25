@@ -29,6 +29,7 @@ try{
  await page.goto(base+'/games/'+game.id);await page.getByRole('button',{name:'Impostazioni',exact:true}).click();await page.getByRole('radio',{name:/^Rinnovata/}).check();await page.getByRole('button',{name:'Torna al tavolo',exact:true}).click()
  const sidebar=page.getByRole('complementary',{name:'Dettagli e abilità del tavolo',exact:true}),armorCard=page.locator('#ability-10'),sleepCard=page.locator('#ability-11')
  await armorCard.waitFor();assert.equal(await armorCard.getAttribute('data-compact-active'),'true');assert.equal(await sidebar.locator('.master-active-effects').count(),0)
+ await shots(sidebar.locator('.master-participant-detail'),'sidebar-participant-details')
  await armorCard.getByText('Aster',{exact:true}).waitFor();await armorCard.getByText('Baldur',{exact:false}).first().waitFor()
  assert.equal(currentArmorClass((await api(ctx,path)).characters.find(c=>c.sheet.name==='Baldur').sheet),'15')
  await armorCard.getByRole('button',{name:'Descrizione su '+armor.name,exact:true}).click();await page.getByRole('dialog',{name:armor.name,exact:true}).waitFor();await page.getByRole('button',{name:'Chiudi dettagli',exact:true}).click()

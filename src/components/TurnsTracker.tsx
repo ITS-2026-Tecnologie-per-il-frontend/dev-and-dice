@@ -17,7 +17,6 @@ import { RepeatSavingThrow } from './RepeatSavingThrow'
 import { activeEffects as effectiveAbilities, conditionNames, resolutionPlan, enchantWeapon, saveNames } from '../domain/dnd/CombatResolution'
 import { conditionEffectName, conditionsFor, isIncapacitated, pendingRepeatSaves, endIncapacitatedConcentration, settleCombatEffects } from '../domain/dnd/CombatConditions'
 import { creatureType, creatureTypeNames, assertTargetTypes, combatTargeting, assertCombatTargets } from '../domain/dnd/CombatTargets'
-import { CatalogSearch } from './CatalogSearch'
 import { applyCreation, translatedCreationData, patchCalculatedSheetStats, type CreationData } from '../utils/PlayerCreation'
 import { loadActiveDatabase, concentrationSave, catalogForSheet } from '../domain/dnd/ActiveRules'
 import { combatAbilityInfo, selectedUseOption, spendCombatUse, spendBonusAction, resolveCombatDamage, restoreCombatHitPoints, grantCombatTemporaryHitPoints, requiresAdditionalSpellAction, resolvedAbility } from '../domain/dnd/CombatActions'
@@ -800,16 +799,15 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
                     </div>
                     {inspectorMode === 'participant' && (selectedTurn ? <section className="master-participant-detail" aria-labelledby="master-detail-name">
                         <p className="master-detail-label">Partecipante selezionato</p>
-                        <ParticipantStats hitPoints={selectedTurn.hitPoints} maximum={maximumHitPoints(selectedTurn)} armorClass={selectedTurn.sheet?currentArmorClass(selectedTurn.sheet):selectedTurn.armorClass} initiative={selectedTurn.initiative} temporaryHitPoints={selectedTurn.temporaryHitPoints} temporaryArmorClass={integerValue(selectedTurn.sheet?.playerDetails?.temporaryAC) !== undefined}/>
-                        <div className="master-detail-fields"><label><span>Nome / creatura</span><CatalogSearch aria-label="Nome del partecipante selezionato" value={selectedTurn.description} disabled={combat !== null} entries={catalog.creatures} onChange={value => updateTurn(selectedTurn.id, 'description', value)} onSelect={entry => selectCreature(selectedTurn.id, entry)}/></label>
-                        <label><span>PF temporanei</span><input aria-label={`PF temporanei di ${selectedTurn.description || 'partecipante selezionato'}`} type="number" min="0" step="1" value={selectedTurn.temporaryHitPoints} onChange={event => updateTurn(selectedTurn.id, 'temporaryHitPoints', event.target.value)}/></label></div>
+                        <ParticipantStats hitPoints={selectedTurn.hitPoints} maximum={maximumHitPoints(selectedTurn)} armorClass={selectedTurn.sheet?currentArmorClass(selectedTurn.sheet):selectedTurn.armorClass} initiative={selectedTurn.initiative} temporaryArmorClass={integerValue(selectedTurn.sheet?.playerDetails?.temporaryAC) !== undefined}/>
+                        <div className="master-detail-fields"><label><span>PF temporanei</span><input aria-label={`PF temporanei di ${selectedTurn.description || 'partecipante selezionato'}`} type="number" min="0" step="1" value={selectedTurn.temporaryHitPoints} onChange={event => updateTurn(selectedTurn.id, 'temporaryHitPoints', event.target.value)}/></label>
+                        <button type="button" className="master-open-sheet" onClick={() => openTurnSheet(selectedTurn)}>Apri scheda completa</button></div>
                         {selectedTurn.sheet&&!creatureType(selectedTurn.sheet)&&<details key={selectedTurn.id} open><summary>Dettagli creatura</summary><label className="master-creature-type">Tipo di creatura<select aria-label={`Tipo di creatura di ${selectedTurn.description}`} value={creatureType(selectedTurn.sheet)??''} onChange={event=>{
                             const type=event.target.value
                             if(type&&!Object.hasOwn(creatureTypeNames,type))return
                             if(sheetEditor.current?.patchDetails(selectedTurn.sheet!.id,{'creature.type':type})===false){setCombatRuleError('Salvataggio del tipo di creatura non riuscito.');return}
                             setTurns(current=>current.map(t=>t.id===selectedTurn.id?{...t,sheet:{...t.sheet!,playerDetails:{...t.sheet!.playerDetails,'creature.type':type}}}:t))
                         }}><option value="">Da specificare</option>{Object.entries(creatureTypeNames).map(([type,label])=><option key={type} value={type}>{label}</option>)}</select></label></details>}
-                        <button type="button" className="master-open-sheet" onClick={() => openTurnSheet(selectedTurn)}>Apri scheda completa</button>
                         <div className="master-available-abilities"><h3>Abilità e azioni disponibili</h3><input type="search" aria-label="Cerca abilità del partecipante" placeholder="Cerca un’abilità o un incantesimo…" value={abilitySearch} onChange={event => setAbilitySearch(event.target.value)}/>{participantAbilities(selectedTurn)}</div>
                     </section> : <div className="master-inspector-empty"><h2>Dettagli del partecipante</h2><p>Aggiungi un partecipante al tavolo per consultarne scheda e abilità.</p></div>)}
                 </>}
