@@ -442,6 +442,11 @@
 
 .readied-actions :is(input:not([type=checkbox]),select) { min-height:44px; padding:10px 12px; border:1px solid var(--border); border-radius:5px; background:var(--bg); color:var(--text-h); font:inherit; }
 .readied-actions button { min-height:44px; font:inherit; }
+.readied-actions { scroll-margin-top:20px; }
+.readied-actions:focus { outline:2px solid var(--ui-accent, #147d72); outline-offset:3px; }
+.play-player-turns .turn-sleep-pill { margin-left:8px; vertical-align:middle; }
+.play-player-turns .turn-sleep-pill :is(.turn-condition-pill,.turn-sleep-wake) { box-sizing:border-box; flex:0 0 auto; min-height:28px; width:auto; height:auto; padding:3px 8px; margin:0; border:0; border-radius:0; background:transparent; color:inherit; font:inherit; font-size:12px; line-height:1.4; white-space:nowrap; }
+.play-player-turns .turn-sleep-pill .turn-sleep-wake { border-left:1px solid var(--border); border-radius:0 999px 999px 0; }
 
 .readied-actions .readied-release { gap:16px; padding-top:16px; border-top:1px solid var(--border); }
 .readied-release-heading h4 { margin:0 0 4px; color:var(--text-h); font-size:20px; line-height:1.3; }

@@ -22,6 +22,13 @@ Usare una partita di prova, con due finestre separate: Master e giocatore. L’i
 7. Verificare: gli effetti iniziano soltanto alla conferma, la concentrazione per trattenere Sonno termina, si usa la reazione e non viene consumato un altro slot. La durata del sonno parte dal rilascio.
 8. La reazione resta occupata fino all’inizio del prossimo turno del personaggio. Il testo dell’evento e la portata vanno verificati dal Master: il comando di rilascio è esplicito, non si attiva da solo.
 
+## Sidebar e pillole delle preparazioni
+
+1. Nella vista rinnovata del Master selezionare il personaggio dalla tabella. Il box **Azioni preparate** deve comparire dopo le abilità e prima degli **Effetti del combattimento**, con le sole preparazioni e richieste di quel personaggio. Selezionando un altro partecipante non devono restare visibili quelle del precedente.
+2. Con Sonno preparato, nella riga dell’incantatore deve esserci **Concentrazione | Prep**. Passando il mouse su Concentrazione si leggono effetto e provenienza. Con un risveglio preparato deve esserci **Azione preparata | Prep**, senza attribuirgli concentrazione.
+3. Selezionare un altro personaggio o **Tutte le abilità**, poi premere **Prep** sulla riga dell’incantatore: la sidebar deve tornare al personaggio corretto e scorrere fino al suo box, che riceve il focus. Ripetere con tastiera e su mobile.
+4. Anche il giocatore deve vedere il proprio box dopo le abilità e prima degli effetti. Premere **Prep** nell’ordine di combattimento deve raggiungerlo, anche dalla visualizzazione di tutte le abilità. Le preparazioni non devono comparire duplicate tra gli effetti già attivi.
+
 ## Immunità dichiarata dal Master
 
 1. Inserire Baldur e Noryn nell’area con riserva 20 PF: può addormentarsi una sola delle due creature.

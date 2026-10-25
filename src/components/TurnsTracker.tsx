@@ -44,7 +44,7 @@ const loadingCatalog='Caricamento del catalogo\u2026'
 export type TrackerState = {turns:Turn[];abilities:Ability[];combat:Combat|null}
 export type SessionWorkspace = {syncError?:string;onRetrySave?:()=>void;onWindDirection?:(effectId:number,selected:number[],id:string)=>Promise<void>;windDirectionPending?:number[];state:TrackerState;sheets:CharacterSheet[];storageKey:string;onChange:(state:TrackerState,sheets:CharacterSheet[])=>void;canRemove:(sheet:CharacterSheet)=>boolean;remove:(sheet:CharacterSheet)=>Promise<void>}
 
-export function TurnsTracker({ language, workspace, view = 'original', libraryTools, combatTools, readiedTools }: { language: 'it' | 'en'; workspace?:SessionWorkspace; view?: MasterView; libraryTools?: ReactNode; combatTools?:ReactNode;readiedTools?:ReactNode }) {
+export function TurnsTracker({ language, workspace, view = 'original', libraryTools, combatTools, readiedTools }: { language: 'it' | 'en'; workspace?:SessionWorkspace; view?: MasterView; libraryTools?: ReactNode; combatTools?:ReactNode;readiedTools?:(ownerId:number)=>ReactNode }) {
     const renewed = view === 'renewed'
     const combatFormId=useId()
     const [section, setSection] = useState<'table' | 'library' | 'rules'>('table')
@@ -92,6 +92,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
     const [combat, setCombat] = useState<Combat | null>(workspace?.state.combat ?? null)
     const selectedTurn = turns.find(turn => turn.id === selectedId) ?? turns.find(turn => turn.id === combat?.activeId) ?? turns[0]
     const activeEffects = effectiveAbilities(abilities).concat(abilities.filter(a=>!!a.execution))
+    const combatEffects=activeEffects.filter(a=>!a.readied)
     const [windSaveId,setWindSaveId]=useState<number|null>(null)
     const windDialog=useRef<HTMLDialogElement>(null),dismissWindSave=useDialogDismiss()
     const windEffect=pendingWindSaves(abilities,combat).find(a=>a.id===windSaveId)
@@ -128,6 +129,11 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
             inspector.current?.scrollIntoView({ block: 'start', behavior: 'instant' })
             inspector.current?.focus({ preventScroll: true })
         })
+    }
+    function openPrepared(id:number) {
+        setSection('table')
+        revealParticipant(id)
+        requestAnimationFrame(()=>{const box=document.getElementById('readied-actions');box?.scrollIntoView({block:'start',behavior:'instant'});box?.focus({preventScroll:true})})
     }
     const [sessionSheets,setSessionSheets]=useState(workspace?.sheets ?? [])
     const writeSessionSheets=useCallback((sheets:CharacterSheet[])=>setSessionSheets(sheets),[])
@@ -632,9 +638,10 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
         return <TurnAbilityChoices turn={turn} abilities={abilities} catalog={catalog} creationData={creationData} search={abilitySearch} renewed={renewed} catalogLoading={catalogStatus===loadingCatalog} participants={turnIdentities} actions={rowActions}/>
     }
 
-    const latestRowActions=useRef<TurnRowActions>({openTurnSheet,handleDragStart,reorderTurn,revealParticipant,updateTurn,selectCreature,applyDamage,applyHealing,resolveConcentration,removeTurn,openSheetAbility,highlightAbility,openWindSave,resolveWindSave,wakeSleeper,standUp})
-    useLayoutEffect(()=>{latestRowActions.current={openTurnSheet,handleDragStart,reorderTurn,revealParticipant,updateTurn,selectCreature,applyDamage,applyHealing,resolveConcentration,removeTurn,openSheetAbility,highlightAbility,openWindSave,resolveWindSave,wakeSleeper,standUp}})
+    const latestRowActions=useRef<TurnRowActions>({openPrepared,openTurnSheet,handleDragStart,reorderTurn,revealParticipant,updateTurn,selectCreature,applyDamage,applyHealing,resolveConcentration,removeTurn,openSheetAbility,highlightAbility,openWindSave,resolveWindSave,wakeSleeper,standUp})
+    useLayoutEffect(()=>{latestRowActions.current={openPrepared,openTurnSheet,handleDragStart,reorderTurn,revealParticipant,updateTurn,selectCreature,applyDamage,applyHealing,resolveConcentration,removeTurn,openSheetAbility,highlightAbility,openWindSave,resolveWindSave,wakeSleeper,standUp}})
     const rowActions=useMemo<TurnRowActions>(()=>({
+        openPrepared:(...args)=>latestRowActions.current.openPrepared(...args),
         standUp:(...args)=>latestRowActions.current.standUp(...args),
         wakeSleeper:(...args)=>latestRowActions.current.wakeSleeper(...args),
         openWindSave:(...args)=>latestRowActions.current.openWindSave(...args),
@@ -786,12 +793,13 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
                         <button type="button" className="master-open-sheet" onClick={() => openTurnSheet(selectedTurn)}>Apri scheda completa</button>
                         <div className="master-available-abilities"><h3>Abilità e azioni disponibili</h3><input type="search" aria-label="Cerca abilità del partecipante" placeholder="Cerca un’abilità o un incantesimo…" value={abilitySearch} onChange={event => setAbilitySearch(event.target.value)}/>{participantAbilities(selectedTurn)}</div>
                     </section> : <div className="master-inspector-empty"><h2>Dettagli del partecipante</h2><p>Aggiungi un partecipante al tavolo per consultarne scheda e abilità.</p></div>)}
-                    {activeEffects.length > 0 && <section className="master-active-effects" aria-labelledby="master-effects-heading"><h3 id="master-effects-heading">Effetti del combattimento <span>{activeEffects.length}</span></h3><ul>{activeEffects.map(ability => <li key={ability.id}><button type="button" onClick={() => highlightAbility(ability.id)}><strong>{conditionEffectName(ability,abilities) || 'Effetto senza nome'}</strong><span>{turns.find(turn => turn.id === ability.ownerId)?.description || 'Senza proprietario'} · {ability.execution ? 'In esecuzione' : ability.timed === false ? 'Senza conteggio' : `${ability.remainingTurns} turni`}</span></button></li>)}</ul></section>}
                 </>}
                 <div hidden={renewed && inspectorMode === 'participant' && !selectedTurn}>
                 <AbilitiesTracker ownerFilter={renewed && inspectorMode === 'participant' ? selectedTurn?.id : undefined} heading={renewed ? inspectorMode === 'participant' ? 'Abilità in uso e da configurare' : 'Tutte le abilità' : undefined} onAdd={addAbility} abilities={abilities} setAbilities={setAbilities} participants={participants} catalog={catalog} catalogForOwner={(id)=>{const sheet=turns.find((turn)=>turn.id===id)?.sheet;return sheet ? catalogForSheet(creationData,catalog,sheet) ?? catalog : catalog}} combat={combat} onWindDirection={redirectWind} windDirectionPending={workspace?.windDirectionPending} onActivate={activateCombatAbility} onEnd={endCombatAbility} onResolve={finishCombatAbility} onCancelCast={cancelCombatCast} creationData={creationData} actionError={abilityError} />
                 </div>
-                {readiedTools}
+                {selectedTurn&&(!renewed||inspectorMode==='participant')&&readiedTools?.(selectedTurn.id)}
+                    {renewed&&combatEffects.length > 0 && <section className="master-active-effects" aria-labelledby="master-effects-heading"><h3 id="master-effects-heading">Effetti del combattimento <span>{combatEffects.length}</span></h3><ul>{combatEffects.map(ability => <li key={ability.id}><button type="button" onClick={() => highlightAbility(ability.id)}><strong>{conditionEffectName(ability,abilities) || 'Effetto senza nome'}</strong><span>{turns.find(turn => turn.id === ability.ownerId)?.description || 'Senza proprietario'} · {ability.execution ? 'In esecuzione' : ability.timed === false ? 'Senza conteggio' : `${ability.remainingTurns} turni`}</span></button></li>)}</ul></section>}
+
                 </ParticipantInspector>
                 <dialog ref={windDialog} className="character-dialog repeat-save-dialog" aria-labelledby="wind-save-heading" {...dismissWindSave} onClose={()=>setWindSaveId(null)}>
                     <div className="dialog-header"><h2 id="wind-save-heading">Tiro salvezza di inizio turno</h2><button type="button" aria-label="Chiudi tiro salvezza di inizio turno" onClick={()=>windDialog.current?.close()}>×</button></div>

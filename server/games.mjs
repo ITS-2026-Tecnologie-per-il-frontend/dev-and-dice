@@ -199,7 +199,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
     const participant = game.players.find(player => player.userId === user)
     return { ...result, rollRequests:pendingSavingThrows(db,game,user), character:characters.find(character => character.id === participant.characterId),
       notes:participant.notes ?? {text:'',revision:0},
-      effects:activeEffects(state.abilities).filter(ability => ability.active && (ability.timed === false || ability.remainingTurns > 0)
+      effects:activeEffects(state.abilities).filter(ability => !ability.readied && ability.active && (ability.timed === false || ability.remainingTurns > 0)
         && state.turns.some(turn => (turn.id === ability.ownerId || ability.targets?.some(target=>target.id===turn.id)) && turn.sheet?.id === participant.characterId)).map(ability => ({
           name:ability.name, duration:ability.duration, remainingTurns:ability.remainingTurns, timed:ability.timed !== false,
           concentration:ability.concentration === true,
@@ -207,7 +207,10 @@ export async function gamesRouter({ dataDir, authenticate }) {
           ...(['start','end'].includes(ability.expiresAt) ? {expiresAt:ability.expiresAt} : {}),
           ...(typeof ability.repeatSave === 'string' ? {repeatSave:ability.repeatSave} : {}),
         })),
-      turns:state.turns.map(turn => ({ name:db.characters.find(character => character.id === turn.sheet?.id)?.sheet.name ?? turn.description, current:game.state.combat?.activeId === turn.id })) }
+      turns:state.turns.map(turn => {
+        const prepared=turn.sheet?.id===participant.characterId?activeEffects(state.abilities).find(a=>a.ownerId===turn.id&&a.readied):undefined
+        return {name:db.characters.find(character => character.id === turn.sheet?.id)?.sheet.name ?? turn.description,current:game.state.combat?.activeId===turn.id,...(prepared?{prepared:{name:prepared.name,concentration:prepared.concentration===true}}:{})}
+      }) }
   }
   function createCharacter(db, user, sheet, gameId = null, legacyId) {
     sheet = validateSheet(sheet)
