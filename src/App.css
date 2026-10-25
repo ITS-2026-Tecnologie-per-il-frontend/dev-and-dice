@@ -12,6 +12,9 @@
 }
 
 .combat-controls { align-items: center; }
+.combat-sync-error { border:2px solid #c55a4a; border-radius:6px; padding:12px; margin-bottom:12px; overflow-wrap:anywhere; }
+.combat-sync-error p { margin:8px 0; }
+.combat-sync-error button { min-height:44px; white-space:normal; }
 .turn-header-actions { margin: 0 0 0 auto; justify-content: flex-end; }
 .combat-controls button { margin-top: 0; }
 

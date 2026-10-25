@@ -276,7 +276,7 @@ function SessionPage() {
             else setGame(next)
         }finally{savingRef.current=false;setSaving(false)}
     },[id,blocked])
-    const workspace=useMemo(()=>game?.role==='master' ? {onWindDirection:redirectWind,windDirectionPending:game.combatRequests.filter(r=>r.status==='pending'&&r.windDirection).flatMap(r=>game.state.abilities.filter(a=>a.ownerId===game.state.turns.find(t=>t.sheet?.id===r.characterId)?.id&&a.ruleId==='phb2014:spell:gust-of-wind').map(a=>a.id)),state:game.state,sheets:game.characters.map(character=>character.sheet),storageKey:cacheKey+'.library',onChange:change,remove,canRemove:(sheet:CharacterSheet)=>!draft&&!saving&&game.characters.some(character=>character.id===sheet.id&&character.ownerId===user!.id)} : undefined,[game,cacheKey,change,remove,draft,saving,user,redirectWind])
+    const workspace=useMemo(()=>game?.role==='master' ? {syncError:blocked?(error||'Salvataggio della sessione non riuscito.'):undefined,onRetrySave:()=>{setBlocked(false);setRetry(value=>value+1)},onWindDirection:redirectWind,windDirectionPending:game.combatRequests.filter(r=>r.status==='pending'&&r.windDirection).flatMap(r=>game.state.abilities.filter(a=>a.ownerId===game.state.turns.find(t=>t.sheet?.id===r.characterId)?.id&&a.ruleId==='phb2014:spell:gust-of-wind').map(a=>a.id)),state:game.state,sheets:game.characters.map(character=>character.sheet),storageKey:cacheKey+'.library',onChange:change,remove,canRemove:(sheet:CharacterSheet)=>!draft&&!saving&&game.characters.some(character=>character.id===sheet.id&&character.ownerId===user!.id)} : undefined,[game,cacheKey,change,remove,draft,saving,user,redirectWind,blocked,error])
     useEffect(()=>{
         if(!draft||blocked||savingRef.current)return
         const timer=setTimeout(async()=>{

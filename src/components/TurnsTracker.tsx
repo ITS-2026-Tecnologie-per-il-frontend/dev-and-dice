@@ -42,7 +42,7 @@ export type Turn = {
 const RulesPanel=memo(lazy(()=>import('./RulesPanel')))
 const loadingCatalog='Caricamento del catalogo\u2026'
 export type TrackerState = {turns:Turn[];abilities:Ability[];combat:Combat|null}
-export type SessionWorkspace = {onWindDirection?:(effectId:number,selected:number[],id:string)=>Promise<void>;windDirectionPending?:number[];state:TrackerState;sheets:CharacterSheet[];storageKey:string;onChange:(state:TrackerState,sheets:CharacterSheet[])=>void;canRemove:(sheet:CharacterSheet)=>boolean;remove:(sheet:CharacterSheet)=>Promise<void>}
+export type SessionWorkspace = {syncError?:string;onRetrySave?:()=>void;onWindDirection?:(effectId:number,selected:number[],id:string)=>Promise<void>;windDirectionPending?:number[];state:TrackerState;sheets:CharacterSheet[];storageKey:string;onChange:(state:TrackerState,sheets:CharacterSheet[])=>void;canRemove:(sheet:CharacterSheet)=>boolean;remove:(sheet:CharacterSheet)=>Promise<void>}
 
 export function TurnsTracker({ language, workspace, view = 'original', libraryTools, combatTools, readiedTools }: { language: 'it' | 'en'; workspace?:SessionWorkspace; view?: MasterView; libraryTools?: ReactNode; combatTools?:ReactNode;readiedTools?:ReactNode }) {
     const renewed = view === 'renewed'
@@ -563,6 +563,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
     }
 
     function advanceTurn() {
+        if(workspace?.syncError)return
         if(reactionSync.paused){setCombatRuleError('Risolvi prima le reazioni in attesa.');return}
         if (!combat)return
         const wind=pendingWindSaves(abilities,combat)[0]
@@ -693,21 +694,22 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
             <main className="tracker-main" style={{ '--abilities-width': abilitiesWidth } as CSSProperties}>
                 <section className="combat-tracker" aria-labelledby="turns-heading">
                     <h2 id="turns-heading" ref={tableHeading} tabIndex={renewed ? -1 : undefined}>{renewed ? "Turni e partecipanti" : "Combattimento · Turni e schede"}</h2>
+                    {workspace?.syncError&&<div className="combat-sync-error" role="alert"><strong>Combattimento non sincronizzato</strong><p>Le modifiche del Master non sono state salvate. I giocatori vedono ancora l’ultimo turno confermato dal server.</p><p>{workspace.syncError}</p><button type="button" className="sort-turns" onClick={workspace.onRetrySave}>Riprova salvataggio del combattimento</button></div>}
                     {catalogStatus && <p className="library-help" role="status">{catalogStatus}</p>}
                         <div className="master-combat-header">
                         <div className="turn-actions combat-controls">
                             {combat ? (
                                 <>
-                                    <button ref={nextTurnButton} disabled={reactionSync.paused} className="sort-turns" type="button" onClick={advanceTurn} aria-keyshortcuts={shortcutLabel(shortcut,true)} title={`Turno successivo (${shortcutLabel(shortcut)})`}>
+                                    <button ref={nextTurnButton} disabled={reactionSync.paused||!!workspace?.syncError} className="sort-turns" type="button" onClick={advanceTurn} aria-keyshortcuts={shortcutLabel(shortcut,true)} title={`Turno successivo (${shortcutLabel(shortcut)})`}>
                                         Turno successivo →
                                     </button>
                                     <kbd className="library-help">{shortcutLabel(shortcut)}</kbd>
-                                    <button className="end-combat" type="button" onClick={() => setCombat(null)}>
+                                    <button className="end-combat" type="button" disabled={!!workspace?.syncError} onClick={() => setCombat(null)}>
                                         Termina combattimento
                                     </button>
                                 </>
                             ) : (
-                                <button className="sort-turns" type="submit" form={combatFormId} disabled={turns.length === 0}>
+                                <button className="sort-turns" type="submit" form={combatFormId} disabled={turns.length === 0||!!workspace?.syncError}>
                                     Inizia combattimento
                                 </button>
                             )}
