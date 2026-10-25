@@ -18,6 +18,7 @@ Usare una partita di prova, con due finestre separate: Master e giocatore. L’i
 4. Verificare: si consuma uno slot di 2°, inizia la concentrazione, nessuno si addormenta. Non si tirano ancora i d8.
 5. Passare al turno di un’altra creatura. Quando l’evento avviene, aprire **Rilascia Sonno** nella card dell’azione preparata.
 6. Inserire il totale dei 7d8 e le creature ora nell’area. Il giocatore invia la reazione; il Master può correggere l’area e confermare chi si addormenta. Se agisce direttamente il Master usa **Calcola → Usa reazione**.
+   Per verificare il controllo dei dadi con uno slot di 4°, preparare Sonno con quello slot: il rilascio richiede **11d8**, quindi un intero da **11 a 88**. Inserendo **90** deve comparire un errore sotto il campo e l’invio deve restare disabilitato. Correggendo il totale, i bersagli selezionati devono restare selezionati e l’invio deve abilitarsi se la reazione è disponibile. Il pannello indica anche se il rilascio è già in attesa del Master o la preparazione non è più disponibile; **Chiudi rilascio** resta utilizzabile.
 7. Verificare: gli effetti iniziano soltanto alla conferma, la concentrazione per trattenere Sonno termina, si usa la reazione e non viene consumato un altro slot. La durata del sonno parte dal rilascio.
 8. La reazione resta occupata fino all’inizio del prossimo turno del personaggio. Il testo dell’evento e la portata vanno verificati dal Master: il comando di rilascio è esplicito, non si attiva da solo.
 
