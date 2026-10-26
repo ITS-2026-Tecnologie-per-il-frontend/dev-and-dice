@@ -276,7 +276,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
                     {item.key===key&&<button type="button" className="delete-turn player-cast-close" aria-label={`Chiudi pannello ${item.name}`} onClick={()=>{selectedIdentity.current='';setKey('')}}>×</button>}
                     <div className="catalog-search ability-name"><input aria-label={`Nome abilità ${item.name}`} value={item.displayName||item.name} readOnly/></div>
                     <div className="ability-owner-controls"><AbilityMetadata duration={item.duration} owner={game.character.sheet.name} ownerLabel={item.spellLevel!==undefined?'Lanciatore':'Utilizzatore'}/><InfoButton label="Descrizione" entry={item.entry} name={item.name} description={item.description} fields={{duration:item.duration,remainingTurns:item.remainingTurns,active:item.active,owner:game.character.sheet.name}}/></div>
-                    <AbilityUsage unit={item.unit} concentration={item.concentration} castingTime={String(item.entry?.data.castingTime??'')}/>
+                    <AbilityUsage unit={item.unit} concentration={item.concentration} prolonged={item.prolonged}/>
                     <div className="ability-use-controls">
                         {item.error&&!item.windDirection&&<p role="status">{item.error}</p>}
                         {item.key===key&&panel==='cast'&&!choices.canPropose&&<p role="status">{choices.blockedReason??'Puoi compilare il form; potrai inviarlo durante il tuo turno.'}</p>}

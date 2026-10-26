@@ -14,10 +14,10 @@ export function AbilityMetadata({duration,owner,ownerLabel}:{duration:string;own
     </dl>
 }
 
-export function AbilityUsage({unit,concentration,castingTime}:{unit?:string;concentration?:boolean;castingTime?:string}) {
-    const label=unit==='action'?'Azione':unit==='bonus-action'?'Azione bonus':unit==='reaction'?'Reazione':castingTime
+export function AbilityUsage({unit,concentration,prolonged}:{unit?:string;concentration?:boolean;prolonged?:boolean}) {
+    const label=unit==='action'||prolonged?'Azione':unit==='bonus-action'?'Azione bonus':unit==='reaction'?'Reazione':undefined
     if(!label&&!concentration)return null
-    return <div className="ability-usage" aria-label="Utilizzo dell’abilità">{label&&<span>{label}</span>}{concentration&&<span>Concentrazione</span>}</div>
+    return <div className="ability-usage" aria-label="Utilizzo dell’abilità">{label&&<span>{label}</span>}{(concentration||prolonged)&&<span>{concentration?'Concentrazione':'Concentrazione durante il lancio'}</span>}</div>
 }
 
 export function AbilityTargets({candidates,ownerId,selectedIds,maximum,summary,disabled=false,disableNewTargets=false,label='Bersagli del danno',checkboxLabel,onChange,renderSelected}: {
