@@ -94,7 +94,7 @@ export type ResolutionPlan={attackBonusSources?:{name:string;amount:number}[];we
 export type DefenseRule={type:DamageType;when:'always'|'nonmagical';source:string}
 export type BonusDie={id:number;label:string;sides:number;sign:1|-1;consume:boolean}
 export type DefenseProfile={hitPoints?:number;maxHitPoints?:number;reviewDamage?:boolean;reviewAttack?:boolean;armorClass?:number;saveBonus?:number;attackMode?:'normal'|'advantage'|'disadvantage';saveMode?:'normal'|'advantage'|'disadvantage';attackDisadvantage?:boolean;grantsAttackAdvantage?:boolean;automaticSaveFailure?:boolean;attackDice?:BonusDie[];saveDice?:BonusDie[];spellImmunities?:string[];resistances:DefenseRule[];immunities:DefenseRule[];vulnerabilities:DefenseRule[];conditionImmunities:string[];notes:string[]}
-export type ResolutionRolls={saveOutcome?:boolean;save?:number;saveSecond?:number;attacks?:Record<string,number>;saveBonuses?:Record<string,number>;attackBonuses?:Record<string,number>;critical?:Record<string,number>}
+export type ResolutionRolls={criticalHit?:boolean;saveOutcome?:boolean;save?:number;saveSecond?:number;attacks?:Record<string,number>;saveBonuses?:Record<string,number>;attackBonuses?:Record<string,number>;critical?:Record<string,number>}
 export type PacketResult={hit?:boolean;critical:boolean;total?:number;needsSecondDie?:boolean;needsBonusDice?:BonusDie[];damage:number|null;steps:string[];effects:EffectSpec[];needsCritical:DamageType[]}
 export type TargetResolution={effectDetails?:SpellEffectDetails;temporaryHitPoints?:number;healing?:number|null;damage:number|null;packets:PacketResult[];armorClass?:number;save?:{ability:SaveAbility;die?:number;secondDie?:number;needsSecondDie?:boolean;needsBonusDice?:BonusDie[];automaticFailure?:boolean;bonus?:number;dc?:number;total?:number;success?:boolean};notes:string[]}
 
@@ -457,6 +457,7 @@ export function resolveTarget(plan:ResolutionPlan,packets:RollPacket[],profile:D
         const notes=[...plan.notes,...(modifier===undefined?['Modificatore da incantatore mancante: correggi la caratteristica nella scheda.']:[]),...(!ready&&modifier!==undefined?['PF attuali o massimi mancanti o non validi: correggi la scheda del bersaglio.']:[])]
         return {damage:ready?0:null,healing,packets:[{critical:false,damage:ready?0:null,needsCritical:[],effects:[],steps:[`Guarigione: ${raw}${modifier===undefined?' + modificatore da verificare':` ${modifier<0?'−':'+'} ${Math.abs(modifier)} = ${total}`}`,`PF recuperati: ${healing??'da verificare'}${ready?` (${current} → ${current+healing!}, massimo ${maximum})`:''}`]}],notes}
     }
+    if(rolls.criticalHit!==undefined&&typeof rolls.criticalHit!=='boolean')throw new Error('Decisione sul critico non valida.')
     if([rolls.save,rolls.saveSecond,...Object.values(rolls.attacks??{})].some(n=>n!==undefined&&(!Number.isInteger(n)||n<1||n>20))||Object.values(rolls.critical??{}).some(n=>!Number.isSafeInteger(n)||n<0))throw new Error('Risultati dei dadi non validi.')
     let success:boolean|undefined,total:number|undefined
     const bonusTotal=(dice:BonusDie[],values:Record<string,number>,prefix='')=>dice.reduce((sum,die)=>{
@@ -483,6 +484,9 @@ export function resolveTarget(plan:ResolutionPlan,packets:RollPacket[],profile:D
         const die=profile.attackMode==='advantage'?Math.max(packet.die!,second):profile.attackMode==='disadvantage'?Math.min(packet.die!,second):packet.die!
         const attack=plan.kind==='attack'&&!needsSecondDie&&!attackMissing.length?assessAttack(plan.edition,die,plan.attackBonus===undefined?undefined:plan.attackBonus+attackExtra,profile.armorClass):undefined
         const hit=needsSecondDie||attackMissing.length?undefined:attack?attack.hit:plan.save?success===undefined?undefined:!success:true
+        // PHB 2014, PDF 293: unconscious/paralyzed targets suffer critical hits within 5 feet.
+        // The Master supplies the distance ruling; it never turns a miss into a hit.
+        const critical=hit===true&&(attack?.critical===true||rolls.criticalHit===true&&(plan.kind==='attack'||plan.kind==='automatic'&&!!plan.weaponName))
         const steps:string[]=[],needsCritical:DamageType[]=[],effects=plan.effects.filter(e=>e.trigger==='always'||e.trigger==='hit'&&hit===true||e.trigger==='failed-save'&&success===false).filter(e=>{
             const name=e.condition&&conditionNames[e.condition as keyof typeof conditionNames]
             if(e.condition&&profile.conditionImmunities.some(c=>c===e.condition||name&&c===normalized(name))) {steps.push(`Immunità alla condizione ${name??e.condition}`);return false}
@@ -495,8 +499,8 @@ export function resolveTarget(plan:ResolutionPlan,packets:RollPacket[],profile:D
             const modifier=plan.damageBonuses?.[component.type]??(plan.damageTypeOverride===component.type?plan.damageBonuses?.untyped:undefined)??0
             let amount=component.amount+modifier
             const spellImmune=!!plan.ruleId&&!!profile.spellImmunities?.includes(plan.ruleId)
-            const criticalDice=attack?.critical?rolls.critical?.[`${index}:${component.type}`]:undefined
-            if(attack?.critical) {
+            const criticalDice=critical?rolls.critical?.[`${index}:${component.type}`]:undefined
+            if(critical) {
                 if(criticalDice===undefined){needsCritical.push(component.type);ready=false}else amount+=criticalDice
             }
             amount=Math.max(0,amount)
@@ -513,12 +517,12 @@ export function resolveTarget(plan:ResolutionPlan,packets:RollPacket[],profile:D
             if(immune||spellImmune)amount=0
             else {if(resist)amount=Math.floor(amount/2);if(vulnerable)amount*=2}
             const bonusText=damageBonusText(plan,component.type,modifier)
-            steps.push(`Danni (${damageNames[component.type]}): ${component.amount}${bonusText?' '+bonusText:''}${attack?.critical?criticalDice===undefined?' + dadi critici da inserire':` + ${criticalDice} (critico)`:''}${attack?.critical&&criticalDice===undefined?'':`${plan.save&&success?' → TS riuscito: '+before:''}${spellImmune?' → protezione dall’incantesimo':immune?' → immunità':resist?' → resistenza':''}${vulnerable&&!immune&&!spellImmune?' → vulnerabilità':''} → ${amount}`}`)
+            steps.push(`Danni (${damageNames[component.type]}): ${component.amount}${bonusText?' '+bonusText:''}${critical?criticalDice===undefined?' + dadi critici da inserire':` + ${criticalDice} (critico)`:''}${critical&&criticalDice===undefined?'':`${plan.save&&success?' → TS riuscito: '+before:''}${spellImmune?' → protezione dall’incantesimo':immune?' → immunità':resist?' → resistenza':''}${vulnerable&&!immune&&!spellImmune?' → vulnerabilità':''} → ${amount}`}`)
             if(component.type==='untyped'||profile.reviewDamage||plan.kind==='attack'&&profile.reviewAttack)ready=false
             damage+=amount
         }
         if(!Number.isSafeInteger(damage))throw new Error('Totale dei danni troppo grande.')
-        return {hit,critical:!!attack?.critical,total:attack?.total,needsSecondDie,needsBonusDice:attackMissing,damage:ready?damage:null,steps,effects,needsCritical}
+        return {hit,critical,total:attack?.total,needsSecondDie,needsBonusDice:attackMissing,damage:ready?damage:null,steps,effects,needsCritical}
     })
     const amount=results.reduce((sum,r)=>sum+(r.damage??0),0)
     if(!Number.isSafeInteger(amount))throw new Error('Totale dei danni troppo grande.')

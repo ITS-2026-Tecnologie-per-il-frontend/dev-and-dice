@@ -1,3 +1,4 @@
+import {resetTurnEconomy} from '../src/domain/dnd/TurnEconomy.ts'
 // Run: node tests/weapon-effects.mjs — isolated rules and approval transactions; no live accounts.
 import assert from 'node:assert/strict'
 import {combatRules,actionContext,actionChoices,prepareAction,requestProposal,createRequestResolution,applyCombatRequest,visibleRequests,validCombatRequest} from '../server/combat-requests.mjs'
@@ -22,6 +23,12 @@ assert.equal(weaponProfile({...dagger,playerDetails:{...dagger.playerDetails,'at
 const defender={...newCharacterSheet(),armorClass:'13',playerDetails:{'combat.resistances':'fuoco'}}
 const profile=defenseProfile(defender,undefined,[],3)
 assert.equal(resolveTarget(plan,[{targetId:3,die:13,damage:[{type:'piercing',amount:2}]}],profile).damage,5,'Only dice are entered; the flat damage bonus is added once')
+const conditionalHit=[{targetId:3,die:13,damage:[{type:'piercing',amount:2}]}]
+assert.equal(resolveTarget(plan,conditionalHit,profile,{criticalHit:true}).damage,null,'A condition-based critical requires its additional dice')
+assert.equal(resolveTarget(plan,conditionalHit,profile,{criticalHit:true,critical:{'0:piercing':2}}).damage,7,'A condition-based critical adds dice and the modifier once')
+assert.equal(resolveTarget(plan,[{...conditionalHit[0],die:1}],profile,{criticalHit:true,critical:{'0:piercing':2}}).damage,0,'A critical ruling never turns a natural miss into a hit')
+assert.equal(resolveTarget({...plan,kind:'automatic',weaponName:undefined},conditionalHit,profile,{criticalHit:true}).packets[0].critical,false,'An effect without an attack is not a critical hit')
+
 assert.equal(resolveTarget({...plan,damageTypes:['untyped'],magical:null},[{targetId:3,die:2,damage:[{type:'untyped',amount:4}]}],{...profile,reviewDamage:true}).damage,0,'A known miss never needs weapon properties')
 let owned=addInventoryItem(dagger,data,'Pugnale','dagger','2')
 const id=ownedInventoryItems(owned)[0].id
@@ -130,7 +137,7 @@ assert.equal(actionChoices(actionContext(db,game,player,rules),game,db).actions.
 let self=addInventoryItem(db.characters[0].sheet,data,'Pugnale','dagger','2')
 const selfId=ownedInventoryItems(self)[0].id
 self=setInventoryReference(self,'attacks.0.0',selfId)
-self={...self,playerDetails:{...self.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]'}}
+self={...self,playerDetails:{...self.playerDetails,...resetTurnEconomy,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]'}}
 db.characters[0].sheet=self;game.state.turns[0].sheet=self;game.state.combat.activeId=1;game.state.combat.round++
 const selfEntry=proposal('magic-weapon',1)
 const selfResult=applyCombatRequest(db,game,selfEntry,rules,{confirmed:true,targets:[{id:1,damage:'0'}],weapons:[{targetId:1,itemId:selfId}]})

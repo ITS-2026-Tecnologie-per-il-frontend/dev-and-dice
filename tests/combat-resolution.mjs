@@ -10,6 +10,7 @@ import {combatTargeting,creatureType,targetTypeError,assertTargetTypes} from '..
 import {conditionEffectName,conditionsFor,pendingRepeatSaves,endIncapacitatedConcentration,finishEmptyHoldPerson} from '../src/domain/dnd/CombatConditions.ts'
 import {advanceCombatAbilities} from '../src/utils/Combat.ts'
 import {resolvedAbility} from '../src/domain/dnd/CombatActions.ts'
+import {resetTurnEconomy} from '../src/domain/dnd/TurnEconomy.ts'
 import {newCharacterSheet} from '../src/utils/CharacterSheets.ts'
 import {templateFromCatalog} from '../src/utils/Catalog.ts'
 
@@ -119,7 +120,7 @@ function approve(entry,damage='0',extra={}) {
  const result=applyCombatRequest(db,table,entry,rules,{confirmed:true,targets:[{id:2,damage}],...extra})
  table.state=result.state;for(const sheet of result.sheets)db.characters.find(r=>r.id===sheet.id).sheet=sheet
  table.revision++
- for(const r of db.characters)r.sheet={...r.sheet,playerDetails:{...r.sheet.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]'}}
+ for(const r of db.characters)r.sheet={...r.sheet,playerDetails:{...r.sheet.playerDetails,...resetTurnEconomy,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]'}}
  return result
 }
 const holdRule=combatTargeting(template('hold-person'),rules.catalog,magicSheet,'slot:3')
@@ -260,7 +261,7 @@ try {
  }
  async function decide(id,targets,extra={}) {const now=await current();return api(master,path+'/requests/'+id+'/approve','POST',{revision:now.revision,confirmed:true,targets,...extra})}
  async function roll(user,id,targetId,value,extra={}){const now=await current();return api(user,path+'/requests/'+id+'/roll','POST',{revision:now.revision,targetId,kind:'save',value,...extra})}
- async function nextRound(){const now=await current(),sheets=now.characters.map(r=>({...r.sheet,playerDetails:{...r.sheet.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]'}}));return ok(await api(master,path+'/state','PUT',{revision:now.revision,sheets,state:{...now.state,combat:{activeId:1,round:now.state.combat.round+1}}}))}
+ async function nextRound(){const now=await current(),sheets=now.characters.map(r=>({...r.sheet,playerDetails:{...r.sheet.playerDetails,...resetTurnEconomy,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]'}}));return ok(await api(master,path+'/state','PUT',{revision:now.revision,sheets,state:{...now.state,combat:{activeId:1,round:now.state.combat.round+1}}}))}
  const area=await send('fireball',[{targetId:2,damage:[{type:'fire',amount:21}]},{targetId:3,damage:[{type:'fire',amount:21}]}])
  const publicGame=ok(area.response),id=area.body.id
  assert(!Object.hasOwn(publicGame.combatRequests[0],'resolution'));assert(!Object.hasOwn(publicGame.combatRequests[0].targets[0],'resolution'),'No target outcome or defenses leak to the caster')

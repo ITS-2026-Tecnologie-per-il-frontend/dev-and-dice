@@ -56,7 +56,7 @@ try{
  assert.equal(await total.innerText(),'Totale: —','Missing bonus dice do not produce a misleading subtotal')
  await bonus.fill('2');assert.equal(await total.innerText(),'Totale: 17','The displayed total includes the Bless d4')
  assert.equal(await outcome.innerText(),'Colpito · CA 14','The outcome is available before entering damage')
- await damage.fill('3');await form.getByText('Danni a Ragno Gigante: 5',{exact:true}).waitFor()
+ await damage.fill('3');assert.equal(await form.getByRole('spinbutton',{name:'Danni finali a Ragno Gigante',exact:true}).inputValue(),'5')
  for(const width of [1600,390,320]){
   await page.setViewportSize({width,height:1050})
   await blessed.scrollIntoViewIfNeeded();await blessed.dispatchEvent('click');await statusHelp.waitFor()
@@ -76,7 +76,8 @@ try{
  await bonus.fill('5');assert.equal(await bonus.inputValue(),'0','Values above d4 are rejected')
  await die.fill('1');await bonus.fill('4');assert.equal(await total.innerText(),'Totale: 10');assert.equal(await outcome.innerText(),'Mancato · CA 14','Bless does not turn a natural one into a hit')
  await die.fill('10');await bonus.fill('2');await damage.fill('3')
- await form.getByRole('button',{name:'Applica danni',exact:true}).click();await page.getByText('Sessione sincronizzata',{exact:true}).waitFor()
+ await page.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.endsWith('.library')))
+ await form.getByRole('button',{name:'Applica danni',exact:true}).click();await form.waitFor({state:'detached'});await page.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.endsWith('.library')));await page.getByText('Sessione sincronizzata',{exact:true}).waitFor()
  game=await api(path);assert.equal(game.state.turns[1].hitPoints,'15','The attack applies the same damage shown in the preview')
  game=await api(path+'/state','PUT',{revision:game.revision,sheets:game.characters.map(record=>record.sheet),state:{...game.state,abilities:game.state.abilities.map(ability=>ability.id===source.id?{...ability,targets:[{id:1,damage:'0',resolved:true},{id:2,damage:'0',resolved:true}]}:ability)}})
  await blessedTarget.waitFor();assert.equal(await blessed.count(),1,'A multi-target blessing has one pill per recipient')

@@ -781,6 +781,17 @@ html { scroll-behavior: smooth; }
 .master-attack-result p { margin:0; }
 .master-attack-result strong { font-size:20px; color:var(--text-h); }
 .master-attack-result summary { cursor:pointer; }
+.master-attack-hit-summary { display:grid; gap:6px; padding:10px 12px; border-radius:5px; background:var(--code-bg); }
+.master-attack-hit-summary p { margin:0; }
+.master-attack-hit-summary strong { color:var(--text-h); font-size:22px; }
+.master-attack-context { display:grid; gap:8px; padding:10px 12px; border-left:3px solid var(--ui-accent, #147d72); background:var(--code-bg); }
+.master-attack-context p { margin:0; }
+.master-attack-form .master-attack-result { padding:12px; border:1px solid var(--border); border-radius:6px; background:var(--bg); }
+.master-attack-form .combat-result-final { display:grid; grid-template-columns:minmax(0,1fr) 88px; align-items:center; gap:10px; color:var(--text-h); }
+.master-attack-form .combat-result-final > label { display:block; margin:0; font-size:14px; line-height:1.5; }
+.master-attack-form .master-attack-result .combat-damage-controls input { box-sizing:border-box; width:100%; min-height:44px; padding:8px; font-size:22px; font-weight:650; text-align:right; }
+.master-attack-form .master-attack-result .combat-damage-reset { position:absolute; top:50%; right:calc(100% + 8px); display:grid; place-items:center; width:36px; height:36px; min-height:36px; padding:0; transform:translateY(-50%); }
+.master-attack-result .library-help strong { font-size:inherit; }
 
 .turn-statuses { grid-column:1/-1; display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; min-width:0; }
 .turn-condition-pills { display:flex; flex-wrap:wrap; gap:4px; }
