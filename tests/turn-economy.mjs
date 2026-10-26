@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import {newCharacterSheet} from '../src/utils/CharacterSheets.ts'
 import {recordTurnAction,resetTurnEconomy,turnActionUses,turnActionSlots,turnActionCapacity} from '../src/domain/dnd/TurnEconomy.ts'
-import {spendCombatUse} from '../src/domain/dnd/CombatActions.ts'
+import {spendCombatUse,bonusSpellTurnError} from '../src/domain/dnd/CombatActions.ts'
 import {validEffectSpecs} from '../src/domain/dnd/CombatResolution.ts'
 const sheet={...newCharacterSheet(),name:'Baldur',playerDetails:{'rules2014.attackActionAttacks':'2'}}
 assert.deepEqual(turnActionSlots(sheet,[],1).map(s=>s.used),[false,false,false])
@@ -14,6 +14,12 @@ spent=recordTurnAction(sheet,'action',sheet,true)
 spent=recordTurnAction(spent,'action',spent,true)
 assert.equal(turnActionUses(spent,'action'),1,'Extra Attack shares one action')
 assert.equal(spent.playerDetails['combat.attackActionRemaining'],'0')
+const bonusSpell={level:2,unit:'bonus-action'}
+assert.match(bonusSpellTurnError({...sheet,playerDetails:{'rules2014.spellsThisTurn':'broken'}},bonusSpell),/Cronologia/)
+assert.equal(bonusSpellTurnError(spent,bonusSpell),undefined,'A weapon action does not block a bonus spell')
+assert.equal(bonusSpellTurnError({...sheet,playerDetails:{'rules2014.spellsThisTurn':'[{"level":0,"unit":"action"}]'}},bonusSpell),undefined)
+assert.match(bonusSpellTurnError({...sheet,playerDetails:{'rules2014.spellsThisTurn':'[{"level":1,"unit":"action"}]'}},bonusSpell),/trucchetto/)
+assert.equal(bonusSpellTurnError({...sheet,playerDetails:{'rules.edition':'2024','rules2014.spellsThisTurn':'[{"level":1,"unit":"action"}]'}},bonusSpell),undefined,'Never apply a 2014 restriction to revised rules')
 const bonus=spendCombatUse(sheet,{...ability,section:'bonus'},catalog,undefined,'free')
 assert.equal(turnActionUses(bonus,'bonus-action'),1)
 assert.equal(turnActionUses(bonus,'action'),0)

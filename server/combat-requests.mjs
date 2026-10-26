@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { loadCandidateCreationData } from '../src/domain/dnd/VerifiedDatabase.ts'
 import { activateCreationData, activeCatalog, catalogForSheet, concentrationSave } from '../src/domain/dnd/ActiveRules.ts'
-import { combatAbilityInfo, combatUseOptions, spendCombatUse, bonusActionUsed, spendBonusAction, resolvedAbility, resolveCombatDamage, restoreCombatHitPoints, grantCombatTemporaryHitPoints, assessAttack, requiresAdditionalSpellAction } from '../src/domain/dnd/CombatActions.ts'
+import { combatAbilityInfo, combatUseOptions, spendCombatUse, bonusActionUsed, spendBonusAction, resolvedAbility, resolveCombatDamage, restoreCombatHitPoints, grantCombatTemporaryHitPoints, assessAttack, requiresAdditionalSpellAction, bonusSpellTurnError } from '../src/domain/dnd/CombatActions.ts'
 import { catalogAbilityKind, parseCatalog, sheetWithCombatAbilities } from '../src/utils/Catalog.ts'
 import { withWizardCatalog } from '../src/utils/PlayerCreation.ts'
 import { spellEdition } from '../src/utils/Spellcasting.ts'
@@ -94,6 +94,7 @@ export function actionContext(db,game,user,rules,preview=false,characterId,selec
       if (ability.execution || ability.active && !['phb2014:spell:false-life','phb2014:spell:sleep'].includes(ability.ruleId) && !ability.weaponEffects?.length && (ability.timed===false || ability.remainingTurns>0)) throw new Error('Questa abilità è già in esecuzione.')
       if (spellEdition(record.sheet)==='2024' && ability.ruleId?.includes('2014:')) throw new Error('Questa voce usa regole 2014.')
       options=combatUseOptions(record.sheet,ability,catalog,rules.data)
+      error=bonusSpellTurnError(record.sheet,info)??''
     } catch(cause) {error=cause.message}
     const mechanics=info.entry?.data.mechanics ?? {},effect=object(mechanics.effect)?mechanics.effect:{}
     // ponytail: resolution mode is a suggestion for legacy/custom entries; the Master confirms the actual rolls and effects.

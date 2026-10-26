@@ -194,7 +194,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
         requestAnimationFrame(()=>{form.current?.focus({preventScroll:true});form.current?.scrollIntoView({block:'nearest'})})
     }
     function actionButton(action:ActionChoices['actions'][number]) {
-        return <button type="button" key={action.key} className="participant-ability" data-ability-state={action.active?'active':'available'} aria-pressed={key===action.key} aria-controls="player-action-proposal" disabled={busy} onClick={()=>choose(action.key)}>{action.displayName||action.name} · {action.lastCast?.status==='pending'?'In attesa del Master':action.active?'In esecuzione':action.error||'Usa'}</button>
+        return <button type="button" key={action.key} className="participant-ability" data-ability-state={action.active?'active':'available'} aria-pressed={key===action.key} aria-controls="player-action-proposal" title={action.error||undefined} disabled={busy} onClick={()=>choose(action.key)}>{action.displayName||action.name} · {action.lastCast?.status==='pending'?'In attesa del Master':action.active?'In esecuzione':action.error?'Non disponibile':'Usa'}</button>
     }
     function targetFields(target:CombatTarget) {
         return <>

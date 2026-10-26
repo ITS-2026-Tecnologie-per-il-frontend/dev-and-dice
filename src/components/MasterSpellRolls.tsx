@@ -4,7 +4,7 @@ import type { Ability } from '../utils/Combat'
 import type { CharacterSheet } from '../utils/CharacterSheets'
 import type { Catalog } from '../utils/Catalog'
 import type { CreationData } from '../utils/PlayerCreation'
-import { combatAbilityInfo, requiresAdditionalSpellAction, type UseOption } from '../domain/dnd/CombatActions'
+import { combatAbilityInfo, bonusSpellTurnError, requiresAdditionalSpellAction, type UseOption } from '../domain/dnd/CombatActions'
 import { assertPacketPlan, directBenefit, weaponCandidates, type WeaponChoice, defenseProfile, resolutionPlan, resolveTarget, packetTargets, damageNames, type ResolutionRolls, type TargetResolution, type ResolutionPlan } from '../domain/dnd/CombatResolution'
 import { combatTargeting, creatureType, wearingArmor, assertTargetTypes } from '../domain/dnd/CombatTargets'
 import { inventoryEquipment, inventoryFieldValue, referencedInventoryItem } from '../utils/Inventory'
@@ -31,7 +31,7 @@ export function MasterSpellRolls({ability,owner,participants,abilities,catalog,c
     const decisionId=useId()
     const working=useRef(false),[executionId]=useState(()=>crypto.randomUUID())
     const info=combatAbilityInfo(ability,catalog)
-    const action={name:ability.name,description:ability.description??info.entry?.description??'',group:'Incantesimi' as const,cost:ability.resourceCost??1,error,
+    const action={name:ability.name,description:ability.description??info.entry?.description??'',group:'Incantesimi' as const,cost:ability.resourceCost??1,error:error||(inCombat?bonusSpellTurnError(owner,info):undefined)||'',
         resolution:resolutionPlan(owner,ability,catalog,optionId),options:options.filter(option=>!ability.execution||option.id===ability.execution.option).map(option=>({...option,remaining:ability.execution?null:option.remaining,targeting:combatTargeting(ability,catalog,owner,option.id),resolution:resolutionPlan(owner,ability,catalog,option.id)}))}
     const plan={...(action.options.find(option=>option.id===draft?.option)?.resolution??action.resolution)!,...properties}
     const active=abilities.map(effect=>{

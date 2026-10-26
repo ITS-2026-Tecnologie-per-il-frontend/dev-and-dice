@@ -50,7 +50,7 @@ export function ActionRollForm({action,targets,ownerId,canSubmit,disabled,formRe
         }
     }
     async function submit() {
-        if(working.current||!canSubmit||disabled||!optionAvailable||invalidWeapon)return
+        if(working.current||!canSubmit||disabled||action.error||!optionAvailable||invalidWeapon)return
         const packets:RollPacket[]=plan.temporaryHitPoints?[{targetId:ownerId??-1,damage:[],temporaryHitPointsRoll:Number(temporaryRoll),keepTemporaryHitPoints:keepTemporary==='current'}]:selectedRows.map(row=>({targetId:row.targetId,...(plan.healing?{healingRoll:Number(row.healingRoll)}:{}),...(plan.kind==='attack'?{die:Number(row.die)}:{}),damage:plan.damageTypes.map(type=>({type,amount:Number((plan.sharedDamage?shared:row.damage)[type])}))}))
         if(targeting&&packets.some(packet=>targetTypeError(targeting,targets.find(target=>target.id===packet.targetId)?.creatureType,targets.find(target=>target.id===packet.targetId)?.wearingArmor))){setError('Verifica il tipo dei bersagli selezionati.');return}
         if(!validPackets(packets)){setError('Verifica i risultati dei dadi.');return}
@@ -59,7 +59,7 @@ export function ActionRollForm({action,targets,ownerId,canSubmit,disabled,formRe
         try {await onSubmit(body)}catch(error){setError(message(error))}finally{working.current=false;setBusy(false)}
     }
     return <form className={`action-roll-form ${className}`} id={id} ref={formRef} tabIndex={-1} aria-label={label} onSubmit={event=>{event.preventDefault();void submit()}}>
-        <fieldset aria-label={`Parametri di ${action.name}`} disabled={busy||disabled||!!action.error}>
+        <fieldset aria-label={`Parametri di ${action.name}`} disabled={busy||disabled}>
             <details className="player-action-description" open><summary>{plan.weaponEnhancements?.length?'Valori di base dell’arma':'Descrizione dell’azione'}</summary><p className="combat-request-description">{action.description}</p></details>
             {children}
             {!(action.options.length===1&&optionId==='free')&&<label>Risorsa<select aria-label="Risorsa" value={optionId} required onChange={event=>changeOption(event.target.value)}>{action.options.map(o=><option value={o.id} key={o.id} disabled={o.remaining!==null&&o.remaining<(o.cost??action.cost)}>{o.label}{o.remaining===null?'':` · ${o.remaining} rimasti`}</option>)}</select></label>}
@@ -80,7 +80,8 @@ export function ActionRollForm({action,targets,ownerId,canSubmit,disabled,formRe
                 </div>}/>}
             {rows.length>0&&plan.sharedDamage&&<fieldset className="player-shared-damage"><legend>Danno dell’area</legend><p>Un tiro per tutti i bersagli selezionati.</p><DamageRollFields compact plan={plan} values={shared} onChange={(type,value)=>setShared(current=>({...current,[type]:value}))}/></fieldset>}
             {plan.maximumPackets!==null&&plan.maximumPackets>1&&<p>Colpi assegnati: {rows.length}/{plan.maximumPackets}. Ogni colpo conserva il proprio tiro e i propri danni.</p>}
-            <button className="play-primary" disabled={!canSubmit||!optionAvailable||invalidWeapon||invalidAttack||invalidTemporary||selectedRows.length===0&&(plan.kind==='attack'||plan.kind==='save'||!!plan.damageTypes.length||!!plan.effects.length||!!plan.weaponEffect||!!plan.healing)||!!plan.healing&&(plan.healing.modifier===undefined||rows.some(row=>!row.healingRoll||Number(row.healingRoll)<plan.healing!.count||Number(row.healingRoll)>plan.healing!.count*plan.healing!.sides))||plan.maximumPackets!==null&&rows.length>plan.maximumPackets||!!plan.requiredPackets&&rows.length!==plan.requiredPackets}>{submitLabel}</button>
+            {action.error&&<p role="alert">{action.error}</p>}
+            <button className="play-primary" disabled={!!action.error||!canSubmit||!optionAvailable||invalidWeapon||invalidAttack||invalidTemporary||selectedRows.length===0&&(plan.kind==='attack'||plan.kind==='save'||!!plan.damageTypes.length||!!plan.effects.length||!!plan.weaponEffect||!!plan.healing)||!!plan.healing&&(plan.healing.modifier===undefined||rows.some(row=>!row.healingRoll||Number(row.healingRoll)<plan.healing!.count||Number(row.healingRoll)>plan.healing!.count*plan.healing!.sides))||plan.maximumPackets!==null&&rows.length>plan.maximumPackets||!!plan.requiredPackets&&rows.length!==plan.requiredPackets}>{submitLabel}</button>
         </fieldset>{error&&<p role="alert">{error}</p>}
     </form>
 }

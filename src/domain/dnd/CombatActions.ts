@@ -59,6 +59,15 @@ export function requiresAdditionalSpellAction(sheet:CharacterSheet,ability:Abili
     return sheet.playerDetails?.['combat.actionUsed']==='true'||history.some(cast=>cast?.unit==='action')
 }
 
+// PHB 2014, PDF 203, Bonus Action: every other spell that turn must be a one-action cantrip.
+export function bonusSpellTurnError(sheet:CharacterSheet,info:{level?:number;unit:string}):string|undefined {
+    if(spellEdition(sheet)!=='2014'||info.level===undefined||info.unit!=='bonus-action')return
+    let history:unknown
+    try{history=JSON.parse(sheet.playerDetails?.['rules2014.spellsThisTurn']??sheet.playerDetails?.['combat.spellsThisTurn']??'[]')}catch{return 'Cronologia degli incantesimi del turno non valida.'}
+    if(!Array.isArray(history))return 'Cronologia degli incantesimi del turno non valida.'
+    if(history.some(cast=>cast?.level!==0||cast?.unit!=='action'))return 'Non puoi lanciare un incantesimo come azione bonus in questo turno: hai già lanciato un incantesimo diverso da un trucchetto con tempo di lancio di un’azione (regole 2014).'
+}
+
 function pool(sheet:CharacterSheet,key:string) {
     for (const suffix of ['total','used']) {
         const raw=sheet.playerDetails?.[key+'.'+suffix]
@@ -166,6 +175,8 @@ function spendCombatUseUnchecked(sheet:CharacterSheet,ability:Ability,catalog:Ca
     if (option.cost!==undefined && option.cost!==cost) throw new Error('Il costo deve rispettare il privilegio: '+option.cost+'.')
     const info=combatAbilityInfo(ability,catalog),d=sheet.playerDetails ?? {},next={...sheet,playerDetails:{...d}}
     if (info.level!==undefined) {
+        const restriction=bonusSpellTurnError(sheet,info)
+        if(restriction)throw new Error(restriction)
         if (ability.castingSource!=='resource' && cost!==1) throw new Error('Un lancio consuma un solo slot o utilizzo.')
         if (d['rules2014.raging']==='true' && spellEdition(sheet)==='2014') throw new Error('Durante l’ira non puoi lanciare incantesimi.')
         const history:unknown=JSON.parse((spellEdition(sheet)==='2014' ? d['rules2014.spellsThisTurn'] ?? d['combat.spellsThisTurn'] : d['combat.spellsThisTurn']) ?? '[]')
