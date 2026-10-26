@@ -35,6 +35,8 @@ try {
  async function open(){await page.getByRole('button',{name:'Pugnale · Usa',exact:true}).click();await form.waitFor();await form.getByRole('checkbox',{name:'Worg',exact:true}).check()}
  async function apply(){await page.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.endsWith('.library')));await form.getByRole('button',{name:'Applica danni',exact:true}).evaluate(button=>{button.click();button.click()});await form.waitFor({state:'detached'});await page.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.endsWith('.library')));await page.getByText('Sessione sincronizzata',{exact:true}).waitFor();return api(path)}
  await open()
+ const usage=page.locator('.ability-row').filter({has:form}).getByLabel('Utilizzo dell’abilità',{exact:true})
+ assert.deepEqual(await usage.locator('span').allTextContents(),['Azione'],'Weapon attacks show their action without concentration')
  for(const mode of ['Originale','Rinnovata']){
   await view(mode)
   assert.equal(await form.getByRole('combobox').count(),0)

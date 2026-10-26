@@ -14,6 +14,12 @@ export function AbilityMetadata({duration,owner,ownerLabel}:{duration:string;own
     </dl>
 }
 
+export function AbilityUsage({unit,concentration,castingTime}:{unit?:string;concentration?:boolean;castingTime?:string}) {
+    const label=unit==='action'?'Azione':unit==='bonus-action'?'Azione bonus':unit==='reaction'?'Reazione':castingTime
+    if(!label&&!concentration)return null
+    return <div className="ability-usage" aria-label="Utilizzo dell’abilità">{label&&<span>{label}</span>}{concentration&&<span>Concentrazione</span>}</div>
+}
+
 export function AbilityTargets({candidates,ownerId,selectedIds,maximum,summary,disabled=false,disableNewTargets=false,label='Bersagli del danno',checkboxLabel,onChange,renderSelected}: {
     candidates:{id:number;name:string;unavailableReason?:string}[];ownerId?:number|null;selectedIds:number[];maximum:number|null;summary?:string;disabled?:boolean;disableNewTargets?:boolean;label?:string;
     checkboxLabel?:(candidate:{id:number;name:string})=>string;onChange:(id:number,checked:boolean)=>void;renderSelected?:(candidate:{id:number;name:string})=>ReactNode

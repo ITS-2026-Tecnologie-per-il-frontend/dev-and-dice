@@ -55,6 +55,7 @@
     grid-template-areas:
         "drag name duration remaining delete"
         ". owner owner owner ."
+        ". usage usage usage ."
         ". activation activation activation .";
 }
 
@@ -264,6 +265,7 @@
             ". duration ."
             ". remaining ."
             ". owner ."
+            ". usage ."
             ". activation .";
         gap: 8px;
     }
@@ -685,7 +687,7 @@ html { scroll-behavior: smooth; }
     .info-fields { grid-template-columns: minmax(0, 1fr); }
     .info-scores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-:is(.tracker-main,.master-inspector) .ability-row { grid-template-areas: "drag name name delete" "duration duration remaining remaining" "owner owner owner owner" "details details details details" "use use use use" ". activation activation ."; }
+:is(.tracker-main,.master-inspector) .ability-row { grid-template-areas: "drag name name delete" "duration duration remaining remaining" "owner owner owner owner" "details details details details" "usage usage usage usage" "use use use use" ". activation activation ."; }
 
 .hitpoint-adjustment { display: flex; align-items: end; gap: 6px; min-width: 0; }
 .turn-row .hitpoint-adjustment input { width: 60px; }
@@ -702,8 +704,8 @@ html { scroll-behavior: smooth; }
 .ability-metadata dd { margin:0; color:var(--text-h); font-size:13px; line-height:1.4; overflow-wrap:anywhere; }
 .ability-owner-controls:has(.ability-metadata) { align-items:center; }
 .ability-owner-controls:has(.ability-metadata) > .more-info { min-height:36px; padding:6px 8px; font-size:12px; }
-:is(.tracker-main,.master-inspector) .ability-row[data-owner-fixed="true"] { grid-template-areas:"drag name name delete" "owner owner owner owner" "timing timing timing timing" "details details details details" "use use use use" ". activation activation ."; }
-:is(.tracker-main,.master-inspector) .ability-row[data-owner-fixed="true"][data-instantaneous="true"] { grid-template-areas:"drag name name delete" "owner owner owner owner" "use use use use" ". activation activation ."; }
+:is(.tracker-main,.master-inspector) .ability-row[data-owner-fixed="true"] { grid-template-areas:"drag name name delete" "owner owner owner owner" "timing timing timing timing" "details details details details" "usage usage usage usage" "use use use use" ". activation activation ."; }
+:is(.tracker-main,.master-inspector) .ability-row[data-owner-fixed="true"][data-instantaneous="true"] { grid-template-areas:"drag name name delete" "owner owner owner owner" "usage usage usage usage" "use use use use" ". activation activation ."; }
 .ability-timing-controls { grid-area:timing; min-width:0; color:var(--text); font-size:12px; }
 .ability-timing-controls > summary { min-height:28px; display:flex; align-items:center; cursor:pointer; }
 .ability-timing-controls > summary::before { content:'›'; margin-right:6px; }
@@ -881,3 +883,6 @@ html { scroll-behavior: smooth; }
 .wind-start-save { display:grid; gap:6px; min-width:0; flex-basis:100%; text-align:left; }
 .wind-start-save-actions { display:flex; flex-wrap:wrap; gap:8px; }
 .wind-start-save-actions button { min-height:44px; }
+
+.ability-usage { grid-area:usage; display:flex; flex-wrap:wrap; gap:6px; min-width:0; }
+.ability-usage > span { padding:4px 9px; border:1px solid var(--border); border-radius:5px; background:var(--code-bg); color:var(--text-h); font-size:12px; line-height:1.5; }

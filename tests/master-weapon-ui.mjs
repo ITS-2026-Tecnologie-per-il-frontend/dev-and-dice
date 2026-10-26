@@ -25,7 +25,7 @@ try {
  await api(master,'/register','POST',{username:'MasterWeaponQA',password:'test-password-123'})
  await api(player,'/register','POST',{username:'CasterWeaponQA',password:'test-password-123'})
  const {data,catalog}=await combatRules(),spell=templateFromCatalog(catalog.abilities.find(entry=>entry.data.referenceId==='phb2014:spell:magic-weapon'))
- let caster={...newCharacterSheet(),name:'Aster',characterClass:'Mago',level:'5',abilities:[{...spell,instantaneous:true,damageEnabled:true}],playerDetails:{'slots.2.total':'3','slots.2.used':'0'}}
+ let caster={...newCharacterSheet(),name:'Aster',characterClass:'Mago',level:'5',abilities:[{...spell,instantaneous:true,damageEnabled:true},templateFromCatalog(catalog.abilities.find(entry=>entry.data.referenceId==='phb2014:spell:shield')),templateFromCatalog(catalog.abilities.find(entry=>entry.data.referenceId==='phb2014:spell:fire-bolt'))],playerDetails:{'slots.2.total':'3','slots.2.used':'0'}}
  caster=addInventoryItem(caster,data,'Pugnale di Aster','dagger','1')
  const ownDagger=ownedInventoryItems(caster)[0].id
  let target={...newCharacterSheet(),name:'Baldur',dexterity:'14',strength:'10',hitPoints:'20',armorClass:'13',playerDetails:{'attacks.0.1':'4','attacks.0.2':'1d4+2','attacks.0.3':'Perforante'}}
@@ -42,6 +42,10 @@ try {
  const turn=(sheet,i)=>({id:i+1,sheet,description:sheet.name,initiative:String(20-i),hitPoints:sheet.hitPoints,armorClass:sheet.armorClass,temporaryHitPoints:''})
  game=await api(master,path+'/state','PUT',{revision:game.revision,sheets:[caster,target],state:{turns:[caster,target].map(turn),abilities:[],combat:{activeId:1,round:1}}})
  const available=await api(player,path+'/actions'),action=available.actions.find(action=>action.name===spell.name)
+ assert.equal(action.unit,'bonus-action');assert.equal(action.concentration,true)
+ assert.equal(available.actions.find(a=>a.entry?.data.referenceId==='phb2014:spell:shield').unit,'reaction')
+ assert.equal(available.actions.find(a=>a.entry?.data.referenceId==='phb2014:spell:fire-bolt').unit,'action')
+ assert.equal(available.actions.find(a=>a.entry?.data.referenceId==='phb2014:spell:fire-bolt').concentration,false)
  assert.equal(action.damageEnabled,false,'Casting a known weapon enchantment deals no damage despite stale sheet flags')
  game=await api(player,path+'/requests','POST',{id:crypto.randomUUID(),revision:available.revision,key:action.key,option:'slot:2',cost:1,mode:'none',damageEnabled:false,packets:[{targetId:2,damage:[]}]})
  const request=game.combatRequests.find(request=>request.status==='pending')
@@ -58,6 +62,10 @@ try {
  await page.getByRole('button',{name:spell.name+' · In esecuzione',exact:true}).click()
  const summary=page.getByLabel('Riepilogo: '+spell.name,{exact:true})
  await summary.getByText('Approvata',{exact:true}).waitFor()
+ for(const container of [card,page.locator('.ability-row').filter({has:summary})]){
+  const usage=container.getByLabel('Utilizzo dell’abilità',{exact:true})
+  assert.deepEqual(await usage.locator('span').allTextContents(),['Azione bonus','Concentrazione'])
+ }
  for(const view of [card,summary]){
   const effect=view.getByLabel('Potenziamento applicato',{exact:true})
   for(const text of ['Baldur','Pugnale','L’arma è magica.','+1 ai tiri per colpire.','+1 ai danni dell’arma.'])await effect.getByText(text,{exact:true}).waitFor()
@@ -87,6 +95,9 @@ try {
  await availableMaster.getByRole('button',{name:spell.name+' · Usa',exact:true}).click()
  const form=dm.getByRole('form',{name:'Lancio: '+spell.name,exact:true})
  await form.waitFor()
+ const usage=form.locator('..').locator('..').getByLabel('Utilizzo dell’abilità',{exact:true})
+ await usage.getByText('Azione bonus',{exact:true}).waitFor()
+ assert(await usage.evaluate(element=>element.getBoundingClientRect().bottom<=element.closest('.ability-row').querySelector('.player-action-description').getBoundingClientRect().top),'Usage information precedes the action description')
  // A previous leveled action spell blocks casting, but must not freeze configuration.
  await dm.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.endsWith('.library')))
  game=await api(master,path)
