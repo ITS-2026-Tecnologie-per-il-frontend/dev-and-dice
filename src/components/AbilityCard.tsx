@@ -1,4 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react'
+import type {UseRequirements} from '../domain/dnd/CombatActions'
 import { damageNames, type SpellEffectDetails, type WeaponEffectDetails } from '../domain/dnd/CombatResolution'
 import { signedBonus } from '../utils/CharacterSheets'
 import { HelpTooltip } from './HelpTooltip'
@@ -14,10 +15,10 @@ export function AbilityMetadata({duration,owner,ownerLabel}:{duration:string;own
     </dl>
 }
 
-export function AbilityUsage({unit,concentration,prolonged}:{unit?:string;concentration?:boolean;prolonged?:boolean}) {
+export function AbilityUsage({unit,concentration,prolonged,requirements}:{unit?:string;concentration?:boolean;prolonged?:boolean;requirements?:UseRequirements}) {
     const label=unit==='action'||prolonged?'Azione':unit==='bonus-action'?'Azione bonus':unit==='reaction'?'Reazione':undefined
     if(!label&&!concentration)return null
-    return <div className="ability-usage" aria-label="Utilizzo dell’abilità">{label&&<span>{label}</span>}{(concentration||prolonged)&&<span>{concentration?'Concentrazione':'Concentrazione durante il lancio'}</span>}</div>
+    return <div className="ability-usage" aria-label="Utilizzo dell’abilità">{label&&(requirements?<HelpTooltip label={`Requisiti: ${label}`} triggerContent={<span>{label}</span>}>{requirements.hints.map(text=><p key={text}>{text}</p>)}{requirements.manualChecks.map(text=><p key={text}>{text}</p>)}{requirements.error&&<p><strong>{requirements.error}</strong></p>}</HelpTooltip>:<span>{label}</span>)}{(concentration||prolonged)&&<span>{concentration?'Concentrazione':'Concentrazione durante il lancio'}</span>}</div>
 }
 
 export function AbilityTargets({candidates,ownerId,selectedIds,maximum,summary,disabled=false,disableNewTargets=false,label='Bersagli del danno',checkboxLabel,onChange,renderSelected}: {

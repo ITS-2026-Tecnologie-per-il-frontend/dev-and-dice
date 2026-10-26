@@ -28,13 +28,13 @@ export function turnActionUses(sheet:CharacterSheet,unit:TurnAction):number {
 }
 
 // PHB 2014, PDF 190–191: these resources refresh at the start of their owner's turn.
-export const resetTurnEconomy={'combat.actionUsed':'false','combat.bonusActionUsed':'false','combat.reactionUsed':'false','combat.actionUses':'0','combat.bonusActionUses':'0','combat.reactionUses':'0','combat.attackActionRemaining':'0','combat.actionGrants':'[]'}
+export const resetTurnEconomy={'combat.actionUsed':'false','combat.bonusActionUsed':'false','combat.reactionUsed':'false','combat.actionUses':'0','combat.bonusActionUses':'0','combat.reactionUses':'0','combat.attackActionRemaining':'0','combat.attackActionUsed':'false','combat.actionGrants':'[]'}
 
 export function recordTurnAction(sheet:CharacterSheet,unit:TurnAction,previous=sheet,weaponAttack=false):CharacterSheet {
     const d=sheet.playerDetails??{},remaining=count(previous.playerDetails?.['combat.attackActionRemaining'])
     // PHB 2014, PDF 193 (Attack), 73 (Extra Attack): separate attack rolls share one action.
-    const continued=weaponAttack&&remaining>0
-    return {...sheet,playerDetails:{...d,[`combat.${keys[unit]}Used`]:'true',[`combat.${keys[unit]}Uses`]:String(turnActionUses(previous,unit)+(continued?0:1)),...(weaponAttack?{'combat.attackActionRemaining':String(continued?remaining-1:Math.max(0,count(previous.playerDetails?.['rules2014.attackActionAttacks'])-1))}:{})}}
+    const attackAction=weaponAttack&&unit==='action',continued=attackAction&&remaining>0
+    return {...sheet,playerDetails:{...d,[`combat.${keys[unit]}Used`]:'true',[`combat.${keys[unit]}Uses`]:String(turnActionUses(previous,unit)+(continued?0:1)),...(attackAction?{'combat.attackActionUsed':'true','combat.attackActionRemaining':String(continued?remaining-1:Math.max(0,count(previous.playerDetails?.['rules2014.attackActionAttacks'])-1))}:{})}}
 }
 
 export function turnActionSlots(sheet:CharacterSheet,abilities:Ability[],ownerId:number|undefined,inCombat=true) {

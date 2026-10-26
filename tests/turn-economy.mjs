@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import {newCharacterSheet} from '../src/utils/CharacterSheets.ts'
 import {recordTurnAction,resetTurnEconomy,turnActionUses,turnActionSlots,turnActionCapacity} from '../src/domain/dnd/TurnEconomy.ts'
-import {spendCombatUse,bonusSpellTurnError} from '../src/domain/dnd/CombatActions.ts'
+import {spendCombatUse,bonusSpellTurnError,combatAbilityInfo,combatUseRequirements} from '../src/domain/dnd/CombatActions.ts'
 import {validEffectSpecs} from '../src/domain/dnd/CombatResolution.ts'
 const sheet={...newCharacterSheet(),name:'Baldur',playerDetails:{'rules2014.attackActionAttacks':'2'}}
 assert.deepEqual(turnActionSlots(sheet,[],1).map(s=>s.used),[false,false,false])
@@ -62,4 +62,35 @@ assert.equal(turnActionSlots(surge,[],1)[1].temporary,true,'Instantaneous grants
 const reset={...surge,playerDetails:{...reaction.playerDetails,...resetTurnEconomy,'combat.spellsThisTurn':'[]','rules2014.spellsThisTurn':'[]'}}
 assert.deepEqual(turnActionSlots(reset,[],1).map(s=>s.used),[false,false,false])
 assert.doesNotThrow(()=>turnActionSlots({...sheet,playerDetails:{'combat.spellsThisTurn':'broken','combat.actionUses':'invalid'}},[],1))
+
+const context={abilities:[],ownerId:1,combat:{activeId:1,round:1}},feature={...ability,section:'bonus'}
+assert.match(combatUseRequirements(sheet,feature,catalog,undefined,{...context,combat:{activeId:2,round:1}}).error,/turno/)
+assert.match(combatUseRequirements(bonus,feature,catalog,undefined,context).error,/già usato/)
+const incapacitated={...ability,active:true,timed:false,targets:[{id:1}],resolutionEffects:[{kind:'condition',condition:'incapacitated',trigger:'always'}]}
+assert.match(combatUseRequirements(sheet,feature,catalog,undefined,{...context,abilities:[incapacitated]}).error,/incapacitato/)
+const priorSpell={...sheet,playerDetails:{...sheet.playerDetails,...resetTurnEconomy,'rules2014.spellsThisTurn':'[{"level":1,"unit":"action"}]'}}
+assert.equal(combatUseRequirements(priorSpell,feature,catalog,undefined,context).error,undefined,'Non-spell bonuses are not subject to the bonus-spell restriction')
+assert.match(bonusSpellTurnError({...sheet,playerDetails:{'rules2014.spellsThisTurn':'[{"level":2,"unit":"bonus-action"}]'}},{level:1,unit:'action'}),/soltanto un trucchetto/)
+assert.equal(bonusSpellTurnError({...sheet,playerDetails:{'rules2014.spellsThisTurn':'[{"level":2,"unit":"bonus-action"}]'}},{level:0,unit:'action'}),undefined)
+const priestCatalog={abilities:[{id:'priest',name:'Sacerdote di Guerra',description:'',type:'ability',data:{mechanics:{effect:{activation:'bonus-action',trigger:'use-Attack-action'}}}}]}
+const priest={...ability,catalogId:'priest',requirementsConfirmed:true},fresh={...sheet,playerDetails:{...sheet.playerDetails,...resetTurnEconomy}}
+assert.equal(combatAbilityInfo(priest,priestCatalog).unit,'bonus-action')
+assert.match(combatUseRequirements(fresh,priest,priestCatalog,undefined,context).error,/prima.*Attaccare/)
+assert.match(combatUseRequirements(recordTurnAction(fresh,'action'),priest,priestCatalog,undefined,context).error,/prima.*Attaccare/,'Using an action on a spell is not the Attack action')
+const attacked=recordTurnAction(fresh,'action',fresh,true)
+assert.equal(attacked.playerDetails['combat.attackActionUsed'],'true')
+assert.equal(combatUseRequirements(attacked,priest,priestCatalog,undefined,context).error,undefined)
+assert.equal(recordTurnAction(fresh,'bonus-action',fresh,true).playerDetails['combat.attackActionUsed'],'false','A bonus attack is not an Attack action')
+assert.equal(combatUseRequirements(recordTurnAction(sheet,'action'),priest,priestCatalog,undefined,context).manualChecks.length,1,'Legacy ambiguous actions require a Master ruling')
+assert.throws(()=>spendCombatUse(fresh,priest,priestCatalog,undefined,'free',1,context),/prima.*Attaccare/)
+assert.equal(turnActionUses(spendCombatUse(attacked,priest,priestCatalog,undefined,'free',1,context),'bonus-action'),1)
+const wolfCatalog={abilities:[{id:'wolf',name:'Lupo',description:'',type:'ability',data:{mechanics:{effect:{activation:'bonus-action-on-own-turn',requires:'raging',trigger:'hit-Large-or-smaller-creature-with-melee-weapon-attack'}}}}]}
+const wolf={...ability,catalogId:'wolf'}
+assert.equal(combatAbilityInfo(wolf,wolfCatalog).unit,'bonus-action')
+assert.match(combatUseRequirements(fresh,wolf,wolfCatalog,undefined,context).error,/Ira/)
+const raging={...fresh,playerDetails:{...fresh.playerDetails,'rules2014.raging':'true'}}
+assert.equal(combatUseRequirements(raging,wolf,wolfCatalog,undefined,context).manualChecks.length,1)
+assert.throws(()=>spendCombatUse(raging,wolf,wolfCatalog,undefined,'free',1,context),/Conferma/)
+assert.equal(turnActionUses(spendCombatUse(raging,{...wolf,requirementsConfirmed:true},wolfCatalog,undefined,'free',1,context),'bonus-action'),1)
+assert.match(combatUseRequirements({...fresh,playerDetails:{'combat.spellsThisTurn':'broken'}},feature,catalog,undefined,context).error,/Cronologia/)
 console.log('PASS turn economy: ordinary actions, spell history, bonus/reaction use, legacy saves, Extra Attack, grants, non-stacking, restrictions, expiry and owner resets')

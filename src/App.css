@@ -886,3 +886,7 @@ html { scroll-behavior: smooth; }
 
 .ability-usage { grid-area:usage; display:flex; flex-wrap:wrap; gap:6px; min-width:0; }
 .ability-usage > span { padding:4px 9px; border:1px solid var(--border); border-radius:5px; background:var(--code-bg); color:var(--text-h); font-size:12px; line-height:1.5; }
+
+.ability-usage > .help-tooltip-trigger { width:auto; height:auto; min-height:28px; flex:0 1 auto; padding:4px 9px; border:1px solid var(--border); border-radius:5px; background:var(--code-bg); color:var(--text-h); font-size:12px; line-height:1.5; }
+.ability-usage > .help-tooltip-trigger > span { display:inline; width:auto; height:auto; border:0; border-radius:0; font:inherit; }
+.ability-use-error { grid-column:1/-1; margin:0; font-size:13px; color:var(--text); }

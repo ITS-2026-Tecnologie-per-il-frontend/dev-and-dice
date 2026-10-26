@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { loadCandidateCreationData } from '../src/domain/dnd/VerifiedDatabase.ts'
 import { activateCreationData, activeCatalog, catalogForSheet, concentrationSave } from '../src/domain/dnd/ActiveRules.ts'
-import { combatAbilityInfo, combatUseOptions, spendCombatUse, bonusActionUsed, spendBonusAction, resolvedAbility, resolveCombatDamage, restoreCombatHitPoints, grantCombatTemporaryHitPoints, assessAttack, requiresAdditionalSpellAction, bonusSpellTurnError } from '../src/domain/dnd/CombatActions.ts'
+import { combatAbilityInfo, combatUseOptions, spendCombatUse, bonusActionUsed, spendBonusAction, resolvedAbility, resolveCombatDamage, restoreCombatHitPoints, grantCombatTemporaryHitPoints, assessAttack, requiresAdditionalSpellAction, combatUseRequirements } from '../src/domain/dnd/CombatActions.ts'
 import { catalogAbilityKind, parseCatalog, sheetWithCombatAbilities } from '../src/utils/Catalog.ts'
 import { withWizardCatalog } from '../src/utils/PlayerCreation.ts'
 import { spellEdition } from '../src/utils/Spellcasting.ts'
@@ -87,14 +87,14 @@ export function actionContext(db,game,user,rules,preview=false,characterId,selec
       (template.catalogId ? template.catalogId===ability.catalogId : template.name===ability.name)):[]
     const existing=matches.find(ability=>!!ability.execution||ability.active&&(ability.timed===false||ability.remainingTurns>0))??matches[0]
     const ability={...template,...existing,id:existing?.id ?? 0,ownerId:owner?.id ?? null,active:existing?.active ?? false,remainingTurns:existing?.remainingTurns ?? template.remainingTurns ?? 0}
-    const info=combatAbilityInfo(ability,catalog)
+    const info=combatAbilityInfo(ability,catalog,rules.data)
     if(selection?.unit&&info.unit!==selection.unit)return null
     let options=[],error=''
     try {
       if (ability.execution || ability.active && !['phb2014:spell:false-life','phb2014:spell:sleep'].includes(ability.ruleId) && !ability.weaponEffects?.length && (ability.timed===false || ability.remainingTurns>0)) throw new Error('Questa abilità è già in esecuzione.')
       if (spellEdition(record.sheet)==='2024' && ability.ruleId?.includes('2014:')) throw new Error('Questa voce usa regole 2014.')
       options=combatUseOptions(record.sheet,ability,catalog,rules.data)
-      error=bonusSpellTurnError(record.sheet,info)??''
+
     } catch(cause) {error=cause.message}
     const mechanics=info.entry?.data.mechanics ?? {},effect=object(mechanics.effect)?mechanics.effect:{}
     // ponytail: resolution mode is a suggestion for legacy/custom entries; the Master confirms the actual rolls and effects.
@@ -102,9 +102,10 @@ export function actionContext(db,game,user,rules,preview=false,characterId,selec
     const mode=canonicalPlan?.kind??(info.attack || effect.attack || String(mechanics.kind).includes('attack') ? 'attack' : effect.save || mechanics.save || mechanics.savingThrow ? 'save' : info.damage ? 'automatic' : 'none')
     const attackRow=/^sheet-attack:([0-5])$/.exec(ability.ruleId ?? '')
     const attackBonus=attackRow ? record.sheet.playerDetails?.[`attacks.${attackRow[1]}.1`] : undefined
-    return {key:String(index),ability,options,error,info,mode,attackBonus,resolution:canonicalPlan}
+    const requirements=combatUseRequirements(record.sheet,ability,catalog,rules.data,owner?{abilities:weaponContext.active,ownerId:owner.id,combat:game.state.combat}:undefined)
+    return {key:String(index),ability,options,error:error||requirements.error||'',info,mode,attackBonus,resolution:canonicalPlan,requirements}
   }).filter(action=>action&&!action.info.passive)
-  return {record,owner,catalog,actions,weaponContext,targets:game.state.turns.map(turn=>({...turn,sheet:db.characters.find(r=>r.gameId===game.id&&r.id===turn.sheet?.id)?.sheet??turn.sheet})),canPropose,blockedReason:blocked?'Il personaggio non può agire mentre è incapacitato.':undefined}
+  return {record,owner,catalog,actions,weaponContext,combat:game.state.combat,targets:game.state.turns.map(turn=>({...turn,sheet:db.characters.find(r=>r.gameId===game.id&&r.id===turn.sheet?.id)?.sheet??turn.sheet})),canPropose,blockedReason:blocked?'Il personaggio non può agire mentre è incapacitato.':undefined}
 }
 
 // Folata di vento: SRD 5.1 IT (D&D_5e_manuale_compatto_italiano.pdf), PDF 160.
@@ -164,10 +165,10 @@ export function createSleepReview(context,proposal) {
 }
 
 export function actionChoices(context,game,db) {
-  return {revision:game.revision,canPropose:context.canPropose,blockedReason:context.blockedReason,ownerId:context.owner?.id ?? null,actions:context.actions.map(({key,ability,options,error,info,mode,attackBonus})=>({key,windDirection:windDirectionChoice(context,game,ability),attackBonus,effects:spellEffectDetails({...ability,resolutionEffects:ability.resolutionEffects??resolutionPlan(context.record.sheet,ability,context.catalog,ability.useOption,context.weaponContext)?.effects},context.targets.map(target=>({...target,name:target.sheet?.name??target.description})),game.state.abilities,context.weaponContext.data),weaponEffects:weaponEffectDetails(ability.weaponEffects??[],game.state.turns.flatMap(turn=>{const sheet=db.characters.find(record=>record.id===turn.sheet?.id)?.sheet??turn.sheet;return sheet?[sheet]:[]})),lastCast:castReceipt(context,game,ability),additionalActionRequired:requiresAdditionalSpellAction(context.record.sheet,ability,context.catalog),displayName:weaponDisplayName(resolutionPlan(context.record.sheet,ability,context.catalog,undefined,context.weaponContext),context.targets.map(caster=>({id:caster.id,name:caster.sheet?.name??caster.description}))),name:ability.name,...(ability.ruleId==='phb2014:spell:sleep'?{sleepCasts:activeEffects(game.state.abilities).filter(a=>a.ruleId===ability.ruleId&&a.ownerId===context.owner?.id).map(a=>({id:a.id,remainingTurns:a.remainingTurns,option:a.useOption??'',targets:(a.targets??[]).map(t=>context.targets.find(p=>p.id===t.id)?.sheet?.name??context.targets.find(p=>p.id===t.id)?.description??'Creatura')}))}:{}),entry:info.entry,description:ability.description ?? info.entry?.description ?? '',options:options.map(option=>({...option,targeting:combatTargeting(ability,context.catalog,context.record.sheet,option.id),resolution:resolutionPlan(context.record.sheet,ability,context.catalog,option.id,context.weaponContext)})),error,
+  return {revision:game.revision,canPropose:context.canPropose,blockedReason:context.blockedReason,ownerId:context.owner?.id ?? null,actions:context.actions.map(({key,ability,options,error,info,mode,attackBonus,requirements})=>({key,windDirection:windDirectionChoice(context,game,ability),attackBonus,effects:spellEffectDetails({...ability,resolutionEffects:ability.resolutionEffects??resolutionPlan(context.record.sheet,ability,context.catalog,ability.useOption,context.weaponContext)?.effects},context.targets.map(target=>({...target,name:target.sheet?.name??target.description})),game.state.abilities,context.weaponContext.data),weaponEffects:weaponEffectDetails(ability.weaponEffects??[],game.state.turns.flatMap(turn=>{const sheet=db.characters.find(record=>record.id===turn.sheet?.id)?.sheet??turn.sheet;return sheet?[sheet]:[]})),lastCast:castReceipt(context,game,ability),additionalActionRequired:requiresAdditionalSpellAction(context.record.sheet,ability,context.catalog),displayName:weaponDisplayName(resolutionPlan(context.record.sheet,ability,context.catalog,undefined,context.weaponContext),context.targets.map(caster=>({id:caster.id,name:caster.sheet?.name??caster.description}))),name:ability.name,...(ability.ruleId==='phb2014:spell:sleep'?{sleepCasts:activeEffects(game.state.abilities).filter(a=>a.ruleId===ability.ruleId&&a.ownerId===context.owner?.id).map(a=>({id:a.id,remainingTurns:a.remainingTurns,option:a.useOption??'',targets:(a.targets??[]).map(t=>context.targets.find(p=>p.id===t.id)?.sheet?.name??context.targets.find(p=>p.id===t.id)?.description??'Creatura')}))}:{}),entry:info.entry,description:ability.description ?? info.entry?.description ?? '',options:options.map(option=>({...option,targeting:combatTargeting(ability,context.catalog,context.record.sheet,option.id),resolution:resolutionPlan(context.record.sheet,ability,context.catalog,option.id,context.weaponContext)})),error,
     spellLevel:info.level,group:info.level!==undefined ? 'Incantesimi' : catalogAbilityKind(info.entry,ability.section,ability.description ?? info.entry?.description).weaponAttack ? 'Attacchi fisici' : 'Abilità attivabili',
     duration:info.instantaneous ? 'Istantanea' : ability.duration==='Personalizzata' ? `${ability.remainingTurns} turni` : ability.duration,remainingTurns:ability.remainingTurns,active:!!ability.execution || ability.active && (ability.timed===false || ability.remainingTurns>0),
-    cost:ability.resourceCost ?? 1,resolution:resolutionPlan(context.record.sheet,ability,context.catalog,undefined,context.weaponContext),damageEnabled:info.damage,mode,prolonged:info.prolonged,ritual:info.ritual,unit:info.unit,concentration:info.concentration||ability.concentration===true})),
+    cost:ability.resourceCost ?? 1,resolution:resolutionPlan(context.record.sheet,ability,context.catalog,undefined,context.weaponContext),damageEnabled:info.damage,mode,prolonged:info.prolonged,ritual:info.ritual,unit:info.unit,concentration:info.concentration||ability.concentration===true,requirements})),
     targets:context.targets.map(turn=>({id:turn.id,name:turn.sheet?.name??turn.description,creatureType:creatureType(turn.sheet),wearingArmor:turn.sheet?wearingArmor(turn.sheet):undefined}))}
 
 }
@@ -304,17 +305,17 @@ export function visibleRequests(game,user,db,rules) {
   // ponytail: like the sheet journal, persisted requests grow for one session; move both journals to paginated DB storage together.
   return [...entries].reverse().filter((entry,index)=>index<20 || requestStatus(game,entry)==='pending').map(original=>{
     const entry=game.masterId===user&&original.status==='pending'&&original.proposal.sleepRoll!==undefined&&db&&rules?{...original,sleepReview:createSleepReview({targets:game.state.turns.map(t=>({...t,sheet:db.characters.find(r=>r.id===t.sheet?.id&&r.gameId===game.id)?.sheet??t.sheet})),weaponContext:{active:game.state.abilities,data:rules.data}},original.proposal)}:original
-    let additionalActionRequired=entry.resolution?.additionalActionRequired??false
+    let additionalActionRequired=entry.resolution?.additionalActionRequired??false,requirements
     if(entry.proposal.readyCommand?.kind.startsWith('prepare-')&&db){const sheet=db.characters.find(r=>r.id===entry.characterId&&r.gameId===game.id)?.sheet;const history=JSON.parse(sheet?.playerDetails?.['rules2014.spellsThisTurn']??sheet?.playerDetails?.['combat.spellsThisTurn']??'[]');additionalActionRequired=sheet?.playerDetails?.['combat.actionUsed']==='true'||Array.isArray(history)&&history.some(c=>c.unit==='action')}
     if(game.masterId===user&&entry.status==='pending'&&entry.proposal.windDirection===undefined&&db&&rules) {
       const record=db.characters.find(r=>r.id===entry.characterId&&r.gameId===game.id)
       if(record) {
         const catalog=catalogForSheet(rules.data,rules.catalog,record.sheet),ability=sheetWithCombatAbilities(record.sheet,catalog).abilities[Number(entry.proposal.key)]
-        if(ability?.name===entry.actionName)additionalActionRequired=requiresAdditionalSpellAction(record.sheet,ability,catalog)
+        if(ability?.name===entry.actionName){additionalActionRequired=requiresAdditionalSpellAction(record.sheet,ability,catalog);requirements=combatUseRequirements(record.sheet,ability,catalog,rules.data,{abilities:game.state.abilities,ownerId:game.state.turns.find(t=>t.sheet?.id===record.id)?.id,combat:game.state.combat})}
       }
     }
     return ({id:entry.id,characterId:entry.characterId,characterName:entry.characterName,actorName:entry.actorName,actionName:entry.actionName,
-    createdAt:entry.createdAt,status:requestStatus(game,entry),...(entry.proposal.readyCommand?{readyCommand:entry.proposal.readyCommand}:{}),additionalActionRequired,optionLabel:entry.optionLabel,cost:entry.proposal.cost,windDirection:entry.proposal.windDirection!==undefined,spendsResources:!['free','cantrip','ritual'].includes(entry.proposal.option),mode:entry.proposal.mode,damageEnabled:entry.proposal.damageEnabled,prolonged:entry.prolonged,
+    createdAt:entry.createdAt,status:requestStatus(game,entry),...(entry.proposal.readyCommand?{readyCommand:entry.proposal.readyCommand}:{}),additionalActionRequired,requirements,optionLabel:entry.optionLabel,cost:entry.proposal.cost,windDirection:entry.proposal.windDirection!==undefined,spendsResources:!['free','cantrip','ritual'].includes(entry.proposal.option),mode:entry.proposal.mode,damageEnabled:entry.proposal.damageEnabled,prolonged:entry.prolonged,
     ...(entry.proposal.attackDie!==undefined?{attackDie:entry.proposal.attackDie}:{}),...(entry.proposal.sleepRoll!==undefined?{sleepRoll:entry.proposal.sleepRoll}:{}),...(game.masterId===user&&entry.sleepReview?{sleepReview:{...entry.sleepReview,candidates:entry.sleepReview.candidates.map(c=>({...c,name:c.name??entry.targets.find(t=>t.id===c.id)?.name??'Creatura'}))}}:{}),
     ...(entry.resolution?{packets:entry.proposal.packets,rollsRevision:entry.rollsRevision??0,...(game.masterId===user?{resolution:{...entry.resolution.plan,attackAbility:entry.resolution.plan.attackAbility??(entry.resolution.plan.kind==='attack'&&!entry.resolution.plan.weaponName&&!/^sheet-attack:/.test(entry.resolution.plan.ruleId??'')?spellAttackAbility(game.state?.turns.find(t=>t.sheet?.id===entry.characterId)?.sheet):undefined)},weaponChoices:entry.resolution.weaponChoices,...(entry.resolution.wind?{wind:{...entry.resolution.wind,editable:windEditable(game,entry)}}:{})}: {})}:{}),
     targets:(entry.sleepReview&&entry.status==='approved'?entry.sleepReview.candidates.filter(c=>(entry.sleepReview.area??entry.proposal.targets.map(t=>t.id)).includes(c.id)).map(c=>({id:c.id,name:c.name??entry.targets.find(t=>t.id===c.id)?.name??'Creatura',roll:'',damageRoll:'',damage:'0'})):entry.resolution?.wind?entry.resolution.wind.selected.map(id=>{const c=entry.resolution.wind.candidates.find(c=>c.id===id);return {id,name:c.name,roll:'',damageRoll:'',damage:'0'}}):entry.targets).map(({id,name,roll,hit,damageRoll,damage,armorClass})=>{
@@ -364,7 +365,7 @@ export function prepareAction(context,proposal,rules) {
   const rage=ability.ruleId==='phb2014:class-feature:barbarian-1-rage',info=action.info
   if ((info.concentration || ability.concentration) && context.record.sheet.playerDetails?.['rules2014.raging']==='true') fail(409,'Durante l’ira non puoi mantenere concentrazione.')
   let sheet
-  try {sheet=spendCombatUse(context.record.sheet,ability,context.catalog,rules.data,option.id,proposal.cost,{abilities:context.weaponContext.active,ownerId:context.owner.id})} catch(error) {fail(409,error.message)}
+  try {sheet=spendCombatUse(context.record.sheet,ability,context.catalog,rules.data,option.id,proposal.cost,{abilities:context.weaponContext.active,ownerId:context.owner.id,combat:context.combat})} catch(error) {fail(409,error.message)}
   if (rage) sheet={...sheet,playerDetails:{...sheet.playerDetails,'rules2014.raging':'true','rules2014.concentration':''}}
   if (info.concentration || ability.concentration) sheet={...sheet,playerDetails:{...sheet.playerDetails,'rules2014.concentration':ability.ruleId ?? ability.catalogId ?? ability.name}}
   return {action,ability,sheet,rage,option}

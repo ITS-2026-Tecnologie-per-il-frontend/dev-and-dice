@@ -30,7 +30,7 @@ export function MasterSpellRolls({ability,owner,participants,abilities,catalog,c
     const additionalActionRequired=inCombat&&requiresAdditionalSpellAction(owner,ability,catalog)
     const decisionId=useId()
     const working=useRef(false),[executionId]=useState(()=>crypto.randomUUID())
-    const info=combatAbilityInfo(ability,catalog)
+    const info=combatAbilityInfo(ability,catalog,data)
     const action={name:ability.name,description:ability.description??info.entry?.description??'',group:'Incantesimi' as const,cost:ability.resourceCost??1,error:error||(inCombat?bonusSpellTurnError(owner,info):undefined)||'',
         resolution:resolutionPlan(owner,ability,catalog,optionId),options:options.filter(option=>!ability.execution||option.id===ability.execution.option).map(option=>({...option,remaining:ability.execution?null:option.remaining,targeting:combatTargeting(ability,catalog,owner,option.id),resolution:resolutionPlan(owner,ability,catalog,option.id)}))}
     const plan={...(action.options.find(option=>option.id===draft?.option)?.resolution??action.resolution)!,...properties}

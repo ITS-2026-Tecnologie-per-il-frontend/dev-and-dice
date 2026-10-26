@@ -65,6 +65,12 @@ try {
  for(const container of [card,page.locator('.ability-row').filter({has:summary})]){
   const usage=container.getByLabel('Utilizzo dell’abilità',{exact:true})
   assert.deepEqual(await usage.locator('span').allTextContents(),['Azione bonus','Concentrazione'])
+  const trigger=usage.getByRole('button',{name:'Requisiti: Azione bonus',exact:true})
+  await trigger.hover()
+  const tooltip=container.page().getByRole('tooltip')
+  await tooltip.getByText(/Vale in entrambi gli ordini/).waitFor()
+  await tooltip.getByText(/Richiede concentrazione/).waitFor()
+  await container.page().keyboard.press('Escape');await tooltip.waitFor({state:'detached'})
  }
  for(const view of [card,summary]){
   const effect=view.getByLabel('Potenziamento applicato',{exact:true})

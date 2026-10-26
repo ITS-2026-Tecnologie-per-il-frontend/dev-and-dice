@@ -394,7 +394,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
             const original=turns.find(turn=>turn.id===ability.ownerId),turn=original&&refreshParticipantAbilities(original),owner=turn?.sheet,ownerCatalog=owner ? catalogForSheet(creationData,catalog,owner) ?? catalog : catalog
             if (!turn) throw new Error('Seleziona il proprietario dell’abilità.')
             if (turn.availableAbilityIndexes && ability.sheetAbilityIndex!==undefined && !turn.availableAbilityIndexes.includes(ability.sheetAbilityIndex)) throw new Error('Questa abilità non è più disponibile nella scheda.')
-            const info=combatAbilityInfo(ability,ownerCatalog),option=selectedUseOption(owner,ability,ownerCatalog,creationData)
+            const info=combatAbilityInfo(ability,ownerCatalog,creationData),option=selectedUseOption(owner,ability,ownerCatalog,creationData)
             if(isIncapacitated(abilities,ability.ownerId!))throw new Error('Il personaggio non può agire mentre è incapacitato.')
             assertCombatTargets(ability,ownerCatalog,owner,option?.id)
             assertTargetTypes(combatTargeting(ability,ownerCatalog,owner,option?.id),turns,ability.targets?.map(t=>t.id)??[])
@@ -417,12 +417,12 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
     function completeCombatCast(ability:Ability) {
         if (!ability.execution || handledExecutions.current.has('cast:'+ability.execution.id)) return
         const owner=turns.find(turn=>turn.id===ability.ownerId)?.sheet,ownerCatalog=owner ? catalogForSheet(creationData,catalog,owner) ?? catalog : catalog
-        const info=combatAbilityInfo(ability,ownerCatalog),rage=ability.ruleId==='phb2014:class-feature:barbarian-1-rage'
+        const info=combatAbilityInfo(ability,ownerCatalog,creationData),rage=ability.ruleId==='phb2014:class-feature:barbarian-1-rage'
         if (owner&&spellEdition(owner)==='2024'&&ability.ruleId?.includes('2014:')) throw new Error('Questa voce usa regole 2014: scegli la voce dell’edizione corretta.')
         if (info.unit==='bonus-action' && combat && ability.ownerId!==combat.activeId) throw new Error('L’azione bonus richiede il turno del personaggio.')
         if ((ability.concentration || info.concentration) && owner?.playerDetails?.['rules2014.raging']==='true') throw new Error('Durante l’ira non puoi mantenere concentrazione.')
         const castingOwner=owner && !combat ? {...owner,playerDetails:{...owner.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]',...resetTurnEconomy}} : owner
-        const spent=castingOwner ? spendCombatUse(castingOwner,ability,ownerCatalog,creationData,ability.execution.option,ability.execution.cost,{abilities,ownerId:ability.ownerId!}) : undefined
+        const spent=castingOwner ? spendCombatUse(castingOwner,ability,ownerCatalog,creationData,ability.execution.option,ability.execution.cost,{abilities,ownerId:ability.ownerId!,combat}) : undefined
         const details={...spent?.playerDetails,...(rage ? {'rules2014.raging':'true','rules2014.concentration':''} : {}),
             ...(ability.concentration || info.concentration ? {'rules2014.concentration':ability.ruleId ?? ability.catalogId ?? ability.name} : {}),
             ...(ability.execution.phase==='casting' && !info.concentration ? {'rules2014.concentration':''} : {})}
@@ -441,7 +441,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
             if (!ability.execution || handledExecutions.current.has('finish:'+ability.execution.id)) return false
             if (ability.execution.phase==='casting') {completeCombatCast(ability);setCombatRuleError('');return}
             const owner=turns.find(turn=>turn.id===ability.ownerId)?.sheet,ownerCatalog=owner ? catalogForSheet(creationData,catalog,owner) ?? catalog : catalog
-            const info=combatAbilityInfo(ability,ownerCatalog),instantaneous=info.instantaneous
+            const info=combatAbilityInfo(ability,ownerCatalog,creationData),instantaneous=info.instantaneous
             assertTargetTypes(combatTargeting(ability,ownerCatalog,owner,ability.execution.option),turns,ability.targets?.map(target=>target.id)??[])
             const alreadyCast=abilities.some(item=>item.id===ability.id&&item.execution?.id===ability.execution?.id)
             let resolvingTurns=turns
@@ -453,7 +453,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
                 const castingOwner=combat?owner:{...owner,playerDetails:{...owner.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]',...resetTurnEconomy}}
                 if(info.unit==='bonus-action'&&combat&&ability.ownerId!==combat.activeId)throw new Error('L’azione bonus richiede il turno del personaggio.')
                 if(combat&&requiresAdditionalSpellAction(castingOwner,ability,ownerCatalog)&&!additionalActionConfirmed)throw new Error('Conferma un’altra azione valida per lanciare questo incantesimo.')
-                const spent=spendCombatUse(castingOwner,ability,ownerCatalog,creationData,ability.execution.option,ability.execution.cost,{abilities,ownerId:ability.ownerId!})
+                const spent=spendCombatUse(castingOwner,ability,ownerCatalog,creationData,ability.execution.option,ability.execution.cost,{abilities,ownerId:ability.ownerId!,combat})
                 resolvingTurns=turns.map(turn=>turn.id===ability.ownerId?{...turn,sheet:spent}:turn)
             }
             const resolving=info.repairsObject ? {...ability,targets:[]} : ability

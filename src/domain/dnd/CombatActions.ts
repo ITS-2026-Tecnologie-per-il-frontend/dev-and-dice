@@ -1,9 +1,10 @@
+import {isIncapacitated} from './CombatConditions.ts'
 import {validEffectSpecs} from './CombatResolution.ts'
 import {recordTurnAction,turnActionUses,turnActionCapacity,grantTurnActions} from './TurnEconomy.ts'
 import { castSheetSpell, sheetClassLevels, sheetRuleResources } from './ActiveRules.ts'
 import { wildShapeResources } from './VerifiedDatabase.ts'
 import { integerValue, type CharacterSheet } from '../../utils/CharacterSheets.ts'
-import { durationTurns, hitPointsAfterHealing, hitPointsAfterDamageWithTemporary, type Ability } from '../../utils/Combat.ts'
+import { durationTurns, hitPointsAfterHealing, hitPointsAfterDamageWithTemporary, type Ability, type Combat } from '../../utils/Combat.ts'
 import { catalogAbilityKind, templateFromCatalog, type Catalog } from '../../utils/Catalog.ts'
 import { creationEnabled, type CreationData } from '../../utils/PlayerCreation.ts'
 import { spellEdition, classId } from '../../utils/Spellcasting.ts'
@@ -25,8 +26,8 @@ export function assessAttack(edition:'2014'|'2024',die:number,modifier:number|un
 export type AttackAssessment=ReturnType<typeof assessAttack>
 export type UseOption={id:string;label:string;remaining:number|null;cost?:number}
 
-export function combatAbilityInfo(ability:Pick<Ability,'catalogId'|'duration'|'remainingTurns'|'instantaneous'|'damageEnabled'|'spellLevel'|'castingAlternative'|'description'|'section'>,catalog:Catalog) {
-    const entry=catalog.abilities.find(entry=>entry.id===ability.catalogId),m=object(entry?.data.mechanics)
+export function combatAbilityInfo(ability:Pick<Ability,'catalogId'|'duration'|'remainingTurns'|'instantaneous'|'damageEnabled'|'spellLevel'|'castingAlternative'|'description'|'section'|'ruleId'>,catalog:Catalog,data?:CreationData) {
+    const entry=catalog.abilities.find(entry=>entry.id===ability.catalogId),m=object(entry?.data.mechanics??data?.verified?.reviewedEntities.find(entity=>entity.id===ability.ruleId&&entity.verification.complete)?.mechanics)
     const level=ability.spellLevel ?? (typeof entry?.data.level==='number' ? entry.data.level : undefined)
     // PHB 2014, D&D_5_Player_Original_Handbook.pdf, PDF 260, Mending:
     // repairs a touched object; "former damage" describes the repair, not damage dealt.
@@ -45,8 +46,9 @@ export function combatAbilityInfo(ability:Pick<Ability,'catalogId'|'duration'|'r
     const prolonged=casting.unit==='minute' || casting.unit==='hour' || !casting.unit && /\bminut|\bor[ae]\b|\bhours?\b/i.test(castingText)
     const ritual=m.ritual===true || entry?.data.ritual===true
     const concentration=m.concentration===true || object(entry?.data.durationInfo).concentration===true
-    const unit=typeof casting.unit==='string' ? casting.unit : ['action','bonus-action','reaction'].includes(String(m.activation)) ? String(m.activation) : ['action','bonus-action','reaction'].includes(String(object(m.activation).unit)) ? String(object(m.activation).unit) : /bonus/i.test(castingText) ? 'bonus-action' : /reazion|reaction/i.test(castingText) ? 'reaction' : prolonged ? 'minute' : ability.section==='bonus'?'bonus-action':ability.section==='reaction'?'reaction':'action'
-    return {entry,level,instantaneous,damage,prolonged,ritual,concentration,unit,alternatives,repairsObject,passive,attack}
+    const activation=String(object(m.effect).activation??''),featureUnit=['action','bonus-action','reaction'].find(unit=>activation===unit||activation.startsWith(unit+'-'))
+    const unit=typeof casting.unit==='string' ? casting.unit : featureUnit ?? (['action','bonus-action','reaction'].includes(String(m.activation)) ? String(m.activation) : ['action','bonus-action','reaction'].includes(String(object(m.activation).unit)) ? String(object(m.activation).unit) : /bonus/i.test(castingText) ? 'bonus-action' : /reazion|reaction/i.test(castingText) ? 'reaction' : prolonged ? 'minute' : ability.section==='bonus'?'bonus-action':ability.section==='reaction'?'reaction':'action')
+    return {entry,level,instantaneous,damage,prolonged,ritual,concentration,unit,alternatives,repairsObject,passive,attack,effect:object(m.effect)}
 }
 
 // D&D_5_Player_Original_Handbook.pdf (2014), PDF 190, 73 and 203: another action spell needs another valid
@@ -61,11 +63,49 @@ export function requiresAdditionalSpellAction(sheet:CharacterSheet,ability:Abili
 
 // PHB 2014, PDF 203, Bonus Action: every other spell that turn must be a one-action cantrip.
 export function bonusSpellTurnError(sheet:CharacterSheet,info:{level?:number;unit:string}):string|undefined {
-    if(spellEdition(sheet)!=='2014'||info.level===undefined||info.unit!=='bonus-action')return
+    if(spellEdition(sheet)!=='2014'||info.level===undefined)return
     let history:unknown
     try{history=JSON.parse(sheet.playerDetails?.['rules2014.spellsThisTurn']??sheet.playerDetails?.['combat.spellsThisTurn']??'[]')}catch{return 'Cronologia degli incantesimi del turno non valida.'}
     if(!Array.isArray(history))return 'Cronologia degli incantesimi del turno non valida.'
-    if(history.some(cast=>cast?.level!==0||cast?.unit!=='action'))return 'Non puoi lanciare un incantesimo come azione bonus in questo turno: hai già lanciato un incantesimo diverso da un trucchetto con tempo di lancio di un’azione (regole 2014).'
+    if(info.unit==='bonus-action'&&history.some(cast=>cast?.level!==0||cast?.unit!=='action'))return 'Non puoi lanciare un incantesimo come azione bonus in questo turno: hai già lanciato un incantesimo diverso da un trucchetto con tempo di lancio di un’azione (regole 2014).'
+    if(history.some(cast=>cast?.unit==='bonus-action')&&(info.level!==0||info.unit!=='action'))return 'In questo turno hai già lanciato un incantesimo come azione bonus: puoi lanciare soltanto un trucchetto con tempo di lancio di un’azione (regole 2014).'
+}
+
+export type UseRequirements={hints:string[];manualChecks:string[];error?:string}
+type UseContext={abilities:Ability[];ownerId:number;combat?:Combat|null}
+
+// D&D_5_Player_Original_Handbook.pdf (2014), PDF 190–191 (Bonus Actions/Reactions), 203 (Bonus Action spells),
+// 64 (War Priest), 51 (Totemic Attunement). Only verified fields grant specific checks.
+export function combatUseRequirements(sheet:CharacterSheet|undefined,ability:Ability,catalog:Catalog,data?:CreationData,context?:UseContext):UseRequirements {
+    const info=combatAbilityInfo(ability,catalog,data),hints:string[]=[],manualChecks:string[]=[],effect=info.effect
+    if(info.unit==='bonus-action')hints.push('Usa un’azione bonus nel tuo turno. Non richiede un’azione precedente, salvo quanto indicato da questa capacità.')
+    else if(info.unit==='reaction')hints.push('Usa la reazione quando si verifica l’evento indicato nella descrizione. Torna disponibile all’inizio del tuo prossimo turno.')
+    else if(info.unit==='action'||info.prolonged)hints.push('Usa l’azione del personaggio.'+(info.prolonged?' Ripeti l’azione ogni turno fino a completare il lancio.':''))
+    if(info.level!==undefined&&sheet&&spellEdition(sheet)==='2014')hints.push('Incantesimi 2014: se lanci una magia come azione bonus, ogni altro incantesimo dello stesso turno deve essere un trucchetto con tempo di lancio di un’azione. Vale in entrambi gli ordini; gli attacchi con arma non attivano questo limite.')
+    if(info.level!==undefined&&info.level>0||effect.resource||effect.resourceCost)hints.push('Rispetta il costo e gli utilizzi disponibili della modalità selezionata.')
+    if(info.concentration||info.prolonged)hints.push(info.concentration?'Richiede concentrazione: interrompe un’altra concentrazione già mantenuta.':'Richiede concentrazione durante il lancio, fino al suo completamento.')
+    if(effect.trigger==='use-Attack-action')hints.push('Richiede prima l’azione Attaccare in questo turno. Lanciare un incantesimo o usare un’altra azione non basta.')
+    if(effect.requires==='raging')hints.push('Richiede Ira attiva.')
+    // ponytail: distance, perception and untracked triggers stay explicit Master checks;
+    // replace these with automatic checks only when the combat state records that evidence.
+    if(info.level===undefined&&(effect.trigger&&effect.trigger!=='use-Attack-action'||effect.requires&&effect.requires!=='raging'||effect.origin||effect.spell||effect.target&&effect.target!=='self'))manualChecks.push('Verifica le condizioni specifiche, il bersaglio e la portata indicati nella descrizione. Il Master le conferma prima di applicare l’effetto.')
+    if(sheet&&effect.trigger==='use-Attack-action'&&sheet.playerDetails?.['combat.attackActionUsed']===undefined&&turnActionUses(sheet,'action')>0)manualChecks.push('Questo turno proviene da dati precedenti: il Master deve verificare che l’azione già usata fosse Attaccare.')
+    let error:string|undefined
+    if(sheet)try{
+        if(context&&isIncapacitated(context.abilities,context.ownerId))error='Il personaggio non può agire mentre è incapacitato.'
+        else if(info.unit==='bonus-action'&&context?.combat&&context.combat.activeId!==context.ownerId)error='L’azione bonus richiede il turno del personaggio.'
+        else if(info.unit==='bonus-action'&&bonusActionUsed(sheet,context?turnActionCapacity(sheet,context.abilities,context.ownerId,'bonus-action'):1))error='Hai già usato l’azione bonus in questo turno.'
+        else if(info.unit==='reaction'&&turnActionUses(sheet,'reaction')>=(context?turnActionCapacity(sheet,context.abilities,context.ownerId,'reaction'):1))error='Hai già usato la reazione: torna disponibile all’inizio del tuo prossimo turno.'
+        else if(effect.trigger==='use-Attack-action'&&sheet.playerDetails?.['combat.attackActionUsed']!=='true'&&!(sheet.playerDetails?.['combat.attackActionUsed']===undefined&&turnActionUses(sheet,'action')>0))error='Devi prima usare l’azione Attaccare in questo turno.'
+        else if(effect.requires==='raging'&&sheet.playerDetails?.['rules2014.raging']!=='true')error='Questa capacità richiede Ira attiva.'
+        else if(spellEdition(sheet)==='2014'&&sheet.playerDetails?.['rules2014.raging']==='true'&&(info.level!==undefined||info.concentration||info.prolonged))error='Durante l’ira non puoi lanciare incantesimi né mantenere concentrazione.'
+        else error=bonusSpellTurnError(sheet,info)
+        if(!error){
+            const options=combatUseOptions(sheet,ability,catalog,data)
+            if(!options.length||options.every(option=>option.remaining!==null&&option.remaining<(option.cost??ability.resourceCost??1)))error='Utilizzi esauriti o nessuna modalità disponibile: controlla le risorse nella scheda.'
+        }
+    }catch(cause){error=cause instanceof SyntaxError?'Cronologia del turno non valida: aggiorna i dati prima di usare questa capacità.':cause instanceof Error?cause.message:'Verifica i requisiti dell’azione.'}
+    return {hints,manualChecks,error}
 }
 
 function pool(sheet:CharacterSheet,key:string) {
@@ -79,7 +119,7 @@ function pool(sheet:CharacterSheet,key:string) {
 }
 
 export function combatUseOptions(sheet:CharacterSheet|undefined,ability:Ability,catalog:Catalog,data?:CreationData):UseOption[] {
-    const {entry,level,ritual,passive}=combatAbilityInfo(ability,catalog),d=sheet?.playerDetails ?? {}
+    const {entry,level,ritual,passive}=combatAbilityInfo(ability,catalog,data),d=sheet?.playerDetails ?? {}
     if (passive) return []
     const edition=entry?.data.edition ?? (entry?.data.ruleset==='dnd5e-2024' ? '2024' : ability.ruleId?.includes('2014:') ? '2014' : undefined)
     if (sheet && (edition==='2014' || edition==='2024') && spellEdition(sheet)!==edition) throw new Error(`Questa voce usa regole ${edition}: scegli la voce dell’edizione della scheda.`)
@@ -134,14 +174,14 @@ export function combatAbilityStatus(sheet:CharacterSheet|undefined,ability:Abili
     return options.every(option=>option.remaining!==null && option.remaining<(option.cost ?? cost)) ? 'Esauriti utilizzi' : 'Usa'
 }
 
-export function spendCombatUse(sheet:CharacterSheet,ability:Ability,catalog:Catalog,data:CreationData|undefined,optionId:string,cost=1,context?:{abilities:Ability[];ownerId:number}):CharacterSheet {
+export function spendCombatUse(sheet:CharacterSheet,ability:Ability,catalog:Catalog,data:CreationData|undefined,optionId:string,cost=1,context?:UseContext):CharacterSheet {
     // PHB 2014 PDF 191, Reactions: refresh at the START of the owner's next turn.
     // Revised rule verified separately: D&D_5.5_manuale_compatto_italiano.pdf, PDF 211, Reazione.
-    const info=combatAbilityInfo(ability,catalog),unit=info.unit,reaction=unit==='reaction'
-    if(reaction&&turnActionUses(sheet,'reaction')>=(context?turnActionCapacity(sheet,context.abilities,context.ownerId,'reaction'):1))throw new Error('Hai già usato la reazione: torna disponibile all’inizio del tuo prossimo turno.')
-    if(unit==='bonus-action')spendBonusAction(sheet,context?turnActionCapacity(sheet,context.abilities,context.ownerId,'bonus-action'):1)
+    const info=combatAbilityInfo(ability,catalog,data),unit=info.unit,requirements=combatUseRequirements(sheet,ability,catalog,data,context)
+    if(requirements.error)throw new Error(requirements.error)
+    if(requirements.manualChecks.length&&!ability.requirementsConfirmed)throw new Error('Conferma i requisiti specifici nella descrizione prima di usare questa capacità.')
     let next=spendCombatUseUnchecked(sheet,ability,catalog,data,optionId,cost)
-    const effect=object(object(info.entry?.data.mechanics).effect)
+    const effect=info.effect
     if(info.instantaneous&&effect.target==='self'&&Array.isArray(effect.actionGrants)){
         const grants=effect.actionGrants.map(g=>({...object(g),kind:'action-grant',trigger:'always'}))
         if(!validEffectSpecs(grants))throw new Error('Azioni aggiuntive non valide nella definizione dell’abilità.')
@@ -173,7 +213,7 @@ function spendCombatUseUnchecked(sheet:CharacterSheet,ability:Ability,catalog:Ca
     const option=combatUseOptions(sheet,ability,catalog,data).find(option=>option.id===optionId)
     if (!option || option.remaining!==null && option.remaining<cost) throw new Error('Utilizzi esauriti o modalità di utilizzo non disponibile.')
     if (option.cost!==undefined && option.cost!==cost) throw new Error('Il costo deve rispettare il privilegio: '+option.cost+'.')
-    const info=combatAbilityInfo(ability,catalog),d=sheet.playerDetails ?? {},next={...sheet,playerDetails:{...d}}
+    const info=combatAbilityInfo(ability,catalog,data),d=sheet.playerDetails ?? {},next={...sheet,playerDetails:{...d}}
     if (info.level!==undefined) {
         const restriction=bonusSpellTurnError(sheet,info)
         if(restriction)throw new Error(restriction)

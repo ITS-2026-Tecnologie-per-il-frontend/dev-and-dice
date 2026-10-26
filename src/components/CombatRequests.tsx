@@ -44,6 +44,7 @@ export function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDe
     const missingWind=!!request.wind&&wind.selected.some(id=>wind.saves[id]?.mode==='manual'&&wind.saves[id]?.success===undefined)
     const [weapons,setWeapons]=useState<Record<number,WeaponChoice>>({})
     const [additionalActionConfirmed,setAdditionalActionConfirmed]=useState(false)
+    const [requirementsConfirmed,setRequirementsConfirmed]=useState(false)
     const [sleepArea,setSleepArea]=useState<number[]>(request.sleepReview?.area??request.targets.map(t=>t.id))
     const [sleepSelected,setSleepSelected]=useState<number[]>(()=>request.sleepReview?(request.status==='pending'?sleepAllocation(request.sleepReview.candidates,request.sleepReview.area??request.targets.map(t=>t.id),request.sleepRoll??0,request.sleepReview.selected).selected:request.sleepReview.selected):[])
     const [sleepImmune,setSleepImmune]=useState<number[]>(request.sleepReview?.immuneIds??[])
@@ -60,9 +61,9 @@ export function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDe
     const missingWeapon=!!weaponEffect&&request.targets.some(t=>!weapons[t.id]?.itemId||!!weaponEffect.extraDamage&&!weapons[t.id]?.damageType||!!weaponEffect.damageDice&&weapons[t.id]?.useCastingAbility!==false&&weaponEffect.castingModifier===undefined)
     const working=useRef(false)
     async function decide(decision:'approve'|'reject') {
-        if (working.current) return
+        if (working.current||decision==='approve'&&(request.requirements?.error||request.requirements?.manualChecks.length&&!requirementsConfirmed)) return
         working.current=true;setBusy(true);setError('')
-        try {await onDecide(request.id,decision,{confirmed:decision==='approve',additionalActionConfirmed,manualResolution:manual,...(request.sleepReview?{sleepArea,sleepTargets:sleepFinal,sleepImmune}:{}),...(request.wind?{wind}:{}),...(weaponEffect?{weapons:request.targets.map(t=>({targetId:t.id,...weapons[t.id]}))}:{}),targets:request.wind?wind.selected.map(id=>({id,damage:'0'})):request.targets.map(target=>({id:target.id,damage:damageFor(target)})),...(request.resolution?{effects:effectTargets.filter(t=>effectOverrides[t.id]!==false).map(t=>t.id)}:{})})} catch(error) {setError(message(error))} finally {working.current=false;setBusy(false)}
+        try {await onDecide(request.id,decision,{confirmed:decision==='approve'&&(!request.requirements?.manualChecks.length||requirementsConfirmed),additionalActionConfirmed,manualResolution:manual,...(request.sleepReview?{sleepArea,sleepTargets:sleepFinal,sleepImmune}:{}),...(request.wind?{wind}:{}),...(weaponEffect?{weapons:request.targets.map(t=>({targetId:t.id,...weapons[t.id]}))}:{}),targets:request.wind?wind.selected.map(id=>({id,damage:'0'})):request.targets.map(target=>({id:target.id,damage:damageFor(target)})),...(request.resolution?{effects:effectTargets.filter(t=>effectOverrides[t.id]!==false).map(t=>t.id)}:{})})} catch(error) {setError(message(error))} finally {working.current=false;setBusy(false)}
     }
     async function refreshRequest(){
         if(working.current)return
@@ -93,7 +94,9 @@ export function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDe
                 {effectTargets.map(target=><label className="combat-request-check" key={target.id}><input type="checkbox" checked={effectOverrides[target.id]!==false} onChange={event=>setEffectOverrides(current=>({...current,[target.id]:event.target.checked}))}/>Applica gli effetti aggiuntivi a {target.name}</label>)}
                 {request.resolution&&request.targets.some(t=>t.resolution?.damage===null)&&<label className="combat-request-check"><input type="checkbox" checked={manual} onChange={event=>setManual(event.target.checked)}/>Confermo una risoluzione manuale per i dati mancanti</label>}
                 </>}
-                <div className="play-actions">{stale&&(request.wind||request.readyCommand||directBenefit(request.resolution))&&<button type="button" onClick={()=>void refreshRequest()}>Aggiorna richiesta</button>}{pending&&<button disabled={!!request.additionalActionRequired&&!additionalActionConfirmed||missingWind||missingWeapon||missingSleep||!!request.resolution&&request.targets.some(t=>t.resolution?.damage===null)&&!manual} type="submit">Approva azione</button>}{(pending||stale)&&<button type="button" className="play-secondary" onClick={()=>void decide('reject')}>Rifiuta azione</button>}</div>
+                {request.requirements?.error&&<p role="status">{request.requirements.error}</p>}
+                {!!request.requirements?.manualChecks.length&&<label className="combat-request-check"><input type="checkbox" checked={requirementsConfirmed} onChange={event=>setRequirementsConfirmed(event.target.checked)}/>Confermo le condizioni specifiche nella descrizione: bersaglio, portata ed evento richiesto.</label>}
+                <div className="play-actions">{stale&&(request.wind||request.readyCommand||directBenefit(request.resolution))&&<button type="button" onClick={()=>void refreshRequest()}>Aggiorna richiesta</button>}{pending&&<button disabled={!!request.requirements?.error||!!request.requirements?.manualChecks.length&&!requirementsConfirmed||!!request.additionalActionRequired&&!additionalActionConfirmed||missingWind||missingWeapon||missingSleep||!!request.resolution&&request.targets.some(t=>t.resolution?.damage===null)&&!manual} type="submit">Approva azione</button>}{(pending||stale)&&<button type="button" className="play-secondary" onClick={()=>void decide('reject')}>Rifiuta azione</button>}</div>
             </fieldset>
         </form>}{!pending&&!stale&&request.wind&&request.resolution&&<WindSummary review={request.wind} plan={request.resolution} casterName={request.characterName}/>}{error&&<p role="alert">{error}</p>}</article>
 }
@@ -179,7 +182,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
     function changeMode(mode:CombatRequest['mode']) {setMode(mode);setTargets([]);if(mode==='none')setDamageEnabled(false)}
     async function submit(event:FormEvent) {
         event.preventDefault()
-        if (working.current||!choices||renewed&&!choices.canPropose||weapon&&!validDie||sleep&&!validSleep) return
+        if (working.current||!choices||action?.error||renewed&&!choices.canPropose||weapon&&!validDie||sleep&&!validSleep) return
         working.current=true;setBusy(true);setError('')
         const proposal={...(sleep?{sleepRoll:sleepTotal}:{}),...(weapon?{attackDie:die}:{}),revision:choices.revision,key,option:optionId,cost:sleep?1:option?.cost??cost,mode:sleep?'none':mode,damageEnabled:sleep?false:damageEnabled,targets:targets.map(({id,roll,hit,damageRoll,damage})=>sleep?{id,roll:'',hit:false,damageRoll:'',damage:'0'}:{id,roll:weapon?weaponRollText:roll,hit:weapon?false:hit,damageRoll,damage})}
         const signature=JSON.stringify(proposal)
@@ -206,7 +209,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
                         {!weapon&&mode==='attack'&&target.roll.trim()&&<label className={renewed?'ability-check':'combat-request-check'}><input type="checkbox" checked={target.hit} onChange={event=>patch(target.id,{hit:event.target.checked,damageRoll:'',damage:'0'})}/>Almeno un attacco ha colpito (da confermare col Master)</label>}
                         {damageEnabled&&(weapon?validDie:mode!=='attack'||target.hit)&&<label>Danni tirati<input type="text" inputMode="numeric" pattern="[0-9]+" required maxLength={16} placeholder="Totale, es. 7" value={target.damageRoll} onChange={event=>{const damage=event.target.value;if(!/^\d*$/.test(damage)||!Number.isSafeInteger(Number(damage)))return;patch(target.id,{damageRoll:damage,damage:damage||'0'})}}/></label>}</>
     }
-    const legacyProposal=choices&&(!renewed||action)&&<form id="player-action-proposal" ref={form} tabIndex={renewed?-1:undefined} aria-label={renewed?`Proposta: ${action?.name}`:undefined} onSubmit={event=>void submit(event)}><fieldset disabled={busy||pending||!!stale||loading||renewed&&!!action?.error}>{!renewed&&<legend>Proposta al Master</legend>}
+    const legacyProposal=choices&&(!renewed||action)&&<form id="player-action-proposal" ref={form} tabIndex={renewed?-1:undefined} aria-label={renewed?`Proposta: ${action?.name}`:undefined} onSubmit={event=>void submit(event)}><fieldset disabled={busy||pending||!!stale||loading}>{!renewed&&<legend>Proposta al Master</legend>}
                 {!renewed&&<label>Azione<select aria-label="Azione" value={key} required onChange={event=>select(event.target.value)}><option value="">Scegli un’azione…</option>{choices.actions.map(action=><option key={action.key} value={action.key} disabled={!!action.error}>{action.name}{action.error?' · '+action.error:''}</option>)}</select></label>}
                 {!choices.actions.length&&<p>Nessuna azione disponibile: controlla attacchi, abilità e incantesimi salvati nella scheda.</p>}
                 {action&&<><details className="player-action-description" open={renewed?true:undefined}><summary>Descrizione dell’azione</summary><p className="combat-request-description">{action.description||'Risoluzione da confermare con il Master.'}</p></details>
@@ -230,8 +233,8 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
                     {!renewed&&targets.map(target=><fieldset key={target.id}><legend>{target.name||'Partecipante'}</legend>{targetFields(target)}</fieldset>)}
                     {(action.prolonged||optionId==='ritual')&&<p>Il Master potrà approvare solo dopo il completamento del lancio. Un lancio interrotto va rifiutato e non consuma risorse.</p>}
                     {action.additionalActionRequired&&<p role="status">L’azione di questo turno risulta già utilizzata. Il Master potrà approvare questa richiesta solo se disponi di un’altra azione valida.</p>}
-                    {sleep&&error&&<p role="alert">{error}</p>}
-                    <button className="play-primary" disabled={sleep&&!validSleep||renewed&&!choices.canPropose||!option||tooManyTargets||weapon&&!validDie||!sleep&&!targets.length&&(damageEnabled||mode==='attack'||mode==='save')||option?.remaining!==null&&(option?.remaining??0)<(option?.cost??cost)}>{busy?'Invio in corso…':'Invia al Master'}</button>
+                    {action.error&&<p role="alert">{action.error}</p>}{sleep&&error&&<p role="alert">{error}</p>}
+                    <button className="play-primary" disabled={!!action.error||sleep&&!validSleep||renewed&&!choices.canPropose||!option||tooManyTargets||weapon&&!validDie||!sleep&&!targets.length&&(damageEnabled||mode==='attack'||mode==='save')||option?.remaining!==null&&(option?.remaining??0)<(option?.cost??cost)}>{busy?'Invio in corso…':'Invia al Master'}</button>
                 </>}
             </fieldset></form>
     const proposal=choices&&action?.resolution&&(renewed||!!action.resolution.healing||!!action.resolution.temporaryHitPoints)?<PlayerActionRolls key={action.key} game={game} choices={choices} action={action} formRef={form} onUpdate={onUpdate} onSubmitted={()=>{setPanel('summary');setTargets([]);setRetry(current=>current+1)}}/>:legacyProposal
@@ -276,7 +279,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
                     {item.key===key&&<button type="button" className="delete-turn player-cast-close" aria-label={`Chiudi pannello ${item.name}`} onClick={()=>{selectedIdentity.current='';setKey('')}}>×</button>}
                     <div className="catalog-search ability-name"><input aria-label={`Nome abilità ${item.name}`} value={item.displayName||item.name} readOnly/></div>
                     <div className="ability-owner-controls"><AbilityMetadata duration={item.duration} owner={game.character.sheet.name} ownerLabel={item.spellLevel!==undefined?'Lanciatore':'Utilizzatore'}/><InfoButton label="Descrizione" entry={item.entry} name={item.name} description={item.description} fields={{duration:item.duration,remainingTurns:item.remainingTurns,active:item.active,owner:game.character.sheet.name}}/></div>
-                    <AbilityUsage unit={item.unit} concentration={item.concentration} prolonged={item.prolonged}/>
+                    <AbilityUsage unit={item.unit} concentration={item.concentration} prolonged={item.prolonged} requirements={item.requirements}/>
                     <div className="ability-use-controls">
                         {item.error&&!item.windDirection&&<p role="status">{item.error}</p>}
                         {item.key===key&&panel==='cast'&&!choices.canPropose&&<p role="status">{choices.blockedReason??'Puoi compilare il form; potrai inviarlo durante il tuo turno.'}</p>}

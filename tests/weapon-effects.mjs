@@ -9,6 +9,7 @@ import {templateFromCatalog} from '../src/utils/Catalog.ts'
 import {addInventoryItem,setInventoryReference,ownedInventoryItems,separateInventoryItem,reconcileInventory} from '../src/utils/Inventory.ts'
 import {validateState} from '../server/games.mjs'
 const rules=await combatRules(),{data,catalog}=rules
+assert.equal(combatAbilityInfo({ruleId:'phb2014:subclass-feature:war-1-war-priest',duration:'Senza conteggio',remainingTurns:0},catalog,data).unit,'bonus-action','Verified class feature activation is preserved even without a catalog entry')
 const spell=id=>templateFromCatalog(catalog.abilities.find(a=>a.data.referenceId==='phb2014:spell:'+id))
 const dagger={...newCharacterSheet(),name:'Baldur',strength:'10',dexterity:'16',armorClass:'13',hitPoints:'30',playerDetails:{'attacks.0.0':'Pugnale','attacks.0.1':'5','attacks.0.2':'1d4+3','attacks.0.3':'Perforante'}}
 const attack={...dagger.abilities[0],id:0,name:'Pugnale',ruleId:'sheet-attack:0',ownerId:2,active:false,duration:'Senza conteggio',remainingTurns:0,timed:false}
@@ -99,6 +100,12 @@ assert.equal(findSheetCombatAbility([importedSource],mage.abilities[0],1,0)?.id,
 assert.equal(importSheetAbility([importedSource],mage,1,0,100).length,1,'Opening an approved cast must not import a duplicate')
 assert.equal(findSheetCombatAbility([{...importedSource,id:100,sheetAbilityIndex:0,active:false},importedSource],mage.abilities[0],1,0)?.id,99,'The active cast wins over an older inactive configuration')
 const entry=proposal('magic-weapon')
+const beforeApproval=structuredClone(db.characters[0].sheet)
+db.characters[0].sheet={...beforeApproval,playerDetails:{...beforeApproval.playerDetails,'combat.bonusActionUsed':'true'}}
+assert.throws(()=>applyCombatRequest(db,game,entry,rules,{confirmed:true,targets:[{id:2,damage:'0'}]}),/già usato l’azione bonus/,'Approval revalidates canonical state after proposal')
+assert.equal(db.characters[0].sheet.playerDetails['slots.2.used'],beforeApproval.playerDetails['slots.2.used'],'A rejected approval spends no slot')
+db.characters[0].sheet=beforeApproval
+
 assert.equal(entry.resolution.weaponChoices[0].items[0].quantity,2)
 assert.equal(visibleRequests({...game,combatRequests:[entry]},caster)[0].weaponChoices,undefined,'Another character inventory never leaks to the caster')
 assert.equal(visibleRequests({...game,combatRequests:[entry]},master)[0].weaponChoices[0].items[0].id,id)
