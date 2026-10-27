@@ -21,6 +21,7 @@ Questi sono gli esempi usati come riferimento per i form e i comportamenti conco
 | Scudo | Solo su se stessi, reazione, CA prima e dopo, attesa della risposta, timer condiviso e gestione anche dal Master. |
 | Folata di Vento | Creature nella linea, TS a inizio turno, cambio direzione con azione bonus e gestione dei bersagli nella nuova direzione. |
 | Sonno | Riserva di PF, area correggibile dal Master, selezione dei dormienti, immunità, lanci indipendenti, risveglio e stato Addormentato. |
+| Controincantesimo | Reazione 2014, lancio da interrompere, slot, requisiti specifici, livello riservato al Master, prova contro CD solo se necessaria, risorse ed esito collegato al lancio originale. Dettagli in [docs/controincantesimo-test.md](docs/controincantesimo-test.md). |
 | Riparare | Utilità su un oggetto senza danni e distinzione tra risorse richieste e tempo di lancio; etichette Azione e Concentrazione durante il lancio. |
 
 ### Elementi condivisi già rivisti
@@ -36,8 +37,8 @@ Questi sono gli esempi usati come riferimento per i form e i comportamenti conco
 
 Ordine concordato per proseguire:
 
-1. [ ] **Controincantesimo — prossimo form da affrontare.** Reazione con gestione dell'eventuale prova di caratteristica contro CD, oltre ai casi senza prova.
-2. [ ] **Dissolvi Magie.** Applicazione dello stesso tipo di prova agli effetti da terminare, con selezione e riepilogo degli effetti interessati.
+1. [x] **Controincantesimo.** Form dedicato, risoluzione e verifica dei due ruoli completati per i casi registrati in [docs/controincantesimo-test.md](docs/controincantesimo-test.md).
+2. [ ] **Dissolvi Magie — prossimo form da affrontare.** Applicazione dello stesso tipo di prova agli effetti da terminare, con selezione e riepilogo degli effetti interessati.
 3. [ ] **Lottare.** Prove contrapposte tra due creature, scelta della difesa, parità e condizione risultante.
 4. [ ] **Spingere.** Prove contrapposte e scelta dell'esito previsto, distinguendo spostamento e Prono.
 
