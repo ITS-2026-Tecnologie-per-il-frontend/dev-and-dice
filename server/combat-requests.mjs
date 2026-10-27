@@ -83,7 +83,7 @@ export function actionContext(db,game,user,rules,preview=false,characterId,selec
     const entry=catalog.abilities.find(entry=>entry.id===template.catalogId)
     if (typeof entry?.data.level==='number') template.spellLevel=entry.data.level
     if (typeof entry?.data.referenceId==='string') template.ruleId=entry.data.referenceId
-    const matches=owner?game.state.abilities.filter(ability=>!ability.readied&&ability.ownerId===owner.id &&
+    const matches=owner?weaponContext.active.filter(ability=>!ability.readied&&ability.ownerId===owner.id &&
       (template.catalogId ? template.catalogId===ability.catalogId : template.name===ability.name)):[]
     const existing=matches.find(ability=>!!ability.execution||ability.active&&(ability.timed===false||ability.remainingTurns>0))??matches[0]
     const ability={...template,...existing,id:existing?.id ?? 0,ownerId:owner?.id ?? null,active:existing?.active ?? false,remainingTurns:existing?.remainingTurns ?? template.remainingTurns ?? 0}

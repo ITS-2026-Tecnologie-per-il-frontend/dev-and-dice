@@ -301,6 +301,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
             const sheet={...turn.sheet,playerDetails:{...turn.sheet.playerDetails,temporaryHitPoints:normalizedValue,'temporaryHitPoints.source':''}}
             if(sheetEditor.current?.patchMany([sheet])===false)return false
             setTurns(current=>current.map(item=>item.id===id?{...item,temporaryHitPoints:normalizedValue,sheet}:item))
+            if(normalizedValue==='0')setAbilities(current=>settleCombatEffects(current,turns.map(item=>item.id===id?{...item,temporaryHitPoints:normalizedValue}:item),combat).abilities)
             return true
         }
         if (stats && turn.sheet) {
@@ -314,6 +315,7 @@ export function TurnsTracker({ language, workspace, view = 'original', libraryTo
             ),
         )
         if(field==='hitPoints'&&Number(updatedValue)<Number(turn.hitPoints))setAbilities(current=>wakeSleep(current,[id]))
+        if(nextTemporaryHitPoints==='0')setAbilities(current=>settleCombatEffects(current,turns.map(item=>item.id===id?{...item,temporaryHitPoints:nextTemporaryHitPoints}:item),combat).abilities)
         return true
     }
 

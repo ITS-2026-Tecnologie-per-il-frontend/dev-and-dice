@@ -1,5 +1,5 @@
 import type { Ability, Combat } from '../../utils/Combat.ts'
-import type { CharacterSheet } from '../../utils/CharacterSheets.ts'
+import {integerValue,type CharacterSheet} from '../../utils/CharacterSheets.ts'
 import { wearingArmor } from './CombatTargets.ts'
 import { activeEffects, defenseProfile, conditionNames } from './CombatResolution.ts'
 import { applySleepConditions, isSleep } from './Sleep.ts'
@@ -78,6 +78,11 @@ export function endIncapacitatedConcentration<T extends {id:number;sheet?:Charac
 // PHB 2014 PDF 199, 240: expire only the pool granted by this cast.
 // Legacy/manual pools have no source and remain under the Master's control.
 export function settleCombatEffects<T extends {id:number;description?:string;sheet?:CharacterSheet;temporaryHitPoints?:string;concentrationChecks?:number[]}>(abilities:Ability[],turns:T[],combat?:Combat|null) {
+    // D&D_5_Player_Original_Handbook.pdf (2014), PDF 199 and 240:
+    // False Life supplies one temporary HP pool. Close the spent benefit, including legacy casts,
+    // only at an explicit zero; an empty/missing field is not evidence that the pool was depleted.
+    abilities=abilities.map(ability=>ability.active&&!ability.execution&&ability.ruleId==='phb2014:spell:false-life'&&turns.some(turn=>turn.id===ability.ownerId&&integerValue(turn.temporaryHitPoints??turn.sheet?.playerDetails?.temporaryHitPoints)===0)
+        ?{...ability,active:false,remainingTurns:0}:ability)
     abilities=applySleepConditions(abilities,turns,combat)
     // PHB 2014 PDF 257: donning armor ends Mage Armor; removing it does not revive the cast.
     const current=abilities.map(ability=>ability.active&&ability.ruleId==='phb2014:spell:mage-armor'&&ability.targets?.some(target=>{
