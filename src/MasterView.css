@@ -261,6 +261,11 @@
 .compact-active-details[open] { display:grid; gap:10px; }
 .compact-active-details:has(> .wind-direction-controls > form) > .ability-targets { display:none; }
 .compact-active-details .ability-target-list { max-height:none; overflow:visible; scrollbar-gutter:auto; }
+.compact-active-details > .wind-direction-controls { margin-top:8px; }
+.master-renewed .ability-row[data-compact-active] .ability-check { display:flex; flex-direction:row; align-items:center; gap:8px; margin:0; font-size:13px; line-height:1.4; overflow-wrap:anywhere; }
+.master-renewed .ability-row[data-compact-active] input[type='checkbox'] { box-sizing:border-box; width:16px; min-width:16px; max-width:16px; height:16px; min-height:16px; max-height:16px; flex:0 0 16px; padding:0; margin:0; }
+.master-renewed .ability-row[data-compact-active] .wind-direction-controls > .sort-turns { justify-self:start; width:auto; min-height:32px; margin:0; padding:6px 10px; font-size:12px; line-height:1.4; }
+@media(pointer:coarse){.master-renewed .ability-row[data-compact-active] .wind-direction-controls > .sort-turns { min-height:44px; }}
 .combat-effect-group + .combat-effect-group { margin-top:18px; padding-top:16px; border-top:1px solid var(--border); }
 .combat-effect-group h4 { margin:0 0 10px; color:var(--text-h); font-size:14px; }
 @media(pointer:coarse){.compact-active-heading { grid-template-columns:44px minmax(0,1fr) auto; }.master-renewed .compact-active-order button { width:44px; height:44px; min-height:44px; }}
