@@ -1,3 +1,5 @@
+import {CounterspellForm,CounterspellReview,CounterspellSummary} from './CounterspellForm'
+import {counterspellId} from '../domain/dnd/Counterspell'
 import { PlayerActionRolls, WeaponEnchantmentFields, ResolutionDetails, FinalDamageField, MasterResolutionRolls, MasterCriticalRolls, MasterSavingRolls, type RequestDecision } from './CombatRolls'
 import { memo, useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react'
 import { playApi, type ActionChoices, type CombatRequest, type CombatTarget, type Game, type PlayerGame, type WindReview as WindData } from '../utils/PlayApi'
@@ -21,6 +23,8 @@ const statusLabels={pending:'In attesa del Master',approved:'Approvata',rejected
 const message=(error:unknown)=>error instanceof Error ? error.message : 'Operazione non riuscita.'
 
 function RequestDescription({request,review=false}:{request:CombatRequest;review?:boolean}) {
+    if(request.counteredBy)return <><p>{request.characterName} · {request.actionName}</p><p className="counterspell-outcome">Incantesimo interrotto da Controincantesimo. Nessun effetto applicato; risorsa e azione del lancio consumate.</p></>
+    if(request.counterspell)return <><p>{request.characterName} · {request.optionLabel}</p><CounterspellSummary snapshot={request.counterspell}/>{request.status==='pending'&&<p role="status">In attesa della risoluzione del Master.</p>}</>
     if(review)return <>
         <p className="combat-request-author"><strong>{request.characterName}</strong><span>Giocato da {request.actorName}</span><time dateTime={request.createdAt}>{new Date(request.createdAt).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</time></p>
         <p className="combat-request-mode"><span>{request.resolution?.temporaryHitPoints?'PF temporanei':request.resolution?.healing?'Guarigione':modeLabels[request.mode]}</span><span>{request.optionLabel}{request.spendsResources?` · costo ${request.cost}`:''}</span></p>
@@ -38,7 +42,11 @@ function RequestDescription({request,review=false}:{request:CombatRequest;review
         <p role="status">{statusLabels[request.status]}</p></>
 }
 
-export function ReviewRequest({request,ability,entry,catalogStatus,disabled,onDecide}:{request:CombatRequest;ability?:SheetAbility;entry?:CatalogEntry;catalogStatus?:string;disabled:boolean;onDecide:(id:string,decision:RequestDecision,body:unknown)=>Promise<void>}) {
+export function ReviewRequest(props:Parameters<typeof StandardReviewRequest>[0]) {
+    return props.request.counterspell?<CounterspellReview request={props.request} disabled={props.disabled} onDecide={props.onDecide}/>:<StandardReviewRequest {...props}/>
+}
+
+function StandardReviewRequest({request,ability,entry,catalogStatus,disabled,onDecide}:{request:CombatRequest;ability?:SheetAbility;entry?:CatalogEntry;catalogStatus?:string;disabled:boolean;onDecide:(id:string,decision:RequestDecision,body:unknown)=>Promise<void>}) {
     const decisionId=useId()
     const [wind,setWind]=useState<Pick<WindData,'selected'|'saves'>>(()=>({selected:request.wind?.selected??[],saves:request.wind?.saves??{}}))
     const missingWind=!!request.wind&&wind.selected.some(id=>wind.saves[id]?.mode==='manual'&&wind.saves[id]?.success===undefined)
@@ -237,7 +245,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
                     <button className="play-primary" disabled={!!action.error||sleep&&!validSleep||renewed&&!choices.canPropose||!option||tooManyTargets||weapon&&!validDie||!sleep&&!targets.length&&(damageEnabled||mode==='attack'||mode==='save')||option?.remaining!==null&&(option?.remaining??0)<(option?.cost??cost)}>{busy?'Invio in corso…':'Invia al Master'}</button>
                 </>}
             </fieldset></form>
-    const proposal=choices&&action?.resolution&&(renewed||!!action.resolution.healing||!!action.resolution.temporaryHitPoints)?<PlayerActionRolls key={action.key} game={game} choices={choices} action={action} formRef={form} onUpdate={onUpdate} onSubmitted={()=>{setPanel('summary');setTargets([]);setRetry(current=>current+1)}}/>:legacyProposal
+    const proposal=choices&&choices.ownerId!==null&&action?.entry?.data.referenceId===counterspellId&&action.entry.data.edition==='2014'?<CounterspellForm game={game} ownerId={choices.ownerId} onUpdate={onUpdate}/>:choices&&action?.resolution&&(renewed||!!action.resolution.healing||!!action.resolution.temporaryHitPoints)?<PlayerActionRolls key={action.key} game={game} choices={choices} action={action} formRef={form} onUpdate={onUpdate} onSubmitted={()=>{setPanel('summary');setTargets([]);setRetry(current=>current+1)}}/>:legacyProposal
     const remainingSeconds=Math.max(0,action?.remainingTurns??0)*6
     const remainingTime=[Math.floor(remainingSeconds/3600)?`${Math.floor(remainingSeconds/3600)} h`:'',Math.floor(remainingSeconds%3600/60)?`${Math.floor(remainingSeconds%3600/60)} min`:'',remainingSeconds%60?`${remainingSeconds%60} s`:''].filter(Boolean).join(' ')||'0 s'
     const summary=action&&<div className="player-cast-summary" aria-label={`Riepilogo: ${action.name}`}>

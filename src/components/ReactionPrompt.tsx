@@ -1,3 +1,5 @@
+import {CounterspellForm} from './CounterspellForm'
+import {counterspellId} from '../domain/dnd/Counterspell'
 import {memo,useCallback,useMemo,useContext,useEffect,useId,useLayoutEffect,useRef,useState,type ReactNode} from 'react'
 import {playApi,type ActionChoices,type Game,type MasterGame,type ReactionEvent,type ReactionWindow} from '../utils/PlayApi'
 import {ReactionContext} from './ReactionContext'
@@ -116,7 +118,7 @@ function ReactionDialog({window,game,onUpdate,disabled=false}:{window:ReactionWi
         <p className="library-help">{isMaster?'Puoi scegliere al posto del giocatore. Il timer è condiviso: ogni interazione qui o nel popup del giocatore lo riporta a 30 secondi. Alla scadenza si prosegue senza usare la reazione.':'Hai 30 secondi di inattività. Interagire con questa finestra fa ripartire il timer. Alla scadenza prosegui senza usare la reazione.'}</p>
         {!choices&&!error&&<p role="status">Caricamento delle reazioni…</p>}
         <label>Reazione<select aria-label="Reazione" disabled={busy||!choices} value={key} onChange={event=>setKey(event.target.value)}>{choices?.actions.filter(a=>window.actionKeys.includes(a.key)).map(a=><option value={a.key} key={a.key}>{a.name}</option>)}</select></label>
-        {choices&&action&&<ReactionRollForm key={action.key} action={action} targets={choices.targets} ownerId={choices.ownerId} canSubmit={true} disabled={busy||disabled} label={`Reazione: ${action.name}`} submitLabel={isMaster?'Usa la reazione':'Usa la reazione · invia al Master'} onSubmit={submitReaction}/> }
+        {choices&&action&&(action.entry?.data.referenceId===counterspellId&&action.entry.data.edition==='2014'?<CounterspellForm game={game} ownerId={choices.ownerId!} reactionId={window.id} onUpdate={onUpdate} disabled={busy||disabled}/>:<ReactionRollForm key={action.key} action={action} targets={choices.targets} ownerId={choices.ownerId} canSubmit={true} disabled={busy||disabled} label={`Reazione: ${action.name}`} submitLabel={isMaster?'Usa la reazione':'Usa la reazione · invia al Master'} onSubmit={submitReaction}/>) }
         {!isMaster&&error&&<p role="alert">{error}</p>}
         <button type="button" className="play-secondary" disabled={busy} onClick={()=>void decline()}>Non usare la reazione</button>
     </>

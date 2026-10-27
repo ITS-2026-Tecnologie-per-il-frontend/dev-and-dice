@@ -1,0 +1,12 @@
+.counterspell-form,.counterspell-resolution,.counterspell-check { display:grid; gap:12px; min-width:0; }
+.counterspell-form p,.counterspell-resolution p,.counterspell-summary p { margin:0; line-height:1.5; }
+.counterspell-resolution label { display:grid; gap:5px; min-width:0; }
+.counterspell-resolution :is(input,select) { box-sizing:border-box; width:100%; min-width:0; min-height:44px; padding:8px 10px; border:1px solid var(--border); border-radius:5px; color:var(--text-h); background:var(--bg); font:inherit; }
+.counterspell-check { margin:0; padding:12px; border:1px solid var(--border); border-radius:5px; }
+.counterspell-check legend { padding:0 4px; font-size:13px; font-weight:650; }
+.counterspell-modifier { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+.counterspell-summary,.counterspell-outcome { display:grid; gap:6px; padding:10px 12px; border-left:3px solid var(--ui-accent,#147d72); background:var(--code-bg); color:var(--text-h); font-size:13px; line-height:1.5; overflow-wrap:anywhere; }
+.counterspell-summary { margin-bottom:4px; }
+.counterspell-form .counterspell-requirements,.counterspell-review .counterspell-requirements { display:flex; flex-direction:row; align-items:flex-start; gap:8px; font-size:13px; line-height:1.5; }
+.counterspell-requirements input[type=checkbox],.master-renewed .ability-row .counterspell-requirements input[type=checkbox] { width:16px; min-width:16px; height:16px; min-height:16px; max-height:16px; flex:0 0 16px; padding:0; margin:2px 0 0; }
+.counterspell-review > .play-actions button,.counterspell-review > .play-actions .disabled-button-hint > button { box-sizing:border-box; min-height:44px; padding:10px 18px; border:1px solid var(--border); border-radius:5px; color:var(--text-h); background:var(--bg); font:inherit; cursor:pointer; }
