@@ -173,6 +173,7 @@ try{
  await wake.getByLabel('Evento che attiva la reazione',{exact:true}).fill('Quando inizia il turno di Noryn')
  await wake.getByRole('button',{name:'Prepara',exact:true}).click()
  await masterReady.getByLabel('Risveglio preparato di Aster',{exact:true}).waitFor()
+ assert.equal(await masterReady.getByRole('button',{name:/^Prepara un/}).count(),0,'A prepared wake hides the add-preparation control for its owner')
  for(let i=0;i<2;i++){await dm.getByRole('button',{name:'Turno successivo →',exact:true}).click();await sync()}
  await dm.getByRole('button',{name:'Apri azione preparata di Aster',exact:true}).click()
  await dm.waitForFunction(()=>document.activeElement?.id==='readied-actions')
