@@ -1,3 +1,4 @@
+import {counterspellChoices,createCounterspellEntry,applyCounterspell,counterspellRelatedCastIds} from './counterspell.mjs'
 import {turnActionSlots} from '../src/domain/dnd/TurnEconomy.ts'
 import {validReadiedAction} from '../src/domain/dnd/Readied.ts'
 import {readyChoices,readyEntry,applyReadyCommand} from './readied-actions.mjs'
@@ -256,6 +257,36 @@ export async function gamesRouter({ dataDir, authenticate }) {
       return view(db,game,req.userId)
     }))
   })
+  router.get('/games/:id/counterspell',async(req,res)=>{
+    const rules=await combatRules(),db=await read(),game=gameFor(db,req.params.id,req.userId)
+    if(!/^\d+$/.test(req.query.actorId??''))fail(400,'Seleziona il lanciatore di Controincantesimo.')
+    res.json(counterspellChoices(db,game,req.userId,Number(req.query.actorId),rules,req.query.reactionId))
+  })
+  router.post('/games/:id/counterspell',async(req,res)=>{
+    const rules=await combatRules()
+    res.json(await write(db=>{
+      const game=gameFor(db,req.params.id,req.userId),body=req.body
+      if(!object(body)||Object.keys(body).some(k=>!['id','revision','actorId','targetKey','option','requirementsConfirmed','reactionId','decision'].includes(k))||!idPattern.test(body.id??''))fail(400,'Richiesta di Controincantesimo non valida.')
+      if(req.userId!==game.masterId&&body.decision!==undefined)fail(403,'Solo il Master pu\u00f2 risolvere la prova di Controincantesimo.')
+      const existing=game.combatRequests?.find(e=>e.id===body.id)
+      if(existing){if(!existing.proposal.counterspell||req.userId!==game.masterId&&existing.ownerId!==req.userId||existing.proposal.counterspell.actorId!==body.actorId||existing.proposal.counterspell.targetKey!==body.targetKey||existing.proposal.option!==body.option)fail(409,'Identificativo gi\u00e0 usato.');return view(db,game,req.userId)}
+      checkRevision(game,body.revision)
+      const entry=createCounterspellEntry(db,game,req.userId,req.username,body,rules)
+      if(!validCombatRequest(entry))fail(400,'Richiesta di Controincantesimo non valida.')
+      const window=body.reactionId?reactionWindow(game,req.userId,body.reactionId):undefined
+      const related=counterspellRelatedCastIds(game,entry.counterspell.target)
+      if((game.reactionWindows??[]).some(w=>reactionOpen(w)&&w.id!==window?.id&&w.groupId!==window?.groupId&&!related.has(w.event.requestId)&&!related.has(w.requestId)))fail(409,'Risolvi prima le altre reazioni in attesa.')
+      if(game.masterId===req.userId){
+        const result=applyCounterspell(db,game,entry,rules,body.decision),state=validateState(result.state)
+        for(const sheet of result.sheets){const record=db.characters.find(r=>r.id===sheet.id&&r.gameId===game.id);if(!record)fail(409,'Personaggio non disponibile.');saveSheet(game,record,validateSheet(sheet),req)}
+        game.state=state;game.revision++;entry.counterspell=result.counterspell;entry.status='approved';entry.resolvedAt=new Date().toISOString()
+      }
+      ;(game.combatRequests??=[]).push(entry)
+      if(window){window.requestId=entry.id;window.status=entry.status==='approved'?'used':'submitted'}
+      game.requestsRevision=(game.requestsRevision??0)+1
+      return view(db,game,req.userId)
+    }))
+  })
   router.get('/games/:id/readied-actions',async(req,res)=>{
     const rules=await combatRules(),db=await read(),game=gameFor(db,req.params.id,req.userId)
     res.json(readyChoices(db,game,req.userId,rules))
@@ -318,7 +349,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
   router.post('/games/:id/requests', async (req,res)=>{
     gameFor(await read(),req.params.id,req.userId)
     const proposal=requestProposal(req.body),rules=await combatRules()
-    if(proposal.readyCommand)fail(400,'Usa il percorso delle azioni preparate.')
+    if(proposal.readyCommand||proposal.counterspell)fail(400,'Usa il percorso dedicato a questa azione.')
     res.json(await write(db=>{
       const game=gameFor(db,req.params.id,req.userId)
       const duplicate=game.combatRequests?.find(entry=>entry.id===proposal.id)
@@ -362,7 +393,11 @@ export async function gamesRouter({ dataDir, authenticate }) {
       const game=gameFor(db,req.params.id,req.userId),entry=game.combatRequests?.find(e=>e.id===req.params.requestId)
       if(!entry)fail(404,'Richiesta non disponibile.')
       checkRevision(game,req.body?.revision)
-      if(entry.proposal.readyCommand){
+      if(entry.proposal.counterspell){
+        if(game.masterId!==req.userId||entry.status!=='pending'||req.body?.kind!=='refresh')fail(403,'Solo il Master può aggiornare questa richiesta.')
+        const c=entry.proposal.counterspell,refreshed=createCounterspellEntry(db,game,req.userId,entry.actorName,{id:entry.id,revision:game.revision,actorId:c.actorId,targetKey:c.targetKey,requirementsConfirmed:true,option:entry.proposal.option,reactionId:entry.proposal.reactionId},rules)
+        entry.proposal=refreshed.proposal;entry.counterspell=refreshed.counterspell;entry.targets=refreshed.targets;entry.rollsRevision=(entry.rollsRevision??0)+1
+      }else if(entry.proposal.readyCommand){
         if(game.masterId!==req.userId||entry.status!=='pending'||req.body?.kind!=='refresh')fail(403,'Solo il Master può aggiornare questa richiesta.')
         const refreshed=readyEntry(db,game,entry.ownerId,entry.actorName,entry.id,entry.proposal.readyCommand,rules)
         entry.proposal=refreshed.proposal;entry.targets=refreshed.targets;entry.sleepReview=refreshed.sleepReview;entry.rollsRevision=(entry.rollsRevision??0)+1
@@ -385,10 +420,11 @@ export async function gamesRouter({ dataDir, authenticate }) {
       if (entry.status!=='pending') fail(409,'Questa richiesta è già stata conclusa.')
       checkRevision(game,req.body?.revision)
       if (status==='approved') {
+        if(game.combatRequests.some(r=>r.status==='pending'&&r.counterspell?.target.requestId===entry.id))fail(409,'Risolvi prima il Controincantesimo che tenta di interrompere questo lancio.')
         if(entry.proposal.reactionId&&!game.reactionWindows?.some(w=>w.id===entry.proposal.reactionId&&w.requestId===entry.id&&w.ownerId===entry.ownerId&&w.status==='submitted'))fail(409,'La reazione non è più valida.')
-        if(!entry.proposal.reactionId&&(game.reactionWindows??[]).some(reactionOpen))fail(409,'Attendi la scelta delle reazioni prima di applicare questa azione.')
+        if(!entry.proposal.reactionId&&(game.reactionWindows??[]).some(w=>reactionOpen(w)&&(!entry.counterspell||!counterspellRelatedCastIds(game,entry.counterspell.target).has(w.event.requestId)&&!counterspellRelatedCastIds(game,entry.counterspell.target).has(w.requestId))))fail(409,'Attendi la scelta delle reazioni prima di applicare questa azione.')
         if (requestStatus(game,entry)!=='pending') fail(409,'Turno o dati della sessione cambiati: chiedi al giocatore una nuova richiesta.')
-        const result=entry.proposal.readyCommand?applyReadyCommand(db,game,entry,rules,req.body):applyCombatRequest(db,game,entry,rules,req.body)
+        const result=entry.proposal.counterspell?applyCounterspell(db,game,entry,rules,req.body):entry.proposal.readyCommand?applyReadyCommand(db,game,entry,rules,req.body):applyCombatRequest(db,game,entry,rules,req.body)
         const state=validateState(result.state)
         for (const sheet of result.sheets) {
           const record=db.characters.find(record=>record.id===sheet.id && record.gameId===game.id)
@@ -396,6 +432,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
           saveSheet(game,record,validateSheet(sheet),req)
         }
         game.state=state;game.revision++
+        if(result.counterspell)entry.counterspell=result.counterspell
         if(result.wind)entry.resolution.wind=result.wind
         if(result.sleepReview)entry.sleepReview=result.sleepReview
         entry.targets=entry.targets.map(target=>({...target,damage:result.targets.find(final=>final.id===target.id)?.damage??target.damage}))

@@ -1,3 +1,4 @@
+import {counterspellId,validCounterspellIntent,validCounterspellSnapshot} from '../src/domain/dnd/Counterspell.ts'
 import {turnActionCapacity} from '../src/domain/dnd/TurnEconomy.ts'
 import {validReadyCommand} from '../src/domain/dnd/Readied.ts'
 import { inventoryEquipment, referencedInventoryItem, inventoryFieldValue } from '../src/utils/Inventory.ts'
@@ -178,8 +179,9 @@ export function requestProposal(body) {
     if(!validPackets(body.packets)||body.attackDie!==undefined)fail(400,'Pacchetti di dadi non validi.')
     try {body={...body,targets:packetTargets(body.packets)}} catch(error){fail(400,error.message)}
   }
-  if (!object(body) || Object.keys(body).some(key=>!['id','revision','key','option','cost','mode','damageEnabled','targets','attackDie','packets','effectChoice','reactionId','windDirection','sleepRoll','readyCommand'].includes(key))
+  if (!object(body) || Object.keys(body).some(key=>!['id','revision','key','option','cost','mode','damageEnabled','targets','attackDie','packets','effectChoice','reactionId','windDirection','sleepRoll','readyCommand','counterspell'].includes(key))
     || body.readyCommand!==undefined&&!validReadyCommand(body.readyCommand)
+    || body.counterspell!==undefined&&(!validCounterspellIntent(body.counterspell)||body.mode!=='none'||body.damageEnabled||body.packets!==undefined||body.readyCommand!==undefined||body.windDirection!==undefined)
     || body.sleepRoll!==undefined&&!integer(body.sleepRoll)
     || body.windDirection!==undefined&&(!integer(body.windDirection)||body.option!=='free'||body.mode!=='none'||body.damageEnabled||body.reactionId!==undefined||!Array.isArray(body.packets)||body.packets.some(p=>p.die!==undefined||p.damage.length))
     || body.reactionId!==undefined&&!uuid(body.reactionId)
@@ -198,8 +200,9 @@ export function requestProposal(body) {
 }
 
 export function validCombatRequest(entry) {
+  if(entry.counterspell!==undefined&&(!validCounterspellSnapshot(entry.counterspell)||!entry.proposal?.counterspell)||entry.proposal?.counterspell&&!entry.counterspell||entry.counteredBy!==undefined&&!uuid(entry.counteredBy))return false
   if (!object(entry) || !uuid(entry.id) || !uuid(entry.ownerId) || !uuid(entry.characterId) || !text(entry.characterName,160) || !text(entry.actorName,24)
-    || entry.reviewedRevision!==undefined&&(!integer(entry.reviewedRevision)||!entry.resolution||!Array.isArray(entry.proposal?.packets))
+    || entry.reviewedRevision!==undefined&&(!integer(entry.reviewedRevision)||!entry.counterspell&&(!entry.resolution||!Array.isArray(entry.proposal?.packets)))
     || !text(entry.actionName,20000) || !text(entry.optionLabel,2000) || typeof entry.prolonged!=='boolean'
     || !text(entry.createdAt,40) || !['pending','approved','rejected'].includes(entry.status)
     || !Array.isArray(entry.targets) || entry.targets.length!==entry.proposal?.targets?.length
@@ -214,7 +217,7 @@ export function validCombatRequest(entry) {
   if(entry.proposal.packets!==undefined&&!validResolutionSnapshot(entry))return false
   if(entry.proposal.windDirection!==undefined&&entry.resolution?.plan.ruleId!=='phb2014:spell:gust-of-wind')return false
   if(entry.reactionReviewed!==undefined&&entry.reactionReviewed!==true)return false
-  if(entry.reviewedRevision!==undefined&&!entry.resolution.wind&&!directBenefit(entry.resolution.plan)&&!entry.reactionReviewed)return false
+  if(entry.reviewedRevision!==undefined&&!entry.counterspell&&!entry.resolution.wind&&!directBenefit(entry.resolution.plan)&&!entry.reactionReviewed)return false
   try {requestProposal(entry.proposal);return entry.id===entry.proposal.id} catch {return false}
 }
 
@@ -315,11 +318,12 @@ export function visibleRequests(game,user,db,rules) {
       }
     }
     return ({id:entry.id,characterId:entry.characterId,characterName:entry.characterName,actorName:entry.actorName,actionName:entry.actionName,
-    createdAt:entry.createdAt,status:requestStatus(game,entry),...(entry.proposal.readyCommand?{readyCommand:entry.proposal.readyCommand}:{}),additionalActionRequired,requirements,optionLabel:entry.optionLabel,cost:entry.proposal.cost,windDirection:entry.proposal.windDirection!==undefined,spendsResources:!['free','cantrip','ritual'].includes(entry.proposal.option),mode:entry.proposal.mode,damageEnabled:entry.proposal.damageEnabled,prolonged:entry.prolonged,
+    createdAt:entry.createdAt,status:requestStatus(game,entry),counteredBy:entry.counteredBy,...(entry.counterspell?{counterspell:game.masterId===user||entry.status==='approved'?entry.counterspell:{...entry.counterspell,target:{key:entry.counterspell.target.key,actorId:entry.counterspell.target.actorId,casterName:entry.counterspell.target.casterName}}}:{}),...(entry.proposal.readyCommand?{readyCommand:entry.proposal.readyCommand}:{}),additionalActionRequired,requirements,optionLabel:entry.optionLabel,cost:entry.proposal.cost,windDirection:entry.proposal.windDirection!==undefined,spendsResources:!['free','cantrip','ritual'].includes(entry.proposal.option),mode:entry.proposal.mode,damageEnabled:entry.proposal.damageEnabled,prolonged:entry.prolonged,
     ...(entry.proposal.attackDie!==undefined?{attackDie:entry.proposal.attackDie}:{}),...(entry.proposal.sleepRoll!==undefined?{sleepRoll:entry.proposal.sleepRoll}:{}),...(game.masterId===user&&entry.sleepReview?{sleepReview:{...entry.sleepReview,candidates:entry.sleepReview.candidates.map(c=>({...c,name:c.name??entry.targets.find(t=>t.id===c.id)?.name??'Creatura'}))}}:{}),
-    ...(entry.resolution?{packets:entry.proposal.packets,rollsRevision:entry.rollsRevision??0,...(game.masterId===user?{resolution:{...entry.resolution.plan,attackAbility:entry.resolution.plan.attackAbility??(entry.resolution.plan.kind==='attack'&&!entry.resolution.plan.weaponName&&!/^sheet-attack:/.test(entry.resolution.plan.ruleId??'')?spellAttackAbility(game.state?.turns.find(t=>t.sheet?.id===entry.characterId)?.sheet):undefined)},weaponChoices:entry.resolution.weaponChoices,...(entry.resolution.wind?{wind:{...entry.resolution.wind,editable:windEditable(game,entry)}}:{})}: {})}:{}),
+    ...(entry.resolution&&!entry.counteredBy?{packets:entry.proposal.packets,rollsRevision:entry.rollsRevision??0,...(game.masterId===user?{resolution:{...entry.resolution.plan,attackAbility:entry.resolution.plan.attackAbility??(entry.resolution.plan.kind==='attack'&&!entry.resolution.plan.weaponName&&!/^sheet-attack:/.test(entry.resolution.plan.ruleId??'')?spellAttackAbility(game.state?.turns.find(t=>t.sheet?.id===entry.characterId)?.sheet):undefined)},weaponChoices:entry.resolution.weaponChoices,...(entry.resolution.wind?{wind:{...entry.resolution.wind,editable:windEditable(game,entry)}}:{})}: {})}:{}),
     targets:(entry.sleepReview&&entry.status==='approved'?entry.sleepReview.candidates.filter(c=>(entry.sleepReview.area??entry.proposal.targets.map(t=>t.id)).includes(c.id)).map(c=>({id:c.id,name:c.name??entry.targets.find(t=>t.id===c.id)?.name??'Creatura',roll:'',damageRoll:'',damage:'0'})):entry.resolution?.wind?entry.resolution.wind.selected.map(id=>{const c=entry.resolution.wind.candidates.find(c=>c.id===id);return {id,name:c.name,roll:'',damageRoll:'',damage:'0'}}):entry.targets).map(({id,name,roll,hit,damageRoll,damage,armorClass})=>{
       const base={id,name,roll,damageRoll,...(entry.sleepReview&&entry.status==='approved'?{asleep:entry.sleepReview.selected.includes(id)}:{}),damage:(entry.weaponAttack||entry.resolution)&&game.masterId!==user?(entry.proposal.targets.find(target=>target.id===id)?.damage??'0'):damage}
+      if(entry.counteredBy)return {...base,damage:'0'}
       if(entry.resolution?.wind)return base
       if(entry.resolution){
         if(game.masterId!==user)return base
@@ -339,6 +343,7 @@ export function visibleRequests(game,user,db,rules) {
 export function prepareAction(context,proposal,rules) {
   if(context.blockedReason)fail(409,context.blockedReason)
   const action=context.actions.find(action=>action.key===proposal.key)
+  if(action?.ability.ruleId===counterspellId)fail(400,'Usa il form dedicato a Controincantesimo per scegliere il lancio da interrompere.')
   if(proposal.windDirection!==undefined)return prepareWindDirection(context,proposal)
   if (!action || action.error) fail(409,action?.error || 'Azione non più disponibile nella scheda.')
   const sleep=action.info.entry?.data.edition==='2014'&&action.ability.ruleId==='phb2014:spell:sleep'
