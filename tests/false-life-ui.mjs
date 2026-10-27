@@ -1,5 +1,6 @@
 // Run: node tests/false-life-ui.mjs — 2014 False Life, self-only roll and temporary HP selection.
 import assert from 'node:assert/strict'
+import {resetTurnEconomy} from '../src/domain/dnd/TurnEconomy.ts'
 import {once} from 'node:events'
 import {mkdtemp,mkdir,rm} from 'node:fs/promises'
 import {join} from 'node:path'
@@ -46,6 +47,17 @@ try {
  const source=crypto.randomUUID(),tracked=grantCombatTemporaryHitPoints({id:1,temporaryHitPoints:'12',hitPoints:'10',sheet:caster},8,source)
  const effect={...resolvedAbility({...spell,id:7,ownerId:1,active:false,remainingTurns:600,temporaryHitPointsSource:source},catalog,{activeId:1,round:2},[{id:2},{id:1}])}
  assert.equal(effect.expiryRound,602)
+ const depleted=settleCombatEffects([effect],[{...tracked,temporaryHitPoints:'0'}])
+ assert.equal(depleted.abilities[0].active,false,'An exhausted pool closes its False Life benefit immediately')
+ assert.equal(depleted.abilities[0].remainingTurns,0)
+ assert.equal(depleted.turns[0].sheet.playerDetails['temporaryHitPoints.source'],'','The depleted pool loses its old source')
+ assert.equal(depleted.turns[0].sheet.hitPoints,'10','Closing the benefit never heals or harms actual HP')
+ assert.equal(settleCombatEffects([effect],[{...tracked,temporaryHitPoints:'3'}]).abilities[0].active,true,'Partial absorption keeps the benefit active')
+ assert.equal(settleCombatEffects([effect],[{...tracked,temporaryHitPoints:''}]).abilities[0].active,true,'A blank field is not a depleted pool')
+ assert.equal(settleCombatEffects([effect],[{...tracked,id:2,temporaryHitPoints:'0'}]).abilities[0].active,true,'Another creature exhausting its pool does not end this cast')
+ assert.equal(settleCombatEffects([{...effect,temporaryHitPointsSource:undefined}],[{...tracked,temporaryHitPoints:'0',sheet:{...caster,playerDetails:{...caster.playerDetails,temporaryHitPoints:'0'}}}]).abilities[0].active,false,'Legacy and manually zeroed pools close too')
+ assert.equal(settleCombatEffects([{...effect,execution:{id:'casting',phase:'resolving',option:'slot:1',cost:1}}],[{...tracked,temporaryHitPoints:'0'}]).abilities[0].active,true,'A pending cast must not close before its pool is granted')
+
  const earlier=advanceCombatAbilities([effect],{activeId:1,round:601},{activeId:2,round:602})
  assert.equal(settleCombatEffects(earlier,[tracked]).turns[0].temporaryHitPoints,'8','A global round boundary must not expire the cast early')
  const expired=advanceCombatAbilities(earlier,{activeId:2,round:602},{activeId:1,round:602})
@@ -93,7 +105,9 @@ try {
  await summary.getByText('Dettagli del lancio',{exact:true}).click()
  await summary.getByText('2 sul d4 + 9 = 11 PF temporanei',{exact:true}).waitFor()
  assert.equal(await summary.locator('input,select').count(),0,'Consultation contains original data, no locked empty form')
- assert(await summary.getByRole('button',{name:'Lancia di nuovo',exact:true}).isDisabled(),'A pending cast cannot be duplicated')
+ await summary.getByRole('button',{name:'Lancia di nuovo',exact:true}).click();await form.waitFor()
+ assert(await form.getByRole('button',{name:'Invia al Master',exact:true}).isDisabled(),'Another cast cannot be submitted while one is pending')
+ await page.getByRole('button',{name:spell.name+' · In attesa del Master',exact:true}).click();await summary.waitFor()
  await page.getByRole('button',{name:'Chiudi pannello '+spell.name,exact:true}).click()
  assert.equal(await page.getByLabel('Riepilogo: '+spell.name,{exact:true}).count(),0)
  await page.getByRole('button',{name:'Consulta',exact:true}).click();await summary.waitFor()
@@ -116,7 +130,7 @@ try {
  assert.equal(await form.getByLabel('PF temporanei tirati',{exact:true}).inputValue(),'','A recast starts with fresh dice')
  await form.getByLabel('PF temporanei tirati',{exact:true}).fill('4')
  await form.getByRole('combobox',{name:'PF temporanei da mantenere',exact:true}).selectOption('current')
- const prior=game.state.abilities.find(a=>a.ownerId===1),priorSource=game.state.turns[0].sheet.playerDetails['temporaryHitPoints.source']
+ const prior=game.state.abilities.find(a=>a.ownerId===1&&a.active),priorSource=game.state.turns[0].sheet.playerDetails['temporaryHitPoints.source']
  await form.getByRole('button',{name:'Invia al Master',exact:true}).click()
  await summary.getByText('In attesa del Master',{exact:true}).waitFor()
  game=await api(master,path)
@@ -131,7 +145,7 @@ try {
  await summary.getByText('Approvata',{exact:true}).waitFor();game=await api(master,path)
  assert.equal(game.state.turns[0].temporaryHitPoints,'11')
  assert.equal(game.state.turns[0].sheet.playerDetails['temporaryHitPoints.source'],priorSource)
- assert.equal(game.state.abilities.find(a=>a.ownerId===1).expiryRound,prior.expiryRound,'Keeping the previous pool never refreshes its duration')
+ assert.equal(game.state.abilities.find(a=>a.ownerId===1&&a.active).expiryRound,prior.expiryRound,'Keeping the previous pool never refreshes its duration')
  assert.equal(game.characters.find(c=>c.id===caster.id).sheet.playerDetails['slots.1.used'],'1','A legal recast spends another slot once approved')
  await page.getByRole('button',{name:'Chiudi pannello '+spell.name,exact:true}).click()
  await page.getByRole('button',{name:'Consulta',exact:true}).click();await summary.getByText('Dettagli del lancio',{exact:true}).click();await summary.getByText('4 sul d4 + 4 = 8 PF temporanei',{exact:true}).waitFor()
@@ -177,17 +191,18 @@ try {
  await activeCard.screenshot({path:join(root,'false-life-master-active-320.png')})
  await activeCard.getByRole('button',{name:'Lancia di nuovo',exact:true}).click()
  await dm.getByRole('form',{name:'Lancio: '+spell.name,exact:true}).waitFor()
- assert(await activeCard.getByRole('combobox',{name:'Origine del lancio di '+spell.name,exact:true}).isEnabled(),'A fresh recast can choose its casting origin')
+ assert(await dm.getByRole('form',{name:'Lancio: '+spell.name,exact:true}).getByRole('combobox',{name:'Origine del lancio di '+spell.name,exact:true}).isEnabled(),'A fresh recast can choose its casting origin')
  assert.equal(await dm.getByRole('form',{name:'Lancio: '+spell.name,exact:true}).getByLabel('PF temporanei tirati',{exact:true}).inputValue(),'')
- await activeCard.getByRole('button',{name:'Annulla nuovo lancio',exact:true}).click()
+ await dm.getByRole('form',{name:'Lancio: '+spell.name,exact:true}).locator('xpath=ancestor::*[contains(concat(" ",normalize-space(@class)," ")," ability-row ")][1]').getByRole('button',{name:'Elimina '+spell.name,exact:true}).click()
  assert.equal((await api(master,path)).state.turns[0].temporaryHitPoints,'11','Cancelling a Master recast preserves the active effect')
  await summary.getByText('Dettagli del lancio',{exact:true}).click()
  await summary.getByText('1 h',{exact:true}).waitFor()
  assert(await summary.evaluate(element=>element.scrollWidth<=element.clientWidth+1),'The cast summary fits at 320 px')
  await summary.screenshot({path:join(root,'false-life-summary-dark-320.png')})
  // A later turn distinguishes preserving the old expiry from restarting the hour.
+ await dm.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.endsWith('.library')))
  game=await api(master,path)
- const resetSheets=game.characters.map(record=>({...record.sheet,playerDetails:{...record.sheet.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]'}}))
+ const resetSheets=game.characters.map(record=>({...record.sheet,playerDetails:{...record.sheet.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]',...resetTurnEconomy}}))
  const later={activeId:1,round:2}
  game=await api(master,path+'/state','PUT',{revision:game.revision,sheets:resetSheets,state:{...game.state,abilities:advanceCombatAbilities(game.state.abilities,game.state.combat,later),combat:later}})
  await summary.getByText('59 min 54 s',{exact:true}).waitFor()
@@ -198,19 +213,49 @@ try {
   return api(master,path+'/requests/'+pending.id+'/approve','POST',{revision:sent.revision,confirmed:true,additionalActionConfirmed:confirmed,targets:[{id:1,damage:'0'}]})
  }
  game=await recastViaApi(true,'slot:1')
- assert.equal(game.state.abilities.find(a=>a.ownerId===1).expiryRound,prior.expiryRound,'A later recast retaining the old pool keeps the original expiry')
- assert.equal(game.state.abilities.find(a=>a.ownerId===1).remainingTurns,599)
+ assert.equal(game.state.abilities.find(a=>a.ownerId===1&&a.active).expiryRound,prior.expiryRound,'A later recast retaining the old pool keeps the original expiry')
+ assert.equal(game.state.abilities.find(a=>a.ownerId===1&&a.active).remainingTurns,599)
  game=await recastViaApi(false,'slot:2',true)
- const replacement=game.state.abilities.find(a=>a.ownerId===1)
+ const replacement=game.state.abilities.find(a=>a.ownerId===1&&a.active)
  assert.equal(replacement.expiryRound,602,'Choosing the new pool starts its own hour')
  assert.notEqual(replacement.temporaryHitPointsSource,priorSource)
  assert.equal(game.state.turns[0].temporaryHitPoints,'13')
+ // Exhaust the actual pool through Master damage controls and verify both roles and persistence.
+ const beforeDepletion=game
+ await dm.reload();await dm.getByRole('button',{name:'Dettagli di Maga',exact:true}).click()
+ const benefit=dm.locator('.ability-row[data-compact-active]').filter({has:dm.getByRole('heading',{name:spell.name,exact:true})})
+ await benefit.waitFor()
+ await dm.waitForFunction(()=>document.querySelector('.master-inspector input[aria-label="PF temporanei di Maga"]')?.value==='13')
+ const damage=dm.getByLabel('Danni o cura per Maga',{exact:true}),apply=dm.getByRole('button',{name:'Applica danni a Maga',exact:true})
+ await damage.fill('5');await apply.click()
+ await dm.locator('.master-inspector').getByLabel('PF temporanei di Maga',{exact:true}).waitFor()
+ assert(await benefit.isVisible(),'Partial damage leaves the active card visible')
+ await dm.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.endsWith('.library')))
+ game=await api(master,path);assert.equal(game.state.turns[0].temporaryHitPoints,'8')
+ await damage.fill('8');await apply.click();await benefit.waitFor({state:'detached'})
+ await dm.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.endsWith('.library')))
+ game=await api(master,path)
+ assert.equal(game.state.turns[0].temporaryHitPoints,'0')
+ assert.equal(game.state.turns[0].hitPoints,'10','The last temporary HP absorb the whole hit')
+ assert(!game.state.abilities.some(a=>a.ownerId===1&&a.ruleId===spell.ruleId&&a.active))
+ assert.equal(game.characters.find(c=>c.id===caster.id).sheet.playerDetails['slots.2.used'],beforeDepletion.characters.find(c=>c.id===caster.id).sheet.playerDetails['slots.2.used'],'Depletion never refunds the spell slot')
+ await page.reload();assert(!(await api(player,path)).effects.some(e=>e.name===spell.name),'The player no longer sees an active benefit')
+ await dm.reload();assert.equal(await benefit.count(),0,'The spent benefit stays closed after reload')
+ // Restore the isolated pre-damage fixture to retain the independent duration-expiry check.
+ game=await api(master,path+'/state','PUT',{revision:game.revision,state:beforeDepletion.state,sheets:beforeDepletion.characters.map(c=>c.sheet)})
+ await dm.reload();await dm.getByRole('button',{name:'Dettagli di Maga',exact:true}).click();await benefit.waitFor()
+ await dm.locator('.master-inspector').getByLabel('PF temporanei di Maga',{exact:true}).fill('0');await benefit.waitFor({state:'detached'})
+ await dm.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.endsWith('.library')))
+ game=await api(master,path)
+ assert(!game.state.abilities.some(a=>a.ownerId===1&&a.ruleId===spell.ruleId&&a.active),'Manually setting temporary HP to zero also closes the benefit')
+ assert.equal(game.state.turns[0].hitPoints,'10')
+ game=await api(master,path+'/state','PUT',{revision:game.revision,state:beforeDepletion.state,sheets:beforeDepletion.characters.map(c=>c.sheet)})
  const expiry={activeId:1,round:602}
  game=await api(master,path+'/state','PUT',{revision:game.revision,sheets:[],state:{...game.state,abilities:advanceCombatAbilities(game.state.abilities,later,expiry),combat:expiry}})
  assert.equal(game.state.turns[0].temporaryHitPoints,'0','Server settlement removes expired sourced temporary HP')
  assert.equal(game.characters.find(c=>c.id===caster.id).sheet.playerDetails.temporaryHitPoints,'0','Expiry persists to the character sheet')
  assert.equal(game.state.turns[0].hitPoints,'10')
  assert.deepEqual(errors,[])
- console.log('PASS False Life: self-only dice/upcasting, safe original-cast recap, pending/close/reload, fresh player and Master recasts, additional-action validation, old/new pool expiry, server persistence, once-only slots and no HP healing')
+ console.log('PASS False Life: self-only dice/upcasting, safe original-cast recap, pending/close/reload, fresh player and Master recasts, additional-action validation, old/new pool expiry, automatic closure after damage or manual depletion, server persistence, once-only slots and no HP healing')
 }catch(error){await page.screenshot({path:join(root,'false-life-player-failure.png'),fullPage:true});await dm.screenshot({path:join(root,'false-life-master-failure.png'),fullPage:true});console.error('Browser errors',errors);throw error}
 finally{await browser.close();await frontend.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await rm(dir,{recursive:true,force:true})}

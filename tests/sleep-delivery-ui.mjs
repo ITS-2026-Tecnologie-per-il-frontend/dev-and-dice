@@ -1,5 +1,6 @@
 // Run: node tests/sleep-delivery-ui.mjs — real browser/API delivery, isolated accounts/archive.
 import assert from 'node:assert/strict'
+import {resetTurnEconomy} from '../src/domain/dnd/TurnEconomy.ts'
 import {once} from 'node:events'
 import {mkdtemp,writeFile,readFile,rm,mkdir} from 'node:fs/promises'
 import {join,relative} from 'node:path'
@@ -133,12 +134,16 @@ try{
  await masterPage.getByRole('button',{name:'Applica danni a Maga',exact:true}).click()
  await casterRow.getByRole('button',{name:'Addormentato',exact:true}).waitFor({state:'detached'})
  await masterPage.getByRole('button',{name:'Turno successivo →',exact:true}).click()
+ const pronePill=targetRow.locator('.turn-sleep-pill').filter({hasText:'Prono'})
+ assert(await pronePill.getByRole('button',{name:'Rialza (metà movimento)',exact:true}).isVisible(),'Stand up belongs inside the Prone pill, like the prepared-action segment')
+ assert.equal(await targetRow.locator('.turn-wake-action').count(),0,'No separate stand-up button remains')
+ await pronePill.screenshot({path:join(root,'prone-stand-up-pill.png')})
  await targetRow.getByRole('button',{name:'Rialza (metà movimento)',exact:true}).click()
  await targetRow.getByRole('button',{name:'Prono',exact:true}).waitFor({state:'detached'})
  await masterPage.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.includes('.library')))
  // Simulate another approved sleeper at the start of an awake ally's turn.
  let latest=(await api(master,path)).json
- const restored={...approved.state,combat:{activeId:0,round:2},turns:approved.state.turns.map(t=>({...t,sheet:{...t.sheet,playerDetails:{...t.sheet.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]','combat.actionUsed':'false'}}})),abilities:approved.state.abilities.map(a=>a.ruleId===spell.ruleId?{...a,targets:[{id:1,damage:'0',resolved:true}]}:a)}
+ const restored={...approved.state,combat:{activeId:0,round:2},turns:approved.state.turns.map(t=>({...t,sheet:{...t.sheet,playerDetails:{...t.sheet.playerDetails,'rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]',...resetTurnEconomy}}})),abilities:approved.state.abilities.map(a=>a.ruleId===spell.ruleId?{...a,targets:[{id:1,damage:'0',resolved:true}]}:a)}
  await api(master,path+'/state','PUT',{revision:latest.revision,state:restored,sheets:restored.turns.map(t=>t.sheet)})
  await masterPage.reload()
  await asleep.waitFor()
@@ -174,7 +179,7 @@ try{
  // The Master calculates and reviews Sleep before spending a slot and applying effects.
  await masterPage.waitForFunction(()=>!Object.keys(localStorage).some(k=>k.startsWith('dev-and-dice.game-draft.')&&!k.includes('.library')))
  latest=(await api(master,path)).json
- const masterState={...latest.state,combat:{activeId:0,round:8},turns:latest.state.turns.map(t=>t.id===0?{...t,sheet:{...t.sheet,playerDetails:{...t.sheet.playerDetails,'slots.1.used':'0','slots.2.used':'0','rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]','combat.actionUsed':'false'}}}:t),abilities:latest.state.abilities.map(a=>a.ruleId===spell.ruleId?{...a,active:false,remainingTurns:0,targets:[],resolutionEffects:undefined}:a.ruleId===wind.ruleId?{...a,active:false,remainingTurns:0}:a)}
+ const masterState={...latest.state,combat:{activeId:0,round:8},turns:latest.state.turns.map(t=>t.id===0?{...t,sheet:{...t.sheet,playerDetails:{...t.sheet.playerDetails,'slots.1.used':'0','slots.2.used':'0','rules2014.spellsThisTurn':'[]','combat.spellsThisTurn':'[]',...resetTurnEconomy}}}:t),abilities:latest.state.abilities.map(a=>a.ruleId===spell.ruleId?{...a,active:false,remainingTurns:0,targets:[],resolutionEffects:undefined}:a.ruleId===wind.ruleId?{...a,active:false,remainingTurns:0}:a)}
  await api(master,path+'/state','PUT',{revision:latest.revision,state:masterState,sheets:masterState.turns.map(t=>t.sheet)})
  await masterPage.reload()
  const masterForm=masterPage.getByRole('form',{name:'Lancio: Sonno',exact:true})
