@@ -1,3 +1,4 @@
+import {ActionButton} from './ActionButton'
 import { useId, useState } from 'react'
 import type { Ability } from '../utils/Combat'
 import type { CharacterSheet } from '../utils/CharacterSheets'
@@ -46,7 +47,7 @@ export function MasterSleepForm({ability,owner,participants,abilities,data,catal
         {missing&&<p role="alert">Completa i PF delle creature nell’area prima di usare Sonno.</p>}
         {review&&additional&&<label className="ability-check"><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/>Confermo un’altra azione valida per lanciare un incantesimo.</label>}
         {error&&<p role="alert">{error}</p>}
-        <button className="play-primary" disabled={!valid||review&&missing||!!error||!option||option.remaining!==null&&option.remaining<(option.cost??1)||review&&additional&&!confirmed}>{review?'Usa':'Calcola'}</button>
+        <ActionButton className="play-primary" disabled={!valid||review&&missing||!!error||!option||option.remaining!==null&&option.remaining<(option.cost??1)||review&&additional&&!confirmed} disabledReason={error||(!option?'Scegli uno slot per Sonno.':option.remaining!==null&&option.remaining<(option.cost??1)?'Lo slot selezionato è esaurito.':!valid?`Inserisci il totale dei ${count}d8: un intero tra ${count} e ${count*8}.`:review&&missing?'Completa i PF o verifica le immunità delle creature nell’area.':'Conferma di disporre di un’altra azione valida per il lancio.')}>{review?'Usa':'Calcola'}</ActionButton>
         {review&&<button type="button" className="sort-turns" onClick={()=>setReview(false)}>Modifica lancio</button>}
         </fieldset>
     </form>

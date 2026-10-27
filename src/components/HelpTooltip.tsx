@@ -1,11 +1,11 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode, type HTMLAttributes } from 'react'
 import { createPortal } from 'react-dom'
 import '../HelpTooltip.css'
 
 /** Short, non-interactive help: hover, keyboard focus or tap; never changes form state. */
-export function HelpTooltip({ label, children, triggerContent, className='' }: { label: string; children: ReactNode;triggerContent?:ReactNode;className?:string }) {
+export function HelpTooltip({ label, children, triggerContent, className='', triggerElement='button' }: { label: string; children: ReactNode;triggerContent?:ReactNode;className?:string;triggerElement?:'button'|'span' }) {
     const id = useId()
-    const trigger = useRef<HTMLButtonElement>(null)
+    const trigger = useRef<HTMLElement>(null)
     const popup = useRef<HTMLDivElement>(null)
     const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
     const [open, setOpen] = useState(false)
@@ -60,13 +60,18 @@ export function HelpTooltip({ label, children, triggerContent, className='' }: {
         }
     }, [open])
 
+    const bindings:HTMLAttributes<HTMLElement> & {ref:(element:HTMLElement|null)=>void} = {
+        ref:element=>{trigger.current=element},
+        className:triggerElement==='span'?`disabled-button-hint ${className}`:`help-tooltip-trigger ${className}`,
+        'aria-label':label, 'aria-describedby':open?id:undefined,
+        onPointerEnter:event=>{if(event.pointerType!=='touch')show()}, onPointerLeave:closeSoon,
+        onFocus:event=>{if(event.currentTarget.matches(':focus-visible'))show()},
+        onBlur:()=>{cancelClose();setOpen(false)},
+        onClick:()=>{cancelClose();setOpen(current=>!current)},
+    }
+    const content=triggerContent??<span aria-hidden="true">?</span>
     return <>
-        <button ref={trigger} className={`help-tooltip-trigger ${className}`} type="button" aria-label={label} aria-describedby={open ? id : undefined} aria-expanded={open}
-            onPointerEnter={event => { if (event.pointerType !== 'touch') show() }} onPointerLeave={closeSoon}
-            onFocus={event => { if (event.currentTarget.matches(':focus-visible')) show() }} onBlur={() => { cancelClose(); setOpen(false) }}
-            onClick={() => { cancelClose(); setOpen(current => !current) }}>
-            {triggerContent??<span aria-hidden="true">?</span>}
-        </button>
+        {triggerElement==='span'?<span {...bindings} role="group" tabIndex={0}>{content}</span>:<button {...bindings} type="button" aria-expanded={open}>{content}</button>}
         {open && createPortal(<div ref={popup} id={id} role="tooltip" popover="manual" className="help-tooltip-popover"
             style={{ top: position?.top ?? 0, left: position?.left ?? 0, visibility: position ? 'visible' : 'hidden' }}
             onPointerEnter={cancelClose} onPointerLeave={closeSoon}>{children}</div>, document.body)}

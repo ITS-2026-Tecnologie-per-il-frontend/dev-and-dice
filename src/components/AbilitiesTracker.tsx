@@ -1,3 +1,4 @@
+import {ActionButton} from './ActionButton'
 import {resetTurnEconomy,turnActionCapacity} from '../domain/dnd/TurnEconomy'
 import { useContext, useLayoutEffect, useRef, useState, type Dispatch, type SetStateAction, type DragEvent } from 'react'
 import { durationTurns, activateAbility, type Ability, type Combat } from '../utils/Combat'
@@ -195,14 +196,14 @@ export function AbilitiesTracker({ compactActive=false,configurationId,onConfigu
                         const sortable=visibleAbilities.filter(a=>!a.readied&&a.active&&(a.timed===false||a.remainingTurns>0)),position=sortable.findIndex(a=>a.id===ability.id)
                         const seconds=ability.remainingTurns*6,remaining=[Math.floor(seconds/3600)?`${Math.floor(seconds/3600)} h`:'',Math.floor(seconds%3600/60)?`${Math.floor(seconds%3600/60)} min`:'',seconds%60?`${seconds%60} s`:''].filter(Boolean).join(' ')||'0 s'
                         return <AbilityCard key={ability.id} id={`ability-${ability.id}`} tabIndex={-1} data-compact-active="true" data-reorder-item data-reorder-id={ability.id}>
-                            <div className="compact-active-heading"><div className="compact-active-order"><button type="button" draggable onDragStart={event=>handleDragStart(event,ability.id)} aria-label={`Sposta ${ability.name} su`} disabled={position<=0} onClick={()=>reorderAbility(ability.id,sortable[position-1].id)}>↑</button><button type="button" aria-label={`Sposta ${ability.name} giù`} disabled={position<0||position===sortable.length-1} onClick={()=>reorderAbility(ability.id,sortable[position+1].id)}>↓</button></div><h3>{ability.name||'Effetto senza nome'}</h3><InfoButton label="Descrizione" name={ability.name} description={ability.description} entry={info.entry} fields={{duration:ability.duration,remainingTurns:ability.remainingTurns,active:true,owner:participant?.description??'Nessuno'}}/></div>
+                            <div className="compact-active-heading"><div className="compact-active-order"><ActionButton type="button" draggable onDragStart={event=>handleDragStart(event,ability.id)} aria-label={`Sposta ${ability.name} su`} disabled={position<=0} disabledReason={'Questo effetto è già il primo della lista.'} onClick={()=>reorderAbility(ability.id,sortable[position-1].id)}>↑</ActionButton><ActionButton type="button" aria-label={`Sposta ${ability.name} giù`} disabled={position<0||position===sortable.length-1} disabledReason={'Questo effetto è già l’ultimo della lista.'} onClick={()=>reorderAbility(ability.id,sortable[position+1].id)}>↓</ActionButton></div><h3>{ability.name||'Effetto senza nome'}</h3><InfoButton label="Descrizione" name={ability.name} description={ability.description} entry={info.entry} fields={{duration:ability.duration,remainingTurns:ability.remainingTurns,active:true,owner:participant?.description??'Nessuno'}}/></div>
                             <AbilityMetadata duration={ability.timed===false?'Senza conteggio':`${ability.remainingTurns} round · ${remaining}`} owner={participant?.description??'Nessuno'} ownerLabel={info.level!==undefined?'Lanciatore':'Utilizzatore'}/>
                             {!info.instantaneous&&<details className="compact-active-details"><summary>Gestisci durata</summary><div className="compact-active-timing">{timingControls}</div></details>}
                             {!ability.conditionOrigin&&ability.sourceEffectId===undefined&&<AbilityUsage unit={info.unit} concentration={info.concentration||ability.concentration} prolonged={info.prolonged} requirements={requirements}/>}
                             {targets.length>0&&<p className="compact-active-targets"><span>{sleepForm?'Addormentati':'Bersagli'}:</span> {targets.map(t=>participants.find(p=>p.id===t.id)?.description??'Creatura').join(', ')}</p>}
                             <WeaponEffectSummary effects={weaponEffectDetails(ability.weaponEffects??[],participants.flatMap(p=>p.sheet?[p.sheet]:[]))}/><SpellEffectSummary effects={spellEffectDetails({...ability,resolutionEffects:ability.resolutionEffects??spellPlan?.effects},participants.map(p=>({...p,name:p.description})),abilities,creationData)}/>
                             {deferredPlan?.deferredSave&&owner&&<details className="compact-active-details"><summary>Gestisci direzione e bersagli</summary><SpellSaveNotice plan={deferredPlan}/><AbilityTargets candidates={participants.filter(p=>!!p.sheet).map(p=>({id:p.id,name:p.description}))} ownerId={ability.ownerId} selectedIds={targets.map(t=>t.id)} maximum={null} label="Creature nella linea di vento" onChange={(id,checked)=>patch(ability.id,{targets:checked?[...targets,{id,damage:'0',resolved:true}]:targets.filter(t=>t.id!==id)})}/>{onWindDirection&&<WindDirectionForm key={`${ability.id}:${combat?.round}:${combat?.activeId}`} direct choice={{effectId:ability.id,selected:targets.map(t=>t.id),canUse:!windDirectionReason,reason:windDirectionReason}} candidates={participants.filter(p=>!!p.sheet).map(p=>({id:p.id,name:p.description}))} ownerId={ability.ownerId} onSubmit={(selected,id)=>onWindDirection(ability,selected,id)}/>}</details>}
-                            <div className="compact-active-actions"><button type="button" className="sort-turns" disabled={!onConfigure||ability.sourceEffectId!==undefined||!!ability.conditionOrigin||!owner} onClick={()=>onConfigure?.(ability)}>Lancia di nuovo</button><button type="button" className="end-combat" onClick={()=>onEnd?onEnd(ability):patch(ability.id,{active:false,remainingTurns:0})}>Termina effetto</button></div>
+                            <div className="compact-active-actions"><ActionButton type="button" className="sort-turns" disabled={!onConfigure||ability.sourceEffectId!==undefined||!!ability.conditionOrigin||!owner} disabledReason={ability.conditionOrigin?'Questa condizione deriva da un effetto e non può essere lanciata.':ability.sourceEffectId!==undefined?'Questo effetto dipende da un’altra abilità: usa il comando di lancio dell’abilità originale.':!owner?'Il lanciatore non ha una scheda collegata.':'La configurazione del lancio non è disponibile in questa vista.'} onClick={()=>onConfigure?.(ability)}>Lancia di nuovo</ActionButton><button type="button" className="end-combat" onClick={()=>onEnd?onEnd(ability):patch(ability.id,{active:false,remainingTurns:0})}>Termina effetto</button></div>
                             {actionError?.abilityId===ability.id&&<p role="alert">{actionError.message}</p>}
                         </AbilityCard>
                     }
@@ -282,7 +283,7 @@ export function AbilitiesTracker({ compactActive=false,configurationId,onConfigu
                             <SpellSaveNotice plan={deferredPlan}/>
                             <AbilityTargets candidates={participants.map(candidate=>({id:candidate.id,name:candidate.description||`Creatura ${candidate.id+1}`,unavailableReason:targetTypeError(targeting,creatureType(candidate.sheet))}))} ownerId={ability.ownerId} selectedIds={targets.map(target=>target.id)} maximum={targeting.maximum} summary={targeting.summary} label="Bersagli" disabled={!!ability.execution}
                                 onChange={(id,checked)=>patch(ability.id,{targets:checked?[...targets,{id,damage:'0',resolved:false}]:targets.filter(target=>target.id!==id)})}/>
-                            {!running&&<button className="sort-turns" type="submit" disabled={!option||!!error}>Lancia incantesimo</button>}
+                            {!running&&<ActionButton className="sort-turns" type="submit" disabled={!option||!!error} disabledReason={error||'Scegli una modalità di lancio con risorse disponibili.'}>Lancia incantesimo</ActionButton>}
                         </fieldset></form>{error&&<p role="alert">{error}</p>}{actionError?.abilityId===ability.id&&<p role="alert">{actionError.message}</p>}</div> : activeTemporaryEffect&&onResolve ? <div className="ability-use-controls"><WeaponEffectSummary effects={weaponEffectDetails(ability.weaponEffects??[],participants.flatMap(participant=>participant.sheet?[participant.sheet]:[]))}/><SpellEffectSummary effects={spellEffectDetails({...ability,resolutionEffects:ability.resolutionEffects??spellPlan?.effects},participants.map(participant=>({...participant,name:participant.description})),abilities,creationData)}/><p role="status">In esecuzione{ability.timed!==false?` · ${ability.remainingTurns} round`:''}</p>{spellPlan?.temporaryHitPoints&&<button type="button" className="sort-turns master-active-recast" onClick={()=>setRecasting(ability.id)}>Lancia di nuovo</button>}</div> : onResolve && <div className="ability-use-controls">
                             {status!=='Usa' && <p role="status">{status}{ability.active && !ability.execution && ability.timed!==false && ability.remainingTurns>0 ? ` · ${ability.remainingTurns} turni` : ''}</p>}
                             {error && <p role="alert">{error}</p>}
@@ -316,7 +317,7 @@ export function AbilitiesTracker({ compactActive=false,configurationId,onConfigu
                             {!running && (info.level!==undefined || info.damage || requirements.manualChecks.length>0) && <div className="ability-confirmation"><label className="ability-check"><input type="checkbox" checked={ability.requirementsConfirmed===true} onChange={event=>patch(ability.id,{requirementsConfirmed:event.target.checked})}/>{info.repairsObject ? 'Confermo oggetto a contatto, componenti disponibili e requisiti del lancio.' : 'Confermo requisiti e bersagli'}</label>{!info.repairsObject && <HelpTooltip label="Quali requisiti confermare">Controlla azione o reazione, gittata, bersagli e componenti disponibili, inclusi quelli costosi o consumabili, secondo l’edizione della scheda.</HelpTooltip>}</div>}
                             {ability.execution && <>
                                 <div className="ability-field-help"><span>{ability.execution.phase==='casting' ? 'Lancio in corso' : 'Risoluzione dell’uso'}</span><HelpTooltip label="Aiuto sulla risoluzione dell’uso">{ability.execution.phase==='casting' ? 'Mantieni la concentrazione e completa il tempo richiesto. La risorsa sarà consumata al completamento del lancio.' : 'Concludi dopo aver applicato gli esiti. Un attacco mancato o un tiro salvezza superato non restituisce eventuali risorse già consumate.'}</HelpTooltip></div>
-                                <button className="sort-turns" type="button" disabled={tooManyTargets||manualBusy===ability.id||info.attack&&ability.execution.phase==='resolving'&&targets.some(t=>!manualHits[hitKey(ability,t.id)])} onClick={()=>void finishManual(ability,info.attack)}>{ability.execution.phase==='casting' ? 'Completa lancio' : info.damage ? 'Concludi uso e applica danni' : 'Concludi uso'}</button>
+                                <ActionButton className="sort-turns" type="button" disabled={tooManyTargets||manualBusy===ability.id||info.attack&&ability.execution.phase==='resolving'&&targets.some(t=>!manualHits[hitKey(ability,t.id)])} disabledReason={manualBusy===ability.id?'Attendi la risoluzione delle reazioni prima di applicare i danni.':tooManyTargets?`Seleziona al massimo ${targeting.maximum} bersagli.`:'Indica se l’attacco ha colpito o mancato per ogni bersaglio.'} onClick={()=>void finishManual(ability,info.attack)}>{ability.execution.phase==='casting' ? 'Completa lancio' : info.damage ? 'Concludi uso e applica danni' : 'Concludi uso'}</ActionButton>
                                 {manualBusy===ability.id&&<p role="status">Attendo le reazioni prima di applicare l’attacco…</p>}
                                 {manualNotice?.id===ability.id&&<p role="status">{manualNotice.text}</p>}
                                 {ability.execution.phase==='casting' && <button className="end-combat" type="button" onClick={()=>onCancelCast?.(ability)}>Interrompi lancio senza consumo</button>}
@@ -324,25 +325,25 @@ export function AbilitiesTracker({ compactActive=false,configurationId,onConfigu
                             {actionError?.abilityId===ability.id && <p role="alert" id={`ability-error-${ability.id}`}>{actionError.message}</p>}
                         </div>}
                         {!running&&!spellRolls&&!simpleAttack&&!sleepForm&&error&&<p className="ability-use-error" role="status">{error}</p>}
-                        {!spellRolls&&!simpleAttack&&(!sleepForm||running)&&(!deferredPlan?.deferredSave||running)&&(onEnd && ability.active && (ability.timed===false || ability.remainingTurns>0) ? <button className="end-combat end-ability" type="button" onClick={()=>onEnd(ability)}>Termina effetto</button> : <button
+                        {!spellRolls&&!simpleAttack&&(!sleepForm||running)&&(!deferredPlan?.deferredSave||running)&&(onEnd && ability.active && (ability.timed===false || ability.remainingTurns>0) ? <button className="end-combat end-ability" type="button" onClick={()=>onEnd(ability)}>Termina effetto</button> : <ActionButton
                             className="activate-ability"
                             aria-describedby={actionError?.abilityId===ability.id ? `ability-error-${ability.id}` : undefined}
                             type="button"
-                            disabled={onResolve ? running || tooManyTargets || status==='Esauriti utilizzi' || !!error || !option || !ability.name.trim() || ability.ownerId===null || requirements.manualChecks.length>0&&!ability.requirementsConfirmed : ability.active || (ability.remainingTurns===0 && ability.timed!==false) || !ability.name.trim() || ability.ownerId===null}
+                            disabled={onResolve ? running || tooManyTargets || status==='Esauriti utilizzi' || !!error || !option || !ability.name.trim() || ability.ownerId===null || requirements.manualChecks.length>0&&!ability.requirementsConfirmed : ability.active || (ability.remainingTurns===0 && ability.timed!==false) || !ability.name.trim() || ability.ownerId===null} disabledReason={!ability.name.trim()?'Inserisci il nome dell’abilità.':ability.ownerId===null?'Seleziona il personaggio che usa l’abilità.':running||ability.active?'Questa abilità è già in esecuzione.':onResolve?(error|| (tooManyTargets?`Seleziona al massimo ${targeting.maximum} bersagli.`:status==='Esauriti utilizzi'?'Gli utilizzi di questa abilità sono esauriti.':!option?'Scegli una modalità di utilizzo disponibile.':requirements.manualChecks.join(' '))):'La durata residua è zero: imposta un numero di round maggiore di zero.'}
                             onClick={() => onActivate ? onActivate(ability) : setAbilities((current) => current.map((item) => item.id === ability.id ? activateAbility(item,combat,participants) : item))}
                         >
                             {onResolve ? status : ability.active ? (ability.timed !== false && ability.remainingTurns === 0 ? 'Scaduta' : 'Attivata') : 'Attiva'}
-                        </button>)}
-                        <button
+                        </ActionButton>)}
+                        <ActionButton
                             aria-label={`Elimina ${ability.name || `abilità ${index + 1}`}`}
                             className="delete-ability"
-                            disabled={!!ability.execution}
+                            disabled={!!ability.execution} disabledReason={'Il lancio è in corso: completalo o interrompilo prima di eliminare l’abilità.'}
                             onClick={() => removeAbility(ability.id)}
                             title="Elimina abilità"
                             type="button"
                         >
                             <span aria-hidden="true">×</span>
-                        </button>
+                        </ActionButton>
                     </AbilityCard>
                 )})}
                 <button
@@ -355,14 +356,14 @@ export function AbilitiesTracker({ compactActive=false,configurationId,onConfigu
                 </button>
             </div>
             <div className="ability-actions">
-                <button
+                <ActionButton
                     className="clear-abilities"
                     type="button"
                     onClick={clearAbilities}
-                    disabled={visibleAbilities.length === 0 || visibleAbilities.some(ability=>!!ability.execution)}
+                    disabled={visibleAbilities.length === 0 || visibleAbilities.some(ability=>!!ability.execution)} disabledReason={visibleAbilities.length===0?'Non ci sono abilità da cancellare.':'Completa o interrompi i lanci in corso prima di cancellare le abilità.'}
                 >
                     {ownerFilter === undefined ? "Cancella tutte le abilità" : "Cancella le abilità di questo partecipante"}
-                </button>
+                </ActionButton>
             </div>
         </section>
     )

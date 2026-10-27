@@ -1,3 +1,4 @@
+import {ActionButton} from './ActionButton'
 import {conditionsFor} from '../domain/dnd/CombatConditions'
 import {ReactionContext} from './ReactionContext'
 import { useContext, useLayoutEffect, useRef, useState } from 'react'
@@ -106,7 +107,7 @@ export function MasterAttackRolls({ability,owner,plan,participants,abilities,cat
             {error&&<p role="alert">{error}</p>}
             {reactionError&&<p role="alert">{reactionError}</p>}
             {waiting&&<p role="status">Attendo le reazioni prima di applicare i danni…</p>}
-            <button className="sort-turns" disabled={!canApply} type="submit">Applica danni</button>
+            <ActionButton className="sort-turns" disabled={waiting||!canApply} disabledReason={waiting?'Attendi la risoluzione delle reazioni.':!target?'Seleziona un bersaglio.':needsAttackReview?'Scegli la modalità del tiro per colpire.':needsCriticalDistance?'Indica la distanza dal bersaglio per verificare il colpo critico.':!ready?'Inserisci un d20 valido, da 1 a 20.':error||(!result?'Completa i dati della difesa del bersaglio.':!complete?'Inserisci i dadi dei danni per ogni tipo richiesto.':!validFinal?'Inserisci un danno finale intero maggiore o uguale a zero.':'Completa i dadi aggiuntivi o critici richiesti.')} type="submit">Applica danni</ActionButton>
         </fieldset>
     </form>
 }
