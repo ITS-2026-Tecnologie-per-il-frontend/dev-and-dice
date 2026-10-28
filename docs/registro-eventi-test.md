@@ -41,6 +41,7 @@ Gli eventi nuovi vengono raccolti da questo aggiornamento; non si ricostruiscono
 
 ## Controlli automatici
 
+- `node tests/game-event-snapshots.mjs`: creature presenti solo nel combattimento e schede salvate, nessuna voce spuria dopo attacchi/incantesimi/approvazioni, modifiche reali conservate (PF, cure, PF temporanei, condizioni, turni, aggiunte e rimozioni), nomi e annullamento sicuro con Controincantesimo.
 - `node tests/game-events.mjs`: server e browser isolati, entrambi i ruoli, hover/focus, popup, scadenza simulata, ricarica, configurazione, consumo unico, approvazioni contemporanee, uso diretto del Master, modifica successiva, inversi di PF/condizioni/PF temporanei, conservazione di dati estranei e azioni raggruppate in un salvataggio.
 - `node tests/counterspell.mjs` e `node tests/counterspell-ui.mjs`: risoluzione 2014, privacy, slot normali/Patto, interruzioni annidate, form e temi desktop/mobile.
 - `node tests/reactions-ui.mjs`, `node tests/master-weapon-ui.mjs`, `node tests/turn-economy.mjs`, `node tests/sleep.mjs`: regressioni dei flussi condivisi.

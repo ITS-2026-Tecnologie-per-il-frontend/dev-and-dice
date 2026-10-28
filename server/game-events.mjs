@@ -23,7 +23,8 @@ export function stateSnapshot(state){
 }
 export function gameSnapshot(db,game){
  const snapshot=stateSnapshot(game.state)
- snapshot.sheets=db.characters.filter(r=>r.gameId===game.id).map(r=>sheetView(r.sheet))
+ // Include encounter-only creatures; persistent sheets take precedence over their combat copies.
+ snapshot.sheets=[...new Map([...snapshot.sheets,...db.characters.filter(r=>r.gameId===game.id).map(r=>sheetView(r.sheet))].map(sheet=>[sheet.id,sheet])).values()]
  return snapshot
 }
 export function eventChanges(before,after){
@@ -102,7 +103,7 @@ export function recordGameEvents(db,game,before,actor,rules){
  const commands=(game.state.actionEvents??[]).filter(e=>!before.commands.has(e.id)||e.phase!==before.commands.get(e.id))
  let accounted=false
  let cursor=before.snapshot
- const supplement=state=>{const settled=settleCombatEffects(state.abilities,state.turns,state.combat),snapshot=stateSnapshot({...state,...settled});snapshot.sheets=[...new Map([...before.snapshot.sheets,...snapshot.sheets].map(sheet=>[sheet.id,sheet])).values()];return snapshot}
+ const supplement=state=>{const settled=settleCombatEffects(state.abilities,state.turns,state.combat),snapshot=stateSnapshot({...state,...settled});snapshot.sheets=[...new Map([...before.snapshot.sheets.filter(sheet=>db.characters.some(r=>r.gameId===game.id&&r.id===sheet.id)||!before.snapshot.turns.some(t=>t.sheetId===sheet.id)),...snapshot.sheets].map(sheet=>[sheet.id,sheet])).values()];return snapshot}
  const recordState=delta=>{if(delta.length)append(game,{...base,id:randomUUID(),kind:delta.some(c=>c.scope==='combat')?'turn':'state',label:delta.some(c=>c.scope==='combat')?'Cambio del turno o del combattimento':'Modifica dello stato',changes:delta})}
  for(const command of commands){
   const prior=supplement(command.before),end=supplement(command.after),existing=(game.events??[]).find(e=>e.id===command.id)
@@ -147,7 +148,7 @@ function changeText(change,side,game){
 export function visibleGameEvents(db,game,user,before=Infinity){
  const master=user===game.masterId,own=db.characters.filter(r=>r.gameId===game.id&&r.ownerId===user).map(r=>r.id),ownTurns=game.state.turns.filter(t=>own.includes(t.sheet?.id)).map(t=>t.id)
  return [...(game.events??[])].reverse().filter(e=>e.sequence<before).slice(0,50).map(e=>({id:e.id,sequence:e.sequence,createdAt:e.createdAt,actorName:e.actorName,kind:e.kind,label:!master&&e.cast&&!own.includes(game.state.turns.find(t=>t.id===e.cast.actorId)?.sheet?.id)?'Lancio di incantesimo':e.label,characterName:e.characterName,parentId:e.parentId,countered:!!e.counteredBy,option:master?e.option:undefined,result:e.result,targets:e.targets?.map(t=>({id:t.id,name:t.name,...(master?{result:t.result}:{})})),
-  changes:e.changes.filter(c=>master||c.scope==='sheet'&&own.includes(c.id)||c.scope==='ability'&&[c.before,c.after].some(a=>a&&(ownTurns.includes(a.ownerId)||a.targets?.some(t=>ownTurns.includes(t.id))))).map(c=>({subject:c.scope==='sheet'?db.characters.find(r=>r.id===c.id)?.sheet.name??'Personaggio':c.scope==='ability'?(c.after??c.before)?.name??'Effetto':c.scope==='combat'?'Combattimento':'Partecipante',label:c.scope==='sheet'?fieldLabel(c.path):c.scope==='ability'?'Effetto':c.scope==='combat'?'Turno':'Stato',before:changeText(c,'before',game),after:changeText(c,'after',game)}))}))
+  changes:e.changes.filter(c=>master||c.scope==='sheet'&&own.includes(c.id)||c.scope==='ability'&&[c.before,c.after].some(a=>a&&(ownTurns.includes(a.ownerId)||a.targets?.some(t=>ownTurns.includes(t.id))))).map(c=>({subject:c.scope==='sheet'?db.characters.find(r=>r.id===c.id)?.sheet.name??game.state.turns.find(t=>t.sheet?.id===c.id)?.sheet?.name??(c.after??c.before)?.name??'Personaggio':c.scope==='ability'?(c.after??c.before)?.name??'Effetto':c.scope==='combat'?'Combattimento':'Partecipante',label:c.scope==='sheet'?fieldLabel(c.path):c.scope==='ability'?'Effetto':c.scope==='combat'?'Turno':'Stato',before:changeText(c,'before',game),after:changeText(c,'after',game)}))}))
 }
 export function restoreSpellEvent(db,game,id,accepted){
  const event=(game.events??[]).find(e=>e.id===id)
@@ -157,7 +158,7 @@ export function restoreSpellEvent(db,game,id,accepted){
  const current=gameSnapshot(db,game)
  function value(c){const list=c.scope==='sheet'?current.sheets:c.scope==='ability'?current.abilities:c.scope==='turn'?current.turns:undefined;const item=list?list.find(v=>v.id===c.id):current.combat;return c.path.reduce((v,k)=>v?.[k],item)??null}
  for(const c of reversible)if(!same(value(c),c.after))fail('Un effetto è stato modificato: annullamento non applicato, nessun dato sovrascritto.')
- const state=structuredClone(game.state),sheets=new Map(db.characters.filter(r=>r.gameId===game.id).map(r=>[r.id,structuredClone(r.sheet)]))
+ const state=structuredClone(game.state),sheets=new Map([...state.turns.flatMap(t=>t.sheet?[{...t.sheet,hitPoints:t.hitPoints,playerDetails:{...t.sheet.playerDetails,temporaryHitPoints:t.temporaryHitPoints}}]:[]),...db.characters.filter(r=>r.gameId===game.id).map(r=>r.sheet)].map(sheet=>[sheet.id,structuredClone(sheet)]))
  for(const c of reversible){
   if(c.scope==='sheet'&&c.path.length){const sheet=sheets.get(c.id);if(!sheet)fail('Personaggio non più disponibile.');let target=sheet;for(const key of c.path.slice(0,-1))target=target[key]??={};const key=c.path.at(-1);if(c.before===null)delete target[key];else target[key]=clone(c.before)}
   else if(c.scope==='sheet')fail('Il lancio modifica le schede partecipanti: serve una risoluzione manuale.')
@@ -167,5 +168,5 @@ export function restoreSpellEvent(db,game,id,accepted){
  }
  if(event.cast.concentration&&sheets.has(casterSheetId))sheets.get(casterSheetId).playerDetails['rules2014.concentration']=''
  state.turns=state.turns.map(t=>{const sheet=sheets.get(t.sheet?.id);return sheet?{...t,sheet,hitPoints:sheet.hitPoints,temporaryHitPoints:sheet.playerDetails?.temporaryHitPoints??'',armorClass:sheet.armorClass}:t})
- return {state,sheets:[...sheets.values()],event}
+ return {state,sheets:[...sheets.values()].filter(sheet=>db.characters.some(r=>r.gameId===game.id&&r.id===sheet.id)),event}
 }

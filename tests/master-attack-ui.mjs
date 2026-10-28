@@ -27,9 +27,10 @@ try {
  const {catalog}=await combatRules()
  const owner=sheetWithCombatAbilities({...newCharacterSheet(),name:'Baldur',hitPoints:'30',armorClass:'13',strength:'14',dexterity:'14',playerDetails:{'attacks.0.0':'Pugnale','attacks.0.1':'5','attacks.0.2':'1d4+2','attacks.0.3':'Perforante'}},catalog)
  const foe={...newCharacterSheet(),name:'Worg',kind:'PNG',hitPoints:'30',armorClass:'15',playerDetails:{'combat.resistances':'perforante',temporaryHitPoints:'1'}}
+ const encounterOnly=['Ragno Gigante','Goblin'].map(name=>({...newCharacterSheet(),name,kind:'PNG',hitPoints:'20',armorClass:'12'}))
  let game=await api('/play/games','POST',{name:'Attacchi del Master'}),path='/play/games/'+game.id
  for(const sheet of [owner,foe]){await api('/play/characters','POST',{sheet});game=await api(path+'/characters','POST',{characterId:sheet.id,revision:game.revision})}
- await api(path+'/state','PUT',{revision:game.revision,sheets:[owner,foe],state:{turns:[owner,foe].map((sheet,id)=>({id,sheet,description:sheet.name,initiative:'10',hitPoints:sheet.hitPoints,armorClass:sheet.armorClass,temporaryHitPoints:sheet.playerDetails?.temporaryHitPoints??''})),abilities:[],combat:null}})
+ await api(path+'/state','PUT',{revision:game.revision,sheets:[owner,foe],state:{turns:[owner,foe,...encounterOnly].map((sheet,id)=>({id,sheet,description:sheet.name,initiative:'10',hitPoints:sheet.hitPoints,armorClass:sheet.armorClass,temporaryHitPoints:sheet.playerDetails?.temporaryHitPoints??''})),abilities:[],combat:null}})
  await page.goto(base+'/games/'+game.id);await view('Rinnovata')
  const form=page.getByRole('form',{name:'Attacco: Pugnale',exact:true})
  async function open(){await page.getByRole('button',{name:'Pugnale · Usa',exact:true}).click();await form.waitFor();await form.getByRole('checkbox',{name:'Worg',exact:true}).check()}
@@ -55,7 +56,17 @@ try {
  await finalDamage.fill('9');await dmg.fill('4');assert.equal(await finalDamage.inputValue(),'3','Changing dice recalculates the default rather than retaining a stale override')
  await dmg.fill('3')
  await form.screenshot({path:join(root,'master-attack-normal-desktop.png')})
- game=await apply();assert.equal(game.state.turns[1].hitPoints,'29');assert.equal(game.state.turns[1].temporaryHitPoints,'0','Resistance and temporary HP apply exactly once')
+ const beforeAttack=await api(path)
+ game=await apply()
+ const attackEvents=(await api(path+'/events')).events.filter(e=>e.sequence>beforeAttack.eventSequence)
+ assert.equal(attackEvents.length,1,'An applied dagger attack creates no extra state event for idle encounter-only creatures')
+ assert.equal(attackEvents[0].label,'Pugnale');assert.equal(attackEvents[0].kind,'action')
+ await page.getByRole('button',{name:'Registro degli eventi',exact:true}).click()
+ const journal=page.getByRole('dialog',{name:'Registro degli eventi',exact:true})
+ await journal.locator('#event-'+attackEvents[0].id).getByRole('heading',{name:'Baldur usa Pugnale su Worg',exact:true}).waitFor()
+ await journal.screenshot({path:join(root,'master-attack-journal.png')})
+ await page.getByRole('button',{name:'Chiudi registro degli eventi',exact:true}).click()
+ assert.equal(game.state.turns[1].hitPoints,'29');assert.equal(game.state.turns[1].temporaryHitPoints,'0','Resistance and temporary HP apply exactly once')
  await open();await d20.fill('1')
  await form.getByRole('checkbox',{name:'Colpisce automaticamente (senza d20)',exact:true}).check()
  assert.equal(await d20.count(),0,'Automatic hit needs no fabricated die')
