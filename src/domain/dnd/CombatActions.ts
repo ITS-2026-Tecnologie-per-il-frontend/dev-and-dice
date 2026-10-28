@@ -1,6 +1,6 @@
 import {isIncapacitated} from './CombatConditions.ts'
 import {validEffectSpecs} from './CombatResolution.ts'
-import {recordTurnAction,turnActionUses,turnActionCapacity,grantTurnActions} from './TurnEconomy.ts'
+import {recordTurnAction,turnActionUses,turnActionCapacity,grantTurnActions,resetTurnEconomy} from './TurnEconomy.ts'
 import { castSheetSpell, sheetClassLevels, sheetRuleResources } from './ActiveRules.ts'
 import { wildShapeResources } from './VerifiedDatabase.ts'
 import { integerValue, type CharacterSheet } from '../../utils/CharacterSheets.ts'
@@ -106,6 +106,17 @@ export function combatUseRequirements(sheet:CharacterSheet|undefined,ability:Abi
         }
     }catch(cause){error=cause instanceof SyntaxError?'Cronologia del turno non valida: aggiorna i dati prima di usare questa capacità.':cause instanceof Error?cause.message:'Verifica i requisiti dell’azione.'}
     return {hints,manualChecks,error}
+}
+
+/** Source-card availability; opening an active effect never consumes a use. */
+export function combatAvailability(sheet:CharacterSheet|undefined,ability:Ability,catalog:Catalog,data:CreationData|undefined,context:UseContext & {reactionAvailable?:boolean}):string|undefined {
+    if(sheet&&!context.combat)sheet={...sheet,playerDetails:{...sheet.playerDetails,...resetTurnEconomy,'combat.spellsThisTurn':'[]','rules2014.spellsThisTurn':'[]'}}
+    const info=combatAbilityInfo(ability,catalog,data),reason=combatUseRequirements(sheet,ability,catalog,data,context).error
+    if(reason)return reason
+    if(!sheet)return 'Collega la scheda del personaggio.'
+    if(info.unit==='reaction')return !context.combat?'Avvia il combattimento per usare una reazione.':!context.reactionAvailable?'Nessun evento disponibile per questa reazione.':undefined
+    if(context.combat&&context.combat.activeId!==context.ownerId)return 'Attendi il turno del personaggio.'
+    if(context.combat&&(info.unit==='action'||info.prolonged)&&turnActionUses(sheet,'action')>=turnActionCapacity(sheet,context.abilities,context.ownerId,'action')&&!(info.attack&&Number(sheet.playerDetails?.['combat.attackActionRemaining']??0)>0))return 'Le azioni disponibili in questo turno sono esaurite.'
 }
 
 function pool(sheet:CharacterSheet,key:string) {

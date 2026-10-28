@@ -21,7 +21,7 @@ export function reactionWindow(game,user,id){
   return window
 }
 function matches(action,event,ownerId){
-  if(action.info.unit!=='reaction'||action.error)return false
+  if(action.info.unit!=='reaction'||action.error||action.ability.ruleId==='phb2014:spell:counterspell'&&event.unavailableActors?.includes(ownerId))return false
   const effect=action.info.entry?.data.mechanics?.effect??{}
   const triggers=effect.triggerChoice??[effect.trigger]
   if(event.kind==='other')return true // The Master explicitly verifies unmodelled triggers and distances.
@@ -33,7 +33,6 @@ function matches(action,event,ownerId){
 }
 export function openReactions(db,game,rules,event,groupId=randomUUID()){
   if(!game.state.combat)return groupId
-  if((game.reactionWindows??[]).some(w=>w.groupId===groupId))return groupId
   for(const record of db.characters.filter(r=>r.gameId===game.id&&(r.ownerId===game.masterId||game.players.some(p=>p.userId===r.ownerId&&p.characterId===r.id)))){
     const owners=game.state.turns.filter(t=>t.sheet?.id===record.id)
     if(owners.length!==1||turnActionUses(record.sheet,'reaction')>=turnActionCapacity(record.sheet,game.state.abilities,owners[0]?.id,'reaction'))continue
@@ -45,6 +44,12 @@ export function openReactions(db,game,rules,event,groupId=randomUUID()){
     const keys=context.actions.filter(action=>matches(action,event,context.owner.id)&&action.options.some(option=>{
       try{spendCombatUse(context.record.sheet,{...action.ability,requirementsConfirmed:true,targets:[]},context.catalog,rules.data,option.id,option.cost??1,{abilities:context.weaponContext.active,ownerId:context.owner.id});return true}catch{return false}
     })).map(a=>a.key)
+    const existing=game.reactionWindows?.find(w=>w.groupId===groupId&&w.characterId===record.id)
+    if(existing){
+      if(event.castKey)existing.event.castKey=event.castKey
+      if(existing.status==='pending'){existing.actionKeys=[...new Set([...existing.actionKeys,...keys])];for(const key of keys){const a=context.actions.find(a=>a.key===key);existing.actionIds[key]=a.ability.ruleId??a.ability.catalogId??a.ability.name}}
+      continue
+    }
     if(!keys.length)continue
     ;(game.reactionWindows??=[]).push({id:randomUUID(),groupId,ownerId:record.ownerId,characterId:context.record.id,characterName:context.record.sheet.name,event,actionKeys:keys,actionIds:Object.fromEntries(context.actions.filter(a=>keys.includes(a.key)).map(a=>[a.key,a.ability.ruleId??a.ability.catalogId??a.ability.name])),status:'pending',expiresAt:Date.now()+30000})
   }
@@ -57,6 +62,8 @@ export function finishReaction(db,game,entry,rules){
   const window=game.reactionWindows?.find(w=>w.requestId===entry.id)
   if(!window)return
   window.status=entry.status==='approved'?'used':'declined'
+  const owner=game.state.turns.find(t=>t.sheet?.id===entry.characterId),record=db.characters.find(r=>r.id===entry.characterId)
+  if(entry.status==='approved'&&record&&turnActionUses(record.sheet,'reaction')>=turnActionCapacity(record.sheet,game.state.abilities,owner?.id,'reaction'))for(const sibling of game.reactionWindows??[])if(sibling.characterId===entry.characterId&&sibling.status==='pending')sibling.status='declined'
   const ids=new Set([window.event.requestId,...(game.reactionWindows??[]).filter(w=>w.groupId===window.groupId&&w.status==='submitted').map(w=>w.requestId)])
   for(const source of game.combatRequests??[]){
     if(!ids.has(source.id)||!source.resolution||source.status!=='pending')continue

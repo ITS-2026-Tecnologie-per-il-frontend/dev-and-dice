@@ -6,12 +6,12 @@ import type {CreationData} from '../../utils/PlayerCreation.ts'
 // 2014 only: D&D_5_Player_Original_Handbook.pdf, PDF 229 Counterspell,
 // PDF 55 Jack of All Trades, PDF 116 Improved Abjuration. No attack or save roll.
 export const counterspellId='phb2014:spell:counterspell'
-export type CounterspellTarget={key:string;actorId:number;casterName:string;name?:string;level?:number;requestId?:string;abilityId?:number}
+export type CounterspellTarget={key:string;actorId:number;casterName:string;name?:string;level?:number;requestId?:string;abilityId?:number;eventId?:string;unavailableActors?:number[]}
 export type CounterspellModifier={ability?:SaveAbility;total?:number;sources:{label:string;amount:number}[]}
 export type CounterspellDecision={confirmed?:boolean;spellName?:string;level?:number;die?:number;secondDie?:number;rollMode?:'normal'|'advantage'|'disadvantage';bonus?:number;bonusReason?:string;modifierOverride?:number}
 export type CounterspellResult={level:number;slotLevel:number;automatic:boolean;success:boolean;dc?:number;die?:number;secondDie?:number;rollMode?:'normal'|'advantage'|'disadvantage';modifier?:number;bonus?:number;bonusReason?:string;total?:number}
 export type CounterspellSnapshot={edition:'2014';actorId:number;target:CounterspellTarget;slotLevel:number;modifier:CounterspellModifier;result?:CounterspellResult}
-export type CounterspellChoices={revision:number;ownerId:number;blockedReason?:string;modifier:CounterspellModifier;options:{id:string;label:string;remaining:number|null;cost?:number}[];targets:CounterspellTarget[]}
+export type CounterspellChoices={revision:number;ownerId:number;blockedReason?:string;modifier:CounterspellModifier;options:{id:string;level?:number;label:string;remaining:number|null;cost?:number}[];targets:CounterspellTarget[]}
 export function counterspellModifier(sheet:CharacterSheet,data?:CreationData):CounterspellModifier {
     if(spellEdition(sheet)!=='2014')throw new Error('Controincantesimo: questo form usa soltanto le regole 2014.')
     const ability=spellAttackAbility(sheet,data),value=ability?abilityModifier(sheet[ability]):undefined
@@ -40,7 +40,7 @@ export function resolveCounterspell(slotLevel:number,level:number,modifier:numbe
 export function validCounterspellIntent(v:unknown):v is {actorId:number;targetKey:string;requirementsConfirmed:true} {
     if(!v||typeof v!=='object'||Array.isArray(v))return false
     const c=v as Record<string,unknown>
-    return Object.keys(c).every(k=>['actorId','targetKey','requirementsConfirmed'].includes(k))&&int(c.actorId,0,Number.MAX_SAFE_INTEGER)&&typeof c.targetKey==='string'&&/^(request:[a-f\d-]{36}|ability:\d+|manual:\d+)$/.test(c.targetKey)&&c.requirementsConfirmed===true
+    return Object.keys(c).every(k=>['actorId','targetKey','requirementsConfirmed'].includes(k))&&int(c.actorId,0,Number.MAX_SAFE_INTEGER)&&typeof c.targetKey==='string'&&/^((?:request|event):[a-f\d-]{36}|ability:\d+|manual:\d+)$/.test(c.targetKey)&&c.requirementsConfirmed===true
 }
 export function validCounterspellSnapshot(v:unknown):v is CounterspellSnapshot {
     if(!v||typeof v!=='object'||Array.isArray(v))return false

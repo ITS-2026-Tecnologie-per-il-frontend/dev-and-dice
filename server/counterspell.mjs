@@ -1,3 +1,4 @@
+import {spellOpportunities,restoreSpellEvent} from './game-events.mjs'
 import {counterspellId,counterspellModifier,resolveCounterspell,validCounterspellIntent} from '../src/domain/dnd/Counterspell.ts'
 import {actionContext,requestStatus,requestProposal,prepareAction} from './combat-requests.mjs'
 import {spendCombatUse} from '../src/domain/dnd/CombatActions.ts'
@@ -6,7 +7,8 @@ import {turnActionCapacity,turnActionUses} from '../src/domain/dnd/TurnEconomy.t
 import {spellEdition} from '../src/utils/Spellcasting.ts'
 import {reactionWindow} from './reactions.mjs'
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status})}
-const slotLevel=id=>/^slot:[3-9]$/.test(id??'')?Number(id.slice(5)):undefined
+// PHB 2014 PDF 108 (Pact Magic), 229 (Counterspell): use the slot's effective level.
+const slotLevel=(id,sheet)=>/^slot:[3-9]$/.test(id??'')?Number(id.slice(5)):id==='pact'&&/^[3-9]$/.test(sheet?.playerDetails?.['rules2014.pact.level']??'')?Number(sheet.playerDetails['rules2014.pact.level']):undefined
 function actorContext(db,game,user,actorId,rules){
  const turn=game.state.turns.find(t=>t.id===actorId),record=db.characters.find(r=>r.id===turn?.sheet?.id&&r.gameId===game.id)
  if(!record||user!==game.masterId&&(record.ownerId!==user||!game.players.some(p=>p.userId===user&&p.characterId===record.id)))fail(403,'Personaggio non disponibile.')
@@ -16,30 +18,32 @@ function actorContext(db,game,user,actorId,rules){
  if(context.owner?.id!==actorId)fail(409,'La scheda deve comparire una sola volta nel combattimento.')
  return {context,action,record,turn}
 }
-function levelOf(action,option){return /^slot:[1-9]$/.test(option??'')?Number(option.slice(5)):action.info.level}
+function levelOf(action,option,sheet){return /^slot:[1-9]$/.test(option??'')?Number(option.slice(5)):option==='pact'?Number(sheet.playerDetails?.['rules2014.pact.level'])||undefined:action.info.level}
 export function counterspellTargets(db,game,actorId,rules){
  const targets=[]
  for(const entry of game.combatRequests??[]){
-  if(entry.status!=='pending'||requestStatus(game,entry)!=='pending'||entry.proposal.readyCommand||entry.proposal.windDirection!==undefined)continue
+  if(entry.status!=='pending'||entry.proposal.readyCommand||entry.proposal.windDirection!==undefined||(entry.eventBoundary??null)!==(game.eventBoundary??null))continue
   const caster=game.state.turns.find(t=>t.sheet?.id===entry.characterId)
   if(!caster||caster.id===actorId)continue
   try{
    const context=actionContext(db,game,entry.ownerId,rules,true,entry.characterId,{keys:new Set([entry.proposal.key])}),action=context.actions.find(a=>a.key===entry.proposal.key)
    if(action?.info.level===undefined)continue
-   targets.push({key:'request:'+entry.id,actorId:caster.id,casterName:caster.description,name:entry.actionName,level:levelOf(action,entry.proposal.option),requestId:entry.id})
+   targets.push({key:'request:'+entry.id,actorId:caster.id,casterName:caster.description,name:entry.actionName,level:levelOf(action,entry.proposal.option,context.record.sheet),requestId:entry.id})
   }catch{continue}
  }
  for(const ability of game.state.abilities){
-  if(ability.ownerId===actorId||ability.execution?.phase!=='casting')continue
+  if(ability.ownerId===actorId||ability.execution?.phase!=='casting'||game.events?.length&&game.eventBoundary!==ability.execution.id)continue
   const caster=game.state.turns.find(t=>t.id===ability.ownerId),record=db.characters.find(r=>r.id===caster?.sheet?.id&&r.gameId===game.id)
   if(!caster||!record)continue
   try{
    const context=actionContext(db,game,record.ownerId,rules,true,record.id),action=context.actions.find(a=>a.ability.ruleId===ability.ruleId||a.ability.catalogId===ability.catalogId)
    if(action?.info.level===undefined)continue
-   targets.push({key:'ability:'+ability.id,actorId:caster.id,casterName:caster.description,name:ability.name,level:levelOf(action,ability.execution.option),abilityId:ability.id})
+   targets.push({key:'ability:'+ability.id,actorId:caster.id,casterName:caster.description,name:ability.name,level:levelOf(action,ability.execution.option,context.record.sheet),abilityId:ability.id})
   }catch{continue}
  }
- for(const caster of game.state.turns)if(caster.id!==actorId&&!targets.some(t=>t.actorId===caster.id))targets.push({key:'manual:'+caster.id,actorId:caster.id,casterName:caster.description})
+ for(const target of spellOpportunities(game,actorId))if(target.eventId&&target.actorId!==actorId&&!targets.some(t=>t.abilityId!==undefined&&t.actorId===target.actorId))targets.push(target)
+ // Explicitly signalled events support tabletop casts; no always-open manual target.
+ for(const window of game.reactionWindows??[])if(['pending','submitted'].includes(window.status)&&window.expiresAt>Date.now()&&['spell','other'].includes(window.event.kind))for(const caster of game.state.turns)if(caster.id!==actorId&&(window.event.actorId===undefined||caster.id===window.event.actorId)&&!targets.some(t=>t.actorId===caster.id))targets.push({key:'manual:'+caster.id,actorId:caster.id,casterName:caster.description})
  return targets
 }
 export function counterspellChoices(db,game,user,actorId,rules,reactionId,ignoreId){
@@ -48,23 +52,23 @@ export function counterspellChoices(db,game,user,actorId,rules,reactionId,ignore
  if(window&&(window.characterId!==record.id||!window.actionKeys.includes(action.key)))fail(403,'Controincantesimo non previsto da questa reazione.')
  const pending=game.combatRequests?.some(e=>e.id!==ignoreId&&e.characterId===record.id&&requestStatus(game,e)==='pending'&&(!!e.proposal.counterspell||!!e.proposal.reactionId))
  const blockedReason=!game.state.combat?'Avvia il combattimento prima di usare una reazione.':isIncapacitated(game.state.abilities,actorId)?'Il personaggio non pu\u00f2 agire mentre \u00e8 incapacitato.':turnActionUses(record.sheet,'reaction')>=turnActionCapacity(record.sheet,game.state.abilities,actorId,'reaction')?'Hai gi\u00e0 usato la reazione: si recupera all\u2019inizio del tuo prossimo turno.':pending?'Hai gi\u00e0 una reazione in attesa del Master.':action.error||undefined
- const targets=counterspellTargets(db,game,turn.id,rules).filter(t=>(window?.event.actorId===undefined||t.actorId===window.event.actorId)&&(!window?.event.requestId||t.requestId===window.event.requestId))
- return {revision:game.revision,ownerId:actorId,blockedReason,modifier:counterspellModifier(record.sheet,rules.data),options:action.options.filter(o=>slotLevel(o.id)),targets:targets.map(t=>user===game.masterId?t:{key:t.key,actorId:t.actorId,casterName:t.casterName})}
+ const targets=counterspellTargets(db,game,turn.id,rules).filter(t=>(!window?.event.castKey||t.key===window.event.castKey)&&(window?.event.actorId===undefined||t.actorId===window.event.actorId)&&(!window?.event.requestId||t.requestId===window.event.requestId))
+ return {revision:game.revision,ownerId:actorId,blockedReason,modifier:counterspellModifier(record.sheet,rules.data),options:action.options.map(o=>({...o,level:slotLevel(o.id,record.sheet)})).filter(o=>o.level!==undefined),targets:targets.map(t=>user===game.masterId?t:{key:t.key,actorId:t.actorId,casterName:t.casterName})}
 }
 export function createCounterspellEntry(db,game,user,actorName,body,rules){
  const {id,revision,actorId,targetKey,option,requirementsConfirmed,reactionId}=body??{}
- if(!validCounterspellIntent({actorId,targetKey,requirementsConfirmed})||!/^slot:[3-9]$/.test(option??''))fail(400,'Conferma lanciatore, lancio da interrompere, slot e requisiti.')
+ if(!validCounterspellIntent({actorId,targetKey,requirementsConfirmed})||!/^(slot:[3-9]|pact)$/.test(option??''))fail(400,'Conferma lanciatore, lancio da interrompere, slot e requisiti.')
  const {context,action,record}=actorContext(db,game,user,actorId,rules),choices=counterspellChoices(db,game,user,actorId,rules,reactionId,id)
  if(choices.blockedReason)fail(409,choices.blockedReason)
  const window=reactionId?reactionWindow(game,user,reactionId):undefined
  const target=counterspellTargets(db,game,actorId,rules).find(t=>t.key===targetKey)
- if(!target||window?.event.actorId!==undefined&&window.event.actorId!==target.actorId||window?.event.requestId&&target.requestId!==window.event.requestId)fail(409,'Il lancio da interrompere non \u00e8 pi\u00f9 disponibile per questa reazione.')
- if(window?.event.kind!=='spell'&&window?.event.kind!=='other'&&window)fail(409,'Controincantesimo richiede una creatura che sta lanciando un incantesimo.')
+ if(!target||window?.event.castKey&&target.key!==window.event.castKey||window?.event.actorId!==undefined&&window.event.actorId!==target.actorId||window?.event.requestId&&target.requestId!==window.event.requestId)fail(409,'Il lancio da interrompere non \u00e8 pi\u00f9 disponibile per questa reazione.')
+ if(window?.event.kind!=='spell'&&window?.event.kind!=='other'&&!window?.event.castKey&&window)fail(409,'Controincantesimo richiede una creatura che sta lanciando un incantesimo.')
  const resource=action.options.find(o=>o.id===option)
- if(!resource)fail(400,'Slot non disponibile per Controincantesimo.')
+ if(!resource||slotLevel(option,record.sheet)===undefined)fail(400,'Slot non disponibile per Controincantesimo.')
  try{spendCombatUse(record.sheet,{...action.ability,requirementsConfirmed:true,targets:[]},context.catalog,rules.data,option,1,{abilities:game.state.abilities,ownerId:actorId,combat:game.state.combat})}catch(e){fail(409,e.message)}
  const proposal=requestProposal({id,revision,key:action.key,option,cost:1,mode:'none',damageEnabled:false,targets:[{id:target.actorId,roll:'',hit:false,damageRoll:'',damage:'0'}],counterspell:{actorId,targetKey,requirementsConfirmed},...(reactionId?{reactionId}:{})})
- return {id,ownerId:record.ownerId,characterId:record.id,characterName:record.sheet.name,actorName,actionName:action.ability.name,optionLabel:resource.label,prolonged:false,createdAt:new Date().toISOString(),status:'pending',proposal,targets:[{...proposal.targets[0],name:target.casterName}],counterspell:{edition:'2014',actorId,target,slotLevel:slotLevel(option),modifier:choices.modifier}}
+ return {id,ownerId:record.ownerId,characterId:record.id,characterName:record.sheet.name,actorName,actionName:action.ability.name,optionLabel:resource.label,prolonged:false,createdAt:new Date().toISOString(),status:'pending',proposal,targets:[{...proposal.targets[0],name:target.casterName}],counterspell:{edition:'2014',actorId,target,slotLevel:slotLevel(option,record.sheet),modifier:choices.modifier}}
 }
 export function applyCounterspell(db,game,entry,rules,decision={}){
  if(!decision||typeof decision!=='object'||Array.isArray(decision))fail(400,'Decisione del Master non valida.')
@@ -78,11 +82,19 @@ export function applyCounterspell(db,game,entry,rules,decision={}){
  const level=target.level??decision.level,modifier=counterspellModifier(record.sheet,rules.data)
  let result,sheet
  try{
-  result=resolveCounterspell(slotLevel(entry.proposal.option),level,modifier.total,decision)
+  result=resolveCounterspell(slotLevel(entry.proposal.option,record.sheet),level,modifier.total,decision)
   sheet=spendCombatUse(record.sheet,{...action.ability,requirementsConfirmed:true,targets:[]},context.catalog,rules.data,entry.proposal.option,1,{abilities:game.state.abilities,ownerId:intent.actorId,combat:game.state.combat})
  }catch(e){fail(409,e.message)}
- const sheets=[sheet],nextRevision=game.revision+1
- let abilities=game.state.abilities
+ let restored
+ if(result.success&&target.eventId){
+  restored=restoreSpellEvent(db,game,target.eventId)
+  const prior=restored.sheets.find(s=>s.id===record.id)
+  // Keep the inverse's HP and conditions; merge only this reaction's actual resource deltas.
+  for(const [key,value] of Object.entries(sheet.playerDetails??{}))if(value!==record.sheet.playerDetails?.[key])prior.playerDetails[key]=value
+  sheet=prior
+ }
+ const sheets=restored?restored.sheets:[sheet],nextRevision=game.revision+1
+ let abilities=restored?.state.abilities??game.state.abilities
  const source=target.requestId?game.combatRequests.find(e=>e.id===target.requestId):undefined
  let interruptedSheet
  if(result.success&&source){
@@ -97,11 +109,14 @@ export function applyCounterspell(db,game,entry,rules,decision={}){
  if(result.success&&target.abilityId!==undefined){
   const sourceAbility=abilities.find(a=>a.id===target.abilityId),sourceRecord=db.characters.find(r=>r.id===game.state.turns.find(t=>t.id===target.actorId)?.sheet?.id&&r.gameId===game.id)
   if(!sourceAbility||!sourceRecord)fail(409,'Il lancio prolungato non \u00e8 pi\u00f9 disponibile.')
+  const castingEvent=game.events?.find(e=>e.id===sourceAbility.execution?.id);if(castingEvent)castingEvent.counteredBy=entry.id
   // PHB 2014 PDF 203: an unfinished long casting loses concentration, not a completed-cast slot.
   interruptedSheet={...sourceRecord.sheet,playerDetails:{...sourceRecord.sheet.playerDetails,'rules2014.concentration':''}}
   sheets.push(interruptedSheet)
   abilities=abilities.map(a=>a.id===sourceAbility.id?{...a,active:false,remainingTurns:0,execution:undefined}:a)
  }
+ if(result.success)for(const window of game.reactionWindows??[])if(window.event.castKey===target.key&&window.requestId!==entry.id){window.status='declined';const child=game.combatRequests?.find(e=>e.id===window.requestId);if(child?.status==='pending'){child.status='rejected';child.resolvedAt=new Date().toISOString()}}
+ if(restored){restored.event.counteredBy=entry.id;const sourceEntry=game.combatRequests?.find(e=>e.id===target.eventId);if(sourceEntry)sourceEntry.counteredBy=entry.id}
  // Only mutate source history after every resource check succeeded.
  if(source){
   if(result.success){
@@ -125,11 +140,16 @@ export function applyCounterspell(db,game,entry,rules,decision={}){
  }
  for(const window of game.reactionWindows??[])if(window.characterId===record.id&&window.status==='pending')window.status='used'
  const snapshot={edition:'2014',actorId:intent.actorId,target,slotLevel:result.slotLevel,modifier,result}
- return {state:{...game.state,abilities,turns:game.state.turns.map(t=>{const updated=sheets.find(s=>s.id===t.sheet?.id);return updated?{...t,sheet:{...updated,abilities:t.sheet.abilities}}:t})},sheets,targets:entry.targets,counterspell:snapshot}
+ return {state:{...(restored?.state??game.state),abilities,turns:(restored?.state.turns??game.state.turns).map(t=>{const updated=sheets.find(s=>s.id===t.sheet?.id);return updated?{...t,sheet:{...updated,abilities:t.sheet.abilities}}:t})},sheets,targets:entry.targets,counterspell:snapshot}
 }
 
 export function counterspellRelatedCastIds(game,target){
  const ids=new Set();let id=target.requestId
  while(id&&!ids.has(id)){ids.add(id);id=game.combatRequests.find(e=>e.id===id)?.counterspell?.target.requestId}
  return ids
+}
+
+export function counterspellWindowMatches(game,target,window){
+ const related=counterspellRelatedCastIds(game,target)
+ return window.event.castKey===target.key||related.has(window.event.requestId)||related.has(window.requestId)||target.key.startsWith('manual:')&&['spell','other'].includes(window.event.kind)&&(window.event.actorId===undefined||window.event.actorId===target.actorId)
 }
