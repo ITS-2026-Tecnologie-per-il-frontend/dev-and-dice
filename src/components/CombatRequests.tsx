@@ -1,3 +1,4 @@
+import {ActionButton} from './ActionButton'
 import {CounterspellForm,CounterspellReview,CounterspellSummary} from './CounterspellForm'
 import {counterspellId} from '../domain/dnd/Counterspell'
 import { PlayerActionRolls, WeaponEnchantmentFields, ResolutionDetails, FinalDamageField, MasterResolutionRolls, MasterCriticalRolls, MasterSavingRolls, type RequestDecision } from './CombatRolls'
@@ -170,13 +171,14 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
     const weaponRollText=validDie ? total===undefined ? `${die} sul d20; modificatore e totale da verificare` : `${die} sul d20 ${signedBonus(modifier)} = ${total}` : ''
     const targeting=option?.targeting,tooManyTargets=targeting?.maximum!==null && targeting?.maximum!==undefined && targets.length>targeting.maximum
     const pending=game.combatRequests.some(request=>request.status==='pending'),stale=choices && choices.revision!==game.revision
-    const revision=renewed ? game.revision : undefined
+    const reactionAvailability=game.reactionWindows?.map(w=>`${w.id}:${w.status}:${w.expiresAt}`).join('|')
+    const revision=game.revision
     useEffect(()=>{
         if (!open) return
         let active=true
-        playApi<ActionChoices>('/games/'+game.id+'/actions'+(renewed?'?preview=1':'')).then(choices=>{if(active){setChoices(choices);if(renewed){const selected=choices.actions.find(item=>(item.entry?.id??item.name)===selectedIdentity.current);if(panel==='summary'&&selected&&!selected.active&&selected.duration!=='Istantanea'&&selected.lastCast?.status!=='pending'){selectedIdentity.current='';setKey('')}else setKey(selected?.key??'');setError('')}}}).catch(error=>{if(active)setError(message(error))}).finally(()=>{if(active)setLoading(false)})
+        playApi<ActionChoices>('/games/'+game.id+'/actions?preview=1').then(choices=>{if(active){setChoices(choices);if(renewed){const selected=choices.actions.find(item=>(item.entry?.id??item.name)===selectedIdentity.current);if(panel==='summary'&&selected&&!selected.active&&selected.duration!=='Istantanea'&&selected.lastCast?.status!=='pending'){selectedIdentity.current='';setKey('')}else setKey(selected?.key??'');setError('')}}}).catch(error=>{if(active)setError(message(error))}).finally(()=>{if(active)setLoading(false)})
         return ()=>{active=false}
-    },[open,game.id,retry,renewed,revision,panel,game.requestsRevision])
+    },[open,game.id,retry,renewed,revision,panel,game.requestsRevision,game.eventSequence,reactionAvailability])
     function refreshActions() {setLoading(true);setError('');setChoices(undefined);setKey('');setTargets([]);setRetry(current=>current+1)}
     function select(key:string) {
         const action=choices?.actions.find(action=>action.key===key),option=action?.options.find(option=>option.remaining===null || option.remaining>=(option.cost??action.cost)) ?? action?.options[0]
@@ -190,7 +192,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
     function changeMode(mode:CombatRequest['mode']) {setMode(mode);setTargets([]);if(mode==='none')setDamageEnabled(false)}
     async function submit(event:FormEvent) {
         event.preventDefault()
-        if (working.current||!choices||action?.error||renewed&&!choices.canPropose||weapon&&!validDie||sleep&&!validSleep) return
+        if (working.current||!choices||action?.error||!choices.canPropose||weapon&&!validDie||sleep&&!validSleep) return
         working.current=true;setBusy(true);setError('')
         const proposal={...(sleep?{sleepRoll:sleepTotal}:{}),...(weapon?{attackDie:die}:{}),revision:choices.revision,key,option:optionId,cost:sleep?1:option?.cost??cost,mode:sleep?'none':mode,damageEnabled:sleep?false:damageEnabled,targets:targets.map(({id,roll,hit,damageRoll,damage})=>sleep?{id,roll:'',hit:false,damageRoll:'',damage:'0'}:{id,roll:weapon?weaponRollText:roll,hit:weapon?false:hit,damageRoll,damage})}
         const signature=JSON.stringify(proposal)
@@ -199,13 +201,15 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
     }
     const filtered=choices?.actions.filter(action=>action.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())) ?? []
     function choose(key:string) {
-        select(key)
         const selected=choices?.actions.find(item=>item.key===key)
+        if(selected?.availabilityReason&&!selected.active&&selected.lastCast?.status!=='pending')return
+        select(key)
         setPanel(selected?.active||selected?.lastCast?.status==='pending'?'summary':'cast')
         requestAnimationFrame(()=>{form.current?.focus({preventScroll:true});form.current?.scrollIntoView({block:'nearest'})})
     }
     function actionButton(action:ActionChoices['actions'][number]) {
-        return <button type="button" key={action.key} className="participant-ability" data-ability-state={action.active?'active':'available'} aria-pressed={key===action.key} aria-controls="player-action-proposal" title={action.error||undefined} disabled={busy} onClick={()=>choose(action.key)}>{action.displayName||action.name} · {action.lastCast?.status==='pending'?'In attesa del Master':action.active?'In esecuzione':action.error?'Non disponibile':'Usa'}</button>
+        const consult=action.active||action.lastCast?.status==='pending',reason=consult?undefined:action.availabilityReason
+        return <ActionButton type="button" key={action.key} className="participant-ability" data-ability-state={consult?'active':reason?'blocked':'available'} aria-pressed={key===action.key} aria-controls="player-action-proposal" disabled={busy||!!reason} disabledReason={reason??'Invio in corso.'} onClick={()=>choose(action.key)}>{action.displayName||action.name} · {action.lastCast?.status==='pending'?'In attesa del Master':action.active?'In esecuzione':reason?'Non disponibile':'Usa'}</ActionButton>
     }
     function targetFields(target:CombatTarget) {
         return <>
@@ -218,7 +222,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
                         {damageEnabled&&(weapon?validDie:mode!=='attack'||target.hit)&&<label>Danni tirati<input type="text" inputMode="numeric" pattern="[0-9]+" required maxLength={16} placeholder="Totale, es. 7" value={target.damageRoll} onChange={event=>{const damage=event.target.value;if(!/^\d*$/.test(damage)||!Number.isSafeInteger(Number(damage)))return;patch(target.id,{damageRoll:damage,damage:damage||'0'})}}/></label>}</>
     }
     const legacyProposal=choices&&(!renewed||action)&&<form id="player-action-proposal" ref={form} tabIndex={renewed?-1:undefined} aria-label={renewed?`Proposta: ${action?.name}`:undefined} onSubmit={event=>void submit(event)}><fieldset disabled={busy||pending||!!stale||loading}>{!renewed&&<legend>Proposta al Master</legend>}
-                {!renewed&&<label>Azione<select aria-label="Azione" value={key} required onChange={event=>select(event.target.value)}><option value="">Scegli un’azione…</option>{choices.actions.map(action=><option key={action.key} value={action.key} disabled={!!action.error}>{action.name}{action.error?' · '+action.error:''}</option>)}</select></label>}
+                {!renewed&&<label>Azione<select aria-label="Azione" value={key} required onChange={event=>select(event.target.value)}><option value="">Scegli un’azione…</option>{choices.actions.map(action=><option key={action.key} value={action.key} disabled={!!action.availabilityReason}>{action.name}{action.availabilityReason?' · '+action.availabilityReason:''}</option>)}</select></label>}
                 {!choices.actions.length&&<p>Nessuna azione disponibile: controlla attacchi, abilità e incantesimi salvati nella scheda.</p>}
                 {action&&<><details className="player-action-description" open={renewed?true:undefined}><summary>Descrizione dell’azione</summary><p className="combat-request-description">{action.description||'Risoluzione da confermare con il Master.'}</p></details>
                     {!renewed&&<InfoButton label="Descrizione" entry={action.entry} name={action.name} description={action.description} fields={{duration:action.duration,remainingTurns:action.remainingTurns,active:action.active,owner:game.character.sheet.name}}/>}
@@ -242,7 +246,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
                     {(action.prolonged||optionId==='ritual')&&<p>Il Master potrà approvare solo dopo il completamento del lancio. Un lancio interrotto va rifiutato e non consuma risorse.</p>}
                     {action.additionalActionRequired&&<p role="status">L’azione di questo turno risulta già utilizzata. Il Master potrà approvare questa richiesta solo se disponi di un’altra azione valida.</p>}
                     {action.error&&<p role="alert">{action.error}</p>}{sleep&&error&&<p role="alert">{error}</p>}
-                    <button className="play-primary" disabled={!!action.error||sleep&&!validSleep||renewed&&!choices.canPropose||!option||tooManyTargets||weapon&&!validDie||!sleep&&!targets.length&&(damageEnabled||mode==='attack'||mode==='save')||option?.remaining!==null&&(option?.remaining??0)<(option?.cost??cost)}>{busy?'Invio in corso…':'Invia al Master'}</button>
+                    <button className="play-primary" disabled={!!action.error||sleep&&!validSleep||!choices.canPropose||!option||tooManyTargets||weapon&&!validDie||!sleep&&!targets.length&&(damageEnabled||mode==='attack'||mode==='save')||option?.remaining!==null&&(option?.remaining??0)<(option?.cost??cost)}>{busy?'Invio in corso…':'Invia al Master'}</button>
                 </>}
             </fieldset></form>
     const proposal=choices&&choices.ownerId!==null&&action?.entry?.data.referenceId===counterspellId&&action.entry.data.edition==='2014'?<CounterspellForm game={game} ownerId={choices.ownerId} onUpdate={onUpdate}/>:choices&&action?.resolution&&(renewed||!!action.resolution.healing||!!action.resolution.temporaryHitPoints)?<PlayerActionRolls key={action.key} game={game} choices={choices} action={action} formRef={form} onUpdate={onUpdate} onSubmitted={()=>{setPanel('summary');setTargets([]);setRetry(current=>current+1)}}/>:legacyProposal
@@ -266,15 +270,15 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
         </details>:<p>I dati del tiro originale non sono disponibili per questo effetto.</p>}
         {!action.windDirection&&action.additionalActionRequired&&<p className="player-cast-note">L’azione di questo turno risulta già utilizzata: il Master dovrà confermare un’altra azione valida.</p>}
         {action.windDirection&&choices?<WindDirectionForm key={`${action.windDirection.effectId}:${game.revision}`} choice={action.windDirection} candidates={choices.targets} ownerId={choices.ownerId} disabled={pending||!!stale||loading} onSubmit={async(selected,id)=>{const next=await playApi<Game>('/games/'+game.id+'/wind-direction','POST',{id,revision:choices.revision,effectId:action.windDirection!.effectId,selected});onUpdate(next);setRetry(current=>current+1)}}/>:<button type="button" className="sort-turns player-cast-recast" disabled={loading||busy} onClick={()=>{select(action.key);setPanel('cast')}}>Lancia di nuovo</button>}
-        {!action.windDirection&&(pending||!choices?.canPropose||action.error||!action.options.some(option=>option.remaining===null||option.remaining>=(option.cost??action.cost)))&&<p role="status" className="player-cast-note">{pending?'Hai una richiesta in attesa del Master.':!choices?.canPropose?choices?.blockedReason??'Puoi aprire il form; potrai inviare il nuovo lancio durante il tuo turno.':action.error||'Non hai risorse sufficienti per un nuovo lancio.'}</p>}
+        {!action.windDirection&&action.unit!=='reaction'&&(pending||!choices?.canPropose||action.error||!action.options.some(option=>option.remaining===null||option.remaining>=(option.cost??action.cost)))&&<p role="status" className="player-cast-note">{pending?'Hai una richiesta in attesa del Master.':!choices?.canPropose?choices?.blockedReason??'Puoi aprire il form; potrai inviare il nuovo lancio durante il tuo turno.':action.error||'Non hai risorse sufficienti per un nuovo lancio.'}</p>}
     </div>
     const Heading=renewed?'h3':'h2'
-    return <section className={`play-player-actions${renewed?' master-available-abilities':''}`} aria-labelledby="player-actions"><Heading id="player-actions" hidden={renewed&&inspectorMode==='all'}>{renewed?'Abilità e azioni disponibili':'Le tue azioni'}</Heading><p>Proponi un’azione nel tuo turno. Risorse ed effetti si applicano quando il Master approva.</p>
+    return <section className={`play-player-actions${renewed?' master-available-abilities':''}`} aria-labelledby="player-actions"><Heading id="player-actions" hidden={renewed&&inspectorMode==='all'}>{renewed?'Abilità e azioni disponibili':'Le tue azioni'}</Heading><p>Azioni e azioni bonus nel tuo turno; reazioni quando si presenta l’evento previsto. Risorse ed effetti si applicano quando il Master approva.</p>
         {!renewed&&<button type="button" className="play-secondary" aria-expanded={open} onClick={()=>{if(!open)refreshActions();setOpen(current=>!current)}}>{open?'Chiudi scelta azione':'Scegli azione'}</button>}
         {open&&<>{loading&&<p role="status">Caricamento delle azioni…</p>}{stale&&<p role="status">La sessione è cambiata. Aggiorna le azioni prima di proporne una.</p>}{!loading&&<button type="button" className="play-secondary" disabled={busy} onClick={refreshActions}>Aggiorna azioni</button>}
             {pending&&<p role="status">Hai un’azione in attesa del Master.</p>}
             {renewed&&choices&&<div hidden={inspectorMode==='all'}>
-                {!choices.canPropose&&<p role="status">{choices.blockedReason??'Puoi consultare le tue azioni. Potrai proporle quando il Master avvia il tuo turno.'}</p>}
+                {!choices.canPropose&&<p role="status">{choices.blockedReason??'Le azioni richiedono il tuo turno. Le reazioni diventano disponibili quando si verifica l’evento previsto.'}</p>}
                 <input type="search" aria-label="Cerca abilità del personaggio" placeholder="Cerca un’abilità o un incantesimo…" value={search} onChange={event=>setSearch(event.target.value)}/>
                 {!choices.actions.length&&<p>Nessuna azione disponibile: controlla attacchi, abilità e incantesimi salvati nella scheda.</p>}
                 {!!choices.actions.length&&!filtered.length&&<p>Nessuna abilità corrisponde alla ricerca.</p>}
@@ -290,8 +294,8 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
                     <AbilityUsage unit={item.unit} concentration={item.concentration} prolonged={item.prolonged} requirements={item.requirements}/>
                     <div className="ability-use-controls">
                         {item.error&&!item.windDirection&&<p role="status">{item.error}</p>}
-                        {item.key===key&&panel==='cast'&&!choices.canPropose&&<p role="status">{choices.blockedReason??'Puoi compilare il form; potrai inviarlo durante il tuo turno.'}</p>}
-                        {item.key===key ? panel==='summary'?summary:proposal : <><p className={item.group==='Attacchi fisici'?'combat-request-description':'ability-casting-summary'}>{item.group==='Attacchi fisici' ? item.description||'Controlla bonus al tiro per colpire e danni nella scheda.' : item.active ? 'In esecuzione' : item.options.map(option=>option.label).join(' · ')||'Verifica le risorse nella scheda.'}</p><button type="button" className="sort-turns" disabled={busy} onClick={()=>choose(item.key)}>{item.active||item.lastCast?.status==='pending'?'Consulta':'Usa'}</button></>}
+                        {item.key===key&&panel==='cast'&&item.unit!=='reaction'&&!choices.canPropose&&<p role="status">{choices.blockedReason??'Puoi compilare il form; potrai inviarlo durante il tuo turno.'}</p>}
+                        {item.key===key ? panel==='summary'?summary:proposal : <><p className={item.group==='Attacchi fisici'?'combat-request-description':'ability-casting-summary'}>{item.group==='Attacchi fisici' ? item.description||'Controlla bonus al tiro per colpire e danni nella scheda.' : item.active ? 'In esecuzione' : item.options.map(option=>option.label).join(' · ')||'Verifica le risorse nella scheda.'}</p><ActionButton type="button" className="sort-turns" disabled={busy||!item.active&&item.lastCast?.status!=='pending'&&!!item.availabilityReason} disabledReason={item.availabilityReason??'Invio in corso.'} onClick={()=>choose(item.key)}>{item.active||item.lastCast?.status==='pending'?'Consulta':'Usa'}</ActionButton></>}
                     </div>
                 </AbilityCard>)}</div>
                 {inspectorMode==='participant'&&!key&&!choices.actions.some(item=>item.active)&&<p className="ability-help">Scegli un’abilità del personaggio per consultarne la card e proporne l’utilizzo.</p>}

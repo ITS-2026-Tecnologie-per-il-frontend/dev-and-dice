@@ -65,9 +65,9 @@ export function HelpTooltip({ label, children, triggerContent, className='', tri
         className:triggerElement==='span'?`disabled-button-hint ${className}`:`help-tooltip-trigger ${className}`,
         'aria-label':label, 'aria-describedby':open?id:undefined,
         onPointerEnter:event=>{if(event.pointerType!=='touch')show()}, onPointerLeave:closeSoon,
-        onFocus:event=>{if(event.currentTarget.matches(':focus-visible'))show()},
+        onFocus:event=>{if(triggerElement==='span'||event.currentTarget.matches(':focus-visible'))show()},
         onBlur:()=>{cancelClose();setOpen(false)},
-        onClick:()=>{cancelClose();setOpen(current=>!current)},
+        onClick:()=>{cancelClose();setOpen(current=>triggerElement==='span'?true:!current)},
     }
     const content=triggerContent??<span aria-hidden="true">?</span>
     return <>

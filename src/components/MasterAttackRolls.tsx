@@ -17,7 +17,7 @@ const validRollNumber=(value:string)=>/^\d*$/.test(value)&&Number.isSafeInteger(
 
 export function MasterAttackRolls({ability,owner,plan,participants,abilities,catalog,catalogForOwner,data,onApply}:{
     ability:Ability;owner:CharacterSheet;plan:ResolutionPlan;participants:{id:number;description:string;sheet?:CharacterSheet}[];abilities:Ability[];catalog:Catalog;catalogForOwner?:(id:number|null)=>Catalog;data:CreationData;
-    onApply:(targets:NonNullable<Ability['targets']>)=>boolean|void
+    onApply:(targets:NonNullable<Ability['targets']>,resolution?:TargetResolution)=>boolean|void
 }) {
     const {before:beforeReaction}=useContext(ReactionContext),[waiting,setWaiting]=useState(false),[reactionError,setReactionError]=useState('')
     const applyLatest=useRef<()=>boolean|void>(()=>false)
@@ -63,7 +63,7 @@ export function MasterAttackRolls({ability,owner,plan,participants,abilities,cat
     const validFinal=finalDamage!==''&&validRollNumber(finalDamage)
     const missingDice=!!packet&&(packet.needsCritical.length>0||packet.needsSecondDie||!!packet.needsBonusDice?.length)
     const canApply=!!target&&!!result&&!error&&complete&&validFinal&&!missingDice&&!needsAttackReview&&!needsCriticalDistance
-    useLayoutEffect(()=>{applyLatest.current=()=>canApply?onApply([{id:targetId!,damage:String(Number(finalDamage)),resolved:true}]):false})
+    useLayoutEffect(()=>{applyLatest.current=()=>canApply?onApply([{id:targetId!,damage:String(Number(finalDamage)),resolved:true}],result):false})
     function reset(){setDie('');setDamage({});setRolls({});setOverride(undefined);setAttackMode('');setCriticalDistance('')}
     function numberInput(label:string,value:number|undefined,change:(value:number|undefined)=>void,max?:number) {
         return <label>{label}<input aria-label={label} type="text" inputMode="numeric" pattern={max===20?'([1-9]|1[0-9]|20)':'[0-9]+'} required value={value??''} onChange={e=>{const value=e.target.value;if(validRollNumber(value)&&(max===undefined||Number(value)<=max))change(value===''?undefined:Number(value))}}/></label>

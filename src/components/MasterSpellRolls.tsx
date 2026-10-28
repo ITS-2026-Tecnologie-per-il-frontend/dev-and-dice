@@ -12,7 +12,7 @@ import { inventoryEquipment, inventoryFieldValue, referencedInventoryItem } from
 import { ActionRollForm, ResolutionDetails, FinalDamageField, MasterCriticalRolls, MasterResolutionRolls, MasterSavingRolls, type RollSubmission, type ResolutionReview, type RequestDecision } from './CombatRolls'
 
 const validNumber=(value:string)=>/^\d+$/.test(value)&&Number.isSafeInteger(Number(value))
-export type ResolvedDamagePackets={weaponChoice?:WeaponChoice;id:number;damage:number[];healing?:number;temporaryHitPoints?:number;keepTemporaryHitPoints?:boolean;effects?:import('../domain/dnd/CombatResolution').EffectSpec[]}[]
+export type ResolvedDamagePackets={resolution?:TargetResolution;weaponChoice?:WeaponChoice;id:number;damage:number[];healing?:number;temporaryHitPoints?:number;keepTemporaryHitPoints?:boolean;effects?:import('../domain/dnd/CombatResolution').EffectSpec[]}[]
 
 export function MasterSpellRolls({ability,owner,participants,abilities,catalog,catalogForOwner,data,options,optionId,error,children,onApply,inCombat=false}:{
     inCombat?:boolean;ability:Ability;owner:CharacterSheet;participants:{id:number;description:string;sheet?:CharacterSheet}[];abilities:Ability[];catalog:Catalog;catalogForOwner?:(id:number|null)=>Catalog;data:CreationData;options:UseOption[];optionId?:string;error:string;children:ReactNode;
@@ -61,7 +61,7 @@ export function MasterSpellRolls({ability,owner,participants,abilities,catalog,c
     useLayoutEffect(()=>{applyLatest.current=()=>{
             if(!draft)return
             const targets=results.map(({id,result})=>({id,damage:finalDamage(id,result!),resolved:true}))
-            const damagePackets=results.map(({id,result})=>({id,...(plan.temporaryHitPoints?{temporaryHitPoints:result!.temporaryHitPoints!,keepTemporaryHitPoints:draft.packets[0].keepTemporaryHitPoints}:{}),...(plan.healing?{healing:result!.healing!}:{}),effects:result!.packets.flatMap(packet=>packet.effects),damage:Number(finalDamage(id,result!))===result!.damage?result!.packets.map(packet=>packet.damage!):[Number(finalDamage(id,result!))]}))
+            const damagePackets=results.map(({id,result})=>({id,resolution:result!,...(plan.temporaryHitPoints?{temporaryHitPoints:result!.temporaryHitPoints!,keepTemporaryHitPoints:draft.packets[0].keepTemporaryHitPoints}:{}),...(plan.healing?{healing:result!.healing!}:{}),effects:result!.packets.flatMap(packet=>packet.effects),damage:Number(finalDamage(id,result!))===result!.damage?result!.packets.map(packet=>packet.damage!):[Number(finalDamage(id,result!))]}))
             const applied=onApply({...ability,useOption:draft.option,requirementsConfirmed:true,targets,execution:ability.execution??{id:executionId,phase:'resolving',option:draft.option,cost:draft.cost}},damagePackets,additionalActionConfirmed)
             working.current=false
             if(applied!==false){setDraft(undefined);setEdited(undefined);setRolls({});setOverrides({});setAdditionalActionConfirmed(false)}

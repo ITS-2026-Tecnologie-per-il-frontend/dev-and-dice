@@ -1,3 +1,4 @@
+import {GameEventLog} from './GameEventLog'
 import {CounterspellForm} from './CounterspellForm'
 import {turnActionSlots} from '../domain/dnd/TurnEconomy'
 import {TurnActionBudget} from './TurnActionBudget'
@@ -280,7 +281,7 @@ function SessionPage() {
             else setGame(next)
         }finally{savingRef.current=false;setSaving(false)}
     },[id,blocked])
-    const workspace=useMemo(()=>game?.role==='master' ? {syncError:blocked?(error||'Salvataggio della sessione non riuscito.'):undefined,onRetrySave:()=>{setBlocked(false);setRetry(value=>value+1)},onWindDirection:redirectWind,windDirectionPending:game.combatRequests.filter(r=>r.status==='pending'&&r.windDirection).flatMap(r=>game.state.abilities.filter(a=>a.ownerId===game.state.turns.find(t=>t.sheet?.id===r.characterId)?.id&&a.ruleId==='phb2014:spell:gust-of-wind').map(a=>a.id)),state:game.state,sheets:game.characters.map(character=>character.sheet),storageKey:cacheKey+'.library',onChange:change,remove,canRemove:(sheet:CharacterSheet)=>!draft&&!saving&&game.characters.some(character=>character.id===sheet.id&&character.ownerId===user!.id)} : undefined,[game,cacheKey,change,remove,draft,saving,user,redirectWind,blocked,error])
+    const workspace=useMemo(()=>game?.role==='master' ? {spellOpportunities:game.spellOpportunities,reactionWindows:game.reactionWindows,syncError:blocked?(error||'Salvataggio della sessione non riuscito.'):undefined,onRetrySave:()=>{setBlocked(false);setRetry(value=>value+1)},onWindDirection:redirectWind,windDirectionPending:game.combatRequests.filter(r=>r.status==='pending'&&r.windDirection).flatMap(r=>game.state.abilities.filter(a=>a.ownerId===game.state.turns.find(t=>t.sheet?.id===r.characterId)?.id&&a.ruleId==='phb2014:spell:gust-of-wind').map(a=>a.id)),state:game.state,sheets:game.characters.map(character=>character.sheet),storageKey:cacheKey+'.library',onChange:change,remove,canRemove:(sheet:CharacterSheet)=>!draft&&!saving&&game.characters.some(character=>character.id===sheet.id&&character.ownerId===user!.id)} : undefined,[game,cacheKey,change,remove,draft,saving,user,redirectWind,blocked,error])
     useEffect(()=>{
         if(!draft||blocked||savingRef.current)return
         const timer=setTimeout(async()=>{
@@ -334,7 +335,7 @@ function SessionPage() {
         gameRef.current=next;setGame(next)
     }
     if(!game)return <main className="play-home"><h1>Sessione</h1>{error?<><p role="alert">{error}</p><button type="button" onClick={()=>{setError('');setLoadRetry(value=>value+1)}}>Riprova caricamento</button></>:<p role="status">Caricamento della sessione…</p>}<Link to="/">Torna alla home</Link></main>
-    const notificationTools=<><SheetChanges game={game} disabled={!!draft||saving||blocked} onRead={readNotification} onReject={rejectNotification}/>{game.role==='master'&&<MasterCombatRequests game={game} disabled={!!draft||saving||blocked} onDecide={decideAction}/>}</>
+    const notificationTools=<><GameEventLog game={game}/><SheetChanges game={game} disabled={!!draft||saving||blocked} onRead={readNotification} onReject={rejectNotification}/>{game.role==='master'&&<MasterCombatRequests game={game} disabled={!!draft||saving||blocked} onDecide={decideAction}/>}</>
     function openPlayerPrepared() {
         setPlayerInspectorMode('participant')
         requestAnimationFrame(()=>{const box=document.getElementById('readied-actions');box?.scrollIntoView({block:'start',behavior:'instant'});box?.focus({preventScroll:true})})
