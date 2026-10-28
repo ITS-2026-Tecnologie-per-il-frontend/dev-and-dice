@@ -1,23 +1,28 @@
+import {defaultCounterspellSettings} from '../src/domain/dnd/CounterspellTiming.ts'
+import {renewSpellWindow,spellCastForKey} from './game-events.mjs'
 import {turnActionCapacity,turnActionUses} from '../src/domain/dnd/TurnEconomy.ts'
 import {randomUUID} from 'node:crypto'
 import {spendCombatUse} from '../src/domain/dnd/CombatActions.ts'
 import {actionContext, createRequestResolution, resolveRequestTarget} from './combat-requests.mjs'
 
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status})}
+export const reactionDeadline=(window,key)=>window.actionExpiresAt?.[key]??window.expiresAt
+export const reactionKeys=window=>window.actionKeys.filter(key=>reactionDeadline(window,key)>Date.now())
 export const reactionOpen=window=>window.status==='submitted'||window.status==='pending'&&window.expiresAt>Date.now()
 export function visibleReactions(game,user){
-  return (game.reactionWindows??[]).filter(w=>game.masterId===user||w.ownerId===user).map(w=>({id:w.id,groupId:w.groupId,characterId:w.characterId,characterName:w.characterName,event:w.event,actionKeys:w.actionKeys,expiresAt:w.expiresAt,serverNow:Date.now(),status:w.status==='pending'&&w.expiresAt<=Date.now()?'expired':w.status,requestId:w.requestId}))
+  return (game.reactionWindows??[]).filter(w=>game.masterId===user||w.ownerId===user).map(w=>({id:w.id,groupId:w.groupId,characterId:w.characterId,characterName:w.characterName,event:w.event,actionKeys:w.status==='pending'?reactionKeys(w):w.actionKeys,actionExpiresAt:w.actionExpiresAt,actionSeconds:w.actionSeconds,expiresAt:w.expiresAt,serverNow:Date.now(),status:w.status==='pending'&&w.expiresAt<=Date.now()?'expired':w.status,requestId:w.requestId}))
 }
 export function assertReactionAction(window,action,context){
+  if(reactionDeadline(window,action.key)<=Date.now())fail(409,'La finestra di questa reazione è già conclusa.')
   if(!matches(action,window.event,context.owner.id)||window.actionIds[action.key]!==(action.ability.ruleId??action.ability.catalogId??action.ability.name))fail(409,'La reazione non è più disponibile per questo evento.')
 }
 export function validReactionWindows(windows){
-  return Array.isArray(windows)&&windows.length<=1200&&windows.every(w=>w&&['id','groupId','ownerId','characterId'].every(k=>typeof w[k]==='string'&&/^[a-f\d-]{36}$/i.test(w[k]))&&typeof w.characterName==='string'&&w.characterName.length<=160&&w.event&&['hit','magic-missile','spell','damage','fall','other'].includes(w.event.kind)&&typeof w.event.label==='string'&&w.event.label.length<=500&&Array.isArray(w.event.targetIds)&&w.event.targetIds.every(Number.isSafeInteger)&&Array.isArray(w.actionKeys)&&w.actionKeys.every(k=>typeof k==='string'&&/^\d+$/.test(k))&&w.actionIds&&typeof w.actionIds==='object'&&Number.isSafeInteger(w.expiresAt)&&['pending','submitted','used','declined'].includes(w.status))
+  return Array.isArray(windows)&&windows.length<=1200&&windows.every(w=>w&&['id','groupId','ownerId','characterId'].every(k=>typeof w[k]==='string'&&/^[a-f\d-]{36}$/i.test(w[k]))&&typeof w.characterName==='string'&&w.characterName.length<=160&&w.event&&['hit','magic-missile','spell','damage','fall','other'].includes(w.event.kind)&&typeof w.event.label==='string'&&w.event.label.length<=500&&Array.isArray(w.event.targetIds)&&w.event.targetIds.every(Number.isSafeInteger)&&Array.isArray(w.actionKeys)&&w.actionKeys.every(k=>typeof k==='string'&&/^\d+$/.test(k))&&w.actionIds&&typeof w.actionIds==='object'&&Number.isSafeInteger(w.expiresAt)&&['actionExpiresAt','actionSeconds'].every(field=>w[field]===undefined||w[field]&&typeof w[field]==='object'&&!Array.isArray(w[field])&&Object.entries(w[field]).every(([key,value])=>w.actionKeys.includes(key)&&Number.isSafeInteger(value)&&value>0&&(field!=='actionSeconds'||value<=3600)))&&['pending','submitted','used','declined'].includes(w.status))
 }
-export function reactionWindow(game,user,id){
+export function reactionWindow(game,user,id,key,acceptedId){
   const window=game.reactionWindows?.find(w=>w.id===id&&(w.ownerId===user||game.masterId===user))
   if(!window)fail(403,'Reazione non disponibile per questo giocatore.')
-  if(window.status!=='pending'||window.expiresAt<=Date.now())fail(409,'La finestra di reazione è già conclusa.')
+  if(!(window.status==='submitted'&&window.requestId===acceptedId&&acceptedId)&&(window.status!=='pending'||(key===undefined?window.expiresAt:reactionDeadline(window,key))<=Date.now()))fail(409,'La finestra di reazione è già conclusa.')
   return window
 }
 function matches(action,event,ownerId){
@@ -45,18 +50,40 @@ export function openReactions(db,game,rules,event,groupId=randomUUID()){
       try{spendCombatUse(context.record.sheet,{...action.ability,requirementsConfirmed:true,targets:[]},context.catalog,rules.data,option.id,option.cost??1,{abilities:context.weaponContext.active,ownerId:context.owner.id});return true}catch{return false}
     })).map(a=>a.key)
     const existing=game.reactionWindows?.find(w=>w.groupId===groupId&&w.characterId===record.id)
-    if(existing){
-      if(event.castKey)existing.event.castKey=event.castKey
-      if(existing.status==='pending'){existing.actionKeys=[...new Set([...existing.actionKeys,...keys])];for(const key of keys){const a=context.actions.find(a=>a.key===key);existing.actionIds[key]=a.ability.ruleId??a.ability.catalogId??a.ability.name}}
-      continue
+    if(!keys.length&&!existing)continue
+    const window=existing??{id:randomUUID(),groupId,ownerId:record.ownerId,characterId:context.record.id,characterName:context.record.sheet.name,event,actionKeys:[],actionIds:{},status:'pending',expiresAt:0}
+    if(event.castKey)window.event.castKey=event.castKey
+    if(window.status==='pending')for(const key of keys){
+      const action=context.actions.find(a=>a.key===key)
+      if(window.actionKeys.includes(key))continue
+      window.actionKeys.push(key);window.actionIds[key]=action.ability.ruleId??action.ability.catalogId??action.ability.name
+      const timing=action.ability.ruleId==='phb2014:spell:counterspell'?spellCastForKey(game,event.castKey)?.counterspellWindow:undefined
+      const seconds=action.ability.ruleId==='phb2014:spell:counterspell'?timing?.seconds??(game.counterspellSettings??defaultCounterspellSettings).seconds:30
+      ;(window.actionSeconds??={})[key]=seconds
+      ;(window.actionExpiresAt??={})[key]=timing?.expiresAt??Date.now()+seconds*1000
+      window.expiresAt=Math.max(window.expiresAt,window.actionExpiresAt[key])
     }
-    if(!keys.length)continue
-    ;(game.reactionWindows??=[]).push({id:randomUUID(),groupId,ownerId:record.ownerId,characterId:context.record.id,characterName:context.record.sheet.name,event,actionKeys:keys,actionIds:Object.fromEntries(context.actions.filter(a=>keys.includes(a.key)).map(a=>[a.key,a.ability.ruleId??a.ability.catalogId??a.ability.name])),status:'pending',expiresAt:Date.now()+30000})
+    if(!existing)(game.reactionWindows??=[]).push(window)
+
   }
   // ponytail: retain the last 200 closed prompts, plus every open one; use a history table if a permanent audit is needed.
   game.reactionWindows=(game.reactionWindows??[]).filter((w,i,list)=>reactionOpen(w)||i>=list.length-200)
   game.requestsRevision=(game.requestsRevision??0)+1
   return groupId
+}
+export function renewReactionWindow(game,window,key){
+ const keys=key===undefined?reactionKeys(window):[key],now=Date.now()
+ if(window.status!=='pending'||window.expiresAt<=now||!keys.length||keys.some(k=>!window.actionKeys.includes(k)||reactionDeadline(window,k)<=now))fail(409,'La finestra di questa reazione è già conclusa.')
+ for(const k of keys){
+  const counterspell=window.actionIds[k]==='phb2014:spell:counterspell',cast=counterspell?renewSpellWindow(game,window.event.castKey,now):undefined
+  const deadline=cast?.expiresAt??now+(window.actionSeconds?.[k]??30)*1000
+  for(const sibling of game.reactionWindows??[]){
+   if(sibling.status!=='pending')continue
+   if(sibling!==window&&(!counterspell||!window.event.castKey||sibling.event.castKey!==window.event.castKey))continue
+   for(const siblingKey of sibling.actionKeys)if(sibling===window&&siblingKey===k||counterspell&&sibling.actionIds[siblingKey]==='phb2014:spell:counterspell'&&reactionDeadline(sibling,siblingKey)>now)(sibling.actionExpiresAt??={})[siblingKey]=deadline
+   sibling.expiresAt=Math.max(...sibling.actionKeys.map(s=>reactionDeadline(sibling,s)))
+  }
+ }
 }
 export function finishReaction(db,game,entry,rules){
   const window=game.reactionWindows?.find(w=>w.requestId===entry.id)

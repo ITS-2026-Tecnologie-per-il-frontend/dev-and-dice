@@ -1,11 +1,12 @@
+import {defaultCounterspellSettings,validCounterspellSettings} from '../src/domain/dnd/CounterspellTiming.ts'
 import {AsyncLocalStorage} from 'node:async_hooks'
 import {captureGame,recordGameEvents,validGameEvents,spellOpportunities,visibleGameEvents,gameSnapshot,eventChanges} from './game-events.mjs'
-import {counterspellChoices,createCounterspellEntry,applyCounterspell,counterspellWindowMatches} from './counterspell.mjs'
+import {counterspellChoices,createCounterspellEntry,applyCounterspell,counterspellWindowMatches,refreshCounterspellTimer} from './counterspell.mjs'
 import {turnActionSlots} from '../src/domain/dnd/TurnEconomy.ts'
 import {validReadiedAction} from '../src/domain/dnd/Readied.ts'
 import {readyChoices,readyEntry,applyReadyCommand} from './readied-actions.mjs'
 import { validWindSave } from '../src/domain/dnd/WindTurns.ts'
-import {assertReactionAction,validReactionWindows,visibleReactions,reactionWindow,reactionOpen,openReactions,finishReaction,requestReactionEvent} from './reactions.mjs'
+import {assertReactionAction,validReactionWindows,visibleReactions,reactionWindow,reactionOpen,openReactions,finishReaction,requestReactionEvent,renewReactionWindow,reactionKeys} from './reactions.mjs'
 import { settleCombatEffects } from '../src/domain/dnd/CombatConditions.ts'
 import { activeEffects, saveNames, validEffectSpecs, validWeaponEnchantments } from '../src/domain/dnd/CombatResolution.ts'
 import { spellEdition } from '../src/utils/Spellcasting.ts'
@@ -121,6 +122,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
       if (!idPattern.test(game.id) || !idPattern.test(game.masterId) || typeof game.name !== 'string' || !/^[A-Za-z\d_-]{43}$/.test(game.inviteToken) || !Array.isArray(game.players) || !integer(game.revision)) throw new Error('Partita salvata non valida.')
       if (!game.players.every(player => object(player) && idPattern.test(player.userId) && idPattern.test(player.characterId) && (player.notes === undefined || validNotes(player.notes)))) throw new Error('Partecipazione salvata non valida.')
       validateState(game.state)
+      if(game.counterspellSettings!==undefined&&!validCounterspellSettings(game.counterspellSettings)||game.counterspellSettingsRevision!==undefined&&!integer(game.counterspellSettingsRevision))throw new Error('Impostazioni di Controincantesimo non valide; originale conservato.')
       if(!validGameEvents(game))throw new Error('Registro eventi non valido; originale conservato.')
       if(game.reactionWindows!==undefined&&!validReactionWindows(game.reactionWindows))throw new Error('Finestre di reazione non valide; originale conservato.')
       if (game.requestsRevision!==undefined && !integer(game.requestsRevision) || game.combatRequests!==undefined && (!Array.isArray(game.combatRequests)
@@ -188,7 +190,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
     record.sheet=sheet;record.revision++
   }
   function view(db,game,user) {
-    const result = {...summary(game,user),eventSequence:game.eventSequence??0,spellOpportunities:spellOpportunities(game,user===game.masterId?undefined:game.state.turns.find(t=>t.sheet?.id===game.players.find(p=>p.userId===user)?.characterId)?.id).map(t=>user===game.masterId?t:{key:t.key,actorId:t.actorId,casterName:t.casterName}),notifications:notificationSummary(game,user),requestsRevision:game.requestsRevision??0,combatRequests:visibleRequests(game,user,db,reviewRules),reactionWindows:visibleReactions(game,user)}
+    const result = {...summary(game,user),serverNow:Date.now(),counterspellSettings:game.counterspellSettings??defaultCounterspellSettings,counterspellSettingsRevision:game.counterspellSettingsRevision??0,eventSequence:game.eventSequence??0,spellOpportunities:spellOpportunities(game,user===game.masterId?undefined:game.state.turns.find(t=>t.sheet?.id===game.players.find(p=>p.userId===user)?.characterId)?.id).map(t=>user===game.masterId?t:{key:t.key,actorId:t.actorId,casterName:t.casterName,window:t.window}),notifications:notificationSummary(game,user),requestsRevision:game.requestsRevision??0,combatRequests:visibleRequests(game,user,db,reviewRules),reactionWindows:visibleReactions(game,user)}
     const records=db.characters.filter(character=>character.gameId===game.id)
     const state=structuredClone(game.state)
     state.abilities=recoverRepeatSaveDCs(game)
@@ -233,6 +235,21 @@ export async function gamesRouter({ dataDir, authenticate }) {
     return record
   }
 
+  router.put('/games/:id/counterspell-settings',async(req,res)=>res.json(await write(db=>{
+    const game=gameFor(db,req.params.id,req.userId)
+    if(game.masterId!==req.userId)fail(403,'Solo il Master può modificare le impostazioni della sessione.')
+    const body=req.body
+    if(!object(body)||Object.keys(body).some(k=>!['revision','settings'].includes(k))||!integer(body.revision)||!validCounterspellSettings(body.settings))fail(400,'Scegli una modalità e un numero intero di secondi da 1 a 3600.')
+    if(body.revision!==(game.counterspellSettingsRevision??0))fail(409,'Le impostazioni sono cambiate: ricarica la sessione prima di salvarle.')
+    if(!isDeepStrictEqual(body.settings,game.counterspellSettings??defaultCounterspellSettings)){game.counterspellSettings=structuredClone(body.settings);game.counterspellSettingsRevision=(game.counterspellSettingsRevision??0)+1}
+    return view(db,game,req.userId)
+  })))
+  router.post('/games/:id/counterspell/activity',async(req,res)=>res.json(await write(db=>{
+    const game=gameFor(db,req.params.id,req.userId),body=req.body
+    if(!object(body)||Object.keys(body).some(k=>!['actorId','targetKey','reactionId'].includes(k))||!integer(body.actorId)||typeof body.targetKey!=='string'||body.targetKey.length>100||body.reactionId!==undefined&&!idPattern.test(body.reactionId))fail(400,'Attività di Controincantesimo non valida.')
+    refreshCounterspellTimer(db,game,req.userId,body.actorId,body.targetKey,reviewRules,body.reactionId)
+    return view(db,game,req.userId)
+  })))
   router.get('/games/:id/events',async(req,res,next)=>{try{const db=await read(),game=gameFor(db,req.params.id,req.userId),before=req.query.before===undefined?Infinity:Number(req.query.before);if(before!==Infinity&&(!Number.isSafeInteger(before)||before<1))fail(400,'Pagina del registro non valida.');res.json({events:visibleGameEvents(db,game,req.userId,before),sequence:game.eventSequence??0})}catch(error){next(error)}})
   router.get('/games/:id/actions', async (req,res)=>{
     gameFor(await read(),req.params.id,req.userId)
@@ -343,7 +360,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
     const context=actionContext(db,game,window.ownerId,rules,true,window.characterId,{keys:new Set(window.actionKeys)})
     if(context.record.id!==window.characterId)fail(409,'Personaggio non più disponibile.')
     const choices=actionChoices(context,game,db)
-    res.json({...choices,actions:choices.actions.filter(a=>window.actionKeys.includes(a.key))})
+    res.json({...choices,actions:choices.actions.filter(a=>reactionKeys(window).includes(a.key))})
   })
   router.post('/games/:id/reactions/:windowId/:decision',async(req,res)=>{
     if(!['activity','decline'].includes(req.params.decision))fail(400,'Decisione non valida.')
@@ -352,7 +369,7 @@ export async function gamesRouter({ dataDir, authenticate }) {
       const existing=game.reactionWindows?.find(w=>w.id===req.params.windowId&&(w.ownerId===req.userId||game.masterId===req.userId))
       if(existing&&req.params.decision==='decline'&&!reactionOpen(existing))return view(db,game,req.userId)
       const window=reactionWindow(game,req.userId,req.params.windowId)
-      if(req.params.decision==='activity')window.expiresAt=Date.now()+30000
+      if(req.params.decision==='activity'){if(!object(req.body)||Object.keys(req.body).some(k=>k!=='key')||req.body.key!==undefined&&typeof req.body.key!=='string')fail(400,'Attività della reazione non valida.');renewReactionWindow(game,window,req.body.key)}
       else window.status='declined'
       game.requestsRevision=(game.requestsRevision??0)+1
       return view(db,game,req.userId)
