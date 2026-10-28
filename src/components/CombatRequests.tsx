@@ -209,7 +209,7 @@ export function PlayerCombatActions({game,onUpdate,renewed=false,inspectorMode='
     }
     function actionButton(action:ActionChoices['actions'][number]) {
         const consult=action.active||action.lastCast?.status==='pending',reason=consult?undefined:action.availabilityReason
-        return <ActionButton type="button" key={action.key} className="participant-ability" data-ability-state={consult?'active':reason?'blocked':'available'} aria-pressed={key===action.key} aria-controls="player-action-proposal" disabled={busy||!!reason} disabledReason={reason??'Invio in corso.'} onClick={()=>choose(action.key)}>{action.displayName||action.name} · {action.lastCast?.status==='pending'?'In attesa del Master':action.active?'In esecuzione':reason?'Non disponibile':'Usa'}</ActionButton>
+        return <ActionButton type="button" key={action.key} className="participant-ability" data-ability-state={consult?'active':reason?'blocked':'available'} aria-pressed={key===action.key} aria-controls="player-action-proposal" disabled={busy||!!reason} disabledReason={reason??'Invio in corso.'} onClick={()=>choose(action.key)}>{action.displayName||action.name}{!reason && <> · {action.lastCast?.status==='pending'?'In attesa del Master':action.active?'In esecuzione':'Usa'}</>}</ActionButton>
     }
     function targetFields(target:CombatTarget) {
         return <>

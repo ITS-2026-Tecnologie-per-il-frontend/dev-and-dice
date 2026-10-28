@@ -478,7 +478,8 @@
 .readied-release-targets input[type=checkbox] { flex-shrink:0; width:18px; height:18px; margin:0; }
 .readied-release .play-primary,.readied-release .readied-release-close { width:100%; margin:0; }
 
-.participant-abilities [data-ability-state="blocked"],.participant-ability[data-ability-state="blocked"] { color:var(--text); background:color-mix(in srgb,#ac5149 13%,var(--bg)); border:1px solid color-mix(in srgb,#ac5149 65%,var(--border)); opacity:1; }
+.participant-abilities [data-ability-state="blocked"],.participant-ability[data-ability-state="blocked"] { color:var(--text); background:color-mix(in srgb,#ac5149 13%,var(--bg)); border:0; text-decoration:none; opacity:.65; }
+.participant-abilities [data-ability-state="blocked"]:hover { background:color-mix(in srgb,#ac5149 13%,var(--bg)); }
 .participant-abilities .disabled-button-hint:has(>.participant-ability) { align-self:stretch; }
 .participant-abilities .disabled-button-hint>.participant-ability { height:100%; width:100%; }
 .game-event-meta { color:var(--text); font-size:.8rem; }
@@ -486,4 +487,4 @@
 .game-event-list details ul { padding-left:0; list-style:none; }
 .game-event-list details li { display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 16px; padding:8px 0; border-bottom:1px solid var(--border); overflow-wrap:anywhere; }
 .game-event-list details li span { font-variant-numeric:tabular-nums; }
-:is(.play-master-page,.play-player-page) .participant-abilities button[data-ability-state="blocked"] { opacity:1; }
+:is(.play-master-page,.play-player-page) .participant-abilities button[data-ability-state="blocked"] { opacity:.65; }
