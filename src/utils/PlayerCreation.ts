@@ -63,6 +63,24 @@ export function subclassMinimumLevel(sheet: CharacterSheet, subclass: Origin, da
 }
 export const subclassOptions = (sheet: CharacterSheet, data: CreationData) => data.subclasses.filter((x) => x.class?.index === classId(sheet) && (!x.editions || x.editions.includes(spellEdition(sheet))))
 export const labelOf = (item: Ref) => item.nameIt ?? item.name
+const languageNamesIt: Record<string,string> = {
+    common:'Comune',dwarvish:'Nanico',elvish:'Elfico',giant:'Gigante',gnomish:'Gnomesco',goblin:'Goblin',halfling:'Halfling',orc:'Orchesco',
+    abyssal:'Abissale',celestial:'Celestiale',draconic:'Draconico','deep-speech':'Gergo delle Profondità',infernal:'Infernale',
+    primordial:'Primordiale',sylvan:'Silvano',undercommon:'Sottocomune',
+}
+const toolChoiceNamesIt: Record<string,string> = {
+    "artisan's tools":'Attrezzi da artigiano',
+    'musical instrument':'Strumento musicale',
+}
+export const creationLabelOf = (item: Ref, data: CreationData) => {
+    const styleSlug=item.index.match(/-fighting-style-(.+)$/)?.[1]
+    const fightingStyle=styleSlug ? data.verified?.verifiedOptions.find((option)=>option.mechanics.optionType==='fighting-style' && option.index.endsWith(`-${styleSlug}`)) : undefined
+    return fightingStyle?.nameIt ? `Stile di combattimento: ${fightingStyle.nameIt}`
+        : item.nameIt
+            ?? languageNamesIt[item.index]
+            ?? data.verified?.verifiedEquipment.find((equipment) => equipment.index === item.index)?.nameIt
+            ?? item.name
+}
 export const abilityFromShort = (short: string) => abilityKeys.find((key) => key.startsWith(short))
 export const modifier = abilityModifier
 export const creationEnabled = (sheet: CharacterSheet) => sheet.kind === 'PG' && sheet.playerDetails?.['creation.enabled'] === 'true'
@@ -165,18 +183,37 @@ export function selectedOrigins(sheet: CharacterSheet, data: CreationData) {
 }
 
 export function optionsFor(choice: Choice, data: CreationData): Option[] {
-    if (choice.from.options) return choice.from.options
-    if (choice.type === 'languages') return data.languages.map((item) => ({ option_type: 'reference', item }))
+    const localize = (option: Option): Option => {
+        const translate = (ref?: Ref): Ref | undefined => {
+            if (!ref) return undefined
+            const nameIt=creationLabelOf(ref,data)
+            return nameIt ? {...ref,nameIt} : ref
+        }
+        return {
+            ...option,
+            ...(option.item ? {item:translate(option.item)} : {}),
+            ...(option.of ? {of:translate(option.of)} : {}),
+            ...(option.ability_score ? {ability_score:translate(option.ability_score)} : {}),
+            ...(option.items ? {items:option.items.map(localize)} : {}),
+            ...(option.choice ? {choice:{...option.choice,from:{...option.choice.from,options:option.choice.from.options?.map(localize)}}} : {}),
+        }
+    }
+    if (choice.from.options) return choice.from.options.map(localize)
+    if (choice.type === 'languages') return data.languages.map((item) => ({ option_type: 'reference', item:localize({option_type:'reference',item}).item! }))
     const category = data.equipmentCategories.find((x) => x.index === choice.from.equipment_category?.index)
     // Categories also contain magic items: those are never starting equipment.
     return (category?.equipment ?? []).filter((ref) => data.equipment.some((x) => x.index === ref.index))
-        .map((item) => ({ option_type: 'counted_reference', count: 1, of: item }))
+        .map((item) => localize({ option_type: 'counted_reference', count: 1, of: item }))
 }
-export function optionLabel(option: Option): string {
-    if (option.items) return option.items.map(optionLabel).join(' + ')
-    if (option.choice) return option.choice.desc ?? `${option.choice.choose} × ${option.choice.from.equipment_category?.name ?? 'a scelta'}`
+export function optionLabel(option: Option, data?: CreationData): string {
+    if (option.items) return option.items.map((item) => optionLabel(item,data)).join(' + ')
+    if (option.choice) {
+        const description=option.choice.desc
+        const translated=description ? toolChoiceNamesIt[description.toLowerCase().replace(/[’]/g,"'")] : undefined
+        return translated ?? description ?? `${option.choice.choose} × ${option.choice.from.equipment_category?.name ?? 'a scelta'}`
+    }
     const ref = option.item ?? option.of ?? option.ability_score
-    return ref ? `${option.count ?? option.bonus ?? 1} × ${labelOf(ref).replace('Skill: ', '')}` : option.desc ?? 'Scelta'
+    return ref ? `${option.count ?? option.bonus ?? 1} × ${(data ? creationLabelOf(ref,data) : labelOf(ref)).replace('Skill: ', '')}` : option.desc ?? 'Scelta'
 }
 export function resolveChoice(choice: Choice, path: string, details: Record<string, string>, data: CreationData): { ref: Ref; count: number }[] {
     const options = optionsFor(choice, data)
@@ -197,6 +234,31 @@ export function resolveChoice(choice: Choice, path: string, details: Record<stri
     }).flat()
 }
 
+function proficiencyChoiceLabel(choice: Choice, origin: Origin): string {
+    const references: Ref[] = []
+    const descriptions = [choice.desc ?? '']
+    function inspect(option: Option) {
+        const ref = option.item ?? option.of ?? option.ability_score
+        if (ref) references.push(ref)
+        if (option.choice) {
+            descriptions.push(option.choice.desc ?? '')
+            option.choice.from.options?.forEach(inspect)
+        }
+        option.items?.forEach(inspect)
+    }
+    choice.from.options?.forEach(inspect)
+    const details = descriptions.join(' ').toLowerCase()
+    const indexes = references.map((ref) => ref.index.toLowerCase())
+    let category: string
+    if (references.length > 0 && references.every((ref) => ref.index.startsWith('skill-'))) category = 'Competenze di abilità'
+    else if (/instrument|strument/.test(details) && /tool|artisan|attrezz/.test(details)) category = 'Competenze con attrezzi o strumenti musicali'
+    else if (/instrument|strument/.test(details) || indexes.some((index) => index.includes('instrument'))) category = 'Competenze con strumenti musicali'
+    else if (/tool|artisan|attrezz|gaming|gioco/.test(details) || indexes.some((index) => /tool|instrument|dice-set|playing-card-set/.test(index))) category = 'Competenze con attrezzi'
+    else if (/weapon|armor/.test(details) || indexes.some((index) => /weapon|armor/.test(index))) category = 'Competenze in armi o armature'
+    else category = 'Altre competenze'
+    return `${category}: ${labelOf(origin)}`
+}
+
 export function creationChoices(sheet: CharacterSheet, data: CreationData): { choice: Choice; path: string; label: string }[] {
     const { race, subrace, characterClass, background } = selectedOrigins(sheet, data)
     const result: { choice: Choice; path: string; label: string }[] = []
@@ -208,7 +270,7 @@ export function creationChoices(sheet: CharacterSheet, data: CreationData): { ch
             const options = original.from.options
             const addNature = spellEdition(sheet) === '2024' && kind === 'class' && origin.index === 'wizard' && options?.every((x) => x.item?.index.startsWith('skill-')) && !options.some((x) => x.item?.index === 'skill-nature')
             const choice = addNature ? { ...original, from: { ...original.from, options: [...options!, { option_type: 'reference', item: { index: 'skill-nature', name: 'Skill: Nature' } }] } } : original
-            result.push({ choice, path: `${root}.proficiency.${i}`, label: `Competenze: ${labelOf(origin)}` })
+            result.push({ choice, path: `${root}.proficiency.${i}`, label: proficiencyChoiceLabel(choice, origin) })
         })
         if (origin.abilityBonusChoices && (spellEdition(sheet) === '2014' || kind === 'background')) result.push({ choice: origin.abilityBonusChoices, path: `${root}.ability`, label: 'Bonus alle caratteristiche' })
         if (origin.language_options) result.push({ choice: origin.language_options, path: `${root}.language`, label: 'Linguaggi aggiuntivi' })
@@ -333,7 +395,7 @@ export function applyCreation(input: CharacterSheet, data: CreationData): Charac
     const revisedSimple = edition === '2024' && ['bard', 'druid', 'monk', 'rogue', 'sorcerer', 'wizard'].includes(characterClass?.index ?? '')
     const classProfs = (characterClass?.proficiencies ?? []).filter((ref) => !revisedSimple || !(ref.index.endsWith('-weapons') || data.equipment.some((item) => item.weapon_category && item.index === ref.index.replace(/s(?=-|$)/g, '')) || characterClass?.index === 'druid' && ref.index === 'medium-armor'))
     if (revisedSimple) classProfs.push({ index: 'simple-weapons', name: 'Simple Weapons' })
-    const profs = [...classProfs, ...(background?.starting_proficiencies ?? []), ...traits.flatMap((x) => x.proficiencies ?? [])]
+    const profs = [...classProfs, ...(background?.starting_proficiencies ?? []), ...(background?.proficiencies ?? []), ...traits.flatMap((x) => x.proficiencies ?? [])]
     if (data.verified) for (const cls of Object.keys(sheetClassLevels(sheet)).filter((cls) => cls!==characterClass?.index)) profs.push(...(data.classes.find((c) => c.index===cls)?.multi_classing?.proficiencies ?? []))
     choices.filter((x) => x.choice.type === 'proficiencies').forEach(({ choice, path }) => profs.push(...resolveChoice(choice, path, d, data).map((x) => x.ref).filter((ref) => !(edition === '2024' && path.startsWith('choice.class.rogue.') && ref.index === 'skill-performance'))))
     if (hasWizardFeature('Training in War and Song')) profs.push({ index: 'light-armor', name: 'Light Armor' }, { index: 'skill-performance', name: 'Intrattenere' })

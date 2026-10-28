@@ -95,10 +95,19 @@ function useCreationData() {
 export function CharacterEditor({record,initial,onSave,onCancel,settingsInDialog=false,historyControl}:{record?:OwnedCharacter;initial?:CharacterSheet;onSave:(sheet:CharacterSheet,revision?:number)=>Promise<void>;onCancel:()=>void;settingsInDialog?:boolean;historyControl?:ReactNode}) {
     const {data,error:rulesError,retry}=useCreationData()
     const [sheet,setSheet]=useState(()=>record?.sheet ?? initial ?? {...newCharacterSheet(),level:'1'})
+    const [showCreationChoice,setShowCreationChoice]=useState(()=>!record&&!initial)
+    const creationChoiceDialog=useRef<HTMLDialogElement>(null)
     const [baseline,setBaseline]=useState(()=>({revision:record?.revision,raw:JSON.stringify(record?.sheet ?? initial ?? null)}))
     const [error,setError]=useState(''),[saving,setSaving]=useState(false)
     const dirty=baseline.raw!==JSON.stringify(sheet)
     const changed=record && record.revision!==baseline.revision
+    useEffect(()=>{
+        const dialog=creationChoiceDialog.current
+        if (showCreationChoice && dialog && !dialog.open) {
+            dialog.showModal()
+            dialog.querySelector('button')?.focus()
+        } else if (!showCreationChoice && dialog?.open) dialog.close()
+    },[showCreationChoice])
     useEffect(()=>{
         if (record && !dirty && record.revision!==baseline.revision) {
             // eslint-disable-next-line react/set-state-in-effect -- Synchronize an unchanged editor with the polled server record.
@@ -128,6 +137,14 @@ export function CharacterEditor({record,initial,onSave,onCancel,settingsInDialog
     useLayoutEffect(()=>{saveAction.current=save})
     const sheetActions=useMemo(()=><><button type="button" disabled={saving} onClick={()=>void saveAction.current()}>Salva personaggio nella sessione</button>{error&&<p role="alert">{error}</p>}</>,[saving,error])
     return <section className="play-editor" aria-label="Scheda del personaggio">
+        <dialog ref={creationChoiceDialog} className="play-creation-choice" aria-labelledby="creation-choice-heading" aria-describedby="creation-choice-description" onCancel={()=>setShowCreationChoice(false)}>
+            <h2 id="creation-choice-heading">Come vuoi creare il personaggio?</h2>
+            <p id="creation-choice-description">Scegli come procedere con la creazione della scheda.</p>
+            <div className="play-creation-choice-actions">
+                <button type="button" onClick={()=>setShowCreationChoice(false)}>Creazione libera</button>
+                <button type="button" onClick={()=>{setSheet(newTutorial());setShowCreationChoice(false)}}>Usa creazione guidata</button>
+            </div>
+        </dialog>
         <div className="play-editor-heading"><h2>{sheet.name || 'Nuovo personaggio'}</h2>{!record&&!sheet.name&&sheet.playerDetails?.['tutorial.active']!=='true'&&<button type="button" onClick={()=>setSheet(newTutorial())}>Usa creazione guidata</button>}</div>
         {rulesError&&<p role="alert">Regole non caricate: {rulesError} <button onClick={retry}>Riprova</button></p>}
         {changed&&dirty&&<p role="alert">La scheda è stata modificata anche da un’altra schermata. Le tue modifiche restano aperte. <button type="button" onClick={()=>{if(window.confirm('Ricaricare la scheda dal server e scartare le modifiche aperte?')){setSheet(record.sheet);setBaseline({revision:record.revision,raw:JSON.stringify(record.sheet)});setError('')}}}>Ricarica scheda</button></p>}

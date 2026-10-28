@@ -3,6 +3,7 @@ import { abilityKeys, applyCreation, characterCalculationIssues, creationChoices
 import { spellEdition, spellRowState } from './Spellcasting.ts'
 
 export const tutorialSteps = ['Iniziamo', 'Classe e livello', 'Origini', 'Caratteristiche', 'Competenze e lingue', 'Equipaggiamento', 'Incantesimi', 'Personalità e gruppo', 'Riepilogo'] as const
+export const tutorialStepOrder = [0, 2, 1, 3, 6, 7, 8] as const
 export const tutorialDraftKey = 'dev-and-dice.character-tutorial.v1'
 export const rangerCreationReview = 'Ranger: il catalogo non collega ancora Nemico prescelto, terreno di Esploratore naturale ed eventuale lingua. Sceglili con il DM e annotali nei Tratti aggiuntivi prima di confermare.'
 export const advancementCreationReview = 'Conferma di aver verificato con il DM avanzamenti, PF e scelte dei livelli superiori.'
@@ -35,7 +36,22 @@ export function tutorialStep(sheet: CharacterSheet) {
     return n !== undefined && n >= 0 && n < tutorialSteps.length ? n : 0
 }
 export function tutorialChoices(sheet: CharacterSheet, data: CreationData, step: number) {
-    return creationChoices(sheet, data).filter(({ choice }) => step === 3 ? choice.type === 'ability_bonuses' : step === 5 ? choice.type === 'equipment' : step === 4 && !['equipment', 'ability_bonuses'].includes(choice.type))
+    const choices = creationChoices(sheet, data)
+    const origins = selectedOrigins(sheet, data)
+    const ancestry = choices.filter(({ path }) => path === 'choice.trait.draconic-ancestry.ancestry')
+    const backgroundPrefix = origins.background ? `choice.background.${origins.background.index}.` : ''
+    const classPrefix = origins.characterClass ? `choice.class.${origins.characterClass.index}.` : ''
+    const isBackgroundChoice = (path: string) => !!backgroundPrefix && path.startsWith(backgroundPrefix)
+    const isClassChoice = (path: string) => (!!classPrefix && path.startsWith(classPrefix)) || path.startsWith('choice.feature.') || path.startsWith('choice.expertise.') || path.startsWith('choice.multiclass.')
+    const isOtherOriginChoice = (path: string) => path.startsWith('choice.race.') || path.startsWith('choice.subrace.') || path.startsWith('choice.trait.')
+    if (step === 1) return choices.filter(({ choice, path }) => (isClassChoice(path) || choice.type === 'equipment' && isOtherOriginChoice(path) && !path.startsWith('choice.trait.draconic-ancestry')) && choice.type !== 'ability_bonuses')
+    if (step === 2) return [
+        ...ancestry.map((choice) => ({ ...choice, label: 'Discendenza Draconica' })),
+        ...choices.filter(({ choice, path }) => isOtherOriginChoice(path) && path !== 'choice.trait.draconic-ancestry.ancestry' && choice.type !== 'ability_bonuses'),
+        ...choices.filter(({ choice, path }) => isBackgroundChoice(path) && choice.type !== 'ability_bonuses'),
+    ]
+    if (step === 3) return choices.filter(({ choice }) => choice.type === 'ability_bonuses')
+    return []
 }
 function incomplete(choice: Choice, path: string, sheet: CharacterSheet, data: CreationData): boolean {
     const d = sheet.playerDetails ?? {}, options = optionsFor(choice, data), selected = new Set<string>()
@@ -91,28 +107,38 @@ export function tutorialIssues(sheet: CharacterSheet, data: CreationData, step: 
         }
     }
     for (const c of tutorialChoices(sheet, data, step)) if (incomplete(c.choice, c.path, sheet, data)) issues.push(`Completa: ${c.label} (scegli ${c.choice.choose}).`)
-    if (step === 4) {
-        if (d['tutorial.randomReview'] && (d['tutorial.randomReviewConfirmed']!=='true' || !d.additionalTraits?.trim())) issues.push(d['tutorial.randomReview'])
-        const profs = [origins.characterClass, origins.race, origins.subrace, origins.background].flatMap((x) => [...(x?.starting_proficiencies ?? []), ...(x?.proficiencies ?? [])]).map((x) => x.index)
+    if ([1, 2].includes(step)) {
+        const selectedChoices = creationChoices(sheet, data)
+        const relevantChoices = step === 2
+            ? selectedChoices.filter(({ path }) => path.startsWith('choice.race.') || path.startsWith('choice.subrace.') || path.startsWith('choice.trait.') || path.startsWith('choice.background.'))
+            : selectedChoices
+        const relevantOrigins = step === 2
+            ? [origins.race, origins.subrace, origins.background]
+            : [origins.characterClass, origins.race, origins.subrace, origins.background]
+        const profs = relevantOrigins.flatMap((x) => [...(x?.starting_proficiencies ?? []), ...(x?.proficiencies ?? [])]).map((x) => x.index)
         for (const ref of [...(origins.race?.traits ?? []), ...(origins.subrace?.racial_traits ?? [])]) profs.push(...(data.traits.find((x) => x.index === ref.index)?.proficiencies ?? []).map((x) => x.index))
-        for (const c of creationChoices(sheet, data).filter((x) => ['proficiencies','proficiency'].includes(x.choice.type))) profs.push(...resolveChoice(c.choice,c.path,d,data).map((x) => x.ref.index))
+        for (const c of relevantChoices.filter((x) => ['proficiencies','proficiency'].includes(x.choice.type))) profs.push(...resolveChoice(c.choice,c.path,d,data).map((x) => x.ref.index))
         for (const index of new Set(profs.filter((p,i) => p.startsWith('skill-') && profs.indexOf(p) !== i))) {
             const skill = data.skills.find((x) => `skill-${x.index}` === index)
             issues.push(`${skill ? labelOf(skill) : index}: competenza scelta più volte. Cambia una delle selezioni nei riquadri Competenze qui sopra.`)
         }
         const languages = (origins.race?.languages ?? []).map((x) => x.index)
-        for (const c of creationChoices(sheet,data).filter((x) => x.choice.type === 'languages')) languages.push(...resolveChoice(c.choice,c.path,d,data).map((x) => x.ref.index))
+        for (const c of relevantChoices.filter((x) => x.choice.type === 'languages')) languages.push(...resolveChoice(c.choice,c.path,d,data).map((x) => x.ref.index))
+        if (step === 2 && edition === '2024') languages.push(...[0,1].map((i) => d[`tutorial.language.${i}`]).filter(Boolean))
         if (languages.some((p,i) => languages.indexOf(p) !== i)) issues.push('Una lingua scelta è già conosciuta: scegli una lingua diversa con il DM.')
-        if (edition === '2024' && (d['tutorial.rules2024'] !== 'true' || !d.additionalTraits?.trim())) issues.push('Conferma le opzioni storiche compatibili e annota il talento di Origine verificato con il DM.')
-        if (edition === '2024' && ([0,1].some((i) => !standardLanguageIds.includes(d[`tutorial.language.${i}`]) || !data.languages.some((x) => x.index === d[`tutorial.language.${i}`])) || d['tutorial.language.0'] === d['tutorial.language.1'])) issues.push('Scegli due lingue standard diverse oltre al Comune.')
         for (const type of ['feature','expertise']) {
-            const selected = creationChoices(sheet,data).filter((x) => x.choice.type === type).flatMap((c) => resolveChoice(c.choice,c.path,d,data).map((x) => x.ref.index))
+            const selected = relevantChoices.filter((x) => x.choice.type === type).flatMap((c) => resolveChoice(c.choice,c.path,d,data).map((x) => x.ref.index))
             if (selected.some((p,i) => selected.indexOf(p) !== i)) issues.push('Un privilegio o una Maestria è stato scelto più volte: scegli alternative diverse.')
         }
-        for (const c of creationChoices(sheet,data).filter((x) => x.choice.type === 'expertise')) for (const selected of resolveChoice(c.choice,c.path,d,data)) {
+        for (const c of relevantChoices.filter((x) => x.choice.type === 'expertise')) for (const selected of resolveChoice(c.choice,c.path,d,data)) {
             const skill = data.skills.find((x) => `skill-${x.index}` === selected.ref.index)
             if (skill && d[skill.playerDetailsKeys.proficient] !== 'true') issues.push('La Maestria va scelta in un’abilità in cui hai già competenza.')
         }
+    }
+    if (step === 1 && d['tutorial.randomReview'] && (d['tutorial.randomReviewConfirmed']!=='true' || !d.additionalTraits?.trim())) issues.push(d['tutorial.randomReview'])
+    if (step === 2) {
+        if (edition === '2024' && (d['tutorial.rules2024'] !== 'true' || !d.additionalTraits?.trim())) issues.push('Conferma le opzioni storiche compatibili e annota il talento di Origine verificato con il DM.')
+        if (edition === '2024' && ([0,1].some((i) => !standardLanguageIds.includes(d[`tutorial.language.${i}`]) || !data.languages.some((x) => x.index === d[`tutorial.language.${i}`])) || d['tutorial.language.0'] === d['tutorial.language.1'])) issues.push('Scegli due lingue standard diverse oltre al Comune.')
     }
     if (step === 6) {
         const rules = spellRules(sheet, data), selection = spellSelection(sheet, data)

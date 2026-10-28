@@ -10,7 +10,7 @@ export function tutorialReview(sheet: CharacterSheet, data: CreationData) {
 }
 
 export function tutorialIssueFields(issue: string, sheet: CharacterSheet, data: CreationData, step: number): string[] {
-    if (step===4 && issue===sheet.playerDetails?.['tutorial.randomReview']) return ['additionalTraits','tutorial.randomReviewConfirmed']
+    if (step===1 && issue===sheet.playerDetails?.['tutorial.randomReview']) return ['additionalTraits','tutorial.randomReviewConfirmed']
     const rules: [RegExp,string[]][] = [
         [/^Scegli l.edizione/,['rules.edition']], [/^Dai un nome/,['name']],
         [/^Scegli una classe/,['creation.class']], [/^Il livello/,['level']],
@@ -28,7 +28,7 @@ export function tutorialIssueFields(issue: string, sheet: CharacterSheet, data: 
     const matching=choices.filter(({label})=>issue.startsWith(`Completa: ${label} (`))
     if (matching.length) return matching.map(({path})=>path)
     if (/lingua scelta/.test(issue)) return choices.filter(({choice})=>choice.type==='languages').map(({path})=>path)
-    if (/competenza scelta|Maestria|privilegio/.test(issue) && step===4) return ['choices']
+    if (/competenza scelta|Maestria|privilegio/.test(issue) && [1,2].includes(step)) return ['choices']
     if (step===6) return ['spells']
     return []
 }

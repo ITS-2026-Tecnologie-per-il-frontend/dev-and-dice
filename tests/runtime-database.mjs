@@ -3,7 +3,7 @@ import { readFileSync, existsSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { loadCandidateCreationData, spellCastPlan } from '../src/domain/dnd/VerifiedDatabase.ts'
 import { activateCreationData, activeCatalog, creationDataForEdition, catalogForSheet, preserveSavedSheets, loadActiveDatabase, restSheet, spendSheetHitDie, castSheetSpell, convertSorcery, concentrationSave, sheetRuleResources, sheetClassLevels, ruleOptionGroups, ruleOptionIssues } from '../src/domain/dnd/ActiveRules.ts'
-import { applyCreation, enableCreation, creationChoices, optionsFor, spellRules, withWizardCatalog } from '../src/utils/PlayerCreation.ts'
+import { applyCreation, enableCreation, creationChoices, optionsFor, optionLabel, spellRules, withWizardCatalog, labelOf, creationLabelOf } from '../src/utils/PlayerCreation.ts'
 import { newCharacterSheet, parseCharacterSheets } from '../src/utils/CharacterSheets.ts'
 import { spellProfile } from '../src/utils/Spellcasting.ts'
 import { activateAbility, advanceCombatAbilities } from '../src/utils/Combat.ts'
@@ -19,6 +19,48 @@ assert.equal(data.verified.candidateReleaseId,'0d0d275e18ee23737904')
 assert.equal(data.verified.reviewedEntities.length,2504)
 assert.equal(creationDataForEdition(data,'2024'),legacy)
 assert.equal(creationDataForEdition(data,'2014'),data)
+const criminal=data.backgrounds.find((origin)=>origin.index==='criminal')
+assert.ok(criminal.proficiencies.some((ref)=>ref.index==='thieves-tools'),'Fixed background tool proficiency is activated')
+const charlatan=data.backgrounds.find((origin)=>origin.index==='charlatan')
+assert.equal(charlatan.proficiencies.find((ref)=>ref.index==='disguise-kit')?.nameIt,'Trucchi per il Camuffamento','Verified Italian name is linked to the disguise kit')
+assert.equal(charlatan.proficiencies.find((ref)=>ref.index==='forgery-kit')?.nameIt,'Arnesi da Falsario','Verified Italian name is linked to the forgery kit')
+assert.deepEqual(charlatan.proficiencies.filter((ref)=>['disguise-kit','forgery-kit'].includes(ref.index)).map(labelOf),['Trucchi per il Camuffamento','Arnesi da Falsario'],'Charlatan tool proficiencies render with their Italian names')
+assert.equal(optionLabel({option_type:'reference',item:{index:'disguise-kit',name:'Disguise Kit'}},data),'1 × Trucchi per il Camuffamento','The choice label can recover an Italian name from an English-only ref')
+const expectedFightingStyles=new Map([
+    ['archery','Tiro con l’Arco'],['defense','Difesa'],['dueling','Duellare'],['great-weapon-fighting','Combattere con Armi Possenti'],
+    ['protection','Protezione'],['two-weapon-fighting','Combattere con Due Armi'],
+])
+for (const [slug,name] of expectedFightingStyles) assert.equal(optionLabel({option_type:'reference',item:{index:`fighter-fighting-style-${slug}`,name:`Fighting Style: ${slug}`}},data),`1 × Stile di combattimento: ${name}`,`Fighter fighting style ${slug} has an Italian label`)
+const monkDraft={...newCharacterSheet(),playerDetails:{'rules.edition':'2014','creation.class':'monk'}}
+const monkToolChoice=creationChoices(monkDraft,data).find(({path})=>path==='choice.class.monk.proficiency.1')
+assert.ok(monkToolChoice,'Monk artisan tools/instrument choice is present')
+assert.deepEqual(optionsFor(monkToolChoice.choice,data).map((option)=>optionLabel(option,data)),['Attrezzi da artigiano','Strumento musicale'],'Monk tool categories are displayed in Italian')
+const rawArtisanChoice={choose:1,type:'proficiencies',from:{option_set_type:'options_array',options:[{option_type:'reference',item:{index:'carpenters-tools',name:"Carpenter's Tools"}}]}}
+assert.equal(optionsFor(rawArtisanChoice,data)[0].item.nameIt,'Strumenti da Falegname','English-only multiple-choice refs are localized before rendering')
+const expectedLanguageNames=new Map([
+    ['common','Comune'],['dwarvish','Nanico'],['elvish','Elfico'],['giant','Gigante'],['gnomish','Gnomesco'],['goblin','Goblin'],['halfling','Halfling'],['orc','Orchesco'],
+    ['abyssal','Abissale'],['celestial','Celestiale'],['draconic','Draconico'],['deep-speech','Gergo delle Profondità'],['infernal','Infernale'],
+    ['primordial','Primordiale'],['sylvan','Silvano'],['undercommon','Sottocomune'],
+])
+for (const [index,name] of expectedLanguageNames) assert.equal(creationLabelOf({index,name:index},data),name,`Language ${index} has an Italian display name`)
+const languageChoice={choose:1,type:'languages',from:{option_set_type:'resource_list'}}
+assert.equal(optionLabel(optionsFor(languageChoice,data).find((option)=>option.item?.index==='dwarvish'),data),'1 × Nanico','Multiple-choice language labels use Italian')
+const criminalDraft={...newCharacterSheet(),playerDetails:{'rules.edition':'2014','creation.enabled':'true','creation.class':'wizard','creation.race':'human','creation.background':'criminal'}}
+const criminalChoices=creationChoices(criminalDraft,data)
+const gamingChoice=criminalChoices.find(({path})=>path==='choice.background.criminal.proficiency.0')
+assert.ok(gamingChoice,'Background tool-choice is exposed in Origins')
+const gamingOptions=optionsFor(gamingChoice.choice,data)
+const diceOption=gamingOptions.findIndex((option)=>(option.item??option.of)?.index==='dice-set')
+assert.ok(diceOption>=0,'Gaming-set choice offers equipment from the correct category')
+const trainedCriminal=applyCreation({...criminalDraft,playerDetails:{...criminalDraft.playerDetails,[`${gamingChoice.path}.0`]:String(diceOption)}},data)
+assert.ok(trainedCriminal.playerDetails.tools.includes(labelOf(criminal.proficiencies.find((ref)=>ref.index==='thieves-tools'))),'Fixed tool proficiency is marked on the character sheet')
+assert.ok(trainedCriminal.playerDetails.tools.includes(labelOf(gamingOptions[diceOption].item??gamingOptions[diceOption].of)),'Chosen gaming-set proficiency is marked on the character sheet')
+assert.ok(creationChoices({...criminalDraft,playerDetails:{...criminalDraft.playerDetails,'creation.background':'guild-artisan'}},data)
+    .some(({choice})=>choice.from.options?.some((option)=>(option.item??option.of)?.index==='carpenters-tools' && (option.item??option.of)?.nameIt==='Strumenti da Falegname')),'Artisan choices link verified Italian equipment names')
+const entertainerChoices=creationChoices({...criminalDraft,playerDetails:{...criminalDraft.playerDetails,'creation.background':'entertainer'}},data)
+assert.ok(entertainerChoices.some(({choice})=>choice.from.options?.some((option)=>(option.item??option.of)?.index==='bagpipes' && (option.item??option.of)?.nameIt==='Cornamusa')),'Instrument choices link verified Italian equipment names')
+const folkHero=data.backgrounds.find((origin)=>origin.index==='folk-hero')
+assert.ok(folkHero.proficiencies.some((ref)=>ref.index==='vehicles-land'),'Vehicle proficiency is also marked as a fixed background proficiency')
 
 // The actual app loader shares one in-flight load, checks hashes and retries a failed load.
 const originalFetch=globalThis.fetch,requests=new Map()

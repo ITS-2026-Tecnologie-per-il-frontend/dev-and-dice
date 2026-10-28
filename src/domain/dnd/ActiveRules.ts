@@ -1,5 +1,5 @@
 import * as rules from './VerifiedDatabase.ts'
-import type { CreationData, Ref, ClassFeature } from '../../utils/PlayerCreation.ts'
+import type { CreationData, Ref, Choice, ClassFeature } from '../../utils/PlayerCreation.ts'
 import { abilityModifier, characterFields, characterLevel, integerValue, type CharacterSheet } from '../../utils/CharacterSheets.ts'
 import { classId, spellEdition, spellRowState } from '../../utils/Spellcasting.ts'
 import { parseCatalog, type Catalog, type CatalogEntry } from '../../utils/Catalog.ts'
@@ -8,10 +8,39 @@ export const runtimeDirectory = 'data/rules2014'
 const keys = ['strength','dexterity','constitution','intelligence','wisdom','charisma'] as const
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 const normalized = (name: string) => name.normalize('NFD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'')
+const backgroundToolChoiceCategories: Record<string,{ category: string; label: string }> = {
+    'artisan-tools-choice': {category:'artisans-tools',label:'attrezzi da artigiano'},
+    'gaming-set-choice': {category:'gaming-sets',label:'set da gioco'},
+    'musical-instrument-choice': {category:'musical-instruments',label:'strumenti musicali'},
+}
+const backgroundVehicleProficiencies: Record<string,string> = {'vehicles-land':'Veicoli terrestri','vehicles-water':'Veicoli acquatici'}
 export const ruleName = (entity: Pick<rules.ReviewedEntity,'name'|'nameIt'>) => entity.nameIt ?? entity.name
 export const ruleDescription = (entity: Pick<rules.ReviewedEntity,'summaryIt'|'verification'>) => `${entity.summaryIt ?? ''}${entity.verification.complete ? '' : '\nParziale: decisione del DM richiesta. ' + entity.verification.missingFields.join(', ')}`
 export const ruleSourceText = (entity: Pick<rules.ReviewedEntity,'sources'>) => entity.sources.map((s) => `${s.filename} · PDF ${s.pdfPages.join(', ')} · ${s.section}`).join('\n')
 const metadata = (entity: rules.ReviewedEntity) => ({ referenceId: entity.id, ruleStatus: entity.verification.complete ? 'verified' as const : 'partial' as const, ruleSources: ruleSourceText(entity) })
+
+function backgroundToolGrants(data: rules.CandidateCreationData, toolIds: string[]) {
+    const proficiencies: Ref[] = []
+    const choices: Choice[] = []
+    const withVerifiedName = (item: Ref): Ref => {
+        const verified = data.verifiedEquipment.find((equipment) => equipment.index === item.index)
+        return verified?.nameIt ? {...item,nameIt:verified.nameIt} : item
+    }
+    for (const index of toolIds) {
+        const definition = backgroundToolChoiceCategories[index]
+        if (definition) {
+            const category = data.equipmentCategories.find((x) => x.index === definition.category)
+            const options = category?.equipment.filter((item) => data.equipment.some((equipment) => equipment.index === item.index)) ?? []
+            if (!options.length) throw new Error(`Opzioni mancanti per la competenza del background: ${index}.`)
+            choices.push({choose:1,type:'proficiencies',desc:`Scegli una competenza: ${definition.label}`,from:{option_set_type:'options_array',options:options.map((item) => ({option_type:'reference',item:withVerifiedName(item)}))}})
+            continue
+        }
+        const equipment = data.equipment.find((item) => item.index === index)
+        const name = backgroundVehicleProficiencies[index]
+        proficiencies.push(equipment ? withVerifiedName(equipment) : {index,name:name ?? index.replaceAll('-',' ')})
+    }
+    return {proficiencies,choices}
+}
 
 export function referenceFor(data: rules.CandidateCreationData, array: string, index: string) {
     const mapped = data.idMap.find((row) => row.array === array && row.currentId === index)
@@ -26,6 +55,10 @@ export function activateCreationData(data: rules.CandidateCreationData, legacy: 
         const entity = referenceFor(data,array,origin.index)
         if (!entity) return { ...origin, ruleStatus:'legacy' as const }
         const m = entity.mechanics
+        const backgroundTools = array === 'backgrounds' && Array.isArray(m.toolProficiencies)
+            ? backgroundToolGrants(data,m.toolProficiencies.filter((index): index is string => typeof index === 'string'))
+            : undefined
+        const existingChoices = Array.isArray(origin.proficiency_choices) ? origin.proficiency_choices : origin.proficiency_choices ? [origin.proficiency_choices] : []
         return { ...origin, ...metadata(entity), nameIt:entity.nameIt ?? origin.nameIt,
             desc:[ruleDescription(entity)], editions:['2014'] as ('2014'|'2024')[],
             ...(typeof m.hitDie === 'number' ? { hit_die:m.hitDie } : {}),
@@ -35,6 +68,10 @@ export function activateCreationData(data: rules.CandidateCreationData, legacy: 
             ...(typeof m.minimumLevel === 'number' ? { minimumLevel:m.minimumLevel } : {}),
             ...(object(m.fixedAbilityBonuses) ? { fixedAbilityBonuses:m.fixedAbilityBonuses } : {}),
             ...(object(m.speed) && typeof m.speed.value === 'number' ? { speed:m.speed.value } : {}),
+            ...(backgroundTools ? {
+                proficiencies:[...(origin.proficiencies ?? []),...backgroundTools.proficiencies],
+                proficiency_choices:[...existingChoices,...backgroundTools.choices],
+            } : {}),
             ...(array === 'backgrounds' && object(m.feature) ? { feature:{ name:String(m.feature.name),desc:[String(m.feature.summaryIt)] } } : {}),
         }
     })

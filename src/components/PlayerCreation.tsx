@@ -36,7 +36,7 @@ export function CreationChoices({ sheet, data, change, choices: suppliedChoices,
                         const skill = data.skills.find((x) => option.item?.index === `skill-${x.index}`)
                         if (expertise && skill && d[skill.playerDetailsKeys.proficient] !== 'true' && d[key] !== String(j)) return null
                         const alreadyKnown = !expertise && skill && knownSkills.has(option.item!.index)
-                        return <option key={j} value={j} disabled={choice.type !== 'equipment' && others.includes(String(j)) || choice.type === 'languages' && knownLanguages.has(option.item?.index ?? '') && d[key] !== String(j) || !!alreadyKnown && d[key] !== String(j)}>{skill ? labelOf(skill) : optionLabel(option)}{alreadyKnown ? ' · già concessa da un’altra origine' : ''}</option>
+                        return <option key={j} value={j} disabled={choice.type !== 'equipment' && others.includes(String(j)) || choice.type === 'languages' && knownLanguages.has(option.item?.index ?? '') && d[key] !== String(j) || !!alreadyKnown && d[key] !== String(j)}>{skill ? labelOf(skill) : optionLabel(option,data)}{alreadyKnown ? ' · già concessa da un’altra origine' : ''}</option>
                     })}
                 </select></label>{!expertise && selected?.item?.index.startsWith('skill-') && knownSkills.has(selected.item.index) && <p className="creation-choice-warning" role="status">Questa abilità è già concessa da un’altra origine. Scegli un’altra abilità dal menu qui sopra.</p>}{d[key] !== undefined && d[key] !== '' && selected && nested(selected, `${key}.option.${d[key]}`, expertise)}</div>
             })}

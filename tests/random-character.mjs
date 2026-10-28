@@ -123,7 +123,7 @@ assert.deepEqual(tutorialIssues(ranger,data,8),[])
 const changed=changeTutorialOrigin(ranger,data,'class','fighter')
 assert.equal(changed.playerDetails['tutorial.randomReview'],'','Changing class must clear an irrelevant manual review')
 const returned=changeTutorialOrigin(changed,data,'class','ranger')
-assert.ok(tutorialIssues(returned,data,4).includes(returned.playerDetails['tutorial.randomReview']),'Returning to Ranger must not reuse a previous confirmation')
+assert.ok(tutorialIssues(returned,data,1).includes(returned.playerDetails['tutorial.randomReview']),'Returning to Ranger must not reuse a previous confirmation')
 const catalog=parseCatalog(json('database'))
 for (const template of ['generic','wizard','wizard-pdf']) {
     const saved={...a,playerDetails:{...a.playerDetails,'sheet.template':template,'tutorial.active':'false','tutorial.completed':'true'}}
