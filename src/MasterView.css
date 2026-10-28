@@ -19,7 +19,7 @@
 .master-view-option > span > span { color:var(--text); }
 .master-settings-extra { display:grid; gap:16px; margin-top:20px; padding-top:20px; border-top:1px solid var(--border); }
 .master-settings-extra label { display:grid; gap:6px; font-size:14px; }
-.master-settings-extra select { min-height:44px; padding:8px; background:var(--bg); color:var(--text-h); border:1px solid var(--border); border-radius:4px; font:inherit; }
+.master-settings-extra select,.master-settings-extra input[type="number"] { min-height:44px; padding:8px; background:var(--bg); color:var(--text-h); border:1px solid var(--border); border-radius:4px; font:inherit; }
 .master-settings-dialog footer { display:flex; justify-content:flex-end; margin-top:24px; }
 .master-settings-dialog footer button { padding:10px 18px; border:0; border-radius:6px; background:var(--ui-action, var(--ui-accent, #147d72)); color:white; font:inherit; font-size:14px; }
 .master-settings-button:focus-visible,.master-settings-dialog :focus-visible { outline:3px solid var(--ui-accent, #147d72); outline-offset:3px; }
@@ -269,3 +269,6 @@
 .combat-effect-group + .combat-effect-group { margin-top:18px; padding-top:16px; border-top:1px solid var(--border); }
 .combat-effect-group h4 { margin:0 0 10px; color:var(--text-h); font-size:14px; }
 @media(pointer:coarse){.compact-active-heading { grid-template-columns:44px minmax(0,1fr) auto; }.master-renewed .compact-active-order button { width:44px; height:44px; min-height:44px; }}
+
+.counterspell-settings { display:grid; gap:12px; }
+.counterspell-settings .theme-settings-note { margin:0; }

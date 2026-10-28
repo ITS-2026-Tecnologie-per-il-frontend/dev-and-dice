@@ -24,7 +24,7 @@ let game,path
 async function save(state,sheets){game=await api(master,path);game=await api(master,path+'/state','PUT',{revision:game.revision,state,sheets});return game}
 async function closeWindows(){game=await api(master,path);for(const w of game.reactionWindows??[])if(w.status==='pending')await api(master,path+'/reactions/'+w.id+'/decline','POST');game=await api(master,path)}
 // Move only the isolated archive's timestamps to test expiration without sleeping 30 seconds.
-async function expirePopups(){const file=join(dir,'games.json'),db=JSON.parse(await readFile(file,'utf8'));for(const g of db.games)for(const w of g.reactionWindows??[])if(w.status==='pending')w.expiresAt=Date.now()-60000;await writeFile(file,JSON.stringify(db))}
+async function expirePopups(){const file=join(dir,'games.json'),db=JSON.parse(await readFile(file,'utf8'));for(const g of db.games)for(const w of g.reactionWindows??[])if(w.status==='pending'){w.expiresAt=Date.now()-60000;for(const key of Object.keys(w.actionExpiresAt??{}))w.actionExpiresAt[key]=w.expiresAt};await writeFile(file,JSON.stringify(db))}
 try{
  await api(master,'/register','POST',{username:'EventsMaster',password:'isolated-password'});await api(player,'/register','POST',{username:'EventsPlayer',password:'isolated-password'})
  const caster={...newCharacterSheet(),name:'Aster',characterClass:'Mago',level:'11',intelligence:'18',hitPoints:'25',armorClass:'12',abilities:[spell('counterspell'),spell('false-life')],playerDetails:{'slots.3.total':'4','slots.1.total':'2'}},foe={...newCharacterSheet(),name:'NPC Mago',kind:'PNG',characterClass:'Mago',level:'11',intelligence:'18',hitPoints:'30',armorClass:'13',abilities:[spell('fireball')],playerDetails:{'slots.3.total':'4'}}

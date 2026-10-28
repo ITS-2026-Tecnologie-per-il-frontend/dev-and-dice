@@ -1,4 +1,5 @@
-import {useEffect,useRef,useState} from 'react'
+import {ReactionCountdown,type ReactionClock,useReactionActivity} from './ReactionCountdown'
+import {useEffect,useLayoutEffect,useRef,useState} from 'react'
 import {playApi,type Game,type CombatRequest} from '../utils/PlayApi'
 import {resolveCounterspell,type CounterspellChoices,type CounterspellSnapshot,type CounterspellDecision} from '../domain/dnd/Counterspell'
 import {saveNames} from '../domain/dnd/CombatResolution'
@@ -52,16 +53,26 @@ function Requirements({checked,onChange}:{checked:boolean;onChange:(checked:bool
 export function CounterspellForm({game,ownerId,onUpdate,disabled=false,reactionId}:{game:Game;ownerId:number;onUpdate:(game:Game)=>void;disabled?:boolean;reactionId?:string}){
     const [choices,setChoices]=useState<CounterspellChoices>(),[targetKey,setTargetKey]=useState(''),[option,setOption]=useState(''),[confirmed,setConfirmed]=useState(false),[decision,setDecision]=useState<CounterspellDecision>({}),[busy,setBusy]=useState(false),[error,setError]=useState(''),[retry,setRetry]=useState(0),[receipt,setReceipt]=useState<CounterspellSnapshot>()
     const attempt=useRef<{signature:string;id:string}>(undefined),working=useRef(false),master=game.role==='master'
-    const reactionAvailability=game.reactionWindows?.map(w=>`${w.id}:${w.status}:${w.expiresAt}`).join('|')
+    const reactionAvailability=game.reactionWindows?.map(w=>`${w.id}:${w.status}:${w.actionKeys.join(',')}`).join('|'),opportunities=game.spellOpportunities?.map(t=>t.key).join('|'),requestStatuses=game.combatRequests.map(r=>`${r.id}:${r.status}`).join('|')
     const query=`/games/${game.id}/counterspell?actorId=${ownerId}${reactionId?'&reactionId='+encodeURIComponent(reactionId):''}`
-    useEffect(()=>{let alive=true;void playApi<CounterspellChoices>(query).then(c=>{if(!alive)return;setChoices(c);setError('');setTargetKey(current=>c.targets.some(t=>t.key===current)?current:c.targets.filter(t=>!t.key.startsWith('manual:')).length===1?c.targets.find(t=>!t.key.startsWith('manual:'))!.key:'');setOption(current=>c.options.some(o=>o.id===current)?current:c.options.find(o=>o.remaining===null||o.remaining>=(o.cost??1))?.id??c.options[0]?.id??'')}).catch(e=>{if(alive)setError(e.message)});return()=>{alive=false}},[query,game.revision,game.requestsRevision,game.eventSequence,retry,reactionAvailability])
+    useEffect(()=>{let alive=true;void playApi<CounterspellChoices>(query).then(c=>{if(!alive)return;setChoices(c);setError('');setTargetKey(current=>c.targets.some(t=>t.key===current)?current:c.targets.filter(t=>!t.key.startsWith('manual:')).length===1?c.targets.find(t=>!t.key.startsWith('manual:'))!.key:'');setOption(current=>c.options.some(o=>o.id===current)?current:c.options.find(o=>o.remaining===null||o.remaining>=(o.cost??1))?.id??c.options[0]?.id??'')}).catch(e=>{if(alive)setError(e.message)});return()=>{alive=false}},[query,game.revision,requestStatuses,opportunities,game.eventSequence,retry,reactionAvailability])
     const selected=choices?.targets.find(t=>t.key===targetKey),resource=choices?.options.find(o=>o.id===option)
+    const popup=game.reactionWindows?.find(w=>w.id===reactionId),live=game.spellOpportunities?.find(t=>t.key===selected?.key)
+    const timing=popup?{mode:selected?.window?.mode??'timer',seconds:popup.actionSeconds?.[choices?.actionKey??'']??selected?.window?.seconds??30,expiresAt:popup.actionExpiresAt?.[choices?.actionKey??'']??popup.expiresAt}:live?.window??selected?.window
+    const clock=useRef<ReactionClock>({expiresAt:0,deadline:0}),clockKey=useRef(targetKey)
+    useLayoutEffect(()=>{if(clockKey.current!==targetKey){clock.current={expiresAt:0,deadline:0};clockKey.current=targetKey}},[targetKey])
+    const activity=useReactionActivity(async()=>{
+        const target=targetKey||choices?.targets[0]?.key
+        if(!target)return
+        onUpdate(await playApi<Game>(`/games/${game.id}/counterspell/activity`,'POST',{actorId:ownerId,targetKey:target,...(reactionId?{reactionId}:{})}))
+    },!busy&&!disabled&&!!choices?.targets.length,timing?.seconds??30,setError)
     const snapshot:CounterspellSnapshot|undefined=selected&&choices&&resource?{edition:'2014',actorId:ownerId,target:selected,slotLevel:resource.level??Number(resource.id.slice(5)),modifier:choices.modifier}:undefined
     const reason=busy?'Invio di Controincantesimo in corso.':disabled?'Attendi la sincronizzazione della sessione.':!choices?'Attendi il caricamento dei lanci disponibili.':choices.blockedReason??(!selected?'Seleziona la creatura e il lancio da interrompere.':!resource?'Scegli uno slot di almeno 3° livello.':resource.remaining!==null&&resource.remaining<(resource.cost??1)?'Lo slot selezionato è esaurito.':!confirmed?'Conferma visibilità, portata, lancio in corso e componente somatica.':master&&snapshot?resolutionReason(snapshot,decision):undefined)
     async function submit(){
         if(working.current||reason)return
         working.current=true;setBusy(true);setError('')
         try{
+            await activity.flush()
             const current=await playApi<CounterspellChoices>(query);setChoices(current)
             const body={actorId:ownerId,targetKey,option,requirementsConfirmed:confirmed,...(reactionId?{reactionId}:{}),...(master?{decision:{...decision,confirmed}}:{})},signature=JSON.stringify(body)
             if(attempt.current?.signature!==signature)attempt.current={signature,id:crypto.randomUUID()}
@@ -71,9 +82,10 @@ export function CounterspellForm({game,ownerId,onUpdate,disabled=false,reactionI
             onUpdate(next);attempt.current=undefined;setConfirmed(false)
         }catch(e){setError(e instanceof Error?e.message:'Controincantesimo non riuscito.')}finally{working.current=false;setBusy(false)}
     }
-    return <form className="action-roll-form master-action-form counterspell-form" aria-label="Lancio: Controincantesimo" onSubmit={e=>{e.preventDefault();void submit()}}>
+    return <form className="action-roll-form master-action-form counterspell-form" aria-label="Lancio: Controincantesimo" onSubmit={e=>{e.preventDefault();void submit()}} onPointerDownCapture={activity.interact} onKeyDownCapture={activity.interact} onInputCapture={activity.interact} onChangeCapture={activity.interact}>
         <p className="ability-casting-summary">Istantaneo · Nessun danno · Nessuna concentrazione</p>
-        <p className="library-help">Non serve preparare un’azione. In questa app puoi interrompere l’ultimo lancio finché non avviene un altro evento di gioco indipendente, anche dopo la chiusura del popup di 30 secondi. Slot e reazione si consumano anche se la prova fallisce.</p>
+        <p className="library-help">Non serve preparare un’azione. {timing?.mode==='timer'?`Hai ${timing.seconds} secondi di inattività per questo lancio. Ogni interazione con il form riavvia il timer.`:'Puoi interrompere il lancio fino al prossimo evento indipendente, anche dopo la chiusura del popup.'} Slot e reazione si consumano anche se la prova fallisce.</p>
+        {timing&&(!!reactionId||timing.mode==='timer')&&<ReactionCountdown key={targetKey} window={{expiresAt:timing.expiresAt,serverNow:popup?.serverNow??game.serverNow??choices?.serverNow??0}} clock={clock} seconds={timing.seconds} busy={busy||disabled} onRestart={activity.interact}/>}
         {receipt&&<CounterspellSummary snapshot={receipt}/>}
         <fieldset disabled={disabled||busy}>
             <label>Lancio da interrompere<select aria-label="Lancio da interrompere" required value={targetKey} onChange={e=>{setTargetKey(e.target.value);setDecision({});setConfirmed(false);setReceipt(undefined)}}><option value="">Scegli il lancio…</option>{choices?.targets.map(t=><option key={t.key} value={t.key}>{t.casterName} · {t.name??(t.key.startsWith('manual:')?'lancio dichiarato al tavolo':'lancio in corso')}</option>)}</select></label>
