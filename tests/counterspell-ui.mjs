@@ -25,7 +25,7 @@ try{
  let game=await api(master,'/play/games','POST',{name:'Controincantesimo QA'});await api(player,'/play/invites/'+game.inviteToken+'/join','POST',{sheet:caster});await api(enemy,'/play/invites/'+game.inviteToken+'/join','POST',{sheet:foe});const path='/play/games/'+game.id
  const state={turns:[caster,foe].map((sheet,id)=>({id,sheet,description:sheet.name,initiative:String(20-id),hitPoints:sheet.hitPoints,armorClass:'12',temporaryHitPoints:''})),abilities:[{id:100,ownerId:0,ruleId:'test:held',name:'Concentrazione precedente',active:true,concentration:true,duration:'1 minuto',remainingTurns:10}],combat:{activeId:1,round:1}}
  async function reset(){game=await api(master,path);game=await api(master,path+'/state','PUT',{revision:game.revision,state,sheets:[caster,foe]})}
- await reset();await dm.goto(base+'/games/'+game.id);await view(dm);await dm.getByRole('button',{name:'Dettagli di Aster',exact:true}).click();await dm.getByRole('button',{name:'Controincantesimo · Usa',exact:true}).click()
+ await reset();const manual=await api(master,path+'/reactions','POST',{revision:game.revision,event:{kind:'spell',label:'Baldur lancia un incantesimo dichiarato al tavolo.',targetIds:[],actorId:1}});game=manual.game;await dm.goto(base+'/games/'+game.id);await view(dm);await dm.getByRole('button',{name:'Dettagli di Aster',exact:true}).click();await dm.getByRole('button',{name:'Controincantesimo · Usa',exact:true}).click()
  let form=dm.getByRole('form',{name:'Lancio: Controincantesimo',exact:true});await form.waitFor()
  assert.equal(await form.getByRole('checkbox').count(),1,'Only the specific reaction requirement is editable')
  assert.equal(await form.getByRole('combobox',{name:/Origine del lancio/}).count(),0)
@@ -41,6 +41,7 @@ try{
  // An actual pending upcast Fireball is the source, and its identity/level stay hidden in player choices.
  const actions=await api(enemy,path+'/actions'),action=actions.actions.find(a=>a.name==='Palla di Fuoco'),sourceId=crypto.randomUUID()
  await api(enemy,path+'/requests','POST',{id:sourceId,revision:actions.revision,key:action.key,option:'slot:5',cost:1,mode:'save',damageEnabled:true,packets:[{targetId:0,damage:[{type:'fire',amount:30}]}]})
+ game=await api(master,path);for(const w of game.reactionWindows??[])if(w.status==='pending')await api(master,path+'/reactions/'+w.id+'/decline','POST');
  const choices=await api(player,path+'/counterspell?actorId=0');assert(choices.targets.every(t=>t.level===undefined&&t.name===undefined))
  await pc.goto(base+'/games/'+game.id);await view(pc);await pc.getByRole('button',{name:'Controincantesimo · Usa',exact:true}).click()
  form=pc.getByRole('form',{name:'Lancio: Controincantesimo',exact:true});await form.getByRole('combobox',{name:'Lancio da interrompere',exact:true}).selectOption('request:'+sourceId)

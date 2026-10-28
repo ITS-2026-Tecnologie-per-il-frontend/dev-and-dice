@@ -1,6 +1,6 @@
 # Form già rivisti e prossimi form
 
-Aggiornato al 27 ottobre 2026. Il giro corrente riguarda gli esempi delle categorie di form, prima della verifica completa del catalogo. Il riferimento è il 2014; le voci 2024 devono essere controllate separatamente.
+Aggiornato al 28 ottobre 2026. Il giro corrente riguarda gli esempi delle categorie di form, prima della verifica completa del catalogo. Il riferimento è il 2014; le voci 2024 devono essere controllate separatamente.
 
 ## Già visti e corretti
 
@@ -59,4 +59,4 @@ Gli incantesimi rappresentativi sono ancora da scegliere; queste famiglie non so
 
 Procedere una famiglia alla volta e registrare per ogni voce cosa è verificato nei test, nel browser, ancora parziale o aperto. Controllare entrambi i ruoli lungo l'intero flusso: compilazione, richiesta, revisione, risultati leggibili, applicazione, risorse, durata e fine effetto.
 
-Gli altri problemi trasversali rimangono in [next-update.md](next-update.md), inclusi il lag iniziale del popup di reazione del Master e il registro delle azioni eseguite direttamente dal Master. La classificazione di riferimento è in [reports/modelli-utilizzo-e-notifiche.md](reports/modelli-utilizzo-e-notifiche.md).
+Gli altri problemi trasversali rimangono in [next-update.md](next-update.md), incluso il lag iniziale del popup di reazione del Master. Registro e disponibilità delle card sono stati aggiornati: [prove e comportamento](docs/registro-eventi-test.md). La classificazione di riferimento è in [reports/modelli-utilizzo-e-notifiche.md](reports/modelli-utilizzo-e-notifiche.md).

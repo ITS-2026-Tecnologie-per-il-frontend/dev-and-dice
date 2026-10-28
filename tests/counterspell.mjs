@@ -83,5 +83,10 @@ game.state.abilities.push({...mending,id:200,ownerId:1,active:true,remainingTurn
 entry=createCounterspellEntry(db,game,user,'Player',{...proposal(),targetKey:'ability:200'},rules);result=applyCounterspell(db,game,entry,rules,{confirmed:true});commit(result)
 assert(!game.state.abilities.find(a=>a.id===200).execution,'An interrupted long casting cannot complete later')
 assert.equal(db.characters[1].sheet.playerDetails['rules2014.concentration'],'');assert.equal(db.characters[1].sheet.playerDetails['slots.5.used'],undefined)
+reset()
+const warlock={...db.characters[0].sheet,characterClass:'Warlock',level:'5',charisma:'18',playerDetails:{'creation.enabled':'true','creation.class':'warlock','creation.subclass':'fiend','rules2014.pact.level':'3','spell.3.0.name':'Controincantesimo','spell.3.0.index':'counterspell','spell.3.0.class':'warlock','spell.3.0.source':'class'}}
+db.characters[0].sheet=warlock;game.state.turns[0].sheet=warlock
+assert.equal(counterspellChoices(db,game,user,0,rules).options.find(o=>o.id==='pact')?.level,3,'Pact Magic is a real slot, at its effective level')
+entry=createCounterspellEntry(db,game,user,'Player',proposal('pact'),rules);result=applyCounterspell(db,game,entry,rules,{confirmed:true,die:11});assert.equal(result.sheets.find(s=>s.id===caster.id).playerDetails['rules2014.used.pact'],'1');assert.equal(result.counterspell.slotLevel,3)
 reset();db.characters[0].sheet.playerDetails['rules.edition']='2024';assert.throws(()=>counterspellChoices(db,game,user,0,rules),/2014/)
 console.log('PASS Counterspell 2014: automatic/upcast/check/tie/natural rolls, advantage, modifiers, hidden levels, ownership, resources, concentration, source cancellation and failed-interruption resume')
